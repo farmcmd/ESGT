@@ -1563,6 +1563,54 @@
                 }
             });
 
+            // ================= 新增：主辦方清空所有數據 (測試或換檔用) =================
+            document.getElementById('reset-gov-data-btn')?.addEventListener('click', async () => {
+                const pwd = prompt('⚠️ 警告：這將會清空「永續政府總指標」與「所有計畫儀表板」。\n確定清空請輸入管理密碼 (mori2025)：');
+                if (pwd !== 'mori2025') {
+                    if (pwd !== null) alert('密碼錯誤，已取消操作。');
+                    return;
+                }
+
+                if (db && !isOfflineMode) {
+                    try {
+                        document.body.style.cursor = 'wait';
+                        
+                        // 1. 清空總表與機關分類統計
+                        await setDoc(govGeneralDocRef, {
+                            totalCarbon: 0,
+                            totalGreen: 0,
+                            typeCounts: {}
+                        });
+
+                        // 2. 刪除 Firebase 中的所有計畫文件
+                        const snapshot = await getDocs(govProjectsColRef);
+                        const deletePromises = [];
+                        snapshot.forEach(docSnap => {
+                            deletePromises.push(deleteDoc(doc(db, 'gov_projects', docSnap.id)));
+                        });
+                        await Promise.all(deletePromises);
+
+                        alert('✅ 雲端數據已全部清空！儀表板已歸零。');
+                    } catch (e) {
+                        console.error('清空失敗:', e);
+                        alert('清空失敗，請檢查資料庫權限或網路連線。');
+                    } finally {
+                        document.body.style.cursor = 'default';
+                    }
+                } else {
+                    // 單機模式清空
+                    globalGovData.totalCarbon = 0;
+                    globalGovData.totalGreen = 0;
+                    globalGovData.projects = [];
+                    globalGovData.typeCounts = {};
+                    renderGovDashboard();
+                    renderGovTypeChart();
+                    updateProjectDropdown();
+                    alert('【單機模式】數據已清空！');
+                }
+            });
+            // =========================================================================
+
             // 2.2 參與者：選擇計畫並登錄
             document.getElementById('log-user-proj-btn')?.addEventListener('click', async () => {
                 const selectEl = document.getElementById('user-proj-select');
@@ -2269,12 +2317,17 @@
 
                 card.className = "bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 relative flex flex-col justify-between transition-all duration-300 h-full overflow-hidden";
                 card.innerHTML = `
-                    <button class="download-card-btn absolute top-3 right-3 text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm z-20" title="下載此儀表板為圖片">
-                        <i class="fas fa-download"></i>
-                    </button>
+                    <div class="card-action-btns absolute top-3 right-3 flex gap-2 z-20">
+                        <button class="delete-card-btn text-red-500 bg-red-50 hover:bg-red-100 border border-red-100 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="刪除此計畫">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="download-card-btn text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="下載此儀表板為圖片">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
                     <div class="flex-grow pt-2">
-                        <p class="text-[10px] text-blue-500 font-bold mb-1 pr-8"><i class="fas fa-calendar-alt mr-1"></i>${proj.date || '未提供'}</p>
-                        <h5 class="text-sm font-bold text-gray-800 mb-1 line-clamp-2 pr-8" title="${proj.name}">${proj.name}</h5>
+                        <p class="text-[10px] text-blue-500 font-bold mb-1 pr-20"><i class="fas fa-calendar-alt mr-1"></i>${proj.date || '未提供'}</p>
+                        <h5 class="text-sm font-bold text-gray-800 mb-1 line-clamp-2 pr-20" title="${proj.name}">${proj.name}</h5>
                         <p class="text-xs font-bold text-blue-700 mb-2"><i class="fas fa-flag mr-1"></i>${proj.event || ''}</p>
                         
                         ${budgetVal > 0 ? `<p class="text-[10px] text-gray-600 font-bold mb-1 bg-yellow-50 inline-block px-1 rounded border border-yellow-100">${budgetHtml}</p>` : ''}
@@ -2297,6 +2350,51 @@
                         <i class="fas fa-qrcode text-gray-300 text-sm ml-2" title="探探里山永續平台"></i>
                     </div>
                 `;
+
+                // 綁定單一計畫刪除邏輯
+                const deleteBtn = card.querySelector('.delete-card-btn');
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const pwd = prompt('⚠️ 準備刪除計畫「' + proj.name + '」。\n請輸入管理員密碼 (預設: mori2025)：');
+                    if (pwd !== 'mori2025') {
+                        if (pwd !== null) alert('密碼錯誤，已取消操作。');
+                        return;
+                    }
+
+                    if (!confirm('確定要永久刪除「' + proj.name + '」嗎？\n(此操作將同步扣除政府總表的減碳與綠色消費數據)')) {
+                        return;
+                    }
+
+                    if (db && !isOfflineMode) {
+                        try {
+                            document.body.style.cursor = 'wait';
+                            
+                            // 1. 同步扣除政府總表數據
+                            await setDoc(govGeneralDocRef, {
+                                totalCarbon: increment(-(proj.carbon || 0)),
+                                totalGreen: increment(-(proj.green || 0))
+                            }, { merge: true });
+
+                            // 2. 刪除該計畫文件
+                            await deleteDoc(doc(govProjectsColRef, proj.id));
+
+                            alert('✅ 計畫「' + proj.name + '」已成功刪除！');
+                        } catch(err) {
+                            console.error('刪除失敗:', err);
+                            alert('刪除失敗，請檢查網路連線或資料庫權限。');
+                        } finally {
+                            document.body.style.cursor = 'default';
+                        }
+                    } else {
+                        // 單機模式處理
+                        globalGovData.totalCarbon = Math.max(0, globalGovData.totalCarbon - (proj.carbon || 0));
+                        globalGovData.totalGreen = Math.max(0, globalGovData.totalGreen - (proj.green || 0));
+                        globalGovData.projects = globalGovData.projects.filter(p => p.id !== proj.id);
+                        renderGovDashboard();
+                        updateProjectDropdown();
+                        alert('【單機模式】計畫「' + proj.name + '」已刪除！');
+                    }
+                });
 
                 // 綁定一鍵匯出圖片邏輯 (升級：專屬隱藏版型渲染)
                 const downloadBtn = card.querySelector('.download-card-btn');
