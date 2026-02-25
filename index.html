@@ -812,7 +812,7 @@
         // 1. Firebase Logic & Data
         // ------------------------------------------------------------------
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, onSnapshot, increment, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         const firebaseConfig = {
@@ -2355,6 +2355,7 @@
                 const deleteBtn = card.querySelector('.delete-card-btn');
                 deleteBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
+                    // 這裡的提示文字已經拿掉預設密碼，若您畫面還看到，代表是舊快取
                     const pwd = prompt('⚠️ 準備刪除計畫「' + proj.name + '」。\n請輸入管理員密碼：');
                     if (pwd !== 'mori2025') {
                         if (pwd !== null) alert('密碼錯誤，已取消操作。');
@@ -2375,8 +2376,8 @@
                                 totalGreen: increment(-(proj.green || 0))
                             }, { merge: true });
 
-                            // 2. 刪除該計畫文件
-                            await deleteDoc(doc(govProjectsColRef, proj.id));
+                            // 2. 刪除該計畫文件 (升級：採用更穩健的絕對路徑寫法)
+                            await deleteDoc(doc(db, 'gov_projects', proj.id));
 
                             alert('✅ 計畫「' + proj.name + '」已成功刪除！');
                         } catch(err) {
