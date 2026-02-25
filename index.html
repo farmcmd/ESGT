@@ -565,9 +565,9 @@
                                     <input type="text" id="host-proj-name" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入計畫名稱 (必填)">
                                     <input type="text" id="host-proj-event" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入活動名稱 (必填)">
                                     <input type="text" id="host-proj-remark" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="備註 (例: 上午場 / 參與單位)">
-                                    <input type="number" id="host-proj-budget" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="活動投入預算 ($) (非必填)">
+                                    <input type="number" id="host-proj-budget" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="活動投入預算 ($) (非必填)" min="0">
                                     <div>
-                                        <input type="number" step="0.01" id="host-proj-sroi" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="SROI值計算 (e.g. 1.95) (非必填)">
+                                        <input type="number" step="0.01" id="host-proj-sroi" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="SROI值計算 (e.g. 1.95) (非必填)" min="0">
                                         <p class="text-[10px] text-gray-500 mt-1 ml-1 leading-relaxed"><i class="fas fa-info-circle text-blue-400 mr-1"></i>需依主辦方選擇之活動或單位提供之報告書認定。</p>
                                     </div>
                                 </div>
@@ -635,7 +635,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-1">單價 ($)</label>
-                            <input type="number" id="green-price" class="w-full p-2 border rounded-lg text-center" placeholder="0">
+                            <input type="number" id="green-price" class="w-full p-2 border rounded-lg text-center" placeholder="0" min="0">
                         </div>
                     </div>
 
@@ -656,7 +656,7 @@
                     <div class="bg-mori-light/30 p-4 rounded-xl border border-mori-light mb-4 flex items-center justify-between">
                          <div class="w-1/2">
                              <label class="block text-xs font-bold text-gray-500 mb-1">消費金額 ($)</label>
-                             <input type="number" id="sroi-price" class="w-full p-2 border rounded-lg text-lg font-bold text-mori-dark" placeholder="輸入金額">
+                             <input type="number" id="sroi-price" class="w-full p-2 border rounded-lg text-lg font-bold text-mori-dark" placeholder="輸入金額" min="0">
                          </div>
                          <div class="w-1/2 text-right">
                              <p class="text-xs text-mori-sage font-bold">預估社會價值</p>
@@ -699,11 +699,11 @@
                          <div class="mb-4 flex gap-4">
                              <div class="w-1/2">
                                  <label class="block text-xs font-bold text-gray-500 mb-1">採購金額 ($)</label>
-                                 <input type="number" id="project-amount" class="w-full p-2 border rounded-lg text-lg font-bold text-mori-dark focus:border-mori-sage focus:outline-none" placeholder="輸入金額">
+                                 <input type="number" id="project-amount" class="w-full p-2 border rounded-lg text-lg font-bold text-mori-dark focus:border-mori-sage focus:outline-none" placeholder="輸入金額" min="0">
                              </div>
                              <div class="w-1/2">
                                  <label class="block text-xs font-bold text-gray-500 mb-1">SROI加權</label>
-                                 <input type="number" step="0.01" id="project-sroi-weight" class="w-full p-2 border rounded-lg text-lg font-bold text-mori-dark focus:border-mori-sage focus:outline-none" placeholder="例: 1.5" value="1.0">
+                                 <input type="number" step="0.01" id="project-sroi-weight" class="w-full p-2 border rounded-lg text-lg font-bold text-mori-dark focus:border-mori-sage focus:outline-none" placeholder="例: 1.5" value="1.0" min="0">
                              </div>
                          </div>
                          <button id="log-project-btn" class="w-full py-3 bg-gray-700 text-white font-bold rounded-lg hover:bg-gray-800 transition">確認登錄企業採購/協同專案</button>
@@ -738,7 +738,7 @@
                 
                 <div id="poi-review-section" class="hidden bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4 block">
                      <h4 class="text-xs font-bold text-yellow-800 mb-2">消費審核 (獲得積分)</h4>
-                     <input type="number" id="consumption-amount" class="w-full p-2 text-sm border rounded mb-2" placeholder="消費金額 ($)">
+                     <input type="number" id="consumption-amount" class="w-full p-2 text-sm border rounded mb-2" placeholder="消費金額 ($)" min="0">
                      <input type="text" id="review-code" class="w-full p-2 text-sm border rounded mb-2" placeholder="3碼審核碼" maxlength="3">
                      <button id="submit-poi-review" class="w-full py-2 bg-yellow-500 text-white rounded text-sm font-bold">提交</button>
                      <p id="poi-review-status" class="text-xs mt-1 text-center font-bold"></p>
@@ -1520,6 +1520,8 @@
                 const dateOnly = todayStr.split(' ')[0]; // 擷取日期
 
                 if (!projName || !eventName) { alert('請完整填寫「計畫名稱」與「活動名稱」！'); return; }
+                if (Number(budget) < 0) { alert('活動投入預算不可為負數！'); return; }
+                if (Number(sroi) < 0) { alert('SROI加權不可為負數！'); return; }
 
                 // 使用時間戳產生唯一ID
                 const docId = `proj_${Date.now()}`;
@@ -1719,7 +1721,11 @@
             const sroiUnitSelect = document.getElementById('sroi-unit-select');
             const updateSroiPreview = () => {
                 if(!sroiPriceInput || !sroiUnitSelect) return;
-                const price = parseFloat(sroiPriceInput.value) || 0;
+                let price = parseFloat(sroiPriceInput.value) || 0;
+                if (price < 0) {
+                    price = 0;
+                    sroiPriceInput.value = 0; // 強制修正輸入框數值
+                }
                 const weight = parseFloat(sroiUnitSelect.value) || 0;
                 const val = (price * weight).toFixed(0);
                 const display = document.getElementById('sroi-preview-val');
@@ -1733,6 +1739,9 @@
             sroiUnitSelect?.addEventListener('change', updateSroiPreview);
             
             document.getElementById('log-sroi-btn')?.addEventListener('click', () => {
+                const priceInputVal = parseFloat(document.getElementById('sroi-price').value) || 0;
+                if (priceInputVal < 0) { alert('消費金額不可為負數！'); return; }
+                
                 const val = parseFloat(document.getElementById('sroi-preview-val').textContent.replace('$',''));
                 if(val > 0) {
                     state.sroiProcure += val;
@@ -1773,7 +1782,8 @@
                 const sroiWeight = parseFloat(document.getElementById('project-sroi-weight').value) || 1.0;
 
                 if (!orgName) { alert('請輸入機構名稱！'); return; }
-                if (amount <= 0) { alert('請輸入有效的採購金額！'); return; }
+                if (amount <= 0) { alert('請輸入大於 0 的有效採購金額！'); return; }
+                if (sroiWeight < 0) { alert('SROI加權不可為負數！'); return; }
 
                 state.projectProcure += amount;
                 if (!state.projectList) state.projectList = [];
@@ -1812,9 +1822,9 @@
 
             // 景點消費審核按鈕
             document.getElementById('submit-poi-review')?.addEventListener('click', () => {
-                const amount = document.getElementById('consumption-amount')?.value;
+                const amount = parseFloat(document.getElementById('consumption-amount')?.value) || 0;
                 const code = document.getElementById('review-code')?.value;
-                if(!amount || !code) { alert('請完整填寫消費金額與 3 碼審核碼'); return; }
+                if(amount <= 0 || !code) { alert('請輸入大於 0 的消費金額與 3 碼審核碼'); return; }
                 
                 state.totalScore += 10;
                 addLog(`綠色消費：於 ${currentModalPoi?.name || '景點'} 審核通過消費 $${amount} (獲得 10 積分)`);
@@ -2582,6 +2592,9 @@
         function handleGreenProcure() {
              const qty = parseFloat(document.getElementById('green-qty').value) || 1;
              const price = parseFloat(document.getElementById('green-price').value) || 0;
+             if (qty < 0) { alert('數量不可為負數！'); return; }
+             if (price < 0) { alert('消費金額不可為負數！'); return; }
+             
              const total = qty * price;
              if(total > 0) {
                  state.greenProcure += total;
