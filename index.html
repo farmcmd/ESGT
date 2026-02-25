@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>探探里山-永續旅遊 | 民眾通用版</title>
+    <title>探探里山-永續旅遊 | 森林系版</title>
     <!-- 引入外部樣式庫 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -2117,8 +2117,11 @@
                         tagHtml = '<span class="text-[10px] font-bold text-white bg-mori-forest px-2 py-1 rounded">終點</span>';
                     }
 
+                    // 動態將 SROI (✓) 替換為更顯眼的亮綠色字體，保持原始資料乾淨
+                    const displayName = poi.name.replace('SROI (✓)', '<span class="text-green-600 font-bold">SROI (✓)</span>');
+
                     li.className = `p-2 bg-white hover:bg-gray-50 hover:shadow-sm rounded-lg cursor-pointer flex justify-between items-center border ${activeStyle} transition`;
-                    li.innerHTML = `<span class="font-bold text-gray-700 truncate mr-2">${poi.icon} ${poi.name}</span> ${tagHtml}`;
+                    li.innerHTML = `<span class="font-bold text-gray-700 truncate mr-2">${poi.icon} ${displayName}</span> ${tagHtml}`;
                     li.addEventListener('click', () => openPoiModal(poi));
                     ul.appendChild(li);
                 });
@@ -2131,7 +2134,8 @@
         // ================= 修正後的 Modal 函數 =================
         function openPoiModal(poi) {
             currentModalPoi = poi;
-            document.getElementById('poi-modal-title').textContent = poi.name;
+            // 彈出視窗標題也同步將 SROI (✓) 替換為顯眼綠色字體
+            document.getElementById('poi-modal-title').innerHTML = poi.name.replace('SROI (✓)', '<span class="text-green-600 font-bold">SROI (✓)</span>');
             document.getElementById('poi-modal-description').innerHTML = poi.description;
             
             const fbContainer = document.getElementById('poi-modal-fb-container');
@@ -2166,7 +2170,7 @@
                 esgContainer.innerHTML = `
                     <p class="text-[11px] text-green-800 mb-2 leading-relaxed font-medium">
                         <i class="fas fa-leaf mr-1 text-mori-forest"></i>
-                        在此消費的特定產品，經農業部、環境部、TWSE、TPEx認定，發布於115年度（第一屆）ESG評鑑指標之消費產品及行動(體驗)消費，皆可計入。
+                        經農業部、環境部、TWSE、TPEx認定，發布於115年度（第一屆）ESG評鑑指標之消費產品及行動(體驗)商品；或消費於<span class="text-green-600 font-bold">SROI (✓)</span>具社會責任價值之農場商品，皆可計入。
                     </p>
                     <button id="open-esg-calc-from-poi" class="w-full py-2 bg-gradient-to-r from-mori-forest to-mori-sage text-white text-sm font-bold rounded-lg shadow hover:opacity-90 transition flex justify-center items-center">
                         <i class="fas fa-calculator mr-2"></i>開啟綠色消費評鑑計算機
