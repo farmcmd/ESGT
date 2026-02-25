@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -768,16 +769,19 @@
             govGeneralDocRef = doc(db, 'global_stats', 'gov_general');
             govProjectsColRef = collection(db, 'gov_projects');
             
+            // 處理匿名驗證
             onAuthStateChanged(auth, (user) => {
                 if(user) {
                     currentUser = user;
                     initGlobalCounters();
                     fetchNetworkCarbon();
+                    recordPageView(); // 新增：連線成功後觸發瀏覽人次紀錄
                 } else {
                     currentUser = null;
                 }
             });
             
+            // 靜默處理登入錯誤，並精準提示需授權的網域
             signInAnonymously(auth).catch(e => {
                 const currentDomain = window.location.hostname;
                 console.warn(`[Firebase Auth 錯誤] 網域未授權: ${e.message}`);
@@ -2341,6 +2345,21 @@
             document.getElementById(id)?.classList.add('hidden');
         }
         
+        // ================= 新增：紀錄瀏覽人次的獨立函式 =================
+        async function recordPageView() {
+            if(!db || isOfflineMode) return;
+            try {
+                // 使用 sessionStorage 檢查，確保每次開啟視窗只計算一次，防止 F5 瘋狂洗數據
+                if (!sessionStorage.getItem('pageViewCounted')) {
+                    await setDoc(pageViewsDocRef, { count: increment(1) }, { merge: true });
+                    sessionStorage.setItem('pageViewCounted', 'true');
+                }
+            } catch(e) {
+                console.log('紀錄瀏覽人次失敗');
+            }
+        }
+        // ==========================================================
+
         async function fetchNetworkCarbon() {
             if(!db || isOfflineMode) return;
             try {
@@ -2366,6 +2385,17 @@
                          }
                      }
                  }, (error) => console.log('監聽綠色消費失敗，可能因權限不足'));
+
+                 // ================= 新增：監聽瀏覽人次 =================
+                 onSnapshot(pageViewsDocRef, (docSnap) => {
+                     if(docSnap.exists()) {
+                         const count = docSnap.data().count || 0;
+                         if(document.getElementById('page-view-count')) {
+                             document.getElementById('page-view-count').textContent = count.toLocaleString();
+                         }
+                     }
+                 }, (error) => console.log('監聽瀏覽人次失敗'));
+                 // ====================================================
 
                  // 監聽永續政府總指標
                  onSnapshot(govGeneralDocRef, (docSnap) => {
