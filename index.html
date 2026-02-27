@@ -529,6 +529,7 @@
                                     <input type="text" id="ent-create-event" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-mori-sage" placeholder="福委會/補助活動名稱 (必填)">
                                 </div>
                                 <input type="text" id="ent-create-remark" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-mori-sage" placeholder="備註 (例: 第一梯次 / 部門名稱)">
+                                <input type="url" id="ent-create-url" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-mori-sage" placeholder="輸入企業永續網站網址 (選填)">
                                 
                                 <!-- 整併過來的：企業採購或協同專案登錄 -->
                                 <div class="p-4 bg-white border border-mori-sage rounded-lg mt-3 shadow-inner">
@@ -1582,6 +1583,7 @@
                 card.className = "bg-white p-4 rounded-xl shadow-sm border-l-4 border-mori-forest relative flex flex-col justify-between transition-all duration-300 h-full overflow-hidden hover:shadow-md";
                 
                 const remarkHtml = proj.remark ? `<p class="text-xs text-gray-500 mb-2 truncate" title="${proj.remark}"><i class="fas fa-sticky-note mr-1 text-mori-sage"></i>${proj.remark}</p>` : '';
+                const urlHtml = proj.url ? `<a href="${proj.url}" target="_blank" class="inline-block mt-1 mb-2 text-[10px] text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition"><i class="fas fa-external-link-alt mr-1"></i>企業永續網站</a>` : '';
 
                 // 處理綁定的企業採購專案與 SROI 價值顯示
                 let linkedProjHtml = '';
@@ -1667,7 +1669,8 @@
                     <div class="flex-grow pt-2">
                         <p class="text-[10px] text-mori-sage font-bold mb-1 pr-20"><i class="fas fa-calendar-alt mr-1"></i>年度：${proj.year || '未提供'}</p>
                         <h5 class="text-sm font-bold text-mori-dark mb-1 line-clamp-2 pr-20" title="${proj.orgName}">${proj.orgName}</h5>
-                        <p class="text-xs font-bold text-mori-forest mb-2"><i class="fas fa-flag mr-1"></i>${proj.event || ''}</p>
+                        <p class="text-xs font-bold text-mori-forest mb-1"><i class="fas fa-flag mr-1"></i>${proj.event || ''}</p>
+                        ${urlHtml}
                         ${linkedProjHtml}
                         ${remarkHtml}
                         ${socialValueHtml}
@@ -1682,6 +1685,10 @@
                             <p class="text-gray-500">綠色消費</p>
                             <p class="font-bold text-mori-wood">$${(proj.green || 0).toLocaleString()}</p>
                         </div>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-mori-light flex justify-between items-center text-[9px] text-gray-400">
+                        <span class="truncate"><i class="fas fa-link mr-1"></i>溯源網址: https://farmcmd.github.io/ESGT/</span>
+                        <i class="fas fa-qrcode text-mori-sage text-sm ml-2" title="探探里山永續平台 QR Code"></i>
                     </div>
                 `;
 
@@ -2046,6 +2053,7 @@
                 const year = document.getElementById('ent-create-year')?.value.trim();
                 const eventName = document.getElementById('ent-create-event')?.value.trim();
                 const remark = document.getElementById('ent-create-remark')?.value.trim() || '';
+                const entUrl = document.getElementById('ent-create-url')?.value.trim() || '';
                 
                 // 讀取新的採購專案欄位
                 const projType = document.getElementById('ent-create-proj-type')?.value;
@@ -2071,6 +2079,7 @@
                     year: year || new Date().getFullYear().toString(),
                     event: eventName,
                     remark: remark,
+                    url: entUrl,
                     linkedProject: linkedProjectData,
                     carbon: 0,
                     green: 0,
@@ -2084,6 +2093,7 @@
                     document.getElementById('ent-create-year').value = '';
                     document.getElementById('ent-create-event').value = '';
                     document.getElementById('ent-create-remark').value = '';
+                    if(document.getElementById('ent-create-url')) document.getElementById('ent-create-url').value = '';
                     if(document.getElementById('ent-create-proj-amount')) document.getElementById('ent-create-proj-amount').value = '';
                     if(document.getElementById('ent-create-proj-sroi')) document.getElementById('ent-create-proj-sroi').value = '1.0';
 
