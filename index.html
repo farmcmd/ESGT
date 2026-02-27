@@ -126,6 +126,20 @@
             position: relative;
             z-index: 10;
         }
+
+        /* 5星評分 CSS */
+        .star-rating i {
+            color: #D1D5DB;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .star-rating i.active {
+            color: #FBBF24;
+        }
+        .star-rating i:hover,
+        .star-rating i:hover ~ i {
+            color: #FBBF24; /* Hover support for LTR layout could be tricky, handled by JS mainly */
+        }
     </style>
 </head>
 <body class="font-sans antialiased">
@@ -139,7 +153,7 @@
             
             <div class="mt-6 flex flex-wrap gap-3 justify-center">
                 <button id="enterprise-version-btn" class="px-5 py-2 bg-mori-wood/90 hover:bg-mori-wood text-white text-sm font-bold rounded-full shadow transition duration-300 backdrop-blur-sm border border-white/20">
-                    <i class="fas fa-building mr-2"></i> 企業版
+                    <i class="fas fa-building mr-2"></i> 企業永續儀表板
                 </button>
                 <button id="gov-version-btn" class="px-5 py-2 bg-blue-500/80 hover:bg-blue-600 text-white text-sm font-bold rounded-full shadow transition duration-300 backdrop-blur-sm border border-white/20">
                     <i class="fas fa-landmark mr-2"></i> 永續政府
@@ -456,148 +470,71 @@
     <div id="enterprise-modal" class="modal-overlay fixed inset-0 hidden z-50 overflow-y-auto">
         <div class="min-h-screen px-4 text-center">
             <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
-            <div class="modal-content inline-block w-full max-w-5xl p-6 my-8 text-left align-middle transition-all transform bg-mori-base shadow-2xl rounded-2xl border-t-4 border-mori-forest relative">
+            <div class="modal-content inline-block w-full max-w-6xl p-6 my-8 text-left align-middle transition-all transform bg-mori-base shadow-2xl rounded-2xl border-t-4 border-mori-forest relative">
                 <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-2xl"></i></button>
                 
-                <div class="text-center mb-8 mt-2">
+                <div class="text-center mb-6 mt-2">
                     <h3 class="text-3xl font-bold text-mori-dark mb-3 flex items-center justify-center">
                         <i class="fas fa-building mr-3 text-mori-forest"></i>企業永續儀表板
                         <i id="open-enterprise-info-btn" class="fas fa-info-circle ml-3 text-2xl text-mori-sage cursor-pointer hover:text-mori-forest transition" title="專案設立宗旨"></i>
                     </h3>
-                    <p class="text-sm font-bold text-mori-sage">點擊進入各企業專屬永續網頁，查看詳細減碳與綠色消費成就</p>
+                    <p class="text-sm font-bold text-mori-sage">企業專屬永續旅遊評鑑數據，帶動 E.S.G落地與綠色經濟</p>
                 </div>
                 
-                <!-- 企業卡片網格 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="enterprise-grid">
-                    <!-- JS 動態生成 8 間企業卡片 -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 企業專區說明 Modal -->
-    <div id="enterprise-info-modal" class="modal-overlay fixed inset-0 hidden z-[60] flex items-center justify-center p-4">
-        <div class="modal-content bg-white w-full max-w-lg p-8 rounded-2xl shadow-2xl relative text-left border-t-4 border-mori-sage">
-            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
-            <h3 class="text-2xl font-bold text-mori-forest mb-5 border-b pb-3 flex items-center">
-                <i class="fas fa-lightbulb mr-3 text-yellow-500"></i>專案設立宗旨
-            </h3>
-            <div class="text-gray-700 leading-relaxed space-y-4 font-medium text-sm">
-                <p>本專區專為企業夥伴客製化打造。我們協助公司福委會與永續部門，將員工旅遊與 ESG評鑑、SROI、GRI、SDGs 等國際指標深度結合。</p>
-                <p>透過引導員工在旅程與日常中實踐永續觀念，我們將旅遊足跡以及綠色消費轉化為具體的量化評估數據，直接作為企業永續報告書 (ESG Report) 的重要參考依據，共創綠色影響力。</p>
-            </div>
-            <div class="mt-8 text-center">
-                <button class="info-ok-button px-8 py-2 bg-mori-forest text-white rounded-full font-bold hover:bg-mori-dark transition shadow-md">了解</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= 新增：永續政府專區 Modal ================= -->
-    <div id="gov-modal" class="modal-overlay fixed inset-0 hidden z-50 overflow-y-auto">
-        <div class="min-h-screen px-4 text-center">
-            <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
-            <div class="modal-content inline-block w-full max-w-6xl p-6 my-8 text-left align-middle transition-all transform bg-gray-50 shadow-2xl rounded-2xl border-t-4 border-blue-600 relative">
-                <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-2xl"></i></button>
-                
-                <div class="text-center mb-6 mt-2">
-                    <h3 class="text-3xl font-bold text-blue-900 mb-2 flex items-center justify-center">
-                        <i class="fas fa-landmark mr-3 text-blue-600"></i>永續政府儀表板
-                    </h3>
-                    <p class="text-sm font-bold text-blue-700">公部門力量，引領地方創生，帶動地方低碳與綠色經濟</p>
-                </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     <!-- 左側：主要計畫流程 (lg:col-span-2) -->
                     <div class="lg:col-span-2 flex flex-col gap-6">
-                        <!-- 1. [參與者] 選擇計畫並登錄 -->
+                        <!-- 1. [參與者] 選擇企業儀表板並登錄 -->
                         <div class="bg-white p-5 rounded-xl shadow border-2 border-mori-sage relative overflow-hidden">
                             <div class="absolute -right-4 -top-4 text-6xl text-mori-sage opacity-10"><i class="fas fa-sign-in-alt"></i></div>
                             <h4 class="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center relative z-10">
-                                <i class="fas fa-user-check mr-2 text-mori-forest"></i>1. [參與者] 選擇計畫並登錄
+                                <i class="fas fa-user-check mr-2 text-mori-forest"></i>1. [企業員工] 選擇專屬活動並登錄
                             </h4>
-                            <p class="text-[11px] text-gray-500 mb-3 leading-relaxed relative z-10">請從下方選單選擇您今日參與的計畫，將目前的永續成就結算歸戶。</p>
+                            <p class="text-[11px] text-gray-500 mb-3 leading-relaxed relative z-10">請從下方選單選擇您所屬企業的本次活動，將您個人的永續成就結算歸戶至企業總表中。</p>
                             <div class="mb-4 relative z-10">
-                                <select id="user-proj-select" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-mori-sage">
-                                    <option value="">-- 請選擇您參與的計畫 --</option>
+                                <select id="ent-proj-select" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-mori-sage">
+                                    <option value="">-- 請選擇企業專屬活動儀表板 --</option>
                                 </select>
                             </div>
-                            <button id="log-user-proj-btn" class="w-full py-2 bg-mori-forest text-white rounded-lg font-bold text-sm hover:bg-mori-dark transition shadow relative z-10">
-                                確認登錄 (計入該計畫並歸零)
+                            <button id="log-ent-proj-btn" class="w-full py-2 bg-mori-forest text-white rounded-lg font-bold text-sm hover:bg-mori-dark transition shadow relative z-10">
+                                確認登錄 (計入該企業活動並歸零個人數據)
                             </button>
                         </div>
 
-                        <!-- 2. 計畫執行儀表板 -->
+                        <!-- 2. 企業專屬儀表板網格 -->
                         <div>
-                            <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-th-large mr-2"></i>2. 計畫執行儀表板</h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar" id="gov-projects-grid">
+                            <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-th-large mr-2"></i>2. 企業活動執行儀表板</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar" id="enterprise-grid">
                                 <!-- JS 動態生成 -->
                             </div>
                         </div>
 
-                        <!-- 3. [主辦方] 開啟新計畫儀表板 -->
-                        <div class="bg-blue-50 p-5 rounded-xl shadow border border-blue-200 mt-2">
-                            <h4 class="font-bold text-blue-800 mb-3 border-b border-blue-200 pb-2 flex items-center">
-                                <i class="fas fa-plus-square mr-2"></i>3. [主辦方] 開啟新計畫儀表板
+                        <!-- 3. [主辦方] 建立新儀表板 -->
+                        <div class="bg-mori-light/30 p-5 rounded-xl shadow border border-mori-light mt-2">
+                            <h4 class="font-bold text-mori-forest mb-3 border-b border-mori-light pb-2 flex items-center">
+                                <i class="fas fa-plus-square mr-2"></i>3. [企業永續辦公室] 建立新儀表板
                             </h4>
                             <div class="space-y-3 mb-3">
-                                <input type="text" id="host-proj-name" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入計畫名稱 (必填)">
-                                <input type="text" id="host-proj-event" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入活動名稱 (必填)">
-                                <input type="text" id="host-proj-remark" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="備註 (例: 上午場 / 參與單位)">
-                                <input type="number" id="host-proj-budget" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="活動投入預算 ($) (非必填)" min="0">
-                                <div>
-                                    <input type="number" step="0.01" id="host-proj-sroi" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="SROI值計算 (e.g. 1.95) (非必填)" min="0">
-                                    <p class="text-[10px] text-gray-500 mt-1 ml-1 leading-relaxed"><i class="fas fa-info-circle text-blue-400 mr-1"></i>需依主辦方選擇之活動或單位提供之報告書認定。</p>
+                                <input type="text" id="ent-create-org" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-mori-sage" placeholder="輸入企業/集團名稱 (必填)">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="number" id="ent-create-year" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-mori-sage" placeholder="執行年度 (例: 2026)" min="2020">
+                                    <input type="text" id="ent-create-event" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-mori-sage" placeholder="福委會/補助活動名稱 (必填)">
                                 </div>
+                                <input type="text" id="ent-create-remark" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-mori-sage" placeholder="備註 (例: 第一梯次 / 部門名稱)">
                             </div>
-                            <button id="create-proj-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow">
-                                建立新儀表板
+                            <button id="create-ent-proj-btn" class="w-full py-2 bg-mori-sage text-white rounded-lg font-bold text-sm hover:bg-mori-forest transition shadow">
+                                建立專屬企業儀表板
                             </button>
                         </div>
                     </div>
 
-                    <!-- 右側：總表與機關數據 (lg:col-span-1) -->
+                    <!-- 右側：資訊說明 (lg:col-span-1) -->
                     <div class="lg:col-span-1 space-y-6">
-                        <!-- 永續政府總指標 (保持置頂) -->
-                        <div class="bg-gradient-to-br from-blue-50 to-white p-5 rounded-xl shadow border border-blue-100">
-                            <h4 class="font-bold text-blue-900 mb-4 text-center">永續政府總指標</h4>
-                            <div class="space-y-4">
-                                <div class="text-center">
-                                    <p class="text-xs text-gray-500 font-bold mb-1">永續政府累計減碳量</p>
-                                    <p id="gov-total-carbon-display" class="text-2xl font-bold text-green-600">0 g</p>
-                                </div>
-                                <div class="text-center">
-                                    <p class="text-xs text-gray-500 font-bold mb-1">永續綠色消費評鑑數據</p>
-                                    <p id="gov-total-green-display" class="text-2xl font-bold text-blue-600">$0</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 4. 登錄機關行程數據 -->
-                        <div class="bg-white p-5 rounded-xl shadow border border-gray-200">
-                            <h4 class="font-bold text-gray-800 mb-3 border-b pb-2">4. 登錄機關行程數據</h4>
-                            <select id="gov-type-select" class="w-full p-2 border rounded-lg text-sm mb-3 bg-gray-50 focus:outline-none focus:border-blue-500">
-                                <option value="中央政府機關">1. 中央政府機關</option>
-                                <option value="附屬機關">2. 附屬機關</option>
-                                <option value="公營事業機構">3. 公營事業機構</option>
-                                <option value="國有財產管理單位">4. 國有財產管理單位</option>
-                                <option value="國有土地/房地類型">5. 國有土地/房地類型</option>
-                                <option value="地方政府">6. 地方政府</option>
-                            </select>
-                            <input type="text" id="gov-agency-name" class="w-full p-2 border rounded-lg text-sm mb-3 focus:outline-none focus:border-blue-500" placeholder="輸入機關/單位名稱">
-                            <button id="log-gov-general-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow">
-                                確認登錄 (計入本次行程)
-                            </button>
-                        </div>
-
-                        <!-- 5. 各類型機關參與次數 -->
-                        <div class="bg-white p-5 rounded-xl shadow border border-gray-200">
-                            <h4 class="font-bold text-gray-800 mb-3 border-b pb-2 text-sm flex items-center">
-                                <i class="fas fa-chart-bar mr-2 text-blue-500"></i>5. 各類型機關參與次數
-                            </h4>
-                            <div id="gov-type-chart" class="space-y-3">
-                                <!-- JS 動態生成長條圖 -->
-                                <p class="text-xs text-gray-400 text-center py-2">載入中...</p>
-                            </div>
+                        <div class="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-200 text-center">
+                            <i class="fas fa-info-circle text-gray-400 text-3xl mb-2"></i>
+                            <p class="text-xs text-gray-500 leading-relaxed font-bold">
+                                透過集中化的企業儀表板，您能即時掌握各梯次員工的永續參與度。所有數據皆可匯出，直接作為企業 ESG 永續報告書之佐證資料。
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -795,13 +732,145 @@
                     <span class="font-bold text-mori-wood">綠色消費: $<span id="gov-confirm-green"></span></span>
                 </div>
                 <p class="text-xs text-red-600 font-bold mt-3 leading-relaxed">
-                    ⚠️ 警告：按下確認後，這些數據將計入政府總表，並且<strong class="underline">您的個人數據將會歸零</strong>！<br>
+                    ⚠️ 警告：按下確認後，這些數據將計入總表，並且<strong class="underline">您的個人數據將會歸零</strong>！<br>
                     若尚未保存憑證，請先取消並點擊「將最近紀錄匯出為圖片」。
                 </p>
             </div>
             <div class="flex gap-3">
                 <button id="gov-confirm-cancel" class="flex-1 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition">先去匯出</button>
                 <button id="gov-confirm-ok" class="flex-1 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition shadow-md">確認歸零登錄</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ================= 新增：企業 ESG 評鑑問卷 Modal ================= -->
+    <div id="ent-eval-modal" class="modal-overlay fixed inset-0 hidden z-[75] flex items-center justify-center p-4">
+        <div class="modal-content bg-white w-full max-w-2xl rounded-2xl shadow-2xl relative max-h-[90vh] flex flex-col border-t-4 border-mori-wood">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"><i class="fas fa-times text-xl"></i></button>
+            
+            <div class="p-6 border-b border-gray-100 shrink-0 text-center">
+                <h3 class="text-2xl font-bold text-mori-dark mb-1">永續旅遊影響力評鑑</h3>
+                <p class="text-xs text-mori-sage font-bold">請針對本次活動給予回饋，完成後將歸戶您的永續成就</p>
+                <div class="flex justify-center mt-3">
+                     <button id="quick-fill-stars-btn" class="text-[11px] bg-yellow-50 text-yellow-600 border border-yellow-200 px-3 py-1 rounded-full hover:bg-yellow-100 transition shadow-sm font-bold flex items-center">
+                         <i class="fas fa-bolt mr-1"></i> 快速填滿 5 星
+                     </button>
+                </div>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-grow space-y-6 bg-gray-50/50" id="eval-questions-container">
+                <!-- 第一部分：員工投入度 -->
+                <div class="eval-section">
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-heart text-red-400 mr-2"></i>第一部分：員工投入度 (Engagement)</h4>
+                    <div class="space-y-4">
+                        <div class="eval-q" data-qid="q1">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">1. 參與動機：永續ESG是否成為吸引您參加本次永續旅遊的主要原因？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                        <div class="eval-q" data-qid="q2">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">2. 前測認知：活動前，您對公司推動的 ESG 政策了解程度為何？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二部分：環境維度評鑑 (E) -->
+                <div class="eval-section">
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-leaf text-mori-forest mr-2"></i>第二部分：環境維度評鑑 (Environmental)</h4>
+                    <div class="space-y-4">
+                        <div class="eval-q" data-qid="q3">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">3. 減碳行為轉化：參與本次活動後，增加了您在日常生活中實踐「減碳行動」的意願？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                        <div class="eval-q" data-qid="q4">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">4. 綠色消費認同：透過系統看到「減碳克數」的即時反饋，讓您更有成就感？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                        <div class="eval-q" data-qid="q5">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">5. 環境教育價值：您認為行程中的生態導覽具備足夠的教育深度？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第三部分：社會維度評鑑 (S) -->
+                <div class="eval-section">
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-users text-blue-500 mr-2"></i>第三部分：社會維度評鑑 (Social)</h4>
+                    <div class="space-y-4">
+                        <div class="eval-q" data-qid="q6">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">6. 在地影響力感知：參加本次活動深刻感受到公司消費對地方創生與青農的支持？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                        <div class="eval-q" data-qid="q7">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">7. SROI 數據認同：得知消費能產生倍數社會影響力時，提升了您的自豪感？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                        <div class="eval-q" data-qid="q8">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">8. 團隊凝聚力：本次活動有助於跨部門溝通與員工心理健康（Well-being）？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第四部分：公司治理與組織認同 (G) -->
+                <div class="eval-section">
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-building text-purple-500 mr-2"></i>第四部分：公司治理與組織認同 (Governance)</h4>
+                    <div class="space-y-4">
+                        <div class="eval-q" data-qid="q9">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">9. 企業價值對齊：您認為本次活動符合公司宣揚的永續發展願景？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                        <div class="eval-q" data-qid="q10">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">10. 雇主品牌加分：公司舉辦具備數據追蹤的旅遊，提升您對公司的留任度或認同感？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                        <div class="eval-q" data-qid="q11">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">11. 數位透明度：您對於個人足跡能轉化為報告書數據的「過程透明化」滿意？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第五部分：系統與執行優化 -->
+                <div class="eval-section">
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-mobile-alt text-gray-500 mr-2"></i>第五部分：系統優化 (UX & Strategy)</h4>
+                    <div class="space-y-4">
+                        <div class="eval-q" data-qid="q12">
+                            <p class="text-xs text-gray-600 mb-2 font-medium">12. 平台操作便利性：使用「探探里山」紀錄、登錄與匯出的過程順暢？</p>
+                            <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
+                                <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-gray-100 shrink-0 bg-white">
+                <button id="submit-ent-eval-btn" class="w-full py-3 bg-mori-forest text-white rounded-xl font-bold shadow-md hover:bg-mori-dark transition text-sm">
+                    提交評鑑並進入結算
+                </button>
             </div>
         </div>
     </div>
@@ -830,7 +899,7 @@
         let auth = null;
         let currentUser = null;
         let isOfflineMode = false;
-        let globalStatsRef, greenStatsDocRef, pageViewsDocRef, govGeneralDocRef, govProjectsColRef, networkCarbonDocRef;
+        let globalStatsRef, greenStatsDocRef, pageViewsDocRef, govGeneralDocRef, govProjectsColRef, networkCarbonDocRef, entProjectsColRef;
 
         try {
             const app = initializeApp(firebaseConfig);
@@ -844,6 +913,7 @@
             govGeneralDocRef = doc(db, 'global_stats', 'gov_general');
             govProjectsColRef = collection(db, 'gov_projects');
             networkCarbonDocRef = doc(db, 'global_stats', 'network_carbon'); // 新增：獨立全網減碳計數器
+            entProjectsColRef = collection(db, 'ent_projects'); // 新增：企業計畫集合
             
             // 處理匿名驗證
             onAuthStateChanged(auth, (user) => {
@@ -1136,6 +1206,11 @@
             typeCounts: {} // 新增：用來記錄各類型機關的次數
         };
 
+        // 新增：企業總表狀態
+        let globalEntData = {
+            projects: [] // 新增：企業專案列表
+        };
+
         // 新增：定義 6 種機關類型，以便圖表循序渲染
         const GOV_TYPES = [
             "中央政府機關",
@@ -1156,6 +1231,9 @@
         let selectedStart = null;
         let selectedEnd = null;
         let currentModalPoi = null;
+        
+        // 儲存企業評鑑準備要提交的數據暫存
+        let pendingEntEvalSubmission = null;
 
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
@@ -1284,6 +1362,243 @@
         }
         // ===============================================================
 
+        // ================= 新增：更新員工登錄企業計畫下拉選單 =================
+        function updateEntProjectDropdown() {
+            const select = document.getElementById('ent-proj-select');
+            if(!select) return;
+            
+            select.innerHTML = '<option value="">-- 請選擇企業專屬活動儀表板 --</option>';
+            
+            const sortedProjects = [...globalEntData.projects].sort((a,b) => {
+                const timeA = a.updatedAt?.seconds ? a.updatedAt.seconds : (a.updatedAt ? new Date(a.updatedAt).getTime()/1000 : 0);
+                const timeB = b.updatedAt?.seconds ? b.updatedAt.seconds : (b.updatedAt ? new Date(b.updatedAt).getTime()/1000 : 0);
+                return timeB - timeA;
+            });
+
+            sortedProjects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `[${p.year}] ${p.orgName} - ${p.event}`;
+                select.appendChild(opt);
+            });
+        }
+        
+        // ================= 新增：渲染企業儀表板網格 =================
+        function renderEntProjectsDashboard() {
+            const grid = document.getElementById('enterprise-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            
+            if (globalEntData.projects.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-1 sm:col-span-2 bg-gray-50 p-6 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
+                        <i class="fas fa-folder-open text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm font-bold">目前尚無企業活動，請由企業永續辦公室建立</p>
+                    </div>`;
+                return;
+            }
+
+            globalEntData.projects.forEach(proj => {
+                const card = document.createElement('div');
+                const wrapper = document.createElement('div');
+                wrapper.className = "relative h-full";
+
+                card.className = "bg-white p-4 rounded-xl shadow-sm border-l-4 border-mori-forest relative flex flex-col justify-between transition-all duration-300 h-full overflow-hidden hover:shadow-md";
+                
+                const remarkHtml = proj.remark ? `<p class="text-xs text-gray-500 mb-2 truncate" title="${proj.remark}"><i class="fas fa-sticky-note mr-1 text-mori-sage"></i>${proj.remark}</p>` : '';
+
+                // 計算 ESG 評鑑分數
+                const evalCount = proj.eval_count || 0;
+                let evalHtml = '';
+                if (evalCount > 0) {
+                    const avgE = (proj.E_score / (evalCount * 3)).toFixed(1);
+                    const avgS = (proj.S_score / (evalCount * 3)).toFixed(1);
+                    const avgG = (proj.G_score / (evalCount * 3)).toFixed(1);
+                    const avgEng = (proj.Eng_score / (evalCount * 2)).toFixed(1);
+                    
+                    const totalScoreSum = (proj.E_score || 0) + (proj.S_score || 0) + (proj.G_score || 0) + (proj.Eng_score || 0) + (proj.UX_score || 0);
+                    const avgOverall = (totalScoreSum / (evalCount * 12)).toFixed(1);
+
+                    evalHtml = `
+                        <div class="mt-3 bg-yellow-50/50 p-2 rounded-lg border border-yellow-100">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] font-bold text-gray-600"><i class="fas fa-star text-yellow-400 mr-1"></i>ESG 評鑑 (${evalCount}人)</span>
+                                <span class="text-xs font-bold text-mori-forest">${avgOverall} ★</span>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-gray-500 font-medium px-1">
+                                <span>環境 E: ${avgE}</span>
+                                <span>社會 S: ${avgS}</span>
+                                <span>治理 G: ${avgG}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    evalHtml = `<div class="mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100 text-center"><span class="text-[10px] text-gray-400">尚無 ESG 評鑑紀錄</span></div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="card-action-btns absolute top-3 right-3 flex gap-2 z-20">
+                        <button class="delete-ent-card-btn text-red-500 bg-red-50 hover:bg-red-100 border border-red-100 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="刪除此儀表板">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="download-ent-card-btn text-mori-forest bg-mori-light hover:bg-mori-sage hover:text-white border border-mori-sage rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="下載此儀表板為圖片">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="flex-grow pt-2">
+                        <p class="text-[10px] text-mori-sage font-bold mb-1 pr-20"><i class="fas fa-calendar-alt mr-1"></i>年度：${proj.year || '未提供'}</p>
+                        <h5 class="text-sm font-bold text-mori-dark mb-1 line-clamp-2 pr-20" title="${proj.orgName}">${proj.orgName}</h5>
+                        <p class="text-xs font-bold text-mori-forest mb-2"><i class="fas fa-flag mr-1"></i>${proj.event || ''}</p>
+                        ${remarkHtml}
+                    </div>
+                    ${evalHtml}
+                    <div class="bg-[#F0F7F4] p-2 rounded flex justify-between items-center text-xs mt-2 border border-mori-light">
+                        <div>
+                            <p class="text-gray-500">累計減碳</p>
+                            <p class="font-bold text-mori-forest">${(proj.carbon || 0).toFixed(1)}g</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-gray-500">綠色消費</p>
+                            <p class="font-bold text-mori-wood">$${(proj.green || 0).toLocaleString()}</p>
+                        </div>
+                    </div>
+                `;
+
+                // 綁定刪除邏輯
+                const deleteBtn = card.querySelector('.delete-ent-card-btn');
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const pwd = prompt(`⚠️ 準備刪除「${proj.orgName}」儀表板。\n請輸入管理員密碼：`);
+                    if (pwd !== 'mori2025') {
+                        if (pwd !== null) alert('密碼錯誤，已取消操作。');
+                        return;
+                    }
+                    if (!confirm(`確定要永久刪除「${proj.orgName} - ${proj.event}」嗎？`)) return;
+
+                    if (db && !isOfflineMode) {
+                        try {
+                            document.body.style.cursor = 'wait';
+                            await deleteDoc(doc(db, 'ent_projects', proj.id));
+                            alert(`✅ 企業儀表板「${proj.orgName}」已成功刪除！`);
+                        } catch(err) {
+                            alert('刪除失敗，請檢查網路連線或資料庫權限。');
+                        } finally {
+                            document.body.style.cursor = 'default';
+                        }
+                    } else {
+                        globalEntData.projects = globalEntData.projects.filter(p => p.id !== proj.id);
+                        renderEntProjectsDashboard();
+                        updateEntProjectDropdown();
+                        alert(`【單機模式】儀表板「${proj.orgName}」已刪除！`);
+                    }
+                });
+
+                // 綁定圖片匯出邏輯 (沿用類似政府專區的隱藏版型技術)
+                const downloadBtn = card.querySelector('.download-ent-card-btn');
+                downloadBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (typeof html2canvas === 'undefined') {
+                        alert('圖片匯出模組載入中，請確認網路連線。');
+                        return;
+                    }
+                    
+                    document.body.style.cursor = 'wait';
+                    const exportContainer = document.createElement('div');
+                    exportContainer.style.position = 'absolute';
+                    exportContainer.style.left = '-9999px';
+                    exportContainer.style.top = '0';
+                    exportContainer.style.width = '640px'; 
+                    exportContainer.className = 'bg-[#F7F4EF] p-8 rounded-2xl border-4 border-[#4A6741] text-gray-800 font-sans shadow-2xl';
+                    
+                    // 生成匯出圖片中的 ESG 圖表 Html
+                    const ec = proj.eval_count || 0;
+                    let exportEvalHtml = '';
+                    if (ec > 0) {
+                        const avgE = (proj.E_score / (ec * 3)).toFixed(1);
+                        const avgS = (proj.S_score / (ec * 3)).toFixed(1);
+                        const avgG = (proj.G_score / (ec * 3)).toFixed(1);
+                        const avgEng = (proj.Eng_score / (ec * 2)).toFixed(1);
+                        const sumScore = (proj.E_score||0) + (proj.S_score||0) + (proj.G_score||0) + (proj.Eng_score||0) + (proj.UX_score||0);
+                        const overall = (sumScore / (ec * 12)).toFixed(1);
+                        
+                        exportEvalHtml = `
+                            <div class="mb-5 bg-white p-4 rounded-xl border border-yellow-200 shadow-sm">
+                                <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                                    <h4 class="font-bold text-gray-700 flex items-center"><i class="fas fa-star text-yellow-400 mr-2"></i>員工永續 ESG 影響力評鑑</h4>
+                                    <span class="text-sm font-bold text-mori-forest bg-[#E8EFE6] px-3 py-1 rounded-full">綜合 ${overall} ★ (${ec}人次)</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-3 text-center">
+                                    <div><p class="text-[10px] text-gray-500 mb-1">E 環境保護</p><p class="text-lg font-bold text-mori-forest">${avgE}</p></div>
+                                    <div><p class="text-[10px] text-gray-500 mb-1">S 社會影響</p><p class="text-lg font-bold text-blue-500">${avgS}</p></div>
+                                    <div><p class="text-[10px] text-gray-500 mb-1">G 公司治理</p><p class="text-lg font-bold text-purple-500">${avgG}</p></div>
+                                    <div><p class="text-[10px] text-gray-500 mb-1">投入度</p><p class="text-lg font-bold text-red-400">${avgEng}</p></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    exportContainer.innerHTML = `
+                        <div class="text-center mb-6 border-b-2 border-[#4A6741] pb-5">
+                            <h2 class="text-3xl font-bold text-[#2C3E28] tracking-wider mb-2">探探里山 企業永續成果</h2>
+                            <p class="text-sm font-bold text-[#8B9D77]">ESG 影響力實證報表</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-[#E8EFE6] mb-6">
+                            <p class="text-sm text-[#8B9D77] font-bold mb-2"><i class="fas fa-calendar-alt mr-2"></i>執行年度：${proj.year || '未提供'}</p>
+                            <h3 class="text-2xl font-bold text-[#2C3E28] mb-2 leading-snug">${proj.orgName}</h3>
+                            <p class="text-base font-bold text-[#4A6741] mb-5"><i class="fas fa-flag mr-2"></i>${proj.event || ''}</p>
+                            
+                            ${proj.remark ? `<div class="mb-5"><span class="bg-[#E8EFE6] text-[#4A6741] px-3 py-1.5 rounded-md text-xs font-bold border border-[#8B9D77]"><i class="fas fa-sticky-note mr-1"></i>${proj.remark}</span></div>` : ''}
+
+                            ${exportEvalHtml}
+
+                            <div class="grid grid-cols-2 gap-4 bg-[#F0F7F4] p-5 rounded-xl border border-[#E8EFE6]">
+                                <div class="text-center border-r border-[#E8EFE6]">
+                                    <p class="text-xs text-gray-500 font-bold mb-2">企業累計減碳量</p>
+                                    <p class="text-3xl font-bold text-[#4A6741]">${(proj.carbon || 0).toFixed(1)} <span class="text-base">g</span></p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500 font-bold mb-2">企業綠色消費總額</p>
+                                    <p class="text-3xl font-bold text-[#D2B48C]"><span class="text-base">$</span>${(proj.green || 0).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-end text-gray-500 text-xs font-medium">
+                            <div>
+                                <p class="mb-1"><i class="fas fa-link mr-1"></i>資料溯源：https://farmcmd.github.io/ESGT/</p>
+                                <p><i class="fas fa-clock mr-1"></i>產出時間：${new Date().toLocaleString('zh-TW', {hour12: false})}</p>
+                            </div>
+                            <div class="text-right opacity-60">
+                                <i class="fas fa-qrcode text-4xl"></i>
+                            </div>
+                        </div>
+                    `;
+
+                    document.body.appendChild(exportContainer);
+
+                    try {
+                        const canvas = await html2canvas(exportContainer, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+                        const dataUrl = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        const safeName = (proj.orgName || '未命名').replace(/[/\\?%*:|"<>]/g, '-');
+                        link.download = `探探里山_${safeName}_ESG成果.png`;
+                        link.href = dataUrl;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } catch (err) {
+                        alert('圖片匯出失敗，請稍後再試。');
+                    } finally {
+                        document.body.removeChild(exportContainer);
+                        document.body.style.cursor = 'default';
+                    }
+                });
+
+                wrapper.appendChild(card);
+                grid.appendChild(wrapper);
+            });
+        }
+        // =======================================================
+
         // ------------------------------------------------------------------
         // 4. Initialization & Event Listeners
         // ------------------------------------------------------------------
@@ -1327,6 +1642,60 @@
              }
         };
 
+        // ================= 新增：企業評鑑問卷 星星互動邏輯 =================
+        function initStarRatings() {
+            const starContainers = document.querySelectorAll('.star-rating');
+            starContainers.forEach(container => {
+                const stars = container.querySelectorAll('i');
+                stars.forEach((star, index) => {
+                    star.addEventListener('click', () => {
+                        // 移除所有 active
+                        stars.forEach(s => s.classList.remove('active', 'text-yellow-400'));
+                        // 將點擊與之前的加上 active
+                        for (let i = 0; i <= index; i++) {
+                            stars[i].classList.add('active', 'text-yellow-400');
+                        }
+                        container.setAttribute('data-value', index + 1);
+                    });
+                });
+            });
+
+            // 快速填滿5星按鈕
+            document.getElementById('quick-fill-stars-btn')?.addEventListener('click', () => {
+                starContainers.forEach(container => {
+                    const stars = container.querySelectorAll('i');
+                    stars.forEach(s => s.classList.add('active', 'text-yellow-400'));
+                    container.setAttribute('data-value', '5');
+                });
+            });
+            
+            // 關閉 Modal 按鈕
+            document.querySelector('#ent-eval-modal .close-button')?.addEventListener('click', () => {
+                closeModal('ent-eval-modal');
+                pendingEntEvalSubmission = null; // 清除暫存
+            });
+        }
+        
+        function getQuestionnaireData() {
+            const data = {};
+            let isComplete = true;
+            for(let i = 1; i <= 12; i++) {
+                const qDiv = document.querySelector(`.eval-q[data-qid="q${i}"] .star-rating`);
+                const val = qDiv ? parseInt(qDiv.getAttribute('data-value')) : 0;
+                if (!val || val === 0) isComplete = false;
+                data[`q${i}`] = val || 0;
+            }
+            return { data, isComplete };
+        }
+        
+        function resetQuestionnaire() {
+            document.querySelectorAll('.star-rating').forEach(container => {
+                container.removeAttribute('data-value');
+                container.querySelectorAll('i').forEach(s => s.classList.remove('active', 'text-yellow-400'));
+            });
+        }
+        // ==========================================================
+
         const loadGoogleMaps = () => {
             if(document.querySelector('script[src*="maps.googleapis.com"]')) return;
             const script = document.createElement('script');
@@ -1344,7 +1713,7 @@
             renderGreenLabelCards();
             renderSroiOptions();
             renderPoiList();
-            renderEnterpriseCards(); 
+            initStarRatings(); // 初始化星星問卷
             
             const citySelect = document.getElementById('city-select');
             if (citySelect && typeof taiwanCities !== 'undefined') {
@@ -1365,69 +1734,136 @@
                 }
             });
 
-            document.getElementById('set-city-end-btn')?.addEventListener('click', () => {
-                const cityName = document.getElementById('city-select').value;
-                if (!cityName) { alert('請先選擇縣市'); return; }
-                const city = taiwanCities.find(c => c.name === cityName);
-                if (city) {
-                    selectedEnd = { id: `city_${city.name}`, name: city.name, coords: { lat: city.lat, lng: city.lng }, isCity: true };
-                    updateTripDisplay();
-                    renderPoiList(); // 更新UI標籤
-                    if (window.mapInstance) window.mapInstance.setCenter(selectedEnd.coords);
+            // ================= 企業員工：選擇儀表板並開啟問卷 (第一階段) =================
+            document.getElementById('log-ent-proj-btn')?.addEventListener('click', () => {
+                const selectEl = document.getElementById('ent-proj-select');
+                const projId = selectEl?.value;
+                
+                if (!projId) { alert('請先從下拉選單選擇您要登錄的企業活動！'); return; }
+
+                const selectedProj = globalEntData.projects.find(p => p.id === projId);
+                if (!selectedProj) return;
+
+                const currentTotalGreen = state.greenProcure + state.sroiProcure + state.projectProcure;
+                const currentCarbon = state.totalCarbon;
+
+                if (currentCarbon <= 0 && currentTotalGreen <= 0) {
+                    alert('您目前的行程數據為零，請先完成永續任務或綠色消費後再進行登錄。');
+                    return;
                 }
-            });
-
-            loadGoogleMaps();
-
-            document.getElementById('set-as-start-button')?.addEventListener('click', () => {
-                if (currentModalPoi) {
-                    selectedStart = currentModalPoi;
-                    updateTripDisplay();
-                    closeModal('poi-modal');
-                }
-            });
-
-            document.getElementById('set-as-end-button')?.addEventListener('click', () => {
-                if (currentModalPoi) {
-                    selectedEnd = currentModalPoi;
-                    updateTripDisplay();
-                    closeModal('poi-modal');
-                }
-            });
-
-            document.getElementById('cancel-poi-button')?.addEventListener('click', () => {
-                closeModal('poi-modal');
+                
+                // 暫存要登錄的企業專案與數據，並開啟問卷 Modal
+                pendingEntEvalSubmission = {
+                    projId: projId,
+                    selectedProj: selectedProj,
+                    carbon: currentCarbon,
+                    green: currentTotalGreen
+                };
+                
+                resetQuestionnaire(); // 確保每次開啟都是乾淨的問卷
+                document.getElementById('ent-eval-modal').classList.remove('hidden');
             });
             
-            document.querySelector('#poi-modal .close-button')?.addEventListener('click', () => {
-                closeModal('poi-modal');
-            });
-            
-            // 綁定圖片預覽 Modal 關閉按鈕
-            document.querySelector('#image-export-modal .close-button')?.addEventListener('click', () => {
-                closeModal('image-export-modal');
-            });
+            // ================= 企業員工：提交問卷並進入結算 (第二階段) =================
+            document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async () => {
+                if (!pendingEntEvalSubmission) return;
+                
+                const { data: qData, isComplete } = getQuestionnaireData();
+                if (!isComplete) {
+                    if(!confirm('您尚有未評分的項目，確定要以 0 星提交剩餘項目嗎？\n(建議可使用上方「快速填滿5星」)')) return;
+                }
+                
+                // 關閉問卷 Modal
+                closeModal('ent-eval-modal');
+                
+                const { projId, selectedProj, carbon: currentCarbon, green: currentTotalGreen } = pendingEntEvalSubmission;
 
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.tab-btn').forEach(b => {
-                        b.classList.remove('active-tab', 'bg-white', 'shadow-sm', 'text-mori-forest');
-                        b.classList.add('text-gray-500');
-                    });
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                // 喚起防呆確認視窗
+                const targetDisplay = `[企業活動] ${selectedProj.orgName} - ${selectedProj.event}`;
+                const isConfirmed = await confirmGovCheckout(targetDisplay, currentCarbon, currentTotalGreen);
+                if (!isConfirmed) {
+                    pendingEntEvalSubmission = null; // 取消則清空暫存
+                    return; 
+                }
+
+                // 計算維度總分
+                const Eng_score = qData.q1 + qData.q2;
+                const E_score = qData.q3 + qData.q4 + qData.q5;
+                const S_score = qData.q6 + qData.q7 + qData.q8;
+                const G_score = qData.q9 + qData.q10 + qData.q11;
+                const UX_score = qData.q12;
+
+                const updateLocalDataAndReset = () => {
+                    selectedProj.carbon += currentCarbon;
+                    selectedProj.green += currentTotalGreen;
                     
-                    e.target.classList.add('active-tab', 'bg-white', 'shadow-sm', 'text-mori-forest');
-                    e.target.classList.remove('text-gray-500');
-                    document.getElementById(e.target.dataset.tab).classList.remove('hidden');
-                });
+                    selectedProj.Eng_score = (selectedProj.Eng_score || 0) + Eng_score;
+                    selectedProj.E_score = (selectedProj.E_score || 0) + E_score;
+                    selectedProj.S_score = (selectedProj.S_score || 0) + S_score;
+                    selectedProj.G_score = (selectedProj.G_score || 0) + G_score;
+                    selectedProj.UX_score = (selectedProj.UX_score || 0) + UX_score;
+                    selectedProj.eval_count = (selectedProj.eval_count || 0) + 1;
+                    
+                    // 寫入歷史紀錄
+                    if (!state.checkoutHistory) state.checkoutHistory = [];
+                    state.checkoutHistory.unshift({
+                        time: new Date().toLocaleString('zh-TW', { hour12: false }),
+                        target: targetDisplay,
+                        carbon: currentCarbon,
+                        green: currentTotalGreen
+                    });
+                    if(state.checkoutHistory.length > 20) state.checkoutHistory.pop(); 
+                    
+                    // 深度歸零個人數據
+                    state.totalMileage = 0;
+                    state.totalCarbon = 0;
+                    state.totalScore = 0;
+                    state.greenProcure = 0;
+                    state.sroiProcure = 0;
+                    state.projectProcure = 0;
+                    state.projectList = [];
+                    state.supportedSroiUnits = [];
+                    state.activityLogs = []; 
+                    
+                    addLog(`✅ 企業永續結算：已將數據歸戶至 ${targetDisplay}，並提交 ESG 評鑑。個人數據已歸零，展開新旅程！`);
+                    
+                    saveData();
+                    updateDisplays(); 
+                    renderEntProjectsDashboard();
+                    renderCheckoutHistory(); 
+                    pendingEntEvalSubmission = null; // 清除暫存
+                };
+                
+                if (db && !isOfflineMode) {
+                    try {
+                        // 更新單一專案卡片數據，包含問卷統計
+                        await setDoc(doc(entProjectsColRef, projId), {
+                            carbon: increment(currentCarbon), 
+                            green: increment(currentTotalGreen),
+                            Eng_score: increment(Eng_score),
+                            E_score: increment(E_score),
+                            S_score: increment(S_score),
+                            G_score: increment(G_score),
+                            UX_score: increment(UX_score),
+                            eval_count: increment(1),
+                            updatedAt: serverTimestamp()
+                        }, { merge: true });
+
+                        updateLocalDataAndReset();
+                        alert(`✅ 登錄成功！您的個人數據與 ESG 評鑑已結算。`);
+                        document.getElementById('ent-proj-select').value = '';
+                    } catch(e) {
+                        updateLocalDataAndReset();
+                        alert(`[展示模式] 登錄成功！個人數據與 ESG 評鑑已結算。`);
+                        document.getElementById('ent-proj-select').value = '';
+                    }
+                } else {
+                     updateLocalDataAndReset();
+                     alert(`【單機模式】登錄成功！個人數據與 ESG 評鑑已結算。`);
+                     document.getElementById('ent-proj-select').value = '';
+                }
             });
 
-            setupModal('open-green-eval-btn', 'green-consumption-modal');
-            setupModal('enterprise-version-btn', 'enterprise-modal'); 
-            setupModal('open-enterprise-info-btn', 'enterprise-info-modal'); 
-            
-            setupModal('gov-version-btn', 'gov-modal');
-            
             // ================= 1. 登錄機關行程數據 (結算歸零機制) =================
             document.getElementById('log-gov-general-btn')?.addEventListener('click', async () => {
                 const agency = document.getElementById('gov-agency-name')?.value.trim() || '';
@@ -3014,6 +3450,25 @@
                          renderGovTypeChart(); // 即時更新圖表
                      }
                  }, (error) => console.log('監聽政府總表失敗', error));
+                 
+                 // ================= 新增：監聽企業專屬儀表板 =================
+                 onSnapshot(entProjectsColRef, (snapshot) => {
+                     let tempProjects = [];
+                     snapshot.forEach(docSnap => {
+                         tempProjects.push({ id: docSnap.id, ...docSnap.data() });
+                     });
+                     
+                     tempProjects.sort((a, b) => {
+                         const timeA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0;
+                         const timeB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0;
+                         return timeB - timeA;
+                     });
+                     
+                     globalEntData.projects = tempProjects; 
+                     renderEntProjectsDashboard();
+                     updateEntProjectDropdown(); 
+                 }, (error) => console.log('監聽企業儀表板失敗', error));
+                 // ========================================================
 
                  // 監聽最近更新的政府計畫 (改為記憶體排序，避免 Firebase Missing Index 錯誤)
                  onSnapshot(govProjectsColRef, (snapshot) => {
