@@ -138,7 +138,7 @@
         }
         .star-rating i:hover,
         .star-rating i:hover ~ i {
-            color: #FBBF24; /* Hover support for LTR layout could be tricky, handled by JS mainly */
+            color: #FBBF24;
         }
     </style>
 </head>
@@ -543,6 +543,120 @@
     </div>
     <!-- ========================================================= -->
 
+    <!-- ================= 永續政府專區 Modal (復原) ================= -->
+    <div id="gov-modal" class="modal-overlay fixed inset-0 hidden z-50 overflow-y-auto">
+        <div class="min-h-screen px-4 text-center">
+            <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+            <div class="modal-content inline-block w-full max-w-6xl p-6 my-8 text-left align-middle transition-all transform bg-gray-50 shadow-2xl rounded-2xl border-t-4 border-blue-600 relative">
+                <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-2xl"></i></button>
+
+                <div class="text-center mb-6 mt-2">
+                    <h3 class="text-3xl font-bold text-blue-900 mb-2 flex items-center justify-center">
+                        <i class="fas fa-landmark mr-3 text-blue-600"></i>永續政府儀表板
+                    </h3>
+                    <p class="text-sm font-bold text-blue-700">公部門力量，引領地方創生，帶動地方低碳與綠色經濟</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- 左側：主要計畫流程 (lg:col-span-2) -->
+                    <div class="lg:col-span-2 flex flex-col gap-6">
+                        <!-- 1. [參與者] 選擇計畫並登錄 -->
+                        <div class="bg-white p-5 rounded-xl shadow border-2 border-mori-sage relative overflow-hidden">
+                            <div class="absolute -right-4 -top-4 text-6xl text-mori-sage opacity-10"><i class="fas fa-sign-in-alt"></i></div>
+                            <h4 class="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center relative z-10">
+                                <i class="fas fa-user-check mr-2 text-mori-forest"></i>1. [參與者] 選擇計畫並登錄
+                            </h4>
+                            <p class="text-[11px] text-gray-500 mb-3 leading-relaxed relative z-10">請從下方選單選擇您今日參與的計畫，將目前的永續成就結算歸戶。</p>
+                            <div class="mb-4 relative z-10">
+                                <select id="user-proj-select" class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:outline-none focus:border-mori-sage">
+                                    <option value="">-- 請選擇您參與的計畫 --</option>
+                                </select>
+                            </div>
+                            <button id="log-user-proj-btn" class="w-full py-2 bg-mori-forest text-white rounded-lg font-bold text-sm hover:bg-mori-dark transition shadow relative z-10">
+                                確認登錄 (計入該計畫並歸零)
+                            </button>
+                        </div>
+
+                        <!-- 2. 計畫執行儀表板 -->
+                        <div>
+                            <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-th-large mr-2"></i>2. 計畫執行儀表板</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar" id="gov-projects-grid">
+                                <!-- JS 動態生成 -->
+                            </div>
+                        </div>
+
+                        <!-- 3. [主辦方] 開啟新計畫儀表板 -->
+                        <div class="bg-blue-50 p-5 rounded-xl shadow border border-blue-200 mt-2">
+                            <h4 class="font-bold text-blue-800 mb-3 border-b border-blue-200 pb-2 flex items-center">
+                                <i class="fas fa-plus-square mr-2"></i>3. [主辦方] 開啟新計畫儀表板
+                            </h4>
+                            <div class="space-y-3 mb-3">
+                                <input type="text" id="host-proj-name" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入計畫名稱 (必填)">
+                                <input type="text" id="host-proj-event" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入活動名稱 (必填)">
+                                <input type="text" id="host-proj-remark" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="備註 (例: 上午場 / 參與單位)">
+                                <input type="number" id="host-proj-budget" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="活動投入預算 ($) (非必填)" min="0">
+                                <div>
+                                    <input type="number" step="0.01" id="host-proj-sroi" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="SROI值計算 (e.g. 1.95) (非必填)" min="0">
+                                    <p class="text-[10px] text-gray-500 mt-1 ml-1 leading-relaxed"><i class="fas fa-info-circle text-blue-400 mr-1"></i>需依主辦方選擇之活動或單位提供之報告書認定。</p>
+                                </div>
+                            </div>
+                            <button id="create-proj-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow">
+                                建立新儀表板
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 右側：總表與機關數據 (lg:col-span-1) -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- 永續政府總指標 (保持置頂) -->
+                        <div class="bg-gradient-to-br from-blue-50 to-white p-5 rounded-xl shadow border border-blue-100">
+                            <h4 class="font-bold text-blue-900 mb-4 text-center">永續政府總指標</h4>
+                            <div class="space-y-4">
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500 font-bold mb-1">永續政府累計減碳量</p>
+                                    <p id="gov-total-carbon-display" class="text-2xl font-bold text-green-600">0 g</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500 font-bold mb-1">永續綠色消費評鑑數據</p>
+                                    <p id="gov-total-green-display" class="text-2xl font-bold text-blue-600">$0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. 登錄機關行程數據 -->
+                        <div class="bg-white p-5 rounded-xl shadow border border-gray-200">
+                            <h4 class="font-bold text-gray-800 mb-3 border-b pb-2">4. 登錄機關行程數據</h4>
+                            <select id="gov-type-select" class="w-full p-2 border rounded-lg text-sm mb-3 bg-gray-50 focus:outline-none focus:border-blue-500">
+                                <option value="中央政府機關">1. 中央政府機關</option>
+                                <option value="附屬機關">2. 附屬機關</option>
+                                <option value="公營事業機構">3. 公營事業機構</option>
+                                <option value="國有財產管理單位">4. 國有財產管理單位</option>
+                                <option value="國有土地/房地類型">5. 國有土地/房地類型</option>
+                                <option value="地方政府">6. 地方政府</option>
+                            </select>
+                            <input type="text" id="gov-agency-name" class="w-full p-2 border rounded-lg text-sm mb-3 focus:outline-none focus:border-blue-500" placeholder="輸入機關/單位名稱">
+                            <button id="log-gov-general-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow">
+                                確認登錄 (計入本次行程)
+                            </button>
+                        </div>
+
+                        <!-- 5. 各類型機關參與次數 -->
+                        <div class="bg-white p-5 rounded-xl shadow border border-gray-200">
+                            <h4 class="font-bold text-gray-800 mb-3 border-b pb-2 text-sm flex items-center">
+                                <i class="fas fa-chart-bar mr-2 text-blue-500"></i>5. 各類型機關參與次數
+                            </h4>
+                            <div id="gov-type-chart" class="space-y-3">
+                                <!-- JS 動態生成長條圖 -->
+                                <p class="text-xs text-gray-400 text-center py-2">載入中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========================================================= -->
+
     <!-- 綠色消費評鑑 Modal (UX Optimized) -->
     <div id="green-consumption-modal" class="modal-overlay fixed inset-0 hidden z-50 overflow-y-auto">
         <div class="min-h-screen px-4 text-center">
@@ -721,7 +835,7 @@
     </div>
 
     <!-- ================= 新增：政府登錄結算防呆 Modal ================= -->
-    <div id="gov-confirm-modal" class="modal-overlay fixed inset-0 hidden z-[80] flex items-center justify-center p-4">
+    <div id="gov-confirm-modal" class="modal-overlay fixed inset-0 hidden z-[110] flex items-center justify-center p-4 bg-gray-900/60">
         <div class="modal-content bg-white w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center border-t-4 border-red-500 relative">
             <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4 animate-pulse"></i>
             <h3 class="text-lg font-bold text-gray-800 mb-2">確認登錄並結算？</h3>
@@ -744,7 +858,7 @@
     </div>
     
     <!-- ================= 新增：企業 ESG 評鑑問卷 Modal ================= -->
-    <div id="ent-eval-modal" class="modal-overlay fixed inset-0 hidden z-[75] flex items-center justify-center p-4">
+    <div id="ent-eval-modal" class="modal-overlay fixed inset-0 hidden z-[100] flex items-center justify-center p-4 bg-gray-900/60">
         <div class="modal-content bg-white w-full max-w-2xl rounded-2xl shadow-2xl relative max-h-[90vh] flex flex-col border-t-4 border-mori-wood">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"><i class="fas fa-times text-xl"></i></button>
             
@@ -761,7 +875,7 @@
             <div class="p-6 overflow-y-auto flex-grow space-y-6 bg-gray-50/50" id="eval-questions-container">
                 <!-- 第一部分：員工投入度 -->
                 <div class="eval-section">
-                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-heart text-red-400 mr-2"></i>第一部分：員工投入度 (Engagement)</h4>
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-heart text-red-400 mr-2"></i>第一部分：員工投入度與行為基標 (Engagement)</h4>
                     <div class="space-y-4">
                         <div class="eval-q" data-qid="q1">
                             <p class="text-xs text-gray-600 mb-2 font-medium">1. 參與動機：永續ESG是否成為吸引您參加本次永續旅遊的主要原因？</p>
@@ -780,7 +894,7 @@
 
                 <!-- 第二部分：環境維度評鑑 (E) -->
                 <div class="eval-section">
-                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-leaf text-mori-forest mr-2"></i>第二部分：環境維度評鑑 (Environmental)</h4>
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-leaf text-mori-forest mr-2"></i>第二部分：環境維度評鑑 (Environmental - E)</h4>
                     <div class="space-y-4">
                         <div class="eval-q" data-qid="q3">
                             <p class="text-xs text-gray-600 mb-2 font-medium">3. 減碳行為轉化：參與本次活動後，增加了您在日常生活中實踐「減碳行動」的意願？</p>
@@ -789,7 +903,7 @@
                             </div>
                         </div>
                         <div class="eval-q" data-qid="q4">
-                            <p class="text-xs text-gray-600 mb-2 font-medium">4. 綠色消費認同：透過系統看到「減碳克數」的即時反饋，讓您更有成就感？</p>
+                            <p class="text-xs text-gray-600 mb-2 font-medium">4. 綠色消費認同：透過系統看到「減碳克數」與「種植虛擬樹」的即時反饋，讓您更有成就感？</p>
                             <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
                                 <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
                             </div>
@@ -805,16 +919,16 @@
 
                 <!-- 第三部分：社會維度評鑑 (S) -->
                 <div class="eval-section">
-                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-users text-blue-500 mr-2"></i>第三部分：社會維度評鑑 (Social)</h4>
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-users text-blue-500 mr-2"></i>第三部分：社會維度評鑑 (Social - S)</h4>
                     <div class="space-y-4">
                         <div class="eval-q" data-qid="q6">
-                            <p class="text-xs text-gray-600 mb-2 font-medium">6. 在地影響力感知：參加本次活動深刻感受到公司消費對地方創生與青農的支持？</p>
+                            <p class="text-xs text-gray-600 mb-2 font-medium">6. 在地影響力感知：透過參訪農場，參加本次活動深刻感受到公司消費對地方創生與青農的支持？</p>
                             <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
                                 <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
                             </div>
                         </div>
                         <div class="eval-q" data-qid="q7">
-                            <p class="text-xs text-gray-600 mb-2 font-medium">7. SROI 數據認同：得知消費能產生倍數社會影響力時，提升了您的自豪感？</p>
+                            <p class="text-xs text-gray-600 mb-2 font-medium">7. SROI 數據認同：得知每一元消費能產生 1.95 倍以上的社會影響力時，提升了您的自豪感？</p>
                             <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
                                 <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
                             </div>
@@ -830,7 +944,7 @@
 
                 <!-- 第四部分：公司治理與組織認同 (G) -->
                 <div class="eval-section">
-                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-building text-purple-500 mr-2"></i>第四部分：公司治理與組織認同 (Governance)</h4>
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-building text-purple-500 mr-2"></i>第四部分：公司治理與組織認同 (Governance - G)</h4>
                     <div class="space-y-4">
                         <div class="eval-q" data-qid="q9">
                             <p class="text-xs text-gray-600 mb-2 font-medium">9. 企業價值對齊：您認為本次活動符合公司宣揚的永續發展願景？</p>
@@ -839,13 +953,13 @@
                             </div>
                         </div>
                         <div class="eval-q" data-qid="q10">
-                            <p class="text-xs text-gray-600 mb-2 font-medium">10. 雇主品牌加分：公司舉辦具備數據追蹤的旅遊，提升您對公司的留任度或認同感？</p>
+                            <p class="text-xs text-gray-600 mb-2 font-medium">10. 雇主品牌加分：公司舉辦具備「數據追蹤」的旅遊，提升您對公司的留任度或認同感？</p>
                             <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
                                 <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
                             </div>
                         </div>
                         <div class="eval-q" data-qid="q11">
-                            <p class="text-xs text-gray-600 mb-2 font-medium">11. 數位透明度：您對於個人足跡能轉化為報告書數據的「過程透明化」滿意？</p>
+                            <p class="text-xs text-gray-600 mb-2 font-medium">11. 數位透明度：您對於個人足跡能轉化為企業永續報告書數據的「過程透明化」滿意？</p>
                             <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
                                 <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
                             </div>
@@ -855,10 +969,10 @@
 
                 <!-- 第五部分：系統與執行優化 -->
                 <div class="eval-section">
-                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-mobile-alt text-gray-500 mr-2"></i>第五部分：系統優化 (UX & Strategy)</h4>
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center text-sm border-b pb-1"><i class="fas fa-mobile-alt text-gray-500 mr-2"></i>第五部分：系統與執行優化 (UX & Strategy)</h4>
                     <div class="space-y-4">
                         <div class="eval-q" data-qid="q12">
-                            <p class="text-xs text-gray-600 mb-2 font-medium">12. 平台操作便利性：使用「探探里山」紀錄、登錄與匯出的過程順暢？</p>
+                            <p class="text-xs text-gray-600 mb-2 font-medium">12. 平台操作便利性：使用「探探里山」紀錄、登錄與匯出圖片的過程順暢？</p>
                             <div class="star-rating text-xl flex gap-1 justify-center bg-white py-2 rounded-lg border border-gray-100 shadow-sm">
                                 <i class="fas fa-star" data-val="1"></i><i class="fas fa-star" data-val="2"></i><i class="fas fa-star" data-val="3"></i><i class="fas fa-star" data-val="4"></i><i class="fas fa-star" data-val="5"></i>
                             </div>
@@ -1231,7 +1345,7 @@
         let selectedStart = null;
         let selectedEnd = null;
         let currentModalPoi = null;
-        
+
         // 儲存企業評鑑準備要提交的數據暫存
         let pendingEntEvalSubmission = null;
 
@@ -1509,7 +1623,7 @@
                     exportContainer.style.top = '0';
                     exportContainer.style.width = '640px'; 
                     exportContainer.className = 'bg-[#F7F4EF] p-8 rounded-2xl border-4 border-[#4A6741] text-gray-800 font-sans shadow-2xl';
-                    
+
                     // 生成匯出圖片中的 ESG 圖表 Html
                     const ec = proj.eval_count || 0;
                     let exportEvalHtml = '';
@@ -1524,7 +1638,7 @@
                         exportEvalHtml = `
                             <div class="mb-5 bg-white p-4 rounded-xl border border-yellow-200 shadow-sm">
                                 <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
-                                    <h4 class="font-bold text-gray-700 flex items-center"><i class="fas fa-star text-yellow-400 mr-2"></i>員工永續 ESG 影響力評鑑</h4>
+                                    <h4 class="font-bold text-gray-700 flex items-center"><i class="fas fa-star text-yellow-400 mr-2"></i>員工永續旅遊ESG影響力評鑑調查</h4>
                                     <span class="text-sm font-bold text-mori-forest bg-[#E8EFE6] px-3 py-1 rounded-full">綜合 ${overall} ★ (${ec}人次)</span>
                                 </div>
                                 <div class="grid grid-cols-4 gap-3 text-center">
@@ -1734,6 +1848,115 @@
                 }
             });
 
+            // ====== 恢復被意外覆蓋的事件綁定與 Modal 啟動設定 ======
+            document.getElementById('set-city-end-btn')?.addEventListener('click', () => {
+                const cityName = document.getElementById('city-select').value;
+                if (!cityName) { alert('請先選擇縣市'); return; }
+                const city = taiwanCities.find(c => c.name === cityName);
+                if (city) {
+                    selectedEnd = { id: `city_${city.name}`, name: city.name, coords: { lat: city.lat, lng: city.lng }, isCity: true };
+                    updateTripDisplay();
+                    renderPoiList(); // 更新UI標籤
+                    if (window.mapInstance) window.mapInstance.setCenter(selectedEnd.coords);
+                }
+            });
+
+            loadGoogleMaps();
+
+            document.getElementById('set-as-start-button')?.addEventListener('click', () => {
+                if (currentModalPoi) {
+                    selectedStart = currentModalPoi;
+                    updateTripDisplay();
+                    closeModal('poi-modal');
+                }
+            });
+
+            document.getElementById('set-as-end-button')?.addEventListener('click', () => {
+                if (currentModalPoi) {
+                    selectedEnd = currentModalPoi;
+                    updateTripDisplay();
+                    closeModal('poi-modal');
+                }
+            });
+
+            document.getElementById('cancel-poi-button')?.addEventListener('click', () => {
+                closeModal('poi-modal');
+            });
+            
+            document.querySelector('#poi-modal .close-button')?.addEventListener('click', () => {
+                closeModal('poi-modal');
+            });
+            
+            // 綁定圖片預覽 Modal 關閉按鈕
+            document.querySelector('#image-export-modal .close-button')?.addEventListener('click', () => {
+                closeModal('image-export-modal');
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab-btn').forEach(b => {
+                        b.classList.remove('active-tab', 'bg-white', 'shadow-sm', 'text-mori-forest');
+                        b.classList.add('text-gray-500');
+                    });
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    
+                    e.target.classList.add('active-tab', 'bg-white', 'shadow-sm', 'text-mori-forest');
+                    e.target.classList.remove('text-gray-500');
+                    document.getElementById(e.target.dataset.tab).classList.remove('hidden');
+                });
+            });
+
+            setupModal('open-green-eval-btn', 'green-consumption-modal');
+            setupModal('enterprise-version-btn', 'enterprise-modal'); 
+            setupModal('open-enterprise-info-btn', 'enterprise-info-modal'); 
+            setupModal('gov-version-btn', 'gov-modal');
+            // ========================================================
+
+            // ================= 新增：企業主辦方建立新儀表板 =================
+            document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
+                const orgName = document.getElementById('ent-create-org')?.value.trim();
+                const year = document.getElementById('ent-create-year')?.value.trim();
+                const eventName = document.getElementById('ent-create-event')?.value.trim();
+                const remark = document.getElementById('ent-create-remark')?.value.trim() || '';
+                
+                if (!orgName || !eventName) { alert('請完整填寫「企業/集團名稱」與「活動名稱」！'); return; }
+
+                const docId = `ent_proj_${Date.now()}`;
+                const newProj = {
+                    id: docId,
+                    orgName: orgName,
+                    year: year || new Date().getFullYear().toString(),
+                    event: eventName,
+                    remark: remark,
+                    carbon: 0,
+                    green: 0,
+                    updatedAt: serverTimestamp()
+                };
+
+                if (db && !isOfflineMode) {
+                    try {
+                        await setDoc(doc(entProjectsColRef, docId), newProj);
+                        alert('✅ 成功建立專屬企業儀表板！員工現在可於上方選單找到此活動。');
+                        document.getElementById('ent-create-org').value = '';
+                        document.getElementById('ent-create-year').value = '';
+                        document.getElementById('ent-create-event').value = '';
+                        document.getElementById('ent-create-remark').value = '';
+                    } catch(e) {
+                        alert('建立失敗，請檢查網路連線或資料庫權限');
+                    }
+                } else {
+                    newProj.updatedAt = new Date();
+                    globalEntData.projects.unshift(newProj);
+                    renderEntProjectsDashboard();
+                    updateEntProjectDropdown();
+                    alert('【單機模式】已建立專屬企業儀表板！');
+                    document.getElementById('ent-create-org').value = '';
+                    document.getElementById('ent-create-year').value = '';
+                    document.getElementById('ent-create-event').value = '';
+                    document.getElementById('ent-create-remark').value = '';
+                }
+            });
+
             // ================= 企業員工：選擇儀表板並開啟問卷 (第一階段) =================
             document.getElementById('log-ent-proj-btn')?.addEventListener('click', () => {
                 const selectEl = document.getElementById('ent-proj-select');
@@ -1747,9 +1970,10 @@
                 const currentTotalGreen = state.greenProcure + state.sroiProcure + state.projectProcure;
                 const currentCarbon = state.totalCarbon;
 
+                // 修改防呆：允許 0 數據的測試彈性
                 if (currentCarbon <= 0 && currentTotalGreen <= 0) {
-                    alert('您目前的行程數據為零，請先完成永續任務或綠色消費後再進行登錄。');
-                    return;
+                    const testProceed = confirm('⚠️ 系統提醒：您目前的行程數據為零（尚無減碳或消費紀錄）。\n\n是否要略過檢查，直接進入「永續問卷評鑑」進行測試？');
+                    if (!testProceed) return;
                 }
                 
                 // 暫存要登錄的企業專案與數據，並開啟問卷 Modal
@@ -1770,7 +1994,7 @@
                 
                 const { data: qData, isComplete } = getQuestionnaireData();
                 if (!isComplete) {
-                    if(!confirm('您尚有未評分的項目，確定要以 0 星提交剩餘項目嗎？\n(建議可使用上方「快速填滿5星」)')) return;
+                    if(!confirm('您尚有未評分的項目，確定要以 0 星提交剩餘項目嗎？\n(建議可使用上方「快速填滿 5 星」)')) return;
                 }
                 
                 // 關閉問卷 Modal
