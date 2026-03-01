@@ -691,6 +691,11 @@
                             <div class="space-y-3 mb-3">
                                 <input type="text" id="host-proj-name" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入計畫名稱 (必填)">
                                 <input type="text" id="host-proj-event" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="輸入活動名稱 (必填)">
+                                <!-- 已經為您新增的單位欄位 -->
+                                <input type="text" id="host-proj-supervisor" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="指導單位 (選填)">
+                                <input type="text" id="host-proj-organizer" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="主辦單位 (選填)">
+                                <input type="text" id="host-proj-co-organizer" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="協辦單位 (選填)">
+                                
                                 <input type="text" id="host-proj-remark" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="備註 (例: 上午場 / 參與單位)">
                                 <input type="number" id="host-proj-budget" class="w-full p-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500" placeholder="活動投入預算 ($) (非必填)" min="0">
                                 <div>
@@ -1755,6 +1760,12 @@
                     exportContainer.style.width = '640px'; 
                     exportContainer.className = 'bg-[#F7F4EF] p-8 rounded-2xl border-4 border-[#4A6741] text-gray-800 font-sans shadow-2xl';
 
+                    // 新增：將企業網址放入匯出圖片中
+                    let exportUrlHtml = '';
+                    if (proj.url) {
+                        exportUrlHtml = `<div style="display: inline-block; background-color: #EFF6FF; color: #2563EB; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 1px solid #BFDBFE; margin-right: 12px; margin-bottom: 12px;"><i class="fas fa-external-link-alt" style="margin-right: 8px;"></i>永續網站: <span style="font-weight: normal; font-size: 12px; font-family: monospace;">${proj.url}</span></div>`;
+                    }
+
                     let exportSocialHtml = '';
                     if (proj.linkedProject) {
                         const lp = proj.linkedProject;
@@ -1814,6 +1825,7 @@
                                     <i class="fas fa-flag" style="margin-right: 8px;"></i>${proj.event || ''}
                                 </div>
                                 <div style="display: block; padding-top: 8px;">
+                                    ${exportUrlHtml}
                                     ${proj.linkedProject ? `<div style="display: inline-block; background-color: #FEFCE8; color: #B45309; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 1px solid #FEF08A; margin-right: 12px; margin-bottom: 12px;"><i class="fas fa-handshake" style="margin-right: 8px;"></i>${proj.linkedProject.type}: $${proj.linkedProject.amount.toLocaleString()} (SROI: ${proj.linkedProject.sroiWeight})</div>` : ''}
                                     ${proj.remark ? `<div style="display: inline-block; background-color: #E8EFE6; color: #4A6741; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; border: 1px solid #8B9D77; margin-right: 12px; margin-bottom: 12px;"><i class="fas fa-sticky-note" style="margin-right: 8px;"></i>${proj.remark}</div>` : ''}
                                 </div>
@@ -2362,6 +2374,9 @@
             document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
                 const projName = document.getElementById('host-proj-name')?.value.trim();
                 const eventName = document.getElementById('host-proj-event')?.value.trim();
+                const supervisor = document.getElementById('host-proj-supervisor')?.value.trim() || '';
+                const organizer = document.getElementById('host-proj-organizer')?.value.trim() || '';
+                const coOrganizer = document.getElementById('host-proj-co-organizer')?.value.trim() || '';
                 const remark = document.getElementById('host-proj-remark')?.value.trim() || '';
                 const budget = document.getElementById('host-proj-budget')?.value.trim() || ''; // 取得活動投入
                 const sroi = document.getElementById('host-proj-sroi')?.value.trim() || ''; // 新增：取得 SROI 欄位值
@@ -2378,6 +2393,9 @@
                     id: docId,
                     name: projName,
                     event: eventName,
+                    supervisor: supervisor,
+                    organizer: organizer,
+                    coOrganizer: coOrganizer,
                     remark: remark,
                     budget: budget ? Number(budget) : 0, // 儲存預算，若無則為 0
                     sroi: sroi ? Number(sroi) : 0,       // 新增：儲存 SROI 倍率，若無則為 0
@@ -2393,6 +2411,9 @@
                         alert('✅ 成功建立新計畫儀表板！參與者現在可於右側選單找到此計畫。');
                         document.getElementById('host-proj-name').value = '';
                         document.getElementById('host-proj-event').value = '';
+                        if(document.getElementById('host-proj-supervisor')) document.getElementById('host-proj-supervisor').value = '';
+                        if(document.getElementById('host-proj-organizer')) document.getElementById('host-proj-organizer').value = '';
+                        if(document.getElementById('host-proj-co-organizer')) document.getElementById('host-proj-co-organizer').value = '';
                         document.getElementById('host-proj-remark').value = '';
                         document.getElementById('host-proj-budget').value = '';
                         if(document.getElementById('host-proj-sroi')) document.getElementById('host-proj-sroi').value = '';
@@ -2408,6 +2429,9 @@
                     alert('【單機模式】已建立計畫儀表板！');
                     document.getElementById('host-proj-name').value = '';
                     document.getElementById('host-proj-event').value = '';
+                    if(document.getElementById('host-proj-supervisor')) document.getElementById('host-proj-supervisor').value = '';
+                    if(document.getElementById('host-proj-organizer')) document.getElementById('host-proj-organizer').value = '';
+                    if(document.getElementById('host-proj-co-organizer')) document.getElementById('host-proj-co-organizer').value = '';
                     document.getElementById('host-proj-remark').value = '';
                     document.getElementById('host-proj-budget').value = '';
                     if(document.getElementById('host-proj-sroi')) document.getElementById('host-proj-sroi').value = '';
@@ -2766,9 +2790,10 @@
             ctx.fillText(`茲證明旅者 ${state.playerName || '未具名'}`, 400, 130);
             ctx.fillText(`代碼：${state.playerCode}`, 400, 160);
             
+            // 重新計算分隔線，移至 2/3 處 (X: 540)
             ctx.beginPath();
-            ctx.moveTo(400, 200);
-            ctx.lineTo(400, 480);
+            ctx.moveTo(540, 200);
+            ctx.lineTo(540, 480);
             ctx.strokeStyle = '#D2B48C';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
@@ -2777,46 +2802,63 @@
 
             ctx.textAlign = 'center';
             
+            // 左側區塊中心移至 X: 270
             ctx.font = 'bold 46px "Noto Sans TC"'; 
             ctx.fillStyle = '#8B9D77';
-            ctx.fillText(`${state.totalCarbon.toFixed(1)} g`, 200, 250);
+            ctx.fillText(`${state.totalCarbon.toFixed(1)} g`, 270, 250);
             
             ctx.font = '16px "Noto Sans TC"';
             ctx.fillStyle = '#555';
-            ctx.fillText('累計減少碳排放量', 200, 275);
+            ctx.fillText('累計減少碳排放量', 270, 275);
 
             ctx.fillStyle = '#4A6741';
             ctx.font = 'bold 18px "Noto Sans TC"';
             const mileageKm = (state.totalMileage / 1000).toFixed(2);
-            ctx.fillText(`旅遊總里程: ${mileageKm} km`, 200, 330);
+            ctx.fillText(`旅遊總里程: ${mileageKm} km`, 270, 330);
 
             const totalGreenMoney = Math.floor(state.greenProcure + state.sroiProcure + state.projectProcure);
-            ctx.fillText(`綠色消費總額: $${totalGreenMoney.toLocaleString()}`, 200, 370);
+            ctx.fillText(`綠色消費總額: $${totalGreenMoney.toLocaleString()}`, 270, 370);
             
             const farmCount = state.supportedSroiUnits ? state.supportedSroiUnits.length : 0;
             ctx.fillStyle = '#2C3E28'; 
             ctx.font = '16px "Noto Sans TC"';
-            ctx.fillText(`支持 ${farmCount} 個農場落實永續`, 200, 420);
+            ctx.fillText(`支持 ${farmCount} 個農場落實永續`, 270, 420);
 
+            // 右側區塊中心移至 X: 670，並微調字體適應較窄的空間
             ctx.fillStyle = '#4A6741';
-            ctx.font = 'bold 20px "Noto Sans TC"';
-            ctx.fillText('企業採購與協同專案', 600, 230);
+            ctx.font = 'bold 18px "Noto Sans TC"';
+            ctx.fillText('企業/機關貢獻歸戶總額', 670, 230);
 
-            if (state.projectList && state.projectList.length > 0) {
-                const displayProjects = state.projectList.slice(-3).reverse();
-                displayProjects.forEach((proj, idx) => {
-                    const baseY = 270 + (idx * 65);
+            // 改為抓取使用者的歸戶結算歷史 (checkoutHistory)
+            if (state.checkoutHistory && state.checkoutHistory.length > 0) {
+                // 取最新 3 筆紀錄顯示
+                const displayHistory = state.checkoutHistory.slice(0, 3);
+                displayHistory.forEach((record, idx) => {
+                    const baseY = 270 + (idx * 75);
                     ctx.fillStyle = '#2C3E28';
-                    ctx.font = 'bold 16px "Noto Sans TC"';
-                    ctx.fillText(`${proj.orgName} (${proj.type})`, 600, baseY);
-                    ctx.fillStyle = '#555';
-                    ctx.font = '14px "Noto Sans TC"';
-                    ctx.fillText(`金額: $${proj.amount.toLocaleString()} | SROI加權: ${proj.sroiWeight}`, 600, baseY + 22);
+                    ctx.font = 'bold 14px "Noto Sans TC"';
                     
-                    if(idx < displayProjects.length - 1) {
+                    // 縮減截斷長度適應 1/3 版面
+                    let targetText = record.target;
+                    if (targetText.length > 12) {
+                        targetText = targetText.substring(0, 11) + '...';
+                    }
+                    ctx.fillText(targetText, 670, baseY);
+                    
+                    ctx.fillStyle = '#555';
+                    ctx.font = '12px "Noto Sans TC"';
+                    ctx.fillText(`減碳:${record.carbon.toFixed(1)}g | 綠消:$${record.green.toLocaleString()}`, 670, baseY + 22);
+                    
+                    ctx.fillStyle = '#8B9D77';
+                    ctx.font = '11px "Noto Sans TC"';
+                    // 僅擷取日期部分顯示
+                    ctx.fillText(`時間: ${record.time.split(' ')[0]}`, 670, baseY + 42);
+                    
+                    // 繪製分隔線
+                    if(idx < displayHistory.length - 1) {
                         ctx.beginPath();
-                        ctx.moveTo(480, baseY + 35);
-                        ctx.lineTo(720, baseY + 35);
+                        ctx.moveTo(560, baseY + 55);
+                        ctx.lineTo(780, baseY + 55);
                         ctx.strokeStyle = '#E8EFE6';
                         ctx.lineWidth = 1;
                         ctx.stroke();
@@ -2824,8 +2866,8 @@
                 });
             } else {
                 ctx.fillStyle = '#aaa';
-                ctx.font = '16px "Noto Sans TC"';
-                ctx.fillText('尚無採購/專案紀錄', 600, 300);
+                ctx.font = '15px "Noto Sans TC"';
+                ctx.fillText('個人旅遊無需歸戶', 670, 300); // 更改無紀錄時的文案
             }
 
             ctx.fillStyle = '#4A6741';
@@ -3110,6 +3152,22 @@
                 const budgetVal = Number(proj.budget) || 0;
                 const budgetHtml = budgetVal > 0 ? `<span class="mr-2"><i class="fas fa-coins mr-1 text-yellow-600"></i>投入: $${budgetVal.toLocaleString()}</span>` : '';
                 
+                // 組織單位顯示 (指導、主辦、協辦) - 重新設計為底部清晰文字列表
+                let orgHtml = '';
+                if (proj.supervisor || proj.organizer || proj.coOrganizer) {
+                    orgHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex flex-col gap-1.5">`;
+                    if (proj.supervisor) {
+                        orgHtml += `<div class="flex items-center text-[10px] text-gray-600" title="${proj.supervisor}"><i class="fas fa-star text-indigo-400 mr-1.5 w-3 text-center"></i><span class="font-bold text-gray-700 mr-1">指導:</span><span class="truncate">${proj.supervisor}</span></div>`;
+                    }
+                    if (proj.organizer) {
+                        orgHtml += `<div class="flex items-center text-[10px] text-gray-600" title="${proj.organizer}"><i class="fas fa-sitemap text-blue-400 mr-1.5 w-3 text-center"></i><span class="font-bold text-gray-700 mr-1">主辦:</span><span class="truncate">${proj.organizer}</span></div>`;
+                    }
+                    if (proj.coOrganizer) {
+                        orgHtml += `<div class="flex items-center text-[10px] text-gray-600" title="${proj.coOrganizer}"><i class="fas fa-hands-helping text-cyan-400 mr-1.5 w-3 text-center"></i><span class="font-bold text-gray-700 mr-1">協辦:</span><span class="truncate">${proj.coOrganizer}</span></div>`;
+                    }
+                    orgHtml += `</div>`;
+                }
+
                 // SROI 社會影響力價值計算顯示 (顯示完整計算算式與結果)
                 let socialValueHtml = '';
                 if (proj.sroi && proj.sroi > 0) {
@@ -3171,6 +3229,7 @@
                             <p class="font-bold text-blue-600">$${(proj.green || 0).toLocaleString()}</p>
                         </div>
                     </div>
+                    ${orgHtml}
                     <div class="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center text-[9px] text-gray-400">
                         <span class="truncate"><i class="fas fa-link mr-1"></i>查詢網址: https://farmcmd.github.io/ESGT/</span>
                         <i class="fas fa-qrcode text-gray-300 text-sm ml-2" title="探探里山永續平台"></i>
@@ -3259,6 +3318,16 @@
                                 <p class="text-3xl font-bold text-purple-700 tracking-wider"><i class="fas fa-hand-holding-heart mr-2"></i>$${socialValue.toLocaleString()}</p>
                             </div>
                         `;
+                    }
+
+                    // 匯出報表加入組織單位顯示 (升級：帶有圖示的清楚排版)
+                    let exportOrgHtml = '';
+                    if (proj.supervisor || proj.organizer || proj.coOrganizer) {
+                        exportOrgHtml = `<div style="display: block; margin-top: 16px; padding: 16px; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 12px;">`;
+                        if (proj.supervisor) exportOrgHtml += `<p style="font-size: 16px; color: #4B5563; margin-bottom: 8px;"><i class="fas fa-star" style="color: #818CF8; margin-right: 8px; width: 16px; text-align: center;"></i><strong style="color: #1F2937;">指導單位：</strong>${proj.supervisor}</p>`;
+                        if (proj.organizer) exportOrgHtml += `<p style="font-size: 16px; color: #4B5563; margin-bottom: 8px;"><i class="fas fa-sitemap" style="color: #60A5FA; margin-right: 8px; width: 16px; text-align: center;"></i><strong style="color: #1F2937;">主辦單位：</strong>${proj.organizer}</p>`;
+                        if (proj.coOrganizer) exportOrgHtml += `<p style="font-size: 16px; color: #4B5563; margin-bottom: 0;"><i class="fas fa-hands-helping" style="color: #22D3EE; margin-right: 8px; width: 16px; text-align: center;"></i><strong style="color: #1F2937;">協辦單位：</strong>${proj.coOrganizer}</p>`;
+                        exportOrgHtml += `</div>`;
                     }
 
                     exportContainer.innerHTML = `
