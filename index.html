@@ -2790,10 +2790,10 @@
             ctx.fillText(`茲證明旅者 ${state.playerName || '未具名'}`, 400, 130);
             ctx.fillText(`代碼：${state.playerCode}`, 400, 160);
             
-            // 重新計算分隔線，移至 2/3 處 (X: 540)
+            // 重新計算分隔線，移至 X: 530
             ctx.beginPath();
-            ctx.moveTo(540, 200);
-            ctx.lineTo(540, 480);
+            ctx.moveTo(530, 200);
+            ctx.lineTo(530, 520);
             ctx.strokeStyle = '#D2B48C';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
@@ -2802,72 +2802,130 @@
 
             ctx.textAlign = 'center';
             
-            // 左側區塊中心移至 X: 270
+            // 左側區塊中心移至 X: 265
             ctx.font = 'bold 46px "Noto Sans TC"'; 
             ctx.fillStyle = '#8B9D77';
-            ctx.fillText(`${state.totalCarbon.toFixed(1)} g`, 270, 250);
+            ctx.fillText(`${state.totalCarbon.toFixed(1)} g`, 265, 250);
             
             ctx.font = '16px "Noto Sans TC"';
             ctx.fillStyle = '#555';
-            ctx.fillText('累計減少碳排放量', 270, 275);
+            ctx.fillText('累計減少碳排放量', 265, 275);
 
             ctx.fillStyle = '#4A6741';
             ctx.font = 'bold 18px "Noto Sans TC"';
             const mileageKm = (state.totalMileage / 1000).toFixed(2);
-            ctx.fillText(`旅遊總里程: ${mileageKm} km`, 270, 330);
+            ctx.fillText(`旅遊總里程: ${mileageKm} km`, 265, 330);
 
             const totalGreenMoney = Math.floor(state.greenProcure + state.sroiProcure + state.projectProcure);
-            ctx.fillText(`綠色消費總額: $${totalGreenMoney.toLocaleString()}`, 270, 370);
+            ctx.fillText(`綠色消費總額: $${totalGreenMoney.toLocaleString()}`, 265, 370);
             
             const farmCount = state.supportedSroiUnits ? state.supportedSroiUnits.length : 0;
             ctx.fillStyle = '#2C3E28'; 
             ctx.font = '16px "Noto Sans TC"';
-            ctx.fillText(`支持 ${farmCount} 個農場落實永續`, 270, 420);
+            ctx.fillText(`支持 ${farmCount} 個農場落實永續`, 265, 420);
 
-            // 右側區塊中心移至 X: 670，並微調字體適應較窄的空間
+            // 右側區塊中心移至 X: 665
             ctx.fillStyle = '#4A6741';
             ctx.font = 'bold 18px "Noto Sans TC"';
-            ctx.fillText('企業/機關貢獻歸戶總額', 670, 230);
+            ctx.fillText('企業/機關貢獻歸戶總額', 665, 230);
 
-            // 改為抓取使用者的歸戶結算歷史 (checkoutHistory)
+            // 改為繪製擬真的 UI 歸戶卡片
             if (state.checkoutHistory && state.checkoutHistory.length > 0) {
-                // 取最新 3 筆紀錄顯示
+                // 安全性：若瀏覽器較舊不支援 roundRect，自動補丁 (Polyfill)
+                if (!ctx.roundRect) {
+                    ctx.roundRect = function (x, y, w, h, r) {
+                        if (typeof r === 'undefined') r = 0;
+                        if (typeof r === 'number') r = {tl: r, tr: r, br: r, bl: r};
+                        else if (Array.isArray(r)) r = {tl: r[0], tr: r[1]||r[0], br: r[2]||r[0], bl: r[3]||r[1]||r[0]};
+                        this.beginPath();
+                        this.moveTo(x + r.tl, y);
+                        this.lineTo(x + w - r.tr, y);
+                        this.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+                        this.lineTo(x + w, y + h - r.br);
+                        this.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+                        this.lineTo(x + r.bl, y + h);
+                        this.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+                        this.lineTo(x, y + r.tl);
+                        this.quadraticCurveTo(x, y, x + r.tl, y);
+                        this.closePath();
+                        return this;
+                    }
+                }
+
                 const displayHistory = state.checkoutHistory.slice(0, 3);
                 displayHistory.forEach((record, idx) => {
-                    const baseY = 270 + (idx * 75);
-                    ctx.fillStyle = '#2C3E28';
-                    ctx.font = 'bold 14px "Noto Sans TC"';
+                    const cardX = 555;
+                    const cardY = 250 + (idx * 85);
+                    const cardW = 220;
+                    const cardH = 75;
                     
-                    // 縮減截斷長度適應 1/3 版面
+                    // 根據歸戶對象判斷樣式 (企業=綠色, 政府=藍色)
+                    const isEnterprise = record.target.includes('企業');
+                    const borderColor = isEnterprise ? '#4A6741' : '#3B82F6';
+                    const dataBgColor = isEnterprise ? '#F0F7F4' : '#EFF6FF';
+                    const icon = isEnterprise ? '🏢' : '🏛️';
+
+                    // 1. 繪製卡片陰影與背景
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.06)';
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetY = 2;
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.beginPath();
+                    ctx.roundRect(cardX, cardY, cardW, cardH, 8);
+                    ctx.fill();
+                    
+                    // 清除陰影，繪製邊框
+                    ctx.shadowColor = 'transparent';
+                    ctx.strokeStyle = '#E5E7EB';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // 2. 繪製左側粗邊框標識
+                    ctx.fillStyle = borderColor;
+                    ctx.beginPath();
+                    ctx.roundRect(cardX, cardY, 5, cardH, [8, 0, 0, 8]);
+                    ctx.fill();
+
+                    // 卡片內文設定為左靠齊
+                    ctx.textAlign = 'left';
+                    
+                    // 3. 繪製標題與圖示
+                    ctx.fillStyle = '#1F2937';
+                    ctx.font = 'bold 13px "Noto Sans TC"';
                     let targetText = record.target;
-                    if (targetText.length > 12) {
-                        targetText = targetText.substring(0, 11) + '...';
-                    }
-                    ctx.fillText(targetText, 670, baseY);
+                    // 若有中括號 [企業活動]，將其移除以節省空間
+                    targetText = targetText.replace(/\[.*?\]\s*/, '');
+                    if (targetText.length > 13) targetText = targetText.substring(0, 12) + '...';
+                    ctx.fillText(`${icon} ${targetText}`, cardX + 14, cardY + 22);
+
+                    // 4. 繪製數據專屬小底框
+                    ctx.fillStyle = dataBgColor;
+                    ctx.beginPath();
+                    ctx.roundRect(cardX + 14, cardY + 30, cardW - 24, 24, 4);
+                    ctx.fill();
+
+                    // 5. 繪製數據文字
+                    ctx.fillStyle = '#4B5563';
+                    ctx.font = 'bold 11px "Noto Sans TC"';
+                    const carbonText = `減碳: ${record.carbon.toFixed(1)}g`;
+                    const greenText = `綠消: $${record.green.toLocaleString()}`;
+                    ctx.fillText(carbonText, cardX + 20, cardY + 46);
                     
-                    ctx.fillStyle = '#555';
-                    ctx.font = '12px "Noto Sans TC"';
-                    ctx.fillText(`減碳:${record.carbon.toFixed(1)}g | 綠消:$${record.green.toLocaleString()}`, 670, baseY + 22);
-                    
-                    ctx.fillStyle = '#8B9D77';
-                    ctx.font = '11px "Noto Sans TC"';
-                    // 僅擷取日期部分顯示
-                    ctx.fillText(`時間: ${record.time.split(' ')[0]}`, 670, baseY + 42);
-                    
-                    // 繪製分隔線
-                    if(idx < displayHistory.length - 1) {
-                        ctx.beginPath();
-                        ctx.moveTo(560, baseY + 55);
-                        ctx.lineTo(780, baseY + 55);
-                        ctx.strokeStyle = '#E8EFE6';
-                        ctx.lineWidth = 1;
-                        ctx.stroke();
-                    }
+                    // 綠消文字在小底框內右靠齊
+                    ctx.textAlign = 'right';
+                    ctx.fillText(greenText, cardX + cardW - 10, cardY + 46);
+
+                    // 6. 繪製底部時間
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = '#9CA3AF';
+                    ctx.font = '10px "Noto Sans TC"';
+                    ctx.fillText(`歸戶時間: ${record.time.split(' ')[0]}`, cardX + 14, cardY + 68);
                 });
             } else {
+                ctx.textAlign = 'center';
                 ctx.fillStyle = '#aaa';
                 ctx.font = '15px "Noto Sans TC"';
-                ctx.fillText('個人旅遊無需歸戶', 670, 300); // 更改無紀錄時的文案
+                ctx.fillText('個人旅遊無需歸戶', 665, 300);
             }
 
             ctx.fillStyle = '#4A6741';
