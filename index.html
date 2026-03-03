@@ -742,17 +742,6 @@
                                 確認登錄 (計入本次行程)
                             </button>
                         </div>
-
-                        <!-- 5. 各類型機關參與次數 -->
-                        <div class="bg-white p-5 rounded-xl shadow border border-gray-200">
-                            <h4 class="font-bold text-gray-800 mb-3 border-b pb-2 text-sm flex items-center">
-                                <i class="fas fa-chart-bar mr-2 text-blue-500"></i>5. 各類型機關參與次數
-                            </h4>
-                            <div id="gov-type-chart" class="space-y-3">
-                                <!-- JS 動態生成長條圖 -->
-                                <p class="text-xs text-gray-400 text-center py-2">載入中...</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1401,24 +1390,13 @@
         let globalGovData = {
             totalCarbon: 0,
             totalGreen: 0,
-            projects: [],
-            typeCounts: {} // 新增：用來記錄各類型機關的次數
+            projects: []
         };
 
         // 新增：企業總表狀態
         let globalEntData = {
             projects: [] // 新增：企業專案列表
         };
-
-        // 新增：定義 6 種機關類型，以便圖表循序渲染
-        const GOV_TYPES = [
-            "中央政府機關",
-            "附屬機關",
-            "公營事業機構",
-            "國有財產管理單位",
-            "國有土地/房地類型",
-            "地方政府"
-        ];
         
         let pendingTrip = {
             distMeters: 0,
@@ -1531,35 +1509,6 @@
             `).join('');
         }
         // =======================================================
-
-        // ================= 新增：渲染機關參與類型統計圖表 =================
-        function renderGovTypeChart() {
-            const container = document.getElementById('gov-type-chart');
-            if(!container) return;
-
-            // 計算最大值以做為進度條 100% 的基準 (避免除以 0)
-            const counts = GOV_TYPES.map(type => globalGovData.typeCounts[type] || 0);
-            const maxCount = Math.max(...counts, 1); 
-
-            container.innerHTML = GOV_TYPES.map((type, index) => {
-                const count = globalGovData.typeCounts[type] || 0;
-                const percentage = (count / maxCount) * 100;
-                const label = `${index + 1}. ${type}`;
-
-                return `
-                    <div>
-                        <div class="flex justify-between text-[11px] mb-1">
-                            <span class="text-gray-600 truncate font-bold" title="${label}">${label}</span>
-                            <span class="text-blue-600 font-bold">${count}次</span>
-                        </div>
-                        <div class="w-full bg-blue-50 rounded-full h-1.5 overflow-hidden">
-                            <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-1.5 rounded-full transition-all duration-700" style="width: ${percentage}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        // ===============================================================
 
         // ================= 企業：更新下拉選單 =================
         function updateEntProjectDropdown() {
@@ -2310,9 +2259,6 @@
                     globalGovData.totalCarbon += currentCarbon;
                     globalGovData.totalGreen += currentTotalGreen;
                     
-                    // 新增：更新本地的分類統計次數
-                    globalGovData.typeCounts[govType] = (globalGovData.typeCounts[govType] || 0) + 1;
-                    
                     // 新增：將此次結算結果寫入歷史紀錄
                     if (!state.checkoutHistory) state.checkoutHistory = [];
                     state.checkoutHistory.unshift({
@@ -2341,16 +2287,13 @@
                     updateDisplays(); // 更新圓餅圖等個人 UI 為 0
                     renderGovDashboard(); // 更新政府儀表板
                     renderCheckoutHistory(); // 更新結算榮譽榜
-                    renderGovTypeChart(); // 更新分類統計圖表
                 };
                 
                 if (db && !isOfflineMode) {
                     try {
-                        // 使用 Firebase 特殊語法：動態 Key 直接累加該分類次數
                         await setDoc(govGeneralDocRef, {
                             totalCarbon: increment(currentCarbon),
-                            totalGreen: increment(currentTotalGreen),
-                            [`typeCounts.${govType}`]: increment(1) 
+                            totalGreen: increment(currentTotalGreen)
                         }, { merge: true });
                         
                         updateLocalDataAndReset();
@@ -2450,11 +2393,10 @@
                     try {
                         document.body.style.cursor = 'wait';
                         
-                        // 1. 清空總表與機關分類統計
+                        // 1. 清空總表
                         await setDoc(govGeneralDocRef, {
                             totalCarbon: 0,
-                            totalGreen: 0,
-                            typeCounts: {}
+                            totalGreen: 0
                         });
 
                         // 2. 刪除 Firebase 中的所有計畫文件
@@ -2477,9 +2419,7 @@
                     globalGovData.totalCarbon = 0;
                     globalGovData.totalGreen = 0;
                     globalGovData.projects = [];
-                    globalGovData.typeCounts = {};
                     renderGovDashboard();
-                    renderGovTypeChart();
                     updateProjectDropdown();
                     alert('【單機模式】數據已清空！');
                 }
@@ -3369,23 +3309,44 @@
                         exportSocialHtml = `
                             <div class="mt-5 bg-purple-50 p-5 rounded-xl border border-purple-200">
                                 <div class="flex justify-between items-center mb-2">
-                                    <p class="text-sm font-bold text-purple-900"><i class="fas fa-chart-line mr-2 text-purple-600"></i>社會影響力價值</p>
+                                    <p class="text-sm font-bold text-purple-900">📈 社會影響力價值</p>
                                     <span class="bg-purple-200 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">SROI ${proj.sroi}</span>
                                 </div>
                                 <p class="text-[11px] text-purple-500 mb-2 font-mono">(預算 $${budgetVal.toLocaleString()} + 綠消 $${currentGreen.toLocaleString()}) × ${sroiMultiplier.toFixed(2)}</p>
-                                <p class="text-3xl font-bold text-purple-700 tracking-wider"><i class="fas fa-hand-holding-heart mr-2"></i>$${socialValue.toLocaleString()}</p>
+                                <p class="text-3xl font-bold text-purple-700 tracking-wider">💖 $${socialValue.toLocaleString()}</p>
                             </div>
                         `;
                     }
 
-                    // 匯出報表加入組織單位顯示 (升級：帶有圖示的清楚排版)
+                    // 匯出報表加入組織單位顯示 (升級：無敵表格排版與 Emoji 防破版)
                     let exportOrgHtml = '';
                     if (proj.supervisor || proj.organizer || proj.coOrganizer) {
-                        exportOrgHtml = `<div style="display: block; margin-top: 16px; padding: 16px; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 12px;">`;
-                        if (proj.supervisor) exportOrgHtml += `<p style="font-size: 16px; color: #4B5563; margin-bottom: 8px;"><i class="fas fa-star" style="color: #818CF8; margin-right: 8px; width: 16px; text-align: center;"></i><strong style="color: #1F2937;">指導單位：</strong>${proj.supervisor}</p>`;
-                        if (proj.organizer) exportOrgHtml += `<p style="font-size: 16px; color: #4B5563; margin-bottom: 8px;"><i class="fas fa-sitemap" style="color: #60A5FA; margin-right: 8px; width: 16px; text-align: center;"></i><strong style="color: #1F2937;">主辦單位：</strong>${proj.organizer}</p>`;
-                        if (proj.coOrganizer) exportOrgHtml += `<p style="font-size: 16px; color: #4B5563; margin-bottom: 0;"><i class="fas fa-hands-helping" style="color: #22D3EE; margin-right: 8px; width: 16px; text-align: center;"></i><strong style="color: #1F2937;">協辦單位：</strong>${proj.coOrganizer}</p>`;
-                        exportOrgHtml += `</div>`;
+                        exportOrgHtml = `
+                        <div style="margin-top: 20px; padding: 16px; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 12px;">
+                            <table style="width: 100%; border-collapse: collapse; font-family: 'Noto Sans TC', sans-serif;">
+                                <tbody>`;
+                        if (proj.supervisor) exportOrgHtml += `
+                                    <tr>
+                                        <td style="width: 32px; padding: 6px 0; font-size: 16px; text-align: center; vertical-align: top;">⭐</td>
+                                        <td style="width: 90px; padding: 6px 0; font-size: 16px; font-weight: bold; color: #1E3A8A; vertical-align: top; white-space: nowrap;">指導單位：</td>
+                                        <td style="padding: 6px 0; font-size: 16px; color: #374151; vertical-align: top; line-height: 1.4;">${proj.supervisor}</td>
+                                    </tr>`;
+                        if (proj.organizer) exportOrgHtml += `
+                                    <tr>
+                                        <td style="width: 32px; padding: 6px 0; font-size: 16px; text-align: center; vertical-align: top;">🏛️</td>
+                                        <td style="width: 90px; padding: 6px 0; font-size: 16px; font-weight: bold; color: #1D4ED8; vertical-align: top; white-space: nowrap;">主辦單位：</td>
+                                        <td style="padding: 6px 0; font-size: 16px; color: #374151; vertical-align: top; line-height: 1.4;">${proj.organizer}</td>
+                                    </tr>`;
+                        if (proj.coOrganizer) exportOrgHtml += `
+                                    <tr>
+                                        <td style="width: 32px; padding: 6px 0; font-size: 16px; text-align: center; vertical-align: top;">🤝</td>
+                                        <td style="width: 90px; padding: 6px 0; font-size: 16px; font-weight: bold; color: #0EA5E9; vertical-align: top; white-space: nowrap;">協辦單位：</td>
+                                        <td style="padding: 6px 0; font-size: 16px; color: #374151; vertical-align: top; line-height: 1.4;">${proj.coOrganizer}</td>
+                                    </tr>`;
+                        exportOrgHtml += `
+                                </tbody>
+                            </table>
+                        </div>`;
                     }
 
                     exportContainer.innerHTML = `
@@ -3395,15 +3356,16 @@
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
                             <div style="display: block; margin-bottom: 24px;">
-                                <p style="font-size: 14px; color: #2563EB; font-weight: bold; margin-bottom: 8px;"><i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>辦理日期：${proj.date || '未提供'}</p>
+                                <p style="font-size: 14px; color: #2563EB; font-weight: bold; margin-bottom: 8px;">📅 辦理日期：${proj.date || '未提供'}</p>
                                 <h3 style="font-size: 24px; font-weight: bold; color: #1F2937; margin-bottom: 12px; line-height: 1.4;">${proj.name}</h3>
                                 <div style="font-size: 16px; font-weight: bold; color: #1D4ED8; display: block; margin-bottom: 16px;">
-                                    <i class="fas fa-flag" style="margin-right: 8px;"></i>${proj.event || ''}
+                                    🚩 ${proj.event || ''}
                                 </div>
                                 <div style="display: block; padding-top: 8px;">
-                                    ${budgetVal > 0 ? `<div style="display: inline-block; background-color: #FEFCE8; color: #B45309; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; border: 1px solid #FEF08A; margin-right: 12px; margin-bottom: 12px;"><i class="fas fa-coins" style="margin-right: 6px;"></i>投入預算: $${budgetVal.toLocaleString()}</div>` : ''}
-                                    ${proj.remark ? `<div style="display: inline-block; background-color: #F9FAFB; color: #4B5563; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; border: 1px solid #E5E7EB; margin-right: 12px; margin-bottom: 12px;"><i class="fas fa-sticky-note" style="margin-right: 6px;"></i>${proj.remark}</div>` : ''}
+                                    ${budgetVal > 0 ? `<div style="display: inline-block; background-color: #FEFCE8; color: #B45309; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; border: 1px solid #FEF08A; margin-right: 12px; margin-bottom: 12px;">💰 投入預算: $${budgetVal.toLocaleString()}</div>` : ''}
+                                    ${proj.remark ? `<div style="display: inline-block; background-color: #F9FAFB; color: #4B5563; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; border: 1px solid #E5E7EB; margin-right: 12px; margin-bottom: 12px;">📝 ${proj.remark}</div>` : ''}
                                 </div>
+                                ${exportOrgHtml}
                             </div>
 
                             <div class="grid grid-cols-2 gap-4 bg-gray-50 p-5 rounded-xl border border-gray-200">
@@ -3420,11 +3382,11 @@
                         </div>
                         <div class="flex justify-between items-end text-gray-500 text-xs font-medium">
                             <div>
-                                <p class="mb-1"><i class="fas fa-link mr-1"></i>資料溯源：https://farmcmd.github.io/ESGT/</p>
-                                <p><i class="fas fa-clock mr-1"></i>產出時間：${new Date().toLocaleString('zh-TW', {hour12: false})}</p>
+                                <p class="mb-1">🔗 資料溯源：https://farmcmd.github.io/ESGT/</p>
+                                <p>🕒 產出時間：${new Date().toLocaleString('zh-TW', {hour12: false})}</p>
                             </div>
                             <div class="text-right opacity-60">
-                                <i class="fas fa-qrcode text-4xl"></i>
+                                <span style="font-size: 2rem;">📱</span>
                             </div>
                         </div>
                     `;
@@ -3958,9 +3920,7 @@
                      if(docSnap.exists()) {
                          globalGovData.totalCarbon = docSnap.data().totalCarbon || 0;
                          globalGovData.totalGreen = docSnap.data().totalGreen || 0;
-                         globalGovData.typeCounts = docSnap.data().typeCounts || {}; // 讀取雲端分類統計
                          renderGovDashboard();
-                         renderGovTypeChart(); // 即時更新圖表
                      }
                  }, (error) => console.log('監聽政府總表失敗', error));
                  
