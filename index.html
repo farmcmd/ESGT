@@ -168,7 +168,7 @@
                  <p id="network-total-carbon-reduction" class="text-3xl font-bold text-blue-600 font-mono tracking-tight">載入中...</p>
                  <div class="mt-4 flex flex-col items-center justify-center animate-pulse">
                      <span class="text-4xl filter drop-shadow-md">🌳</span>
-                     <p class="text-sm font-bold text-mori-forest mt-2">已累積種植 <span id="trees-planted-count" class="text-lg">0</span> 棵虛擬樹</p>
+                     <p class="text-sm font-bold text-mori-forest mt-2">已累積 <span id="trees-planted-count" class="text-lg">0</span> 棵成年樟樹1年的吸碳量</p>
                  </div>
             </div>
 
@@ -2073,7 +2073,8 @@
             totalCarbon += Number(globalGovData.generalStats?.carbon || 0);
             totalGreen += Number(globalGovData.generalStats?.green || 0);
 
-            const trees = Math.floor(totalCarbon / 1000); // 1000g = 1 棵樹
+            // 計算公式：總減碳量(g) / 12kg(12000g)，保留兩位小數以顯示細微進度
+            const trees = (totalCarbon / 12000).toFixed(2);
 
             const carbonEl = document.getElementById('network-total-carbon-reduction');
             const greenEl = document.getElementById('display-grand-total-green');
@@ -2081,7 +2082,7 @@
 
             if(carbonEl) carbonEl.textContent = `${totalCarbon.toLocaleString(undefined, {minimumFractionDigits: 1})} g`;
             if(greenEl) greenEl.textContent = `$${totalGreen.toLocaleString()}`;
-            if(treeEl) treeEl.textContent = trees.toLocaleString();
+            if(treeEl) treeEl.textContent = trees;
         }
 
         function loadMockData() {
