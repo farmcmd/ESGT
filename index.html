@@ -283,7 +283,7 @@
                         </div>
                     </div>
 
-                    <!-- 新增：市區短距設定 -->
+                    <!-- 市區短距設定 -->
                     <div class="bg-emerald-50/50 p-4 rounded-xl shadow-sm border border-emerald-100">
                         <h3 class="font-bold text-emerald-800 mb-3 border-b border-emerald-200 pb-2"><i class="fas fa-route mr-2"></i>市區短距設定</h3>
                         <div class="grid grid-cols-4 gap-2 mb-3">
@@ -389,6 +389,11 @@
                                 <input type="number" id="ent-create-year" class="w-full p-2 border rounded-lg text-sm" placeholder="執行年度 (例: 2026)">
                                 <input type="text" id="ent-create-remark" class="w-full p-2 border rounded-lg text-sm" placeholder="備註 (例: 第一梯次)">
                             </div>
+                            <!-- 新增：企業卡片截止時間設定 -->
+                            <div class="mt-1 mb-2">
+                                <label class="block text-[10px] text-gray-500 mb-1">卡片歸戶截止時間 (選填，逾期自動關閉)</label>
+                                <input type="datetime-local" id="ent-create-deadline" class="w-full p-2 border rounded-lg text-sm text-gray-600 bg-white">
+                            </div>
                             <div class="p-4 bg-white border border-mori-sage rounded-lg mt-3 shadow-inner">
                                 <label class="block text-sm font-bold text-mori-forest mb-2 border-b pb-1">企業採購或協同專案 (選填)</label>
                                 <select id="ent-create-proj-type" class="w-full p-2 border rounded-lg bg-gray-50 text-sm mb-2">
@@ -455,8 +460,15 @@
                             <input type="text" id="host-proj-supervisor" class="w-full p-2 border rounded-lg text-sm" placeholder="指導單位 (選填)">
                             <input type="text" id="host-proj-organizer" class="w-full p-2 border rounded-lg text-sm" placeholder="主辦單位 (選填)">
                             <input type="text" id="host-proj-coorganizer" class="w-full p-2 border rounded-lg text-sm" placeholder="協辦單位 (選填)">
-                            <input type="number" id="host-proj-budget" class="w-full p-2 border rounded-lg text-sm" placeholder="活動投入預算 ($)">
-                            <input type="number" step="0.01" id="host-proj-sroi" class="w-full p-2 border rounded-lg text-sm" placeholder="SROI值計算 (e.g. 1.95)">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="number" id="host-proj-budget" class="w-full p-2 border rounded-lg text-sm" placeholder="活動投入預算 ($)">
+                                <input type="number" step="0.01" id="host-proj-sroi" class="w-full p-2 border rounded-lg text-sm" placeholder="SROI值 (e.g. 1.95)">
+                            </div>
+                            <!-- 新增：計畫卡片截止時間設定 -->
+                            <div class="mt-1">
+                                <label class="block text-[10px] text-gray-500 mb-1">卡片歸戶截止時間 (選填，逾期自動關閉)</label>
+                                <input type="datetime-local" id="host-proj-deadline" class="w-full p-2 border rounded-lg text-sm text-gray-600 bg-white">
+                            </div>
                         </div>
                         <button id="create-proj-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm shadow">建立新儀表板</button>
                     </div>
@@ -1113,6 +1125,12 @@
                 const id = document.getElementById('ent-proj-select').value;
                 if(!id) return showToast('請先選擇企業活動！');
                 const proj = globalEntData.projects.find(p => p.id === id);
+                
+                // 檢查是否已逾期
+                if (proj.deadline && new Date() > new Date(proj.deadline)) {
+                    return window.showToast('此活動已過歸戶截止時間，無法再登錄！');
+                }
+
                 const currentGreen = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
 
                 document.getElementById('ent-eval-target-name').textContent = proj.orgName;
@@ -1125,14 +1143,21 @@
 
             document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async () => {
                 if(!pendingEntEvalSubmission) return;
+                
+                const { projId, selectedProj, carbon, green } = pendingEntEvalSubmission;
+                
+                // 雙重防護檢查逾期
+                if (selectedProj.deadline && new Date() > new Date(selectedProj.deadline)) {
+                    document.getElementById('ent-eval-modal').classList.add('hidden');
+                    return window.showToast('提交失敗，此活動剛好超過歸戶截止時間！');
+                }
+
                 let isComplete = true, sum = 0;
                 document.querySelectorAll('#ent-eval-questions-container .number-rating').forEach(c => {
                     const v = parseInt(c.getAttribute('data-value'));
                     if(!v) isComplete = false; else sum += v;
                 });
                 if(!isComplete) return showToast('請完成所有 12 題評分！');
-                
-                const { projId, selectedProj, carbon, green } = pendingEntEvalSubmission;
                 
                 if (!state.checkoutHistory) state.checkoutHistory = [];
                 state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[企業] ${selectedProj.orgName}`, carbon: carbon.toFixed(1), green: green });
@@ -1157,6 +1182,7 @@
                 const websiteUrl = document.getElementById('ent-create-website').value.trim();
                 const year = document.getElementById('ent-create-year').value.trim();
                 const remark = document.getElementById('ent-create-remark').value.trim();
+                const deadline = document.getElementById('ent-create-deadline').value; // 獲取截止時間
                 const projType = document.getElementById('ent-create-proj-type').value;
                 const projAmount = Number(document.getElementById('ent-create-proj-amount').value) || 0;
                 const projSroi = Number(document.getElementById('ent-create-proj-sroi').value) || 1;
@@ -1171,6 +1197,7 @@
                     websiteUrl, 
                     year, 
                     remark,
+                    deadline: deadline || null, // 儲存截止時間
                     linkedProject: projAmount > 0 ? { type: projType, amount: projAmount, sroiWeight: projSroi } : null,
                     eval_count: 0, total_score: 0, carbon: 0, green: 0, updatedAt: new Date() 
                 };
@@ -1189,6 +1216,12 @@
                 const id = document.getElementById('user-proj-select').value;
                 if(!id) return showToast('請先選擇計畫！');
                 const proj = globalGovData.projects.find(p => p.id === id);
+
+                // 檢查是否已逾期
+                if (proj.deadline && new Date() > new Date(proj.deadline)) {
+                    return window.showToast('此計畫已過歸戶截止時間，無法再登錄！');
+                }
+
                 const currentGreen = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
 
                 document.getElementById('gov-eval-target-name').textContent = proj.name;
@@ -1201,14 +1234,21 @@
 
             document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async () => {
                 if(!pendingGovEvalSubmission) return;
+
+                const { projId, selectedProj, carbon, green } = pendingGovEvalSubmission;
+
+                // 雙重防護檢查逾期
+                if (selectedProj.deadline && new Date() > new Date(selectedProj.deadline)) {
+                    document.getElementById('gov-eval-modal').classList.add('hidden');
+                    return window.showToast('提交失敗，此計畫剛好超過歸戶截止時間！');
+                }
+
                 let isComplete = true, sum = 0;
                 document.querySelectorAll('#gov-eval-questions-container .number-rating').forEach(c => {
                     const v = parseInt(c.getAttribute('data-value'));
                     if(!v) isComplete = false; else sum += v;
                 });
                 if(!isComplete) return showToast('請完成所有 11 題星級評分！');
-                
-                const { projId, selectedProj, carbon, green } = pendingGovEvalSubmission;
                 
                 if (!state.checkoutHistory) state.checkoutHistory = [];
                 state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[計畫] ${selectedProj.name}`, carbon: carbon.toFixed(1), green: green });
@@ -1269,6 +1309,7 @@
                 const coOrganizer = document.getElementById('host-proj-coorganizer').value.trim();
                 const budget = Number(document.getElementById('host-proj-budget').value) || 0;
                 const sroi = Number(document.getElementById('host-proj-sroi').value) || 0;
+                const deadline = document.getElementById('host-proj-deadline').value; // 獲取截止時間
 
                 if(!name) return showToast('請輸入計畫名稱');
                 
@@ -1282,6 +1323,7 @@
                     coOrganizer,
                     budget,
                     sroi,
+                    deadline: deadline || null, // 儲存截止時間
                     date: new Date().toLocaleDateString('zh-TW'),
                     eval_count: 0, total_score: 0, carbon: 0, green: 0, updatedAt: new Date()
                 };
@@ -1628,6 +1670,9 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = "relative h-full";
 
+                const isExpired = proj.deadline && new Date() > new Date(proj.deadline);
+                const opacityClass = isExpired ? 'bg-gray-50 opacity-80' : 'bg-white';
+
                 const ec = Number(proj.eval_count) || 0;
                 const totalScore = Number(proj.total_score) || 0;
                 const avg = ec > 0 ? (totalScore / (ec * 11)).toFixed(1) : "0.0";
@@ -1669,9 +1714,10 @@
                 let remarkHtml = proj.remark ? `<span class="inline-block bg-gray-50 text-gray-600 px-2 py-1 rounded text-xs font-medium border border-gray-200 mb-2"><i class="fas fa-sticky-note mr-1 text-gray-400"></i>${proj.remark}</span>` : '';
 
                 const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative flex flex-col justify-between h-full hover:shadow-md transition-all";
+                card.className = `${opacityClass} p-5 rounded-2xl shadow-sm border border-gray-100 relative flex flex-col justify-between h-full hover:shadow-md transition-all`;
                 
                 card.innerHTML = `
+                    ${isExpired ? `<div class="absolute top-0 left-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-tl-2xl rounded-br-lg shadow-sm z-20"><i class="fas fa-lock mr-1"></i>已截止歸戶</div>` : ''}
                     <div class="card-action-btns absolute top-4 right-4 flex gap-2 z-20">
                         <button class="delete-btn text-red-400 bg-red-50 hover:bg-red-100 hover:text-red-600 border border-red-100 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="刪除">
                             <i class="fas fa-trash-alt"></i>
@@ -1682,8 +1728,11 @@
                     </div>
                     
                     <div class="flex-grow">
-                        <p class="text-[11px] text-gray-500 font-bold mb-1.5 flex items-center"><i class="fas fa-calendar-alt mr-1.5 text-blue-400"></i>${proj.date || '未提供'}</p>
-                        <h4 class="text-lg font-bold text-gray-800 mb-1.5 pr-20 leading-snug">${proj.name}</h4>
+                        <p class="text-[11px] text-gray-500 font-bold mb-1.5 flex flex-wrap items-center justify-between">
+                            <span><i class="fas fa-calendar-alt mr-1 text-blue-400"></i>${proj.date || '未提供'}</span>
+                            ${proj.deadline ? `<span class="${isExpired ? 'text-red-500' : 'text-orange-500'}"><i class="fas fa-clock mr-1"></i>截止: ${proj.deadline.replace('T', ' ')}</span>` : ''}
+                        </p>
+                        <h4 class="text-lg font-bold text-gray-800 mb-1.5 pr-20 leading-snug ${isExpired ? 'mt-2' : ''}">${proj.name}</h4>
                         <p class="text-sm font-bold text-blue-600 mb-3 flex items-start"><i class="fas fa-flag mr-1.5 mt-0.5"></i>${proj.event || ''}</p>
                         
                         <div class="flex flex-wrap">
@@ -1772,7 +1821,12 @@
 
         function updateProjectDropdown() {
             const select = document.getElementById('user-proj-select');
-            if(select) select.innerHTML = '<option value="">-- 請選擇參與計畫 --</option>' + globalGovData.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            if(select) {
+                select.innerHTML = '<option value="">-- 請選擇參與計畫 --</option>' + globalGovData.projects.map(p => {
+                    const isExpired = p.deadline && new Date() > new Date(p.deadline);
+                    return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${p.name} ${isExpired ? '(已截止)' : ''}</option>`;
+                }).join('');
+            }
         }
 
         function renderEntProjectsDashboard() {
@@ -1792,6 +1846,9 @@
             globalEntData.projects.forEach(proj => {
                 const wrapper = document.createElement('div');
                 wrapper.className = "relative h-full";
+
+                const isExpired = proj.deadline && new Date() > new Date(proj.deadline);
+                const opacityClass = isExpired ? 'bg-gray-50 opacity-80' : 'bg-white';
 
                 const ec = Number(proj.eval_count) || 0;
                 const totalScore = Number(proj.total_score) || 0;
@@ -1860,8 +1917,9 @@
                 `;
 
                 const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative flex flex-col justify-between h-full hover:shadow-md transition-all";
+                card.className = `${opacityClass} p-5 rounded-2xl shadow-sm border border-gray-100 relative flex flex-col justify-between h-full hover:shadow-md transition-all`;
                 card.innerHTML = `
+                    ${isExpired ? `<div class="absolute top-0 left-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-tl-2xl rounded-br-lg shadow-sm z-20"><i class="fas fa-lock mr-1"></i>已截止歸戶</div>` : ''}
                     <div class="card-action-btns absolute top-4 right-4 flex gap-2 z-20">
                         <button class="delete-btn text-red-400 bg-red-50 hover:bg-red-100 hover:text-red-600 border border-red-100 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="刪除此儀表板">
                             <i class="fas fa-trash-alt"></i>
@@ -1872,8 +1930,11 @@
                     </div>
                     
                     <div class="flex-grow">
-                        <p class="text-[11px] text-gray-500 font-bold mb-1.5 flex items-center"><i class="fas fa-calendar-alt mr-1.5 text-mori-sage"></i>年度：${proj.year || '未提供'}</p>
-                        <h4 class="text-lg font-bold text-mori-dark mb-1.5 pr-20 leading-snug">${proj.orgName}</h4>
+                        <p class="text-[11px] text-gray-500 font-bold mb-1.5 flex flex-wrap items-center justify-between">
+                            <span><i class="fas fa-calendar-alt mr-1 text-mori-sage"></i>年度：${proj.year || '未提供'}</span>
+                            ${proj.deadline ? `<span class="${isExpired ? 'text-red-500' : 'text-orange-500'}"><i class="fas fa-clock mr-1"></i>截止: ${proj.deadline.replace('T', ' ')}</span>` : ''}
+                        </p>
+                        <h4 class="text-lg font-bold text-mori-dark mb-1.5 pr-20 leading-snug ${isExpired ? 'mt-2' : ''}">${proj.orgName}</h4>
                         <p class="text-sm font-bold text-mori-forest mb-2 flex items-start"><i class="fas fa-flag mr-1.5 mt-0.5"></i>${proj.event || ''}</p>
                         ${websiteHtml}
                         
@@ -1963,7 +2024,12 @@
 
         function updateEntProjectDropdown() {
             const select = document.getElementById('ent-proj-select');
-            if(select) select.innerHTML = '<option value="">-- 選擇企業 --</option>' + globalEntData.projects.map(p => `<option value="${p.id}">${p.orgName}</option>`).join('');
+            if(select) {
+                select.innerHTML = '<option value="">-- 選擇企業 --</option>' + globalEntData.projects.map(p => {
+                    const isExpired = p.deadline && new Date() > new Date(p.deadline);
+                    return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${p.orgName} ${isExpired ? '(已截止)' : ''}</option>`;
+                }).join('');
+            }
         }
 
         function renderTransportButtons() {
