@@ -124,7 +124,10 @@
                             <i class="fas fa-award mr-2"></i> 下載永續旅遊證書
                         </button>
                     </div>
-                    <p class="text-xs text-red-500 font-bold tracking-wide">(請於行程結束，永續數據歸戶前下載)</p>
+                    <p class="text-xs text-red-500 font-bold tracking-wide flex items-center justify-center gap-1">
+                        <i class="fas fa-exclamation-triangle text-amber-500 text-sm animate-pulse"></i>
+                        請於行程結束，永續數據歸戶前下載
+                    </p>
                 </div>
             </div>
 
@@ -176,6 +179,9 @@
                         <i class="fas fa-hand-point-down mr-3 text-yellow-500 animate-bounce"></i> 
                         請選擇一種交通方式，前往永續學習任務頁面
                     </h2>
+                    <p class="text-sm text-gray-600 max-w-3xl mx-auto leading-relaxed bg-white/60 p-4 rounded-xl border border-mori-light shadow-sm text-left md:text-center mt-2">
+                        <i class="fas fa-info-circle text-mori-sage mr-1"></i> 選擇一種最相近的交通移動方式，如：汽車/2人，若無選項則可以選擇：3人共乘。因載具/路況/能源效率不同，此處碳里程計算以「學習體驗」為目的，用概算的方法讓使用者瞭解低碳交通方式。期能讓使用者學習後能直覺應用於日常生活。
+                    </p>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="transport-grid"></div>
             </div>
@@ -275,6 +281,19 @@
                                 <button id="set-city-end-btn" class="flex-1 py-2 bg-mori-forest text-white rounded-lg font-bold text-sm transition">設為終點</button>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- 新增：市區短距設定 -->
+                    <div class="bg-emerald-50/50 p-4 rounded-xl shadow-sm border border-emerald-100">
+                        <h3 class="font-bold text-emerald-800 mb-3 border-b border-emerald-200 pb-2"><i class="fas fa-route mr-2"></i>市區短距設定</h3>
+                        <div class="grid grid-cols-4 gap-2 mb-3">
+                            <button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="3">3KM</button>
+                            <button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="5">5KM</button>
+                            <button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="10">10KM</button>
+                            <button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="15">15KM</button>
+                        </div>
+                        <div id="short-dist-result" class="text-xs font-bold text-mori-wood mb-2 text-center min-h-[1.5em]"></div>
+                        <button id="confirm-short-dist-btn" class="hidden w-full py-2 bg-yellow-500 text-white rounded-lg font-bold text-sm shadow animate-bounce">確認並獲取積分</button>
                     </div>
                     
                     <!-- 在地景點列表 -->
@@ -1388,6 +1407,48 @@
             document.getElementById('set-as-start-button')?.addEventListener('click', () => { selectedStart = currentModalPoi; updateTripDisplay(); renderPoiList(); document.getElementById('poi-modal').classList.add('hidden'); });
             document.getElementById('set-as-end-button')?.addEventListener('click', () => { selectedEnd = currentModalPoi; updateTripDisplay(); renderPoiList(); document.getElementById('poi-modal').classList.add('hidden'); });
 
+            // --- 新增：市區短距計算邏輯 ---
+            let pendingShortTrip = { distMeters: 0, distKm: 0, reduction: 0, isValid: false };
+            
+            document.querySelectorAll('.short-dist-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const km = parseFloat(e.target.dataset.km);
+                    if (!state.currentTransport) return window.showToast('請先選擇上方的交通方式！');
+                    
+                    const tData = transportData[state.currentTransport];
+                    const reduction = km * (tData.reduction / 10);
+                    
+                    pendingShortTrip = { distMeters: km * 1000, distKm: km, reduction: reduction, isValid: true };
+                    
+                    document.getElementById('short-dist-result').innerHTML = `<i class="fas fa-bolt text-yellow-500 mr-1"></i>短距 ${km}km | 預估減碳: <span class="text-mori-forest">${reduction.toFixed(1)}g</span>`;
+                    document.getElementById('confirm-short-dist-btn').classList.remove('hidden');
+                    
+                    // 視覺高亮選中的按鈕
+                    document.querySelectorAll('.short-dist-btn').forEach(b => b.classList.remove('bg-emerald-200', 'border-emerald-500', 'shadow-inner'));
+                    e.target.classList.add('bg-emerald-200', 'border-emerald-500', 'shadow-inner');
+                });
+            });
+
+            document.getElementById('confirm-short-dist-btn')?.addEventListener('click', () => {
+                if (!pendingShortTrip.isValid) return;
+                
+                state.totalMileage = (state.totalMileage || 0) + pendingShortTrip.distMeters;
+                state.totalCarbon = (state.totalCarbon || 0) + pendingShortTrip.reduction;
+                state.totalScore = (state.totalScore || 0) + (Math.floor(pendingShortTrip.reduction / 10) || 5);
+                
+                window.addLog(`完成市區短距旅程 (${pendingShortTrip.distKm}km)，減碳 ${pendingShortTrip.reduction.toFixed(1)}g`);
+                updateDisplays(); 
+                saveData();
+                
+                document.getElementById('confirm-short-dist-btn').classList.add('hidden');
+                document.getElementById('short-dist-result').textContent = '';
+                document.querySelectorAll('.short-dist-btn').forEach(b => b.classList.remove('bg-emerald-200', 'border-emerald-500', 'shadow-inner'));
+                
+                window.showToast('短距旅程記錄成功！');
+                pendingShortTrip.isValid = false;
+            });
+
+            // 修復：完美綁定「預覽路線」計算邏輯
             document.getElementById('preview-trip-button')?.addEventListener('click', () => {
                 const status = document.getElementById('trip-calculation-status');
                 const confirmBtn = document.getElementById('confirm-trip-button');
