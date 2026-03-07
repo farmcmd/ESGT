@@ -485,7 +485,7 @@
                             <p class="text-xs text-gray-500 font-bold mb-1">全計畫 + 一般機關 綠色消費</p>
                             <p id="gov-total-green-display" class="text-3xl font-bold text-blue-600 font-mono tracking-tight">$0</p>
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-4 leading-tight relative z-10">包含選項1所有計畫卡片資料<br>以及選項4的一般機關登錄數據</p>
+                        <p class="text-[10px] text-gray-400 mt-4 leading-tight relative z-10">此面板僅統計<br>選項1與選項4之政府專屬歸戶數據</p>
                     </div>
                 </div>
             </div>
@@ -739,7 +739,7 @@
     <!-- JavaScript 核心邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, increment, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, increment, serverTimestamp, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // ==========================================
@@ -829,9 +829,9 @@
         let pendingGovEvalSubmission = null, pendingEntEvalSubmission = null;
         let db = null, auth = null, isOfflineMode = false;
         
-        // 新增：加入 floatingLoaded 標記全網浮動池的就緒狀態
-        let isBackendReady = false, govLoaded = false, entLoaded = false, statsLoaded = false, floatingLoaded = false; 
-        let globalFloating = { carbon: 0, green: 0 }; // 新增：全網大水庫(未歸戶的浮動池)
+        // 更新：引入絕對大水庫(Absolute Total) 機制，徹底取代需要抵銷的邏輯
+        let isBackendReady = false, govLoaded = false, entLoaded = false, statsLoaded = false, absoluteLoaded = false; 
+        let globalAbsolute = { carbon: 0, green: 0 }; // 絕對全網累計(不會被歸戶扣除)
 
         // ==========================================
         // 3. 核心工具函數 (Core Utils)
@@ -916,16 +916,16 @@
             if(document.getElementById('display-sroi-procurement')) document.getElementById('display-sroi-procurement').textContent = `$${Math.floor(state.sroiProcure || 0)}`;
         }
 
-        // 新增：統一寫入大水庫的輔助函數，具備樂觀 UI (Optimistic UI) 即時更新特性
-        async function addToGlobalFloating(carbonDelta, greenDelta) {
-            // 先在前端直接加上去，讓畫面達到「0毫秒」即時跳動回饋
-            globalFloating.carbon = (globalFloating.carbon || 0) + carbonDelta;
-            globalFloating.green = (globalFloating.green || 0) + greenDelta;
+        // 新增：寫入「絕對大水庫」的輔助函數。只增不減，完美符合「全民總量」概念。
+        async function addToGlobalTotal(carbonDelta, greenDelta) {
+            // 前端 Optimistic UI 讓畫面達到「0毫秒」即時跳動回饋
+            globalAbsolute.carbon = (globalAbsolute.carbon || 0) + carbonDelta;
+            globalAbsolute.green = (globalAbsolute.green || 0) + greenDelta;
             updateGlobalSummary();
 
             if (!isOfflineMode && db) {
                 try {
-                    await setDoc(doc(db, 'system_stats', 'global_floating'), {
+                    await setDoc(doc(db, 'system_stats', 'global_absolute'), {
                         carbon: increment(carbonDelta),
                         green: increment(greenDelta)
                     }, { merge: true });
@@ -1190,7 +1190,7 @@
 
                 if (!isOfflineMode && db) {
                     try { 
-                        // 1. 寫入企業卡片
+                        // 1. 寫入企業卡片 (不再扣除大水庫！)
                         await setDoc(doc(db, 'ent_projects', projId), { carbon: increment(carbon), green: increment(green), total_score: increment(sum), eval_count: increment(1), updatedAt: serverTimestamp() }, { merge: true }); 
                     } catch(e) { console.error(e); }
                 } else {
@@ -1199,9 +1199,6 @@
                     selectedProj.carbon = (selectedProj.carbon || 0) + carbon;
                     selectedProj.green = (selectedProj.green || 0) + green;
                 }
-                
-                // 核心防護：將數據抵扣出大水庫，確保總網不重複計算
-                addToGlobalFloating(-carbon, -green);
 
                 addLog(`✅ 企業歸戶：數據歸戶至 ${selectedProj.orgName}`);
                 resetStats(); document.getElementById('ent-eval-modal').classList.add('hidden');
@@ -1286,7 +1283,7 @@
 
                 if (!isOfflineMode && db) {
                     try { 
-                        // 1. 寫入政府計畫卡片
+                        // 1. 寫入政府計畫卡片 (不再扣除大水庫！)
                         await setDoc(doc(db, 'gov_projects', projId), { carbon: increment(carbon), green: increment(green), total_score: increment(sum), eval_count: increment(1), updatedAt: serverTimestamp() }, { merge: true }); 
                     } catch(e) { console.error(e); }
                 } else {
@@ -1295,9 +1292,6 @@
                     selectedProj.carbon = (selectedProj.carbon || 0) + carbon;
                     selectedProj.green = (selectedProj.green || 0) + green;
                 }
-
-                // 核心防護：將數據抵扣出大水庫，確保總網不重複計算
-                addToGlobalFloating(-carbon, -green);
 
                 addLog(`✅ 計畫歸戶：數據歸戶至 ${selectedProj.name}`);
                 resetStats(); document.getElementById('gov-eval-modal').classList.add('hidden');
@@ -1318,6 +1312,7 @@
 
                 if (!isOfflineMode && db) {
                     try { 
+                        // 寫入機關專屬統計 (不再扣除大水庫！)
                         await setDoc(doc(db, 'gov_stats', 'general'), { 
                             carbon: increment(carbon), 
                             green: increment(green), 
@@ -1328,9 +1323,6 @@
                     globalGovData.generalStats.carbon = (globalGovData.generalStats.carbon || 0) + carbon;
                     globalGovData.generalStats.green = (globalGovData.generalStats.green || 0) + green;
                 }
-
-                // 核心防護：將數據抵扣出大水庫，確保總網不重複計算
-                addToGlobalFloating(-carbon, -green);
 
                 addLog(`✅ 機關歸戶：數據累計至 ${govType}-${agencyName}`);
                 resetStats(); 
@@ -1444,7 +1436,7 @@
                 const total = (parseFloat(qtyInput?.value)||1) * (parseFloat(priceInput?.value)||0);
                 if(total > 0) { 
                     state.greenProcure = (state.greenProcure || 0) + total; 
-                    addToGlobalFloating(0, total); // 即時寫入大水庫
+                    addToGlobalTotal(0, total); // 即時寫入絕對大水庫
                     const labelText = selectedGreenLabel ? `(${selectedGreenLabel})` : '';
                     window.addLog(`登錄綠消 ${labelText} $${total.toLocaleString()}`); 
                     updateDisplays(); 
@@ -1463,7 +1455,7 @@
                 const total = Math.floor(price * weight);
                 if(total > 0) { 
                     state.sroiProcure = (state.sroiProcure || 0) + total; 
-                    addToGlobalFloating(0, total); // 即時寫入大水庫
+                    addToGlobalTotal(0, total); // 即時寫入絕對大水庫
                     window.addLog(`登錄 SROI 價值 $${total.toLocaleString()}`); 
                     updateDisplays(); 
                     window.showToast('SROI 登錄成功'); 
@@ -1520,7 +1512,7 @@
                 state.totalCarbon = (state.totalCarbon || 0) + pendingShortTrip.reduction;
                 state.totalScore = (state.totalScore || 0) + (Math.floor(pendingShortTrip.reduction / 10) || 5);
                 
-                addToGlobalFloating(pendingShortTrip.reduction, 0); // 即時寫入大水庫
+                addToGlobalTotal(pendingShortTrip.reduction, 0); // 即時寫入絕對大水庫
 
                 window.addLog(`完成市區短距旅程 (${pendingShortTrip.distKm}km)，減碳 ${pendingShortTrip.reduction.toFixed(1)}g`);
                 updateDisplays(); 
@@ -1586,7 +1578,7 @@
                 state.totalCarbon = (state.totalCarbon || 0) + pendingTrip.reduction; 
                 state.totalScore = (state.totalScore || 0) + (Math.floor(pendingTrip.reduction / 10) || 5);
                 
-                addToGlobalFloating(pendingTrip.reduction, 0); // 即時寫入大水庫
+                addToGlobalTotal(pendingTrip.reduction, 0); // 即時寫入絕對大水庫
 
                 window.addLog(`完成旅程：${selectedStart.name} 到 ${selectedEnd.name}，減碳 ${pendingTrip.reduction.toFixed(1)}g`);
                 updateDisplays(); saveData();
@@ -1624,10 +1616,9 @@
                         label: { text: poi.icon, fontSize: '20px' } 
                     };
                     
-                    // 若是不在列表中的地圖專屬地標，改用綠色座標顯示，並移除 Emoji 標籤
                     if (poi.categoryId === 'map_only') {
                         markerOpts.icon = 'http://maps.google.com/mapfiles/ms/icons/green-dot.png';
-                        delete markerOpts.label; // 確保只顯示純綠色座標，不掛載其他 Icon
+                        delete markerOpts.label; 
                     }
                     
                     const marker = new google.maps.Marker(markerOpts);
@@ -2173,9 +2164,9 @@
             }
         };
 
-        // 新增：更新「永續政府專區」內的總指標看板
+        // 更新：政府專區的視角維持不變（只統計該專區卡片數據）
         function updateGovModalSummary() {
-            if (!isBackendReady) return; // 避免只載入一半就更新畫面
+            if (!isBackendReady) return; 
             
             const projectsCarbon = globalGovData.projects.reduce((sum, p) => sum + (Number(p.carbon) || 0), 0);
             const projectsGreen = globalGovData.projects.reduce((sum, p) => sum + (Number(p.green) || 0), 0);
@@ -2191,25 +2182,13 @@
             if (gDisp) gDisp.textContent = `$${totalGreen.toLocaleString()}`;
         }
 
-        // 修改：首頁全網總指標，改為「所有專案卡片加總 + 全網浮動池(大水庫)」
+        // 修改：首頁全網總指標，現在「只單純讀取」絕對大水庫的值，確保概念獨立，不再有上下跳動！
         function updateGlobalSummary() {
             if (!isBackendReady) return; 
 
-            const allProjects = [...(globalGovData.projects || []), ...(globalEntData.projects || [])];
-            let backendCarbon = allProjects.reduce((sum, p) => sum + (Number(p.carbon) || 0), 0);
-            let backendGreen = allProjects.reduce((sum, p) => sum + (Number(p.green) || 0), 0);
-            
-            // 加上政府模組的一般機關登錄數據
-            backendCarbon += Number(globalGovData.generalStats?.carbon || 0);
-            backendGreen += Number(globalGovData.generalStats?.green || 0);
-
-            // 核心修正：加入全網大水庫 (globalFloating)，徹底移除個人 state 加總以防重複計算
-            let totalCarbon = backendCarbon + Number(globalFloating.carbon || 0);
-            let totalGreen = backendGreen + Number(globalFloating.green || 0);
-            
-            // 防呆：避免因極端操作產生負數
-            totalCarbon = Math.max(0, totalCarbon);
-            totalGreen = Math.max(0, totalGreen);
+            // 絕對大水庫的值
+            let totalCarbon = Math.max(0, Number(globalAbsolute.carbon || 0));
+            let totalGreen = Math.max(0, Number(globalAbsolute.green || 0));
 
             const trees = parseFloat((totalCarbon / 12000).toFixed(2)).toString();
 
@@ -2223,7 +2202,7 @@
         }
 
         function loadMockData() {
-            isBackendReady = true; // 若斷線啟用備用假資料，則強制解除畫面鎖定
+            isBackendReady = true; 
 
             if (globalEntData.projects.length === 0) {
                 globalEntData.projects = [{ 
@@ -2242,10 +2221,13 @@
                     supervisor: '農業部', organizer: '南投縣政府',
                     carbon: 3200, green: 15000, eval_count: 10, total_score: 480 
                 }];
-                // 預設給予一些機關累計數據以供展示
                 globalGovData.generalStats = { carbon: 450.5, green: 3500 };
                 renderGovDashboard(); updateProjectDropdown();
             }
+            
+            // 假資料的大水庫基準
+            globalAbsolute = { carbon: 8641.3, green: 186500 };
+            
             updateGovModalSummary();
             updateGlobalSummary();
         }
@@ -2253,19 +2235,56 @@
         function initGlobalCounters() {
             if (!db) return;
             try {
+                // 自動防呆轉移邏輯：確保初始化時系統正確判斷各區塊載入進度
+                const checkBackendReady = () => {
+                    if (govLoaded && entLoaded && statsLoaded && !absoluteLoaded) {
+                        absoluteLoaded = 'pending';
+                        
+                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
+                            if (docSnap.exists()) {
+                                globalAbsolute = docSnap.data();
+                                absoluteLoaded = true;
+                                isBackendReady = true;
+                                updateGlobalSummary();
+                            } else {
+                                // MIGRATION (首位使用者開啟時自動匯總舊數據，保證歷史累計不流失)
+                                const allProjs = [...(globalGovData.projects || []), ...(globalEntData.projects || [])];
+                                let initCarbon = allProjs.reduce((s, p) => s + (Number(p.carbon) || 0), 0) + Number(globalGovData.generalStats?.carbon || 0);
+                                let initGreen = allProjs.reduce((s, p) => s + (Number(p.green) || 0), 0) + Number(globalGovData.generalStats?.green || 0);
+                                
+                                try {
+                                    const fDoc = await getDoc(doc(db, 'system_stats', 'global_floating'));
+                                    if (fDoc.exists()) { 
+                                        initCarbon += Number(fDoc.data().carbon || 0); 
+                                        initGreen += Number(fDoc.data().green || 0); 
+                                    }
+                                    if (initCarbon > 0 || initGreen > 0) {
+                                        await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: initCarbon, green: initGreen });
+                                        // setDoc 觸發後會再度進入 onSnapshot，所以這裡不需手動設 true
+                                    } else {
+                                        globalAbsolute = { carbon: 0, green: 0 };
+                                        absoluteLoaded = true;
+                                        isBackendReady = true;
+                                        updateGlobalSummary();
+                                    }
+                                } catch(e) {}
+                            }
+                        });
+                    } else if (govLoaded && entLoaded && statsLoaded && absoluteLoaded === true) {
+                        isBackendReady = true;
+                        updateGlobalSummary();
+                    }
+                };
+
                 // 監聽 1. 政府計畫卡片庫
                 onSnapshot(collection(db, 'gov_projects'), (snapshot) => {
                     const projs = [];
                     snapshot.forEach(docSnap => projs.push({ id: docSnap.id, ...docSnap.data() }));
                     projs.sort((a,b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
                     globalGovData.projects = projs;
-                    
-                    govLoaded = true; // 標記政府資料載入完成
-                    if (govLoaded && entLoaded && statsLoaded && floatingLoaded) isBackendReady = true;
-                    
-                    renderGovDashboard(); updateProjectDropdown();
-                    updateGovModalSummary();
-                    updateGlobalSummary();
+                    govLoaded = true; 
+                    renderGovDashboard(); updateProjectDropdown(); updateGovModalSummary();
+                    checkBackendReady();
                 });
                 
                 // 監聽 2. 企業計畫卡片庫
@@ -2274,38 +2293,18 @@
                     snapshot.forEach(docSnap => projs.push({ id: docSnap.id, ...docSnap.data() }));
                     projs.sort((a,b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
                     globalEntData.projects = projs;
-                    
-                    entLoaded = true; // 標記企業資料載入完成
-                    if (govLoaded && entLoaded && statsLoaded && floatingLoaded) isBackendReady = true;
-                    
+                    entLoaded = true; 
                     renderEntProjectsDashboard(); updateEntProjectDropdown();
-                    updateGlobalSummary();
+                    checkBackendReady();
                 });
 
                 // 監聽 3. 政府一般機關聚合數據 (選項4)
                 onSnapshot(doc(db, 'gov_stats', 'general'), (docSnap) => {
-                    if (docSnap.exists()) {
-                        globalGovData.generalStats = docSnap.data();
-                    } else {
-                        globalGovData.generalStats = { carbon: 0, green: 0 };
-                    }
-                    
-                    statsLoaded = true; // 標記機關資料載入完成
-                    if (govLoaded && entLoaded && statsLoaded && floatingLoaded) isBackendReady = true;
-                    
+                    if (docSnap.exists()) globalGovData.generalStats = docSnap.data();
+                    else globalGovData.generalStats = { carbon: 0, green: 0 };
+                    statsLoaded = true; 
                     updateGovModalSummary();
-                    updateGlobalSummary();
-                });
-
-                // 新增：監聽 5. 全網大水庫 (浮動數據池)
-                onSnapshot(doc(db, 'system_stats', 'global_floating'), (docSnap) => {
-                    if (docSnap.exists()) globalFloating = docSnap.data();
-                    else globalFloating = { carbon: 0, green: 0 };
-                    
-                    floatingLoaded = true; // 標記大水庫載入完成
-                    if (govLoaded && entLoaded && statsLoaded && floatingLoaded) isBackendReady = true;
-                    
-                    updateGlobalSummary();
+                    checkBackendReady();
                 });
 
                 // 監聽 4. 全站瀏覽人次
@@ -2317,20 +2316,18 @@
                             const count = docSnap.data().count || 1;
                             el.textContent = count.toLocaleString();
                         } else {
-                            el.textContent = "1"; // 文檔若尚未建立，給予預設值避免畫面空白
+                            el.textContent = "1";
                         }
                     }
                 }, (error) => {
-                    console.warn("無法即時讀取瀏覽人次 (可能是 Firebase 安全規則限制):", error);
                     const el = document.getElementById('visitor-count');
                     if (el && el.textContent === '...') el.textContent = "1";
                 });
 
-                // 遞增瀏覽人次 (使用 sessionStorage 避免單一使用者重整重複計算)
                 if (!sessionStorage.getItem('mori_has_visited') && !isOfflineMode) {
                     setDoc(visitorRef, { count: increment(1) }, { merge: true }).then(() => {
                         sessionStorage.setItem('mori_has_visited', 'true');
-                    }).catch(e => console.warn('更新瀏覽人次失敗 (寫入權限不足或網路異常)', e));
+                    }).catch(e => {});
                 }
 
             } catch(e) { console.log('初始化資料庫監聽失敗', e); }
@@ -2411,7 +2408,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             initFirebase();
             loadLocalData();
-            // loadMockData(); 已經移除同步載入假資料，改由 Firebase 連線失敗時才作為備案載入
             
             renderTransportButtons();
             renderSroiOptions();
