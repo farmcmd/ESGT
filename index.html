@@ -830,6 +830,7 @@
         let mapInitialized = false;
         let pendingGovEvalSubmission = null, pendingEntEvalSubmission = null;
         let db = null, auth = null, isOfflineMode = false;
+        let isBackendReady = false, govLoaded = false, entLoaded = false, statsLoaded = false; // 新增：後端資料就緒標記與鎖定機制
 
         // ==========================================
         // 3. 核心工具函數 (Core Utils)
@@ -2139,6 +2140,8 @@
 
         // 新增：更新「永續政府專區」內的總指標看板
         function updateGovModalSummary() {
+            if (!isBackendReady) return; // 避免只載入一半就更新畫面
+            
             const projectsCarbon = globalGovData.projects.reduce((sum, p) => sum + (Number(p.carbon) || 0), 0);
             const projectsGreen = globalGovData.projects.reduce((sum, p) => sum + (Number(p.green) || 0), 0);
             const generalCarbon = Number(globalGovData.generalStats?.carbon || 0);
@@ -2155,6 +2158,8 @@
 
         // 修改：首頁全網總指標，將一般機關數據與個人未歸戶數據一併加總
         function updateGlobalSummary() {
+            if (!isBackendReady) return; // 關鍵修正：等待後端 3 個資料庫皆載入完成，再進行加總渲染，避免數字異常跳動
+
             const allProjects = [...(globalGovData.projects || []), ...(globalEntData.projects || [])];
             let backendCarbon = allProjects.reduce((sum, p) => sum + (Number(p.carbon) || 0), 0);
             let backendGreen = allProjects.reduce((sum, p) => sum + (Number(p.green) || 0), 0);
@@ -2180,6 +2185,8 @@
         }
 
         function loadMockData() {
+            isBackendReady = true; // 若斷線啟用備用假資料，則強制解除畫面鎖定
+
             if (globalEntData.projects.length === 0) {
                 globalEntData.projects = [{ 
                     id: 'mock_ent_1', orgName: '台聚關係企業 USI Group', year: '2023', event: '臺大實驗林植樹活動暨水里里山永續旅遊', 
@@ -2214,6 +2221,10 @@
                     snapshot.forEach(docSnap => projs.push({ id: docSnap.id, ...docSnap.data() }));
                     projs.sort((a,b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
                     globalGovData.projects = projs;
+                    
+                    govLoaded = true; // 標記政府資料載入完成
+                    if (govLoaded && entLoaded && statsLoaded) isBackendReady = true;
+                    
                     renderGovDashboard(); updateProjectDropdown();
                     updateGovModalSummary();
                     updateGlobalSummary();
@@ -2225,6 +2236,10 @@
                     snapshot.forEach(docSnap => projs.push({ id: docSnap.id, ...docSnap.data() }));
                     projs.sort((a,b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
                     globalEntData.projects = projs;
+                    
+                    entLoaded = true; // 標記企業資料載入完成
+                    if (govLoaded && entLoaded && statsLoaded) isBackendReady = true;
+                    
                     renderEntProjectsDashboard(); updateEntProjectDropdown();
                     updateGlobalSummary();
                 });
@@ -2236,6 +2251,10 @@
                     } else {
                         globalGovData.generalStats = { carbon: 0, green: 0 };
                     }
+                    
+                    statsLoaded = true; // 標記機關資料載入完成
+                    if (govLoaded && entLoaded && statsLoaded) isBackendReady = true;
+                    
                     updateGovModalSummary();
                     updateGlobalSummary();
                 });
