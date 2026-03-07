@@ -909,6 +909,9 @@
             if(document.getElementById('display-score')) document.getElementById('display-score').textContent = state.totalScore || 0;
             if(document.getElementById('display-green-procurement')) document.getElementById('display-green-procurement').textContent = `$${state.greenProcure || 0}`;
             if(document.getElementById('display-sroi-procurement')) document.getElementById('display-sroi-procurement').textContent = `$${Math.floor(state.sroiProcure || 0)}`;
+            
+            // 新增：每次更新個人數據時，同步刷新全網總指標，實現即時視覺回饋
+            updateGlobalSummary();
         }
 
         function renderCheckoutHistory() {
@@ -1544,7 +1547,8 @@
                 if (!pendingTrip.isValid) return;
                 state.totalMileage = (state.totalMileage || 0) + pendingTrip.distMeters; 
                 state.totalCarbon = (state.totalCarbon || 0) + pendingTrip.reduction; 
-                state.totalScore = (state.totalScore || 0) + Math.floor(pendingTrip.reduction / 10) || 5;
+                // 修正：補上括號，避免 JavaScript 運算子優先級導致舊積分被 || 5 覆蓋的 Bug
+                state.totalScore = (state.totalScore || 0) + (Math.floor(pendingTrip.reduction / 10) || 5);
                 window.addLog(`完成旅程：${selectedStart.name} 到 ${selectedEnd.name}，減碳 ${pendingTrip.reduction.toFixed(1)}g`);
                 updateDisplays(); saveData();
                 document.getElementById('confirm-trip-button')?.classList.add('hidden'); 
@@ -2146,18 +2150,22 @@
             if (gDisp) gDisp.textContent = `$${totalGreen.toLocaleString()}`;
         }
 
-        // 修改：首頁全網總指標，將一般機關數據一併加總
+        // 修改：首頁全網總指標，將一般機關數據與個人未歸戶數據一併加總
         function updateGlobalSummary() {
             const allProjects = [...(globalGovData.projects || []), ...(globalEntData.projects || [])];
-            let totalCarbon = allProjects.reduce((sum, p) => sum + (Number(p.carbon) || 0), 0);
-            let totalGreen = allProjects.reduce((sum, p) => sum + (Number(p.green) || 0), 0);
+            let backendCarbon = allProjects.reduce((sum, p) => sum + (Number(p.carbon) || 0), 0);
+            let backendGreen = allProjects.reduce((sum, p) => sum + (Number(p.green) || 0), 0);
             
             // 加上政府模組的一般機關登錄數據
-            totalCarbon += Number(globalGovData.generalStats?.carbon || 0);
-            totalGreen += Number(globalGovData.generalStats?.green || 0);
+            backendCarbon += Number(globalGovData.generalStats?.carbon || 0);
+            backendGreen += Number(globalGovData.generalStats?.green || 0);
 
-            // 計算公式：總減碳量(g) / 12kg(12000g)，保留兩位小數以顯示細微進度
-            const trees = (totalCarbon / 12000).toFixed(2);
+            // 新增：加上個人「尚未歸戶」的當前數據，讓測試與操作時能即時看到全網數字跳動
+            let totalCarbon = backendCarbon + (state.totalCarbon || 0);
+            let totalGreen = backendGreen + (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
+
+            // 修正：使用 parseFloat 去除多餘的 .00，讓整數時顯示更俐落 (例如 0 而非 0.00)
+            const trees = parseFloat((totalCarbon / 12000).toFixed(2)).toString();
 
             const carbonEl = document.getElementById('network-total-carbon-reduction');
             const greenEl = document.getElementById('display-grand-total-green');
@@ -2228,6 +2236,32 @@
                     updateGovModalSummary();
                     updateGlobalSummary();
                 });
+
+                // 新增：監聽 4. 全站瀏覽人次
+                const visitorRef = doc(db, 'system_stats', 'traffic');
+                // 修正：加入權限錯誤攔截 (error callback) 與文檔不存在的防呆機制
+                onSnapshot(visitorRef, (docSnap) => {
+                    const el = document.getElementById('visitor-count');
+                    if (el) {
+                        if (docSnap.exists()) {
+                            const count = docSnap.data().count || 1024;
+                            el.textContent = count.toLocaleString();
+                        } else {
+                            el.textContent = "1,024"; // 文檔若尚未建立，給予預設值避免畫面空白
+                        }
+                    }
+                }, (error) => {
+                    console.warn("無法即時讀取瀏覽人次 (可能是 Firebase 安全規則限制):", error);
+                    const el = document.getElementById('visitor-count');
+                    if (el && el.textContent === '') el.textContent = "1,024";
+                });
+
+                // 新增：遞增瀏覽人次 (使用 sessionStorage 避免單一使用者重整重複計算)
+                if (!sessionStorage.getItem('mori_has_visited') && !isOfflineMode) {
+                    setDoc(visitorRef, { count: increment(1) }, { merge: true }).then(() => {
+                        sessionStorage.setItem('mori_has_visited', 'true');
+                    }).catch(e => console.warn('更新瀏覽人次失敗 (寫入權限不足或網路異常)', e));
+                }
 
             } catch(e) { console.log('初始化資料庫監聽失敗', e); }
         }
