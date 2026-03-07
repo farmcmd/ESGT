@@ -219,7 +219,7 @@
                          <p>© 2026 水里永續共好聯盟。版權所有。</p>
                          <p>開發者信箱: <a href="mailto:farmcmd@gmail.com" class="hover:text-mori-forest font-bold transition text-gray-600">farmcmd@gmail.com</a> (企業客製專案洽談)</p>
                          <p>V2.2，歡迎至 FACEBOOK 粉專 <a href="https://www.facebook.com/Satoyamadining" target="_blank" class="text-blue-500 hover:text-blue-700 font-bold transition">「里山餐桌」</a> 提出建議。</p>
-                         <p class="text-gray-400 mt-4 tracking-widest text-[10px]"><i class="fas fa-eye mr-1"></i>瀏覽人次: <span id="visitor-count" class="font-mono">1,024</span></p>
+                         <p class="text-gray-400 mt-4 tracking-widest text-[10px]"><i class="fas fa-eye mr-1"></i>瀏覽人次: <span id="visitor-count" class="font-mono">...</span></p>
                      </div>
                  </div>
              </div>
@@ -867,9 +867,12 @@
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app); auth = getAuth(app);
-                signInAnonymously(auth).catch(() => { isOfflineMode = true; });
-                onAuthStateChanged(auth, user => { if(user && db) initGlobalCounters(); });
-            } catch (e) { isOfflineMode = true; }
+                signInAnonymously(auth).catch(() => { isOfflineMode = true; loadMockData(); });
+                onAuthStateChanged(auth, user => { 
+                    if(user && db) initGlobalCounters(); 
+                    else if (isOfflineMode) loadMockData();
+                });
+            } catch (e) { isOfflineMode = true; loadMockData(); }
         }
 
         function loadLocalData() {
@@ -2244,16 +2247,16 @@
                     const el = document.getElementById('visitor-count');
                     if (el) {
                         if (docSnap.exists()) {
-                            const count = docSnap.data().count || 1024;
+                            const count = docSnap.data().count || 1;
                             el.textContent = count.toLocaleString();
                         } else {
-                            el.textContent = "1,024"; // 文檔若尚未建立，給予預設值避免畫面空白
+                            el.textContent = "1"; // 文檔若尚未建立，給予預設值避免畫面空白
                         }
                     }
                 }, (error) => {
                     console.warn("無法即時讀取瀏覽人次 (可能是 Firebase 安全規則限制):", error);
                     const el = document.getElementById('visitor-count');
-                    if (el && el.textContent === '') el.textContent = "1,024";
+                    if (el && el.textContent === '...') el.textContent = "1";
                 });
 
                 // 新增：遞增瀏覽人次 (使用 sessionStorage 避免單一使用者重整重複計算)
@@ -2341,7 +2344,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initFirebase();
             loadLocalData();
-            loadMockData();
+            // loadMockData(); 已經移除同步載入假資料，改由 Firebase 連線失敗時才作為備案載入
             
             renderTransportButtons();
             renderSroiOptions();
