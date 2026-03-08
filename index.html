@@ -1163,7 +1163,7 @@
                 const currentGreen = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
 
                 document.getElementById('ent-eval-target-name').textContent = proj.orgName;
-                document.getElementById('ent-eval-target-carbon').textContent = (state.totalCarbon || 0).toFixed(1);
+                document.getElementById('ent-eval-target-carbon').textContent = Math.round(state.totalCarbon || 0);
                 document.getElementById('ent-eval-target-green').textContent = currentGreen.toLocaleString();
                 
                 pendingEntEvalSubmission = { projId: id, selectedProj: proj, carbon: state.totalCarbon, green: currentGreen };
@@ -1189,7 +1189,7 @@
                 if(!isComplete) return showToast('請完成所有 12 題評分！');
                 
                 if (!state.checkoutHistory) state.checkoutHistory = [];
-                state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[企業] ${selectedProj.orgName}`, carbon: carbon.toFixed(1), green: green });
+                state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[企業] ${selectedProj.orgName}`, carbon: Math.round(carbon), green: green });
 
                 if (!isOfflineMode && db) {
                     try { 
@@ -1257,7 +1257,7 @@
                 const currentGreen = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
 
                 document.getElementById('gov-eval-target-name').textContent = proj.name;
-                document.getElementById('gov-eval-target-carbon').textContent = (state.totalCarbon || 0).toFixed(1);
+                document.getElementById('gov-eval-target-carbon').textContent = Math.round(state.totalCarbon || 0);
                 document.getElementById('gov-eval-target-green').textContent = currentGreen.toLocaleString();
                 
                 pendingGovEvalSubmission = { projId: id, selectedProj: proj, carbon: state.totalCarbon, green: currentGreen };
@@ -1282,7 +1282,7 @@
                 if(!isComplete) return showToast('請完成所有 11 題星級評分！');
                 
                 if (!state.checkoutHistory) state.checkoutHistory = [];
-                state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[計畫] ${selectedProj.name}`, carbon: carbon.toFixed(1), green: green });
+                state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[計畫] ${selectedProj.name}`, carbon: Math.round(carbon), green: green });
 
                 if (!isOfflineMode && db) {
                     try { 
@@ -1311,7 +1311,7 @@
                 if (carbon === 0 && green === 0) return window.showToast('目前無可歸戶的永續數據！');
 
                 if (!state.checkoutHistory) state.checkoutHistory = [];
-                state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[機關] ${govType}-${agencyName}`, carbon: carbon.toFixed(1), green: green });
+                state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[機關] ${govType}-${agencyName}`, carbon: Math.round(carbon), green: green });
 
                 if (!isOfflineMode && db) {
                     try { 
@@ -1495,11 +1495,11 @@
                     if (!state.currentTransport) return window.showToast('請先選擇上方的交通方式！');
                     
                     const tData = transportData[state.currentTransport];
-                    const reduction = km * (tData.reduction / 10);
+                    const reduction = Math.round(km * (tData.reduction / 10)); // 四捨五入至整數
                     
                     pendingShortTrip = { distMeters: km * 1000, distKm: km, reduction: reduction, isValid: true };
                     
-                    document.getElementById('short-dist-result').innerHTML = `<i class="fas fa-bolt text-yellow-500 mr-1"></i>短距 ${km}km | 預估減碳: <span class="text-mori-forest">${reduction.toFixed(1)}g</span>`;
+                    document.getElementById('short-dist-result').innerHTML = `<i class="fas fa-bolt text-yellow-500 mr-1"></i>短距 ${km}km | 預估減碳: <span class="text-mori-forest">${reduction}g</span>`;
                     document.getElementById('confirm-short-dist-btn').classList.remove('hidden');
                     
                     // 視覺高亮選中的按鈕
@@ -1517,7 +1517,7 @@
                 
                 addToGlobalTotal(pendingShortTrip.reduction, 0); // 即時寫入絕對大水庫
 
-                window.addLog(`完成市區短距旅程 (${pendingShortTrip.distKm}km)，減碳 ${pendingShortTrip.reduction.toFixed(1)}g`);
+                window.addLog(`完成市區短距旅程 (${pendingShortTrip.distKm}km)，減碳 ${pendingShortTrip.reduction}g`);
                 updateDisplays(); 
                 saveData();
                 
@@ -1552,9 +1552,9 @@
                         window.directionsRenderer.setDirections(result);
                         let distMeters = result.routes[0].legs[0].distance.value;
                         const distKm = distMeters / 1000;
-                        const reduction = distKm * (tData.reduction / 10);
+                        const reduction = Math.round(distKm * (tData.reduction / 10)); // 四捨五入至整數
                         pendingTrip = { distMeters, distKm, reduction, isValid: true };
-                        if(status) status.innerHTML = `距離 ${distKm.toFixed(1)}km | 預估減碳: <span class="text-mori-forest">${reduction.toFixed(1)}g</span>`;
+                        if(status) status.innerHTML = `距離 ${distKm.toFixed(1)}km | 預估減碳: <span class="text-mori-forest">${reduction}g</span>`;
                         if(confirmBtn) confirmBtn.classList.remove('hidden');
                         document.getElementById('preview-trip-button')?.classList.add('hidden');
                     } else {
@@ -1562,13 +1562,14 @@
                         const p1 = new google.maps.LatLng(selectedStart.coords.lat, selectedStart.coords.lng); 
                         const p2 = new google.maps.LatLng(selectedEnd.coords.lat, selectedEnd.coords.lng);
                         const distMeters = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
-                        const distKm = distMeters / 1000; const reduction = distKm * (tData.reduction / 10);
+                        const distKm = distMeters / 1000; 
+                        const reduction = Math.round(distKm * (tData.reduction / 10)); // 四捨五入至整數
                         
                         window.fallbackPolyline = new google.maps.Polyline({ path: [p1, p2], geodesic: true, strokeColor: '#4A6741', strokeOpacity: 0.8, strokeWeight: 4, map: window.mapInstance });
                         const bounds = new google.maps.LatLngBounds(); bounds.extend(p1); bounds.extend(p2); window.mapInstance.fitBounds(bounds);
 
                         pendingTrip = { distMeters, distKm, reduction, isValid: true };
-                        if(status) status.innerHTML = `<i class="fas fa-magic text-yellow-500 mr-1"></i>(直線估算) ${distKm.toFixed(1)}km | 減碳 <span class="text-mori-forest">${reduction.toFixed(1)}g</span>`;
+                        if(status) status.innerHTML = `<i class="fas fa-magic text-yellow-500 mr-1"></i>(直線估算) ${distKm.toFixed(1)}km | 減碳 <span class="text-mori-forest">${reduction}g</span>`;
                         if(confirmBtn) confirmBtn.classList.remove('hidden');
                         document.getElementById('preview-trip-button')?.classList.add('hidden');
                     }
@@ -1583,7 +1584,7 @@
                 
                 addToGlobalTotal(pendingTrip.reduction, 0); // 即時寫入絕對大水庫
 
-                window.addLog(`完成旅程：${selectedStart.name} 到 ${selectedEnd.name}，減碳 ${pendingTrip.reduction.toFixed(1)}g`);
+                window.addLog(`完成旅程：${selectedStart.name} 到 ${selectedEnd.name}，減碳 ${pendingTrip.reduction}g`);
                 updateDisplays(); saveData();
                 document.getElementById('confirm-trip-button')?.classList.add('hidden'); 
                 document.getElementById('preview-trip-button')?.classList.remove('hidden');
@@ -1806,7 +1807,7 @@
                     <div class="bg-[#F8FAFC] p-3 rounded-xl flex justify-between items-center mt-2 border border-blue-100">
                         <div>
                             <p class="text-[11px] text-gray-500 mb-0.5">累計減碳</p>
-                            <p class="font-bold text-green-600 text-base">${(Number(proj.carbon) || 0).toFixed(1)}g</p>
+                            <p class="font-bold text-green-600 text-base">${Math.round(Number(proj.carbon) || 0)}g</p>
                         </div>
                         <div class="text-right">
                             <p class="text-[10px] text-gray-500 mb-0.5">綠色消費</p>
@@ -2002,7 +2003,7 @@
                     <div class="bg-[#F0F7F4] p-3 rounded-xl flex justify-between items-center mt-1 border border-mori-light">
                         <div>
                             <p class="text-[10px] text-gray-500 mb-0.5">累計減碳</p>
-                            <p class="font-bold text-mori-forest text-sm">${(Number(proj.carbon) || 0).toFixed(1)}g</p>
+                            <p class="font-bold text-mori-forest text-sm">${Math.round(Number(proj.carbon) || 0)}g</p>
                         </div>
                         <div class="text-right">
                             <p class="text-[10px] text-gray-500 mb-0.5">綠色消費</p>
@@ -2181,7 +2182,7 @@
 
             const cDisp = document.getElementById('gov-total-carbon-display');
             const gDisp = document.getElementById('gov-total-green-display');
-            if (cDisp) cDisp.textContent = `${totalCarbon.toLocaleString(undefined, {minimumFractionDigits: 1})} g`;
+            if (cDisp) cDisp.textContent = `${Math.round(totalCarbon).toLocaleString()} g`;
             if (gDisp) gDisp.textContent = `$${totalGreen.toLocaleString()}`;
         }
 
@@ -2199,7 +2200,7 @@
             const greenEl = document.getElementById('display-grand-total-green');
             const treeEl = document.getElementById('trees-planted-count');
 
-            if(carbonEl) carbonEl.textContent = `${totalCarbon.toLocaleString(undefined, {minimumFractionDigits: 1})} g`;
+            if(carbonEl) carbonEl.textContent = `${Math.round(totalCarbon).toLocaleString()} g`;
             if(greenEl) greenEl.textContent = `$${totalGreen.toLocaleString()}`;
             if(treeEl) treeEl.textContent = trees;
         }
@@ -2212,7 +2213,7 @@
                     id: 'mock_ent_1', orgName: '台聚關係企業 USI Group', year: '2023', event: '臺大實驗林植樹活動暨水里里山永續旅遊', 
                     websiteUrl: 'https://www.usig.com/zh-tw/dirCSR/frmCSR.aspx', remark: '集團旅遊',
                     linkedProject: { type: '企業旅遊採購', amount: 168000, sroiWeight: 1.0 },
-                    carbon: 874.5, green: 168000, eval_count: 4, total_score: 230,
+                    carbon: 875, green: 168000, eval_count: 4, total_score: 230,
                     E_score: 60, S_score: 58, G_score: 58, Eng_score: 40, UX_score: 14 
                 }];
                 renderEntProjectsDashboard(); updateEntProjectDropdown();
@@ -2224,12 +2225,12 @@
                     supervisor: '農業部', organizer: '南投縣政府',
                     carbon: 3200, green: 15000, eval_count: 10, total_score: 480 
                 }];
-                globalGovData.generalStats = { carbon: 450.5, green: 3500 };
+                globalGovData.generalStats = { carbon: 451, green: 3500 };
                 renderGovDashboard(); updateProjectDropdown();
             }
             
             // 假資料的大水庫基準
-            globalAbsolute = { carbon: 8641.3, green: 186500 };
+            globalAbsolute = { carbon: 8641, green: 186500 };
             
             updateGovModalSummary();
             updateGlobalSummary();
@@ -2263,7 +2264,7 @@
                                         initGreen += Number(fDoc.data().green || 0); 
                                     }
                                     if (initCarbon > 0 || initGreen > 0) {
-                                        await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: initCarbon, green: initGreen });
+                                        await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: Math.round(initCarbon), green: initGreen });
                                         // setDoc 觸發後會再度進入 onSnapshot，所以這裡不需手動設 true
                                     } else {
                                         globalAbsolute = { carbon: 0, green: 0 };
