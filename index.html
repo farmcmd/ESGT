@@ -391,6 +391,11 @@
                         <h4 class="text-sm font-bold text-yellow-800 mb-3"><i class="fas fa-trophy mr-2 text-yellow-600"></i>永續旅程結算紀錄</h4>
                         <div id="checkout-history-list" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
                     </div>
+                    
+                    <!-- 移至此處的下載空白重置檔按鈕 -->
+                    <button id="download-blank-btn" class="w-full py-2.5 bg-white border border-gray-300 text-gray-500 rounded-xl hover:bg-gray-50 hover:text-gray-700 transition text-xs font-bold shadow-sm flex items-center justify-center mt-1">
+                        <i class="fas fa-undo mr-2"></i> 下載空白重置檔
+                    </button>
                 </div>
             </div>
         </section>
@@ -1310,6 +1315,25 @@
                 link.click();
                 URL.revokeObjectURL(url);
                 window.showToast('進度檔匯出成功！');
+            });
+
+            // 下載空白重置檔 (JSON)
+            document.getElementById('download-blank-btn')?.addEventListener('click', () => {
+                const blankState = {
+                    totalMileage: 0, totalCarbon: 0, totalScore: 0,
+                    playerName: "", playerCode: "",
+                    greenProcure: 0, sroiProcure: 0, projectProcure: 0,
+                    activityLogs: [], checkoutHistory: [], currentTransport: null
+                };
+                const dataStr = JSON.stringify(blankState, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `探探里山_空白重置檔.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+                window.showToast('空白重置檔下載成功！');
             });
 
             // 觸發匯入進度檔
