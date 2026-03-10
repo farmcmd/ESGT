@@ -75,10 +75,11 @@
             <h1 class="text-3xl md:text-5xl font-bold tracking-wide mb-2 drop-shadow-md">探探里山-永續旅遊</h1>
             <p class="mt-2 text-[10px] md:text-xs font-light tracking-wider opacity-90">~探索里山的生活方式，學習低碳永續~享受簡單、自然、美好</p>
             
-            <!-- 移動至此的活動行程按鈕 (縮小並緊貼標題) -->
-            <div class="mt-4 mb-1">
-                <button id="event-schedule-btn" class="px-4 py-1.5 bg-yellow-500/90 hover:bg-yellow-500 text-white text-xs font-bold rounded-full shadow-sm transition duration-300 backdrop-blur-sm border border-white/20 inline-flex items-center">
-                    <i class="fas fa-calendar-alt mr-1.5"></i> 最新活動與報名
+            <!-- 移動至此的活動行程按鈕 (改為 NEW 標示) -->
+            <div class="mt-4 mb-1 relative inline-block">
+                <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse border border-white z-10 tracking-widest">NEW</span>
+                <button id="event-schedule-btn" class="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-white text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 border-2 border-yellow-300 inline-flex items-center group">
+                    <i class="fas fa-calendar-alt mr-2 group-hover:animate-bounce"></i> 最新活動與報名
                 </button>
             </div>
 
@@ -92,13 +93,20 @@
                 <span id="player-code" class="font-mono font-bold text-yellow-300 tracking-widest text-lg drop-shadow-sm">...</span>
             </div>
 
-            <div class="mt-4 flex flex-wrap gap-3 justify-center">
-                <button id="enterprise-version-btn" class="px-5 py-2 bg-mori-wood/90 hover:bg-mori-wood text-white text-sm font-bold rounded-full shadow transition duration-300 backdrop-blur-sm border border-white/20">
-                    <i class="fas fa-building mr-2"></i> 企業永續儀表板
-                </button>
-                <button id="gov-version-btn" class="px-5 py-2 bg-blue-500/80 hover:bg-blue-600 text-white text-sm font-bold rounded-full shadow transition duration-300 backdrop-blur-sm border border-white/20">
-                    <i class="fas fa-landmark mr-2"></i> 永續政府
-                </button>
+            <!-- 企業與政府入口 (取消跳動文字，改為 NEW 標示) -->
+            <div class="mt-5 flex flex-wrap gap-4 justify-center items-center">
+                <div class="relative inline-block">
+                    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse border border-white z-10 tracking-widest">NEW</span>
+                    <button id="enterprise-version-btn" class="px-6 py-2.5 bg-mori-wood hover:bg-yellow-700 text-white text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 border-2 border-mori-wood/50 flex items-center group">
+                        <i class="fas fa-building mr-2 group-hover:scale-110 transition-transform"></i> 企業永續儀表板
+                    </button>
+                </div>
+                <div class="relative inline-block">
+                    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse border border-white z-10 tracking-widest">NEW</span>
+                    <button id="gov-version-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 border-2 border-blue-400/50 flex items-center group">
+                        <i class="fas fa-landmark mr-2 group-hover:scale-110 transition-transform"></i> 永續政府
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -2588,6 +2596,16 @@
                     globalGovData.projects = projs;
                     govLoaded = true; 
                     renderGovDashboard(); updateProjectDropdown(); updateGovModalSummary();
+                    
+                    // 動態更新政府角標數字
+                    const govBadge = document.getElementById('badge-gov');
+                    if (govBadge) {
+                        const activeCount = projs.filter(p => !p.deadline || new Date() <= new Date(p.deadline)).length;
+                        govBadge.textContent = activeCount;
+                        if (activeCount > 0) govBadge.classList.remove('hidden');
+                        else govBadge.classList.add('hidden');
+                    }
+                    
                     checkBackendReady();
                 });
                 
@@ -2599,6 +2617,16 @@
                     globalEntData.projects = projs;
                     entLoaded = true; 
                     renderEntProjectsDashboard(); updateEntProjectDropdown();
+                    
+                    // 動態更新企業角標數字
+                    const entBadge = document.getElementById('badge-enterprise');
+                    if (entBadge) {
+                        const activeCount = projs.filter(p => !p.deadline || new Date() <= new Date(p.deadline)).length;
+                        entBadge.textContent = activeCount;
+                        if (activeCount > 0) entBadge.classList.remove('hidden');
+                        else entBadge.classList.add('hidden');
+                    }
+                    
                     checkBackendReady();
                 });
 
@@ -2659,9 +2687,19 @@
                 const scheduleRef = doc(db, 'system_messages', 'event_schedule');
                 onSnapshot(scheduleRef, (docSnap) => {
                     const container = document.getElementById('event-schedule-container');
-                    if (container) {
-                        if (docSnap.exists() && docSnap.data().events && Array.isArray(docSnap.data().events)) {
-                            const events = docSnap.data().events;
+                    const badge = document.getElementById('badge-event-schedule');
+                    
+                    if (docSnap.exists() && docSnap.data().events && Array.isArray(docSnap.data().events)) {
+                        const events = docSnap.data().events;
+                        
+                        // 動態更新活動角標數字
+                        if (badge) {
+                            badge.textContent = events.length;
+                            if (events.length > 0) badge.classList.remove('hidden');
+                            else badge.classList.add('hidden');
+                        }
+
+                        if (container) {
                             if (events.length === 0) {
                                 container.innerHTML = '<div class="text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">目前尚無近期活動，敬請留意後續公告！</div>';
                                 return;
