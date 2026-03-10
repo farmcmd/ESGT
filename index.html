@@ -108,9 +108,20 @@
                          <span id="network-unit" class="hidden absolute left-full ml-2 text-lg md:text-xl font-bold text-black tracking-normal bottom-[2px] md:bottom-1 whitespace-nowrap">g/CO2e</span>
                      </div>
                  </div>
+                 
+                 <!-- 修改：小樹與每日統計並排顯示 -->
                  <div class="mt-6 flex flex-col items-center justify-center animate-pulse">
-                     <span class="text-4xl filter drop-shadow-md">🌳</span>
-                     <p class="text-sm font-bold text-mori-forest mt-2">已累積 <span id="trees-planted-count" class="text-lg">0</span> 棵成年樟樹1年的吸碳量</p>
+                     <div class="flex flex-row items-center justify-center gap-4">
+                         <span class="text-4xl md:text-5xl filter drop-shadow-md">🌳</span>
+                         <div class="flex flex-col justify-center px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-xl border border-green-200/60 shadow-sm text-left">
+                             <span class="text-[10px] text-gray-500 font-bold tracking-wide mb-0.5">今日新增減碳</span>
+                             <span class="text-sm md:text-base font-black text-green-600 flex items-center tracking-wide">
+                                 <i class="fas fa-arrow-trend-up mr-1.5 text-green-500 animate-bounce"></i>
+                                 <span id="daily-carbon-addition">0</span><span class="text-[10px] ml-1 font-bold text-green-700">g</span>
+                             </span>
+                         </div>
+                     </div>
+                     <p class="text-sm font-bold text-mori-forest mt-3">已累積 <span id="trees-planted-count" class="text-lg">0</span> 棵成年樟樹1年的吸碳量</p>
                  </div>
             </div>
 
@@ -1119,18 +1130,30 @@
             if(document.getElementById('display-sroi-procurement')) document.getElementById('display-sroi-procurement').textContent = `$${Math.floor(state.sroiProcure || 0)}`;
         }
 
+        // 取得台灣時區今日日期 YYYY-MM-DD
+        function getTodayKey() {
+            const d = new Date();
+            // 透過簡單的本地時間轉換確保格式一致
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         // 新增：寫入「絕對大水庫」的輔助函數。只增不減，完美符合「全民總量」概念。
         async function addToGlobalTotal(carbonDelta, greenDelta) {
+            const todayStr = getTodayKey();
+            
             // 前端 Optimistic UI 讓畫面達到「0毫秒」即時跳動回饋
             globalAbsolute.carbon = (globalAbsolute.carbon || 0) + carbonDelta;
             globalAbsolute.green = (globalAbsolute.green || 0) + greenDelta;
+            globalAbsolute[`daily_${todayStr}_carbon`] = (globalAbsolute[`daily_${todayStr}_carbon`] || 0) + carbonDelta;
+            
             updateGlobalSummary();
 
             if (!isOfflineMode && db) {
                 try {
                     await setDoc(doc(db, 'system_stats', 'global_absolute'), {
                         carbon: increment(carbonDelta),
-                        green: increment(greenDelta)
+                        green: increment(greenDelta),
+                        [`daily_${todayStr}_carbon`]: increment(carbonDelta) // 同步記錄當日數值
                     }, { merge: true });
                 } catch(e) { console.warn("更新全網大水庫失敗", e); }
             }
@@ -1292,9 +1315,9 @@
 
                 let attributionHtml = '';
                 if (attributionTarget) {
-                    attributionHtml = `<div class="mt-4 bg-green-50/90 p-3 rounded-lg border border-green-200 inline-block shadow-sm">
-                                          <p class="text-xs font-bold text-mori-forest mb-0.5"><i class="fas fa-check-circle mr-1.5 text-mori-sage"></i>本次行動數據已正式貢獻歸戶至：</p>
-                                          <p class="text-lg font-black text-green-800">${attributionTarget}</p>
+                    attributionHtml = `<div class="mt-4 bg-[#F0FDF4] p-4 rounded-xl border-2 border-[#86EFAC] block shadow-sm">
+                                          <p class="text-[13px] font-bold text-[#166534] mb-1"><i class="fas fa-check-circle mr-1.5 text-[#059669]"></i>本次行動數據已正式貢獻歸戶至：</p>
+                                          <p class="text-xl font-black text-[#14532D] tracking-wide">${attributionTarget}</p>
                                        </div>`;
                 }
 
@@ -2571,9 +2594,12 @@
         function updateGlobalSummary() {
             if (!isBackendReady) return; 
 
+            const todayStr = getTodayKey();
+
             // 絕對大水庫的值
             let totalCarbon = Math.max(0, Number(globalAbsolute.carbon || 0));
             let totalGreen = Math.max(0, Number(globalAbsolute.green || 0));
+            let dailyCarbon = Math.max(0, Number(globalAbsolute[`daily_${todayStr}_carbon`] || 0));
 
             const trees = parseFloat((totalCarbon / 12000).toFixed(2)).toString();
 
@@ -2581,6 +2607,7 @@
             const greenEl = document.getElementById('display-grand-total-green');
             const treeEl = document.getElementById('trees-planted-count');
             const unitEl = document.getElementById('network-unit');
+            const dailyEl = document.getElementById('daily-carbon-addition');
 
             if(carbonEl) {
                 carbonEl.textContent = Math.round(totalCarbon).toLocaleString();
@@ -2588,6 +2615,7 @@
             }
             if(greenEl) greenEl.textContent = `$${totalGreen.toLocaleString()}`;
             if(treeEl) treeEl.textContent = trees;
+            if(dailyEl) dailyEl.textContent = Math.round(dailyCarbon).toLocaleString();
         }
 
         function loadMockData() {
@@ -2615,7 +2643,9 @@
             }
             
             // 假資料的大水庫基準
-            globalAbsolute = { carbon: 8641, green: 186500 };
+            const todayStr = getTodayKey();
+            globalAbsolute = { carbon: 22647, green: 186500 };
+            globalAbsolute[`daily_${todayStr}_carbon`] = 350; // 賦予今日假資料以便測試預覽
             
             updateGovModalSummary();
             updateGlobalSummary();
