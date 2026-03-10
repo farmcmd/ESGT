@@ -62,6 +62,13 @@
     <!-- 防呆提示 Toast -->
     <div id="custom-toast"></div>
 
+    <!-- 系統即時廣播列 (新增) -->
+    <div id="system-broadcast-bar" class="hidden w-full bg-yellow-500 text-white px-4 py-2.5 text-sm font-bold flex items-center justify-center shadow-md relative z-[100]">
+        <i class="fas fa-bullhorn mr-2 animate-bounce"></i>
+        <span id="system-broadcast-text" class="tracking-wide">載入中...</span>
+        <button onclick="document.getElementById('system-broadcast-bar').classList.add('hidden')" class="absolute right-4 text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+    </div>
+
     <header class="bg-gradient-to-b from-mori-forest to-mori-sage text-white p-8 md:p-12 text-center shadow-lg relative min-h-[300px] flex flex-col justify-center items-center">
         <canvas id="header-canvas"></canvas>
         <div class="header-content w-full max-w-4xl mx-auto">
@@ -2604,6 +2611,27 @@
                         sessionStorage.setItem('mori_has_visited', 'true');
                     }).catch(e => {});
                 }
+
+                // 監聽 5. 系統即時廣播 (新增)
+                const broadcastRef = doc(db, 'system_messages', 'broadcast');
+                onSnapshot(broadcastRef, (docSnap) => {
+                    const bar = document.getElementById('system-broadcast-bar');
+                    const textEl = document.getElementById('system-broadcast-text');
+                    if (bar && textEl) {
+                        if (docSnap.exists() && docSnap.data().message && docSnap.data().message.trim() !== '') {
+                            let msg = docSnap.data().message;
+                            // 預防 XSS 攻擊，先將特殊字元轉義
+                            let safeMsg = msg.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag));
+                            // 自動偵測網址並轉換為超連結 (新分頁開啟)
+                            let linkedMsg = safeMsg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="underline text-blue-900 hover:text-blue-700 transition font-black px-1">$1</a>');
+                            
+                            textEl.innerHTML = linkedMsg;
+                            bar.classList.remove('hidden');
+                        } else {
+                            bar.classList.add('hidden');
+                        }
+                    }
+                });
 
             } catch(e) { console.log('初始化資料庫監聽失敗', e); }
         }
