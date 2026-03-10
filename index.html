@@ -101,7 +101,7 @@
             
             <!-- 1. 全網減碳區塊 (移至最上方) -->
             <div class="bg-blue-50/50 p-6 rounded-2xl shadow-sm mb-8 border border-blue-100 text-center">
-                 <h3 class="text-lg font-semibold text-blue-800 mb-2">全網累計減碳量</h3>
+                 <h3 class="text-lg font-semibold text-blue-800 mb-2">探探里山旅者共同累積減碳量</h3>
                  <p id="network-total-carbon-reduction" class="text-3xl font-bold text-blue-600 font-mono tracking-tight">載入中...</p>
                  <div class="mt-4 flex flex-col items-center justify-center animate-pulse">
                      <span class="text-4xl filter drop-shadow-md">🌳</span>
@@ -228,8 +228,8 @@
                         <p id="display-sroi-procurement" class="text-lg font-bold text-mori-wood">$0</p>
                     </div>
                     <div class="p-4 bg-gradient-to-br from-mori-sage to-mori-forest rounded-xl shadow-md text-white text-center flex flex-col justify-center">
-                        <p class="text-xs opacity-80">全網綠色消費</p>
-                        <p id="display-grand-total-green" class="text-xl font-bold mt-1">...</p>
+                        <p class="text-[11px] leading-tight opacity-90 mb-0.5">探探里山旅者累計<br>綠色消費總額</p>
+                        <p id="display-grand-total-green" class="text-xl font-bold mt-0.5">...</p>
                     </div>
                 </div>
             </div>
@@ -975,8 +975,8 @@
             bus_train: { name: '共乘巴士', icon: '🚌', reduction: 400, mode: 'TRANSIT' }, carpool_2_moto: { name: '機車/2人', icon: '🛵', reduction: 150, mode: 'DRIVING' },
             carpool_3: { name: '3人共乘', icon: '🚗', reduction: 350, mode: 'DRIVING' }, carpool_4: { name: '4人共乘', icon: '🚗', reduction: 400, mode: 'DRIVING' },
             carpool_5: { name: '5人共乘', icon: '🚐', reduction: 450, mode: 'DRIVING' }, 
-            thsr: { name: '台灣高鐵', icon: '🚄', reduction: 650, mode: 'TRANSIT', tag: '極低碳' },
-            drive_alone: { name: '單人自駕', icon: '🚘', reduction: 0, mode: 'DRIVING', tag: '高碳排' },
+            thsr: { name: '台灣高鐵', icon: '🚄', reduction: 650, mode: 'TRANSIT' },
+            drive_alone: { name: '單人自駕', icon: '🚘', reduction: 0, mode: 'DRIVING' },
             taxi: { name: '預約導覽車', icon: '🚕', reduction: 0, mode: 'DRIVING' }
         };
 
@@ -2398,10 +2398,7 @@
                 // 修改：將留白 p-4 縮小為 p-2 或 py-3，並加入 flex 置中確保縮小後依然整齊
                 btn.className = "bg-white p-2 rounded-xl border border-transparent hover:border-mori-sage cursor-pointer shadow-sm text-center transition flex flex-col justify-center items-center h-full";
                 
-                // 新增：若有標籤(如高碳排)，則獨立渲染紅色小字
-                let tagColor = t.tag === '極低碳' ? 'text-green-500' : 'text-red-500';
-                let tagHtml = t.tag ? `<div class="text-[10px] ${tagColor} font-normal mt-0.5 tracking-wider">(${t.tag})</div>` : '';
-                btn.innerHTML = `<div class="text-3xl mb-1 tracking-tighter">${t.icon}</div><div class="text-xs font-bold text-gray-700 leading-tight">${t.name}${tagHtml}</div>`;
+                btn.innerHTML = `<div class="text-3xl mb-1 tracking-tighter">${t.icon}</div><div class="text-xs font-bold text-gray-700 leading-tight">${t.name}</div>`;
                 
                 btn.onclick = () => {
                     if (k === 'taxi') {
@@ -2505,7 +2502,7 @@
             const greenEl = document.getElementById('display-grand-total-green');
             const treeEl = document.getElementById('trees-planted-count');
 
-            if(carbonEl) carbonEl.textContent = `${Math.round(totalCarbon).toLocaleString()} g`;
+            if(carbonEl) carbonEl.innerHTML = `${Math.round(totalCarbon).toLocaleString()} <span class="text-lg md:text-xl font-medium text-blue-400 tracking-normal ml-1">g/CO2e</span>`;
             if(greenEl) greenEl.textContent = `$${totalGreen.toLocaleString()}`;
             if(treeEl) treeEl.textContent = trees;
         }
