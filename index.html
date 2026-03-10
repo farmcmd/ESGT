@@ -101,9 +101,14 @@
             
             <!-- 1. 全網減碳區塊 (移至最上方) -->
             <div class="bg-blue-50/50 p-6 rounded-2xl shadow-sm mb-8 border border-blue-100 text-center">
-                 <h3 class="text-lg font-semibold text-blue-800 mb-2">探探里山旅者共同累積減碳量</h3>
-                 <p id="network-total-carbon-reduction" class="text-3xl font-bold text-blue-600 font-mono tracking-tight">載入中...</p>
-                 <div class="mt-4 flex flex-col items-center justify-center animate-pulse">
+                 <h3 class="text-lg font-semibold text-blue-800 mb-3">探探里山旅者共同累積減碳量</h3>
+                 <div class="flex justify-center items-center w-full">
+                     <div class="relative inline-flex items-baseline justify-center">
+                         <p id="network-total-carbon-reduction" class="text-4xl md:text-5xl font-bold text-blue-600 font-mono tracking-tight">載入中...</p>
+                         <span id="network-unit" class="hidden absolute left-full ml-2 text-lg md:text-xl font-bold text-black tracking-normal bottom-[2px] md:bottom-1 whitespace-nowrap">g/CO2e</span>
+                     </div>
+                 </div>
+                 <div class="mt-6 flex flex-col items-center justify-center animate-pulse">
                      <span class="text-4xl filter drop-shadow-md">🌳</span>
                      <p class="text-sm font-bold text-mori-forest mt-2">已累積 <span id="trees-planted-count" class="text-lg">0</span> 棵成年樟樹1年的吸碳量</p>
                  </div>
@@ -2501,8 +2506,12 @@
             const carbonEl = document.getElementById('network-total-carbon-reduction');
             const greenEl = document.getElementById('display-grand-total-green');
             const treeEl = document.getElementById('trees-planted-count');
+            const unitEl = document.getElementById('network-unit');
 
-            if(carbonEl) carbonEl.innerHTML = `${Math.round(totalCarbon).toLocaleString()} <span class="text-lg md:text-xl font-medium text-blue-400 tracking-normal ml-1">g/CO2e</span>`;
+            if(carbonEl) {
+                carbonEl.textContent = Math.round(totalCarbon).toLocaleString();
+                if(unitEl) unitEl.classList.remove('hidden');
+            }
             if(greenEl) greenEl.textContent = `$${totalGreen.toLocaleString()}`;
             if(treeEl) treeEl.textContent = trees;
         }
