@@ -1263,7 +1263,7 @@
         }
 
         function bindDownloadEvents() {
-            window.generateAndDownloadCertificate = async function(auto = false) {
+            window.generateAndDownloadCertificate = async function(auto = false, attributionTarget = null) {
                 const certContainer = document.getElementById('certificate-dom-container');
                 if (!certContainer || !window.html2canvas) {
                     return window.showToast('截圖模組準備中，請稍候再試...');
@@ -1282,13 +1282,21 @@
                 
                 const logs = (state.activityLogs || []).slice(0, 5);
                 const logsHtml = logs.length > 0 
-                    ? logs.map(l => `<div class="text-[11px] mb-1.5"><span class="text-mori-forest font-bold">${l.time}</span> ${l.text}</div>`).join('')
-                    : '<div class="text-[11px] text-gray-400 mt-1">尚無紀錄</div>';
+                    ? logs.map(l => `<div class="text-[12px] mb-3 leading-relaxed border-b border-gray-200/60 pb-2.5 last:border-0 last:pb-0 last:mb-0"><span class="text-mori-forest font-bold bg-mori-light/50 px-1.5 py-0.5 rounded mr-1.5 shadow-sm">${l.time}</span> <span class="text-gray-700">${l.text}</span></div>`).join('')
+                    : '<div class="text-[12px] text-gray-400 mt-2 text-center py-4 border border-dashed border-gray-200 rounded-lg">尚無紀錄</div>';
 
                 const checkouts = (state.checkoutHistory || []).slice(0, 4);
                 const checkoutsHtml = checkouts.length > 0
-                    ? checkouts.map(c => `<div class="text-[11px] mb-1.5 leading-tight"><span class="font-bold text-gray-700">${c.target}</span><br><span class="text-gray-500">減碳 ${c.carbon}g | 綠消 $${c.green}</span></div>`).join('')
-                    : '<div class="text-[11px] text-gray-400 mt-1">尚無紀錄</div>';
+                    ? checkouts.map(c => `<div class="text-[12px] mb-3 leading-relaxed border-b border-yellow-200/60 pb-2.5 last:border-0 last:pb-0 last:mb-0"><span class="font-bold text-gray-800"><i class="fas fa-check-circle text-yellow-500 mr-1.5"></i>${c.target}</span><br><span class="text-gray-600 text-[11px] inline-block mt-1.5 bg-white px-2.5 py-1 rounded shadow-sm border border-yellow-100/50">減碳 <span class="text-mori-forest font-bold">${c.carbon}g</span> <span class="mx-1 text-gray-300">|</span> 綠消 <span class="text-mori-wood font-bold">$${c.green}</span></span></div>`).join('')
+                    : '<div class="text-[12px] text-gray-400 mt-2 text-center py-4 border border-dashed border-yellow-200 rounded-lg">尚無紀錄</div>';
+
+                let attributionHtml = '';
+                if (attributionTarget) {
+                    attributionHtml = `<div class="mt-4 bg-green-50/90 p-3 rounded-lg border border-green-200 inline-block shadow-sm">
+                                          <p class="text-xs font-bold text-mori-forest mb-0.5"><i class="fas fa-check-circle mr-1.5 text-mori-sage"></i>本次行動數據已正式貢獻歸戶至：</p>
+                                          <p class="text-lg font-black text-green-800">${attributionTarget}</p>
+                                       </div>`;
+                }
 
                 certContainer.innerHTML = `
                     <div class="border-[12px] border-mori-forest/10 p-2 rounded-xl bg-white relative overflow-hidden">
@@ -1306,6 +1314,7 @@
                                     <span>(代碼：<span class="font-mono text-mori-wood">${code}</span>)</span>
                                 </p>
                                 <p class="text-sm text-gray-600 mt-3 leading-relaxed">在本次探探里山永續旅遊中，積極實踐低碳與綠色消費，達成以下卓越成就，特頒此證以資鼓勵。</p>
+                                ${attributionHtml}
                             </div>
 
                             <div class="grid grid-cols-3 gap-4 mb-6 text-center bg-[#F0F7F4] p-4 rounded-xl border border-mori-light">
@@ -1323,20 +1332,24 @@
                             </div>
 
                             <div class="grid grid-cols-2 gap-6 mb-8">
-                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                    <h4 class="font-bold text-gray-700 text-sm mb-3 border-b border-gray-200 pb-1.5"><i class="fas fa-history mr-1.5 text-mori-sage"></i>永續行動與活動紀錄</h4>
-                                    ${logsHtml}
+                                <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner">
+                                    <h4 class="font-bold text-gray-800 text-[13px] mb-4 border-b-2 border-gray-200 pb-2"><i class="fas fa-history mr-2 text-mori-sage"></i>永續行動與活動紀錄</h4>
+                                    <div class="space-y-1">
+                                        ${logsHtml}
+                                    </div>
                                 </div>
-                                <div class="bg-yellow-50/50 p-4 rounded-xl border border-yellow-100">
-                                    <h4 class="font-bold text-yellow-800 text-sm mb-3 border-b border-yellow-200 pb-1.5"><i class="fas fa-trophy mr-1.5 text-yellow-600"></i>永續旅程結算紀錄</h4>
-                                    ${checkoutsHtml}
+                                <div class="bg-yellow-50/70 p-5 rounded-xl border border-yellow-200 shadow-inner">
+                                    <h4 class="font-bold text-yellow-800 text-[13px] mb-4 border-b-2 border-yellow-200 pb-2"><i class="fas fa-trophy mr-2 text-yellow-600"></i>永續旅程結算紀錄</h4>
+                                    <div class="space-y-1">
+                                        ${checkoutsHtml}
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="flex justify-between items-end mt-10">
-                                <div class="text-[10px] text-gray-400">
-                                    <i class="fas fa-qrcode text-4xl mb-1 text-gray-300"></i><br>
-                                    Scan for ESG Traceability
+                                <div class="text-[10px] text-gray-400 flex flex-col items-start">
+                                    <i class="fas fa-qrcode text-4xl mb-2 text-gray-300"></i>
+                                    <span>Scan for ESG Traceability</span>
                                 </div>
                                 <div class="text-right">
                                     <p class="text-sm text-gray-500 mb-1">發證日期：${new Date().toLocaleDateString('zh-TW')}</p>
@@ -1471,7 +1484,10 @@
                 document.getElementById('ent-eval-modal').classList.remove('hidden');
             });
 
-            document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async () => {
+            document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async (e) => {
+                const btn = e.currentTarget;
+                if(btn.disabled) return;
+                
                 if(!pendingEntEvalSubmission) return;
                 
                 const { projId, selectedProj, carbon, green } = pendingEntEvalSubmission;
@@ -1487,16 +1503,24 @@
                     const v = parseInt(c.getAttribute('data-value'));
                     if(!v) isComplete = false; else sum += v;
                 });
-                if(!isComplete) return showToast('請完成所有 12 題評分！');
+                if(!isComplete) return window.showToast('請完成所有 12 題評分！');
                 
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>結算生成中...';
+                
+                // 1. 本地狀態先更新
                 if (!state.checkoutHistory) state.checkoutHistory = [];
                 state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[企業] ${selectedProj.orgName}`, carbon: Math.round(carbon), green: green });
+                window.addLog(`✅ 企業歸戶：數據歸戶至 ${selectedProj.orgName}`);
 
+                // 2. 優先執行自動下載證書 (防瀏覽器阻擋，並將歸戶目標印在證書上)
+                await window.generateAndDownloadCertificate(true, `【企業專案】${selectedProj.orgName}`);
+
+                // 3. 寫入雲端資料庫
                 if (!isOfflineMode && db) {
                     try { 
-                        // 1. 寫入企業卡片 (不再扣除大水庫！)
                         await setDoc(doc(db, 'ent_projects', projId), { carbon: increment(carbon), green: increment(green), total_score: increment(sum), eval_count: increment(1), updatedAt: serverTimestamp() }, { merge: true }); 
-                    } catch(e) { console.error(e); }
+                    } catch(err) { console.error(err); }
                 } else {
                     selectedProj.eval_count = (selectedProj.eval_count || 0) + 1;
                     selectedProj.total_score = (selectedProj.total_score || 0) + sum;
@@ -1504,13 +1528,12 @@
                     selectedProj.green = (selectedProj.green || 0) + green;
                 }
 
-                addLog(`✅ 企業歸戶：數據歸戶至 ${selectedProj.orgName}`);
-                
-                // 執行自動下載證書 (保留此時尚未歸零的數據)
-                await window.generateAndDownloadCertificate(true);
-                
+                // 4. 重置與清理
                 resetStats(); document.getElementById('ent-eval-modal').classList.add('hidden');
                 renderEntProjectsDashboard(); renderCheckoutHistory();
+                
+                btn.disabled = false;
+                btn.innerHTML = '確認結算歸戶';
             });
 
             document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
@@ -1544,16 +1567,16 @@
                 } else {
                     globalEntData.projects.unshift(newProj);
                 }
-                renderEntProjectsDashboard(); updateEntProjectDropdown(); showToast('建立成功！');
+                renderEntProjectsDashboard(); updateEntProjectDropdown(); window.showToast('企業儀表板建立成功！');
             });
         }
 
         function bindGovernmentFlow() {
             document.getElementById('log-user-proj-btn')?.addEventListener('click', () => {
                 const id = document.getElementById('user-proj-select').value;
-                if(!id) return showToast('請先選擇計畫！');
+                if(!id) return window.showToast('請先選擇參與計畫！');
                 const proj = globalGovData.projects.find(p => p.id === id);
-
+                
                 // 檢查是否已逾期
                 if (proj.deadline && new Date() > new Date(proj.deadline)) {
                     return window.showToast('此計畫已過歸戶截止時間，無法再登錄！');
@@ -1569,7 +1592,10 @@
                 document.getElementById('gov-eval-modal').classList.remove('hidden');
             });
 
-            document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async () => {
+            document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async (e) => {
+                const btn = e.currentTarget;
+                if(btn.disabled) return;
+
                 if(!pendingGovEvalSubmission) return;
 
                 const { projId, selectedProj, carbon, green } = pendingGovEvalSubmission;
@@ -1584,69 +1610,92 @@
                     const v = parseInt(c.getAttribute('data-value'));
                     if(!v) isComplete = false; else sum += v;
                 });
-                if(!isComplete) return showToast('請完成所有 11 題星級評分！');
+                if(!isComplete) return window.showToast('請完成所有 11 題星級評分！');
                 
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>結算生成中...';
+
+                // 1. 本地狀態先更新
                 if (!state.checkoutHistory) state.checkoutHistory = [];
                 state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[計畫] ${selectedProj.name}`, carbon: Math.round(carbon), green: green });
+                window.addLog(`✅ 計畫歸戶：數據歸戶至 ${selectedProj.name}`);
+                
+                // 2. 優先執行自動下載證書 (防瀏覽器阻擋，並將歸戶目標印在證書上)
+                await window.generateAndDownloadCertificate(true, `【政府計畫】${selectedProj.name}`);
 
+                // 3. 寫入雲端資料庫
                 if (!isOfflineMode && db) {
                     try { 
-                        // 1. 寫入政府計畫卡片 (不再扣除大水庫！)
                         await setDoc(doc(db, 'gov_projects', projId), { carbon: increment(carbon), green: increment(green), total_score: increment(sum), eval_count: increment(1), updatedAt: serverTimestamp() }, { merge: true }); 
-                    } catch(e) { console.error(e); }
+                    } catch(err) { console.error(err); }
                 } else {
                     selectedProj.eval_count = (selectedProj.eval_count || 0) + 1;
                     selectedProj.total_score = (selectedProj.total_score || 0) + sum;
                     selectedProj.carbon = (selectedProj.carbon || 0) + carbon;
                     selectedProj.green = (selectedProj.green || 0) + green;
                 }
-
-                addLog(`✅ 計畫歸戶：數據歸戶至 ${selectedProj.name}`);
                 
-                // 執行自動下載證書 (保留此時尚未歸零的數據)
-                await window.generateAndDownloadCertificate(true);
-                
+                // 4. 重置與清理
                 resetStats(); document.getElementById('gov-eval-modal').classList.add('hidden');
                 renderGovDashboard(); renderCheckoutHistory();
                 updateGovModalSummary();
+                
+                btn.disabled = false;
+                btn.innerHTML = '確認結算歸戶';
             });
 
-            document.getElementById('log-gov-general-btn')?.addEventListener('click', async () => {
+            document.getElementById('log-gov-general-btn')?.addEventListener('click', async (e) => {
+                const btn = e.currentTarget;
+                if(btn.disabled) return;
+
                 const agencyName = document.getElementById('gov-agency-name').value.trim() || '未具名機關';
                 const govType = document.getElementById('gov-type-select').value;
                 const carbon = state.totalCarbon || 0;
                 const green = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
 
                 if (carbon === 0 && green === 0) return window.showToast('目前無可歸戶的永續數據！');
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>結算生成中...';
 
+                // 1. 本地狀態先更新
                 if (!state.checkoutHistory) state.checkoutHistory = [];
                 state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[機關] ${govType}-${agencyName}`, carbon: Math.round(carbon), green: green });
+                window.addLog(`✅ 機關歸戶：數據累計至 ${govType}-${agencyName}`);
+                
+                // 2. 優先執行自動下載證書 (防瀏覽器阻擋，並將歸戶目標印在證書上)
+                await window.generateAndDownloadCertificate(true, `【機關差勤】${govType} - ${agencyName}`);
 
+                // 3. 寫入雲端資料庫
                 if (!isOfflineMode && db) {
                     try { 
-                        // 寫入機關專屬統計 (不再扣除大水庫！)
                         await setDoc(doc(db, 'gov_stats', 'general'), { 
                             carbon: increment(carbon), 
                             green: increment(green), 
                             updatedAt: serverTimestamp() 
                         }, { merge: true }); 
-                    } catch(e) { console.error("一般機關登錄失敗", e); window.showToast("資料庫連線失敗"); return;}
+                    } catch(err) { 
+                        console.error("一般機關登錄失敗", err); 
+                        window.showToast("資料庫連線失敗"); 
+                        btn.disabled = false;
+                        btn.innerHTML = '確認機關登錄 (累計至總指標並歸零)';
+                        return;
+                    }
                 } else {
                     globalGovData.generalStats.carbon = (globalGovData.generalStats.carbon || 0) + carbon;
                     globalGovData.generalStats.green = (globalGovData.generalStats.green || 0) + green;
                 }
-
-                addLog(`✅ 機關歸戶：數據累計至 ${govType}-${agencyName}`);
                 
-                // 執行自動下載證書 (保留此時尚未歸零的數據)
-                await window.generateAndDownloadCertificate(true);
-                
+                // 4. 重置與清理
                 resetStats(); 
                 window.showToast('機關行程數據已成功登錄至總指標！');
                 document.getElementById('gov-agency-name').value = '';
                 renderCheckoutHistory();
                 updateGovModalSummary();
                 updateGlobalSummary();
+                
+                btn.disabled = false;
+                btn.innerHTML = '確認機關登錄 (累計至總指標並歸零)';
             });
 
             document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
