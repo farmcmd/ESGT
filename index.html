@@ -118,7 +118,7 @@
             <div class="text-center mb-4 px-2">
                 <p class="text-xs md:text-sm text-gray-700 font-bold tracking-wide inline-flex items-start md:items-center justify-center bg-yellow-50/80 px-4 py-3 rounded-xl border border-yellow-200 shadow-sm leading-relaxed text-left md:text-center w-full max-w-2xl mx-auto">
                     <i class="fas fa-info-circle text-yellow-500 mr-2 mt-0.5 md:mt-0 text-base animate-pulse"></i>
-                    <span>將行程的永續數據貢獻到所屬公司或參加的計畫活動儀表板中，歸戶前建議先 <span class="text-mori-forest font-black">"下載永續旅遊證書"</span>。</span>
+                    <span>將行程的永續數據貢獻到所屬公司或參加的計畫活動儀表板中，系統將於歸戶時<span class="text-mori-forest font-black">自動為您下載永續旅遊證書</span>。</span>
                 </p>
             </div>
 
@@ -355,9 +355,9 @@
                         </div>
                     </div>
 
-                    <!-- 市區短距設定 -->
+                    <!-- 市區短距移動設定 -->
                     <div class="bg-emerald-50/50 p-4 rounded-xl shadow-sm border border-emerald-100">
-                        <h3 class="font-bold text-emerald-800 mb-3 border-b border-emerald-200 pb-2"><i class="fas fa-route mr-2"></i>市區短距設定</h3>
+                        <h3 class="font-bold text-emerald-800 mb-3 border-b border-emerald-200 pb-2"><i class="fas fa-route mr-2"></i>市區短距移動設定</h3>
                         <div class="grid grid-cols-4 gap-2 mb-3">
                             <button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="3">3KM</button>
                             <button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="5">5KM</button>
@@ -416,7 +416,7 @@
                     </div>
                     
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3"><i class="fas fa-history mr-2 text-mori-sage"></i>最近行動紀錄</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-3"><i class="fas fa-history mr-2 text-mori-sage"></i>永續行動與活動紀錄</h4>
                         <div id="logged-actions-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
                     </div>
                     
@@ -585,8 +585,8 @@
                         <span class="bg-white px-2 py-1 rounded text-mori-wood shadow-sm">綠消: $<span id="ent-eval-target-green">0</span></span>
                     </div>
                     <div class="border-t border-green-200 pt-3 mt-2">
-                        <p class="text-xs text-red-600 font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i>提醒：結算歸戶後，您的個人累積數據將會歸零。</p>
-                        <p class="text-xs text-gray-600 font-medium">若需留存紀錄，請先 <button type="button" class="save-data-redirect-btn text-blue-600 hover:text-blue-800 underline font-bold px-1 transition">保存數據 (至首頁匯出)</button></p>
+                        <p class="text-xs text-mori-forest font-bold mb-1"><i class="fas fa-magic mr-1"></i>貼心提醒：確認結算時，系統會自動將您的數據生成「永續旅遊證書」並下載。</p>
+                        <p class="text-[11px] text-gray-500 font-medium">個人累計數據將於結算後自動歸零，並轉移至專案儀表板中。</p>
                     </div>
                 </div>
             </div>
@@ -631,8 +631,8 @@
                             <span class="bg-white px-2 py-1 rounded text-mori-wood shadow-sm">綠消: $<span id="gov-eval-target-green">0</span></span>
                         </div>
                         <div class="border-t border-green-200 pt-3">
-                            <p class="text-xs text-red-600 font-bold mb-1"><i class="fas fa-exclamation-triangle mr-1"></i>提醒：結算歸戶後，您的個人累積數據將會歸零。</p>
-                            <p class="text-xs text-gray-600 font-medium">若需留存紀錄，請先 <button type="button" class="save-data-redirect-btn text-blue-600 hover:text-blue-800 underline font-bold px-1 transition">保存數據 (至首頁匯出)</button></p>
+                            <p class="text-xs text-mori-forest font-bold mb-1"><i class="fas fa-magic mr-1"></i>貼心提醒：確認結算時，系統會自動將您的數據生成「永續旅遊證書」並下載。</p>
+                            <p class="text-[11px] text-gray-500 font-medium">個人累計數據將於結算後自動歸零，並轉移至專案儀表板中。</p>
                         </div>
                     </div>
                 </div>
@@ -1263,13 +1263,14 @@
         }
 
         function bindDownloadEvents() {
-            document.getElementById('download-cert-btn')?.addEventListener('click', async () => {
+            window.generateAndDownloadCertificate = async function(auto = false) {
                 const certContainer = document.getElementById('certificate-dom-container');
                 if (!certContainer || !window.html2canvas) {
                     return window.showToast('截圖模組準備中，請稍候再試...');
                 }
                 
-                window.showToast('精美證書產生中...');
+                if(auto) window.showToast('結算中，系統正為您自動生成證書...');
+                else window.showToast('精美證書產生中...');
 
                 const name = document.getElementById('player-name')?.value || '匿名旅者';
                 const code = document.getElementById('player-code')?.textContent || '';
@@ -1323,7 +1324,7 @@
 
                             <div class="grid grid-cols-2 gap-6 mb-8">
                                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                    <h4 class="font-bold text-gray-700 text-sm mb-3 border-b border-gray-200 pb-1.5"><i class="fas fa-history mr-1.5 text-mori-sage"></i>最近行動紀錄</h4>
+                                    <h4 class="font-bold text-gray-700 text-sm mb-3 border-b border-gray-200 pb-1.5"><i class="fas fa-history mr-1.5 text-mori-sage"></i>永續行動與活動紀錄</h4>
                                     ${logsHtml}
                                 </div>
                                 <div class="bg-yellow-50/50 p-4 rounded-xl border border-yellow-100">
@@ -1353,10 +1354,15 @@
                     link.download = `永續旅遊證書_${name}.png`;
                     link.href = canvas.toDataURL('image/png');
                     link.click();
-                    window.showToast('精美證書下載成功！');
+                    if(auto) window.showToast('自動下載證書成功！數據即將歸戶。');
+                    else window.showToast('精美證書下載成功！');
                 } catch(e) {
                     window.showToast('下載失敗');
                 }
+            };
+
+            document.getElementById('download-cert-btn')?.addEventListener('click', () => {
+                window.generateAndDownloadCertificate(false);
             });
 
             // 匯出個人進度檔 (JSON)
@@ -1499,6 +1505,10 @@
                 }
 
                 addLog(`✅ 企業歸戶：數據歸戶至 ${selectedProj.orgName}`);
+                
+                // 執行自動下載證書 (保留此時尚未歸零的數據)
+                await window.generateAndDownloadCertificate(true);
+                
                 resetStats(); document.getElementById('ent-eval-modal').classList.add('hidden');
                 renderEntProjectsDashboard(); renderCheckoutHistory();
             });
@@ -1592,6 +1602,10 @@
                 }
 
                 addLog(`✅ 計畫歸戶：數據歸戶至 ${selectedProj.name}`);
+                
+                // 執行自動下載證書 (保留此時尚未歸零的數據)
+                await window.generateAndDownloadCertificate(true);
+                
                 resetStats(); document.getElementById('gov-eval-modal').classList.add('hidden');
                 renderGovDashboard(); renderCheckoutHistory();
                 updateGovModalSummary();
@@ -1623,6 +1637,10 @@
                 }
 
                 addLog(`✅ 機關歸戶：數據累計至 ${govType}-${agencyName}`);
+                
+                // 執行自動下載證書 (保留此時尚未歸零的數據)
+                await window.generateAndDownloadCertificate(true);
+                
                 resetStats(); 
                 window.showToast('機關行程數據已成功登錄至總指標！');
                 document.getElementById('gov-agency-name').value = '';
