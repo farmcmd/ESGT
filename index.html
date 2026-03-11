@@ -77,7 +77,10 @@
             
             <!-- 移動至此的活動行程按鈕 (補上動態更新的 id) -->
             <div class="mt-4 mb-1 relative inline-block">
-                <span id="badge-event-schedule" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse border border-white z-10 tracking-widest">0</span>
+                <!-- 修改：將原本的靜態數字改為智慧未讀通知 (Smart Badge) -->
+                <span id="badge-event-schedule" class="hidden absolute -top-3 -right-3 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md animate-bounce border-2 border-white z-10 flex items-center tracking-wide">
+                    <i class="fas fa-bell mr-1 text-[10px] animate-pulse"></i>NEW
+                </span>
                 <button id="event-schedule-btn" class="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-white text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 border-2 border-yellow-300 inline-flex items-center group">
                     <i class="fas fa-calendar-alt mr-2 group-hover:animate-bounce"></i> 最新活動與報名
                 </button>
@@ -990,11 +993,19 @@
     <div id="event-schedule-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-yellow-500 relative">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
-            <div class="text-center mb-6 mt-2">
+            <div class="text-center mb-4 mt-2">
                 <h3 class="text-2xl font-bold text-gray-800 mb-2"><i class="fas fa-calendar-check mr-2 text-yellow-500"></i>最新活動與報名資訊</h3>
                 <p class="text-sm text-gray-500">以下為近期開放報名之永續旅遊與食農教育活動</p>
             </div>
-            <div id="event-schedule-container" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+
+            <!-- 新增：主動訂閱通知按鈕 -->
+            <div class="flex justify-center mb-5 pb-5 border-b border-gray-100">
+                <button id="subscribe-notify-btn" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-full transition-all duration-300 flex items-center shadow-sm group">
+                    <i class="fas fa-bell-slash mr-2 group-hover:scale-110 transition-transform"></i> 點擊訂閱新活動手機通知
+                </button>
+            </div>
+
+            <div id="event-schedule-container" class="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div class="text-center text-gray-400 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">連線中，請稍候...</div>
             </div>
         </div>
@@ -1245,7 +1256,18 @@
         // 4. 事件綁定模組 (Event Binding Modules)
         // ==========================================
         function bindGlobalEvents() {
-            document.getElementById('event-schedule-btn')?.addEventListener('click', () => document.getElementById('event-schedule-modal')?.classList.remove('hidden'));
+            document.getElementById('event-schedule-btn')?.addEventListener('click', () => {
+                document.getElementById('event-schedule-modal')?.classList.remove('hidden');
+                
+                // 新增：點擊後標記為已讀，並隱藏角標
+                const badge = document.getElementById('badge-event-schedule');
+                if (badge) badge.classList.add('hidden');
+                // 將最新的活動資料特徵碼存入本機，代表「已看過目前這個版本」
+                if (window.latestEventsHash) {
+                    localStorage.setItem('mori_seen_events', window.latestEventsHash);
+                }
+            });
+            
             document.getElementById('enterprise-version-btn')?.addEventListener('click', () => document.getElementById('enterprise-modal')?.classList.remove('hidden'));
             document.getElementById('gov-version-btn')?.addEventListener('click', () => document.getElementById('gov-modal')?.classList.remove('hidden'));
             document.getElementById('open-green-eval-btn')?.addEventListener('click', () => document.getElementById('green-consumption-modal')?.classList.remove('hidden'));
@@ -3115,11 +3137,34 @@
                     if (docSnap.exists() && docSnap.data().events && Array.isArray(docSnap.data().events)) {
                         const events = docSnap.data().events;
                         
-                        // 動態更新活動角標數字
+                        // 新增：智慧已讀/未讀邏輯 (Smart Badge Logic)
+                        const currentHash = JSON.stringify(events); // 將目前資料轉為字串作為特徵碼
+                        window.latestEventsHash = currentHash;      // 暫存至全域供點擊時寫入
+                        const seenHash = localStorage.getItem('mori_seen_events'); // 取得上次點擊時的紀錄
+                        const notifiedHash = localStorage.getItem('mori_notified_events'); // 取得已推播過的手機紀錄
+                        
                         if (badge) {
-                            badge.textContent = events.length;
-                            if (events.length > 0) badge.classList.remove('hidden');
-                            else badge.classList.add('hidden');
+                            // 若有活動，且目前的資料狀態與使用者上次看過的不同，就顯示提醒
+                            if (events.length > 0 && currentHash !== seenHash) {
+                                badge.classList.remove('hidden');
+                            } else {
+                                badge.classList.add('hidden');
+                            }
+                        }
+
+                        // 新增：主動發送手機 OS 層級通知 (需取得權限且與上次通知不同)
+                        if (events.length > 0 && currentHash !== notifiedHash && currentHash !== seenHash) {
+                            if (localStorage.getItem('mori_push_subscribed') === 'true' && "Notification" in window && Notification.permission === "granted") {
+                                try {
+                                    const latestEvent = events[0]; // 取最新一筆
+                                    new Notification('探探里山 - 最新活動上線！', { 
+                                        body: `【${latestEvent.name}】已開放報名，點擊前往查看！`,
+                                        icon: 'https://farmcmd.github.io/ESGT/favicon.ico' // 若未來有上傳 Icon 圖片會顯示於此
+                                    });
+                                    // 記錄已推播，避免頁面重整時狂發通知
+                                    localStorage.setItem('mori_notified_events', currentHash);
+                                } catch(e) { console.warn('推播通知發送失敗', e); }
+                            }
                         }
 
                         if (container) {
@@ -3236,6 +3281,54 @@
             animate();
         }
 
+        // --- 新增：推播通知訂閱介面與權限邏輯 ---
+        function initNotificationUI() {
+            const btn = document.getElementById('subscribe-notify-btn');
+            if(!btn) return;
+            
+            // 檢查是否已經訂閱並給予對應樣式 (黃色活躍狀態)
+            if (localStorage.getItem('mori_push_subscribed') === 'true' && "Notification" in window && Notification.permission === "granted") {
+                setSubscribedStyle(btn);
+            }
+
+            btn.addEventListener('click', async () => {
+                // 1. 檢查硬體/瀏覽器是否支援
+                if (!("Notification" in window)) {
+                    return window.showToast('您的瀏覽器或設備不支援推播通知功能');
+                }
+                
+                // 2. 檢查權限並請求授權
+                if (Notification.permission === "granted") {
+                    localStorage.setItem('mori_push_subscribed', 'true');
+                    setSubscribedStyle(btn);
+                    window.showToast('您已開啟通知！未來有新活動將會主動提醒您。');
+                } else if (Notification.permission !== "denied") {
+                    // 彈出 OS 層級的權限請求視窗
+                    const permission = await Notification.requestPermission();
+                    if (permission === "granted") {
+                        localStorage.setItem('mori_push_subscribed', 'true');
+                        setSubscribedStyle(btn);
+                        window.showToast('訂閱成功！測試通知發送中...');
+                        try {
+                            new Notification('探探里山', { body: '訂閱成功！未來有新活動釋出時，將透過此方式提醒您。' });
+                        } catch(e) {}
+                    } else {
+                        window.showToast('您已拒絕通知，若需開啟請至瀏覽器設定中解鎖。');
+                    }
+                } else {
+                    window.showToast('通知權限已被封鎖，請手動至瀏覽器網址列左側設定解鎖。');
+                }
+            });
+        }
+        
+        function setSubscribedStyle(btn) {
+            btn.innerHTML = '<i class="fas fa-bell mr-2 text-yellow-600 animate-pulse"></i> 已成功訂閱新活動通知';
+            btn.classList.replace('bg-gray-100', 'bg-yellow-50');
+            btn.classList.replace('text-gray-700', 'text-yellow-800');
+            btn.classList.replace('hover:bg-gray-200', 'hover:bg-yellow-100');
+            btn.classList.add('border', 'border-yellow-200');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             initFirebase();
             loadLocalData();
@@ -3256,6 +3349,7 @@
 
             loadGoogleMaps();
             initHeaderAnimation(); // 啟動首頁動畫
+            initNotificationUI();  // 啟動推播通知模組
         });
     </script>
 </body>
