@@ -3178,13 +3178,38 @@
                                     // 判斷是否為網址
                                     const urlPattern = /^(https?:\/\/[^\s]+)/;
                                     if(urlPattern.test(ev.regMethod)) {
-                                        regHtml = `<div class="text-sm text-gray-600 mt-2.5 flex items-center border-t border-gray-100 pt-2.5"><i class="fas fa-paper-plane w-4 text-center text-blue-500 mr-1.5"></i> <span class="font-bold mr-2">報名資訊:</span> <a href="${ev.regMethod}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-mori-forest text-white text-xs font-bold rounded-lg hover:bg-mori-dark transition shadow-sm"><i class="fas fa-external-link-alt mr-1.5"></i> 前往報名連結</a></div>`;
+                                        regHtml = `<div class="text-sm text-gray-600 flex items-center"><i class="fas fa-paper-plane w-4 text-center text-blue-500 mr-1.5"></i> <span class="font-bold mr-2">報名資訊:</span> <a href="${ev.regMethod}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-mori-forest text-white text-xs font-bold rounded-lg hover:bg-mori-dark transition shadow-sm"><i class="fas fa-external-link-alt mr-1.5"></i> 前往報名連結</a></div>`;
                                     } else {
                                         // 若不是網址，做基礎 XSS 防護後顯示文字
                                         let safeMethod = ev.regMethod.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag));
-                                        regHtml = `<div class="text-sm text-gray-600 mt-2.5 flex items-start border-t border-gray-100 pt-2.5"><i class="fas fa-info-circle w-4 text-center text-blue-500 mr-1.5 mt-0.5"></i> <span class="font-bold mr-2 shrink-0">報名資訊:</span> <span class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 text-xs font-bold leading-relaxed break-words">${safeMethod}</span></div>`;
+                                        regHtml = `<div class="text-sm text-gray-600 flex items-start"><i class="fas fa-info-circle w-4 text-center text-blue-500 mr-1.5 mt-0.5"></i> <span class="font-bold mr-2 shrink-0">報名資訊:</span> <span class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 text-xs font-bold leading-relaxed break-words">${safeMethod}</span></div>`;
                                     }
                                 }
+
+                                // 產生 Google Calendar 一鍵加入連結
+                                let datesParam = '';
+                                try {
+                                    // 嘗試解析日期格式 (例如 2026/03/26 或 2026-03-26)，轉換為 Google 日曆所需格式
+                                    const dateParts = ev.date.match(/(\d{4})[^\d](\d{1,2})[^\d](\d{1,2})/);
+                                    if (dateParts) {
+                                        const yyyy = dateParts[1];
+                                        const mm = dateParts[2].padStart(2, '0');
+                                        const dd = dateParts[3].padStart(2, '0');
+                                        // Google 全天活動的結束日期必須是隔天
+                                        const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+                                        d.setDate(d.getDate() + 1);
+                                        datesParam = `&dates=${yyyy}${mm}${dd}/${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+                                    }
+                                } catch(e) {}
+                                
+                                const textParam = encodeURIComponent(ev.name || '探探里山活動');
+                                const locationParam = ev.location ? `&location=${encodeURIComponent(ev.location)}` : '';
+                                // 新增：將活動名稱 (ev.name) 加入 detailsText 中
+                                const detailsText = `活動名稱: ${ev.name || '探探里山活動'}\n執行單位: ${ev.executor || '無'}\n報名資訊: ${ev.regMethod || '請見活動頁面'}\n\n👉 探探里山平台: https://farmcmd.github.io/ESGT/`;
+                                const detailsParam = `&details=${encodeURIComponent(detailsText)}`;
+                                const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${textParam}${datesParam}${locationParam}${detailsParam}`;
+
+                                const gCalBtn = `<a href="${gCalUrl}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-[11px] font-bold rounded-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition shadow-sm shrink-0"><i class="far fa-calendar-plus mr-1.5 text-blue-500"></i>加入行事曆</a>`;
 
                                 return `
                                 <div class="bg-white border border-gray-200 p-4 md:p-5 rounded-xl shadow-sm hover:shadow-md transition relative overflow-hidden">
@@ -3196,7 +3221,11 @@
                                     <p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-sitemap w-4 text-center text-gray-400 mr-1.5"></i> <span class="font-bold mr-1">執行單位:</span> ${ev.executor}</p>
                                     ${ev.location ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-map-marker-alt w-4 text-center text-red-400 mr-1.5"></i> <span class="font-bold mr-1">活動地點:</span> ${ev.location}</p>` : ''}
                                     ${ev.deadline ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-hourglass-half w-4 text-center text-orange-500 mr-1.5"></i> <span class="font-bold mr-1">報名截止:</span> <span class="text-orange-600 font-bold">${ev.deadline}</span></p>` : ''}
-                                    ${regHtml}
+                                    
+                                    <div class="mt-3 pt-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                                        <div class="flex-1">${regHtml}</div>
+                                        ${gCalBtn}
+                                    </div>
                                 </div>
                                 `;
                             }).join('');
