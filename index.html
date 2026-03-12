@@ -998,10 +998,13 @@
                 <p class="text-sm text-gray-500">以下為近期開放報名之永續旅遊與食農教育活動</p>
             </div>
 
-            <!-- 新增：主動訂閱通知按鈕 -->
-            <div class="flex justify-center mb-5 pb-5 border-b border-gray-100">
+            <!-- 修改：將訂閱按鈕與新增的分享按鈕整合為操作樞紐 -->
+            <div class="flex flex-wrap justify-center gap-3 mb-5 pb-5 border-b border-gray-100">
                 <button id="subscribe-notify-btn" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-full transition-all duration-300 flex items-center shadow-sm group">
-                    <i class="fas fa-bell-slash mr-2 group-hover:scale-110 transition-transform"></i> 點擊訂閱新活動手機通知
+                    <i class="fas fa-bell-slash mr-2 group-hover:scale-110 transition-transform"></i> 點擊訂閱通知
+                </button>
+                <button id="share-events-btn" class="px-5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-sm font-bold rounded-full transition-all duration-300 flex items-center shadow-sm group">
+                    <i class="fas fa-share-alt mr-2 group-hover:scale-110 transition-transform"></i> 複製活動分享連結
                 </button>
             </div>
 
@@ -1265,6 +1268,45 @@
                 // 將最新的活動資料特徵碼存入本機，代表「已看過目前這個版本」
                 if (window.latestEventsHash) {
                     localStorage.setItem('mori_seen_events', window.latestEventsHash);
+                }
+            });
+
+            // 優化：升級版專屬分享連結複製功能 (雙重防呆機制)
+            document.getElementById('share-events-btn')?.addEventListener('click', () => {
+                // 判斷目前是否在測試預覽環境。若是，則強制替換為正式版 GitHub Pages 網址
+                let baseUrl = window.location.origin + window.location.pathname;
+                if (baseUrl.includes('.goog')) {
+                    baseUrl = 'https://farmcmd.github.io/ESGT/';
+                }
+                
+                // 確保網址格式正確，避免產生錯誤的連結
+                const shareUrl = baseUrl.endsWith('/') ? baseUrl + '?modal=events' : baseUrl + '/?modal=events';
+                
+                // 優先使用現代的 Clipboard API
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        window.showToast('🔗 已複製正式分享連結！快去分享給好友吧');
+                    }).catch(() => fallbackCopy(shareUrl));
+                } else {
+                    fallbackCopy(shareUrl);
+                }
+
+                function fallbackCopy(text) {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-9999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        window.showToast('🔗 已複製正式分享連結！快去分享給好友吧');
+                    } catch (err) {
+                        // 若瀏覽器強力阻擋自動複製，直接彈出原生視窗讓使用者輕鬆手動複製
+                        window.prompt("請手動複製以下網址分享：", text);
+                    }
+                    document.body.removeChild(textArea);
                 }
             });
             
@@ -3379,6 +3421,27 @@
             loadGoogleMaps();
             initHeaderAnimation(); // 啟動首頁動畫
             initNotificationUI();  // 啟動推播通知模組
+
+            // 優化：處理 URL 參數，實現 Deep Linking (深度連結)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('modal') === 'events') {
+                // 新增 100ms 視覺安全延遲：確保網頁 CSS 完全載入後再強制解鎖視窗，避免部分手機瀏覽器畫面卡死
+                setTimeout(() => {
+                    const modal = document.getElementById('event-schedule-modal');
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                        
+                        // 延遲 1.5 秒等待 Firebase 活動資料確實載入後，再執行消除紅點與標記已讀的邏輯
+                        setTimeout(() => {
+                            const badge = document.getElementById('badge-event-schedule');
+                            if (badge) badge.classList.add('hidden');
+                            if (window.latestEventsHash) {
+                                localStorage.setItem('mori_seen_events', window.latestEventsHash);
+                            }
+                        }, 1500); 
+                    }
+                }, 100);
+            }
         });
     </script>
 </body>
