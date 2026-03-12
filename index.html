@@ -306,6 +306,29 @@
                      </div>
                  </div>
              </div>
+
+             <!-- 新增：直接顯示於頁面底部的「最新活動與報名資訊」區塊 -->
+             <div id="latest-events-section" class="mt-8 bg-white p-6 md:p-8 rounded-2xl shadow-md border-t-8 border-yellow-400 scroll-mt-6">
+                 <div class="text-center mb-6">
+                     <h3 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2"><i class="fas fa-calendar-check mr-2 text-yellow-500"></i>最新活動與報名資訊</h3>
+                     <p class="text-sm text-gray-500">把握機會，參與近期的永續旅遊與食農教育活動</p>
+                 </div>
+                 
+                 <!-- 整合訂閱與專屬分享按鈕 -->
+                 <div class="flex flex-wrap justify-center gap-3 mb-6 pb-6 border-b border-gray-100">
+                     <button id="inline-subscribe-notify-btn" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-full transition-all duration-300 flex items-center shadow-sm group">
+                         <i class="fas fa-bell-slash mr-2 group-hover:scale-110 transition-transform"></i> 點擊訂閱通知
+                     </button>
+                     <button id="inline-share-events-btn" class="px-5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-sm font-bold rounded-full transition-all duration-300 flex items-center shadow-sm group">
+                         <i class="fas fa-link mr-2 group-hover:scale-110 transition-transform"></i> 複製活動專屬連結
+                     </button>
+                 </div>
+
+                 <!-- 活動卡片列表 (利用 Grid 排版，並加上 scroll-mt 確保滾動時上方保留呼吸空間) -->
+                 <div id="inline-event-schedule-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 scroll-mt-24">
+                     <div class="col-span-full text-center text-gray-400 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">連線中，請稍候...</div>
+                 </div>
+             </div>
         </section>
 
         <!-- ======================================================== -->
@@ -1271,43 +1294,45 @@
                 }
             });
 
-            // 優化：升級版專屬分享連結複製功能 (雙重防呆機制)
-            document.getElementById('share-events-btn')?.addEventListener('click', () => {
-                // 判斷目前是否在測試預覽環境。若是，則強制替換為正式版 GitHub Pages 網址
-                let baseUrl = window.location.origin + window.location.pathname;
-                if (baseUrl.includes('.goog')) {
-                    baseUrl = 'https://farmcmd.github.io/ESGT/';
+            // 優化：升級版專屬分享連結複製功能 (支援 Modal 內與底部區塊的兩顆按鈕)
+            function fallbackCopy(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    window.showToast('🔗 已複製正式分享連結！快去分享給好友吧');
+                } catch (err) {
+                    window.prompt("請手動複製以下網址分享：", text);
                 }
-                
-                // 確保網址格式正確，避免產生錯誤的連結
-                const shareUrl = baseUrl.endsWith('/') ? baseUrl + '?modal=events' : baseUrl + '/?modal=events';
-                
-                // 優先使用現代的 Clipboard API
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        window.showToast('🔗 已複製正式分享連結！快去分享給好友吧');
-                    }).catch(() => fallbackCopy(shareUrl));
-                } else {
-                    fallbackCopy(shareUrl);
-                }
+                document.body.removeChild(textArea);
+            }
 
-                function fallbackCopy(text) {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = text;
-                    textArea.style.position = "fixed";
-                    textArea.style.left = "-9999px";
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        window.showToast('🔗 已複製正式分享連結！快去分享給好友吧');
-                    } catch (err) {
-                        // 若瀏覽器強力阻擋自動複製，直接彈出原生視窗讓使用者輕鬆手動複製
-                        window.prompt("請手動複製以下網址分享：", text);
+            const shareBtns = [document.getElementById('share-events-btn'), document.getElementById('inline-share-events-btn')];
+            shareBtns.forEach(btn => {
+                if(!btn) return;
+                btn.addEventListener('click', () => {
+                    let baseUrl = window.location.origin + window.location.pathname;
+                    if (baseUrl.includes('.goog')) {
+                        baseUrl = 'https://farmcmd.github.io/ESGT';
                     }
-                    document.body.removeChild(textArea);
-                }
+                    
+                    // 修復：確保網址乾淨，移除多餘的斜線或 index.html，並確實接上原生錨點
+                    baseUrl = baseUrl.replace(/\/index\.html$/, '').replace(/\/$/, '');
+                    const shareUrl = baseUrl + '/#latest-events-section';
+                    
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(shareUrl).then(() => {
+                            window.showToast('🔗 已複製正式分享連結！快去分享給好友吧');
+                        }).catch(() => fallbackCopy(shareUrl));
+                    } else {
+                        fallbackCopy(shareUrl);
+                    }
+                });
             });
             
             document.getElementById('enterprise-version-btn')?.addEventListener('click', () => document.getElementById('enterprise-modal')?.classList.remove('hidden'));
@@ -3174,6 +3199,7 @@
                 const scheduleRef = doc(db, 'system_messages', 'event_schedule');
                 onSnapshot(scheduleRef, (docSnap) => {
                     const container = document.getElementById('event-schedule-container');
+                    const inlineContainer = document.getElementById('inline-event-schedule-container');
                     const badge = document.getElementById('badge-event-schedule');
                     
                     if (docSnap.exists() && docSnap.data().events && Array.isArray(docSnap.data().events)) {
@@ -3209,35 +3235,31 @@
                             }
                         }
 
-                        if (container) {
-                            if (events.length === 0) {
-                                container.innerHTML = '<div class="text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">目前尚無近期活動，敬請留意後續公告！</div>';
-                                return;
-                            }
-                            container.innerHTML = events.map(ev => {
+                        let eventsHtml = '<div class="col-span-full text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">目前尚無近期活動，敬請留意後續公告！</div>';
+
+                        if (events.length > 0) {
+                            eventsHtml = events.map(ev => {
                                 let regHtml = '';
                                 if (ev.regMethod) {
                                     // 判斷是否為網址
                                     const urlPattern = /^(https?:\/\/[^\s]+)/;
                                     if(urlPattern.test(ev.regMethod)) {
-                                        regHtml = `<div class="text-sm text-gray-600 flex items-center"><i class="fas fa-paper-plane w-4 text-center text-blue-500 mr-1.5"></i> <span class="font-bold mr-2">報名資訊:</span> <a href="${ev.regMethod}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-mori-forest text-white text-xs font-bold rounded-lg hover:bg-mori-dark transition shadow-sm"><i class="fas fa-external-link-alt mr-1.5"></i> 前往報名連結</a></div>`;
+                                        regHtml = `<div class="text-sm text-gray-600 flex items-center"><i class="fas fa-paper-plane w-4 text-center text-blue-500 mr-1.5"></i> <span class="font-bold mr-2">報名:</span> <a href="${ev.regMethod}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-mori-forest text-white text-xs font-bold rounded-lg hover:bg-mori-dark transition shadow-sm"><i class="fas fa-external-link-alt mr-1.5"></i> 前往報名連結</a></div>`;
                                     } else {
                                         // 若不是網址，做基礎 XSS 防護後顯示文字
                                         let safeMethod = ev.regMethod.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag));
-                                        regHtml = `<div class="text-sm text-gray-600 flex items-start"><i class="fas fa-info-circle w-4 text-center text-blue-500 mr-1.5 mt-0.5"></i> <span class="font-bold mr-2 shrink-0">報名資訊:</span> <span class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 text-xs font-bold leading-relaxed break-words">${safeMethod}</span></div>`;
+                                        regHtml = `<div class="text-sm text-gray-600 flex items-start"><i class="fas fa-info-circle w-4 text-center text-blue-500 mr-1.5 mt-0.5"></i> <span class="font-bold mr-2 shrink-0">報名:</span> <span class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 text-xs font-bold leading-relaxed break-words">${safeMethod}</span></div>`;
                                     }
                                 }
 
                                 // 產生 Google Calendar 一鍵加入連結
                                 let datesParam = '';
                                 try {
-                                    // 嘗試解析日期格式 (例如 2026/03/26 或 2026-03-26)，轉換為 Google 日曆所需格式
                                     const dateParts = ev.date.match(/(\d{4})[^\d](\d{1,2})[^\d](\d{1,2})/);
                                     if (dateParts) {
                                         const yyyy = dateParts[1];
                                         const mm = dateParts[2].padStart(2, '0');
                                         const dd = dateParts[3].padStart(2, '0');
-                                        // Google 全天活動的結束日期必須是隔天
                                         const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
                                         d.setDate(d.getDate() + 1);
                                         datesParam = `&dates=${yyyy}${mm}${dd}/${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
@@ -3246,24 +3268,25 @@
                                 
                                 const textParam = encodeURIComponent(ev.name || '探探里山活動');
                                 const locationParam = ev.location ? `&location=${encodeURIComponent(ev.location)}` : '';
-                                // 新增：將活動名稱 (ev.name) 加入 detailsText 中
                                 const detailsText = `活動名稱: ${ev.name || '探探里山活動'}\n執行單位: ${ev.executor || '無'}\n報名資訊: ${ev.regMethod || '請見活動頁面'}\n\n👉 探探里山平台: https://farmcmd.github.io/ESGT/`;
                                 const detailsParam = `&details=${encodeURIComponent(detailsText)}`;
                                 const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${textParam}${datesParam}${locationParam}${detailsParam}`;
 
                                 const gCalBtn = `<a href="${gCalUrl}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-[11px] font-bold rounded-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition shadow-sm shrink-0"><i class="far fa-calendar-plus mr-1.5 text-blue-500"></i>加入行事曆</a>`;
 
+                                // 優化卡片：加上 h-full flex flex-col justify-between 確保在 Grid 排版時按鈕都能切齊底部
                                 return `
-                                <div class="bg-white border border-gray-200 p-4 md:p-5 rounded-xl shadow-sm hover:shadow-md transition relative overflow-hidden">
+                                <div class="bg-white border border-gray-200 p-4 md:p-5 rounded-xl shadow-sm hover:shadow-md transition relative overflow-hidden h-full flex flex-col justify-between">
                                     <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
-                                    <div class="flex flex-col md:flex-row justify-between md:items-center mb-3 gap-2">
-                                        <h4 class="font-bold text-lg text-mori-dark leading-tight">${ev.name}</h4>
-                                        <span class="bg-yellow-50 text-yellow-800 text-xs font-bold px-2.5 py-1 rounded border border-yellow-200 whitespace-nowrap w-fit"><i class="fas fa-clock mr-1"></i> 活動日期: ${ev.date}</span>
+                                    <div>
+                                        <div class="flex flex-col md:flex-row justify-between md:items-start mb-3 gap-2">
+                                            <h4 class="font-bold text-lg text-mori-dark leading-tight">${ev.name}</h4>
+                                            <span class="bg-yellow-50 text-yellow-800 text-[11px] font-bold px-2.5 py-1 rounded border border-yellow-200 whitespace-nowrap w-fit shrink-0"><i class="fas fa-clock mr-1"></i> ${ev.date}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-sitemap w-4 text-center text-gray-400 mr-1.5"></i> <span class="font-bold mr-1">執行單位:</span> ${ev.executor}</p>
+                                        ${ev.location ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-map-marker-alt w-4 text-center text-red-400 mr-1.5"></i> <span class="font-bold mr-1">活動地點:</span> ${ev.location}</p>` : ''}
+                                        ${ev.deadline ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-hourglass-half w-4 text-center text-orange-500 mr-1.5"></i> <span class="font-bold mr-1">報名截止:</span> <span class="text-orange-600 font-bold">${ev.deadline}</span></p>` : ''}
                                     </div>
-                                    <p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-sitemap w-4 text-center text-gray-400 mr-1.5"></i> <span class="font-bold mr-1">執行單位:</span> ${ev.executor}</p>
-                                    ${ev.location ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-map-marker-alt w-4 text-center text-red-400 mr-1.5"></i> <span class="font-bold mr-1">活動地點:</span> ${ev.location}</p>` : ''}
-                                    ${ev.deadline ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-hourglass-half w-4 text-center text-orange-500 mr-1.5"></i> <span class="font-bold mr-1">報名截止:</span> <span class="text-orange-600 font-bold">${ev.deadline}</span></p>` : ''}
-                                    
                                     <div class="mt-3 pt-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
                                         <div class="flex-1">${regHtml}</div>
                                         ${gCalBtn}
@@ -3271,9 +3294,42 @@
                                 </div>
                                 `;
                             }).join('');
-                        } else {
-                            container.innerHTML = '<div class="text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">目前尚無近期活動，敬請留意後續公告！</div>';
                         }
+                        
+                        // 同時更新「上方彈窗」與「底部實體區塊」
+                        if (container) container.innerHTML = eventsHtml;
+                        if (inlineContainer) inlineContainer.innerHTML = eventsHtml;
+                        
+                        // 【核心修復】：解決 Firebase 快取導致的過早滾動，並精準定位到「卡片區塊」
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if (urlParams.get('modal') === 'events' || window.location.hash.includes('latest-events')) {
+                            // 允許在網頁載入的前 3 秒內（即使是第二次觸發 onSnapshot）也能重新校正滾動位置
+                            if (!window.hasScrolledToEvents || performance.now() < 3000) {
+                                window.hasScrolledToEvents = true; 
+                                setTimeout(() => {
+                                    const modal = document.getElementById('event-schedule-modal');
+                                    if(modal) modal.classList.add('hidden'); // 強制關閉舊版參數可能觸發的彈窗
+
+                                    // 目標改為卡片容器，確保卡片完整顯示在視窗內
+                                    const cardsContainer = document.getElementById('inline-event-schedule-container');
+                                    const section = document.getElementById('latest-events-section');
+                                    
+                                    if (cardsContainer && section) {
+                                        // 讓畫面精準滾動，使卡片容器置中
+                                        cardsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        
+                                        // 依然讓整個外框閃爍以吸引目光
+                                        section.classList.add('ring-4', 'ring-yellow-400', 'scale-[1.02]', 'transition-all', 'duration-500');
+                                        setTimeout(() => section.classList.remove('ring-4', 'ring-yellow-400', 'scale-[1.02]'), 2000);
+                                    }
+                                }, 500); // 延長緩衝時間至 0.5 秒，確保資料與高度完全撐開
+                            }
+                        }
+
+                    } else {
+                        const emptyHtml = '<div class="col-span-full text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">目前尚無近期活動，敬請留意後續公告！</div>';
+                        if (container) container.innerHTML = emptyHtml;
+                        if (inlineContainer) inlineContainer.innerHTML = emptyHtml;
                     }
                 });
 
@@ -3354,41 +3410,45 @@
 
         // --- 新增：推播通知訂閱介面與權限邏輯 ---
         function initNotificationUI() {
-            const btn = document.getElementById('subscribe-notify-btn');
-            if(!btn) return;
+            // 同時綁定彈窗內與底部區塊的訂閱按鈕
+            const btns = [document.getElementById('subscribe-notify-btn'), document.getElementById('inline-subscribe-notify-btn')];
             
-            // 檢查是否已經訂閱並給予對應樣式 (黃色活躍狀態)
-            if (localStorage.getItem('mori_push_subscribed') === 'true' && "Notification" in window && Notification.permission === "granted") {
-                setSubscribedStyle(btn);
-            }
-
-            btn.addEventListener('click', async () => {
-                // 1. 檢查硬體/瀏覽器是否支援
-                if (!("Notification" in window)) {
-                    return window.showToast('您的瀏覽器或設備不支援推播通知功能');
-                }
+            btns.forEach(btn => {
+                if(!btn) return;
                 
-                // 2. 檢查權限並請求授權
-                if (Notification.permission === "granted") {
-                    localStorage.setItem('mori_push_subscribed', 'true');
+                // 檢查是否已經訂閱並給予對應樣式 (黃色活躍狀態)
+                if (localStorage.getItem('mori_push_subscribed') === 'true' && "Notification" in window && Notification.permission === "granted") {
                     setSubscribedStyle(btn);
-                    window.showToast('您已開啟通知！未來有新活動將會主動提醒您。');
-                } else if (Notification.permission !== "denied") {
-                    // 彈出 OS 層級的權限請求視窗
-                    const permission = await Notification.requestPermission();
-                    if (permission === "granted") {
-                        localStorage.setItem('mori_push_subscribed', 'true');
-                        setSubscribedStyle(btn);
-                        window.showToast('訂閱成功！測試通知發送中...');
-                        try {
-                            new Notification('探探里山', { body: '訂閱成功！未來有新活動釋出時，將透過此方式提醒您。' });
-                        } catch(e) {}
-                    } else {
-                        window.showToast('您已拒絕通知，若需開啟請至瀏覽器設定中解鎖。');
-                    }
-                } else {
-                    window.showToast('通知權限已被封鎖，請手動至瀏覽器網址列左側設定解鎖。');
                 }
+
+                btn.addEventListener('click', async () => {
+                    // 1. 檢查硬體/瀏覽器是否支援
+                    if (!("Notification" in window)) {
+                        return window.showToast('您的瀏覽器或設備不支援推播通知功能');
+                    }
+                    
+                    // 2. 檢查權限並請求授權
+                    if (Notification.permission === "granted") {
+                        localStorage.setItem('mori_push_subscribed', 'true');
+                        btns.forEach(b => setSubscribedStyle(b));
+                        window.showToast('您已開啟通知！未來有新活動將會主動提醒您。');
+                    } else if (Notification.permission !== "denied") {
+                        // 彈出 OS 層級的權限請求視窗
+                        const permission = await Notification.requestPermission();
+                        if (permission === "granted") {
+                            localStorage.setItem('mori_push_subscribed', 'true');
+                            btns.forEach(b => setSubscribedStyle(b));
+                            window.showToast('訂閱成功！測試通知發送中...');
+                            try {
+                                new Notification('探探里山', { body: '訂閱成功！未來有新活動釋出時，將透過此方式提醒您。' });
+                            } catch(e) {}
+                        } else {
+                            window.showToast('您已拒絕通知，若需開啟請至瀏覽器設定中解鎖。');
+                        }
+                    } else {
+                        window.showToast('通知權限已被封鎖，請手動至瀏覽器網址列左側設定解鎖。');
+                    }
+                });
             });
         }
         
@@ -3421,27 +3481,6 @@
             loadGoogleMaps();
             initHeaderAnimation(); // 啟動首頁動畫
             initNotificationUI();  // 啟動推播通知模組
-
-            // 優化：處理 URL 參數，實現 Deep Linking (深度連結)
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('modal') === 'events') {
-                // 新增 100ms 視覺安全延遲：確保網頁 CSS 完全載入後再強制解鎖視窗，避免部分手機瀏覽器畫面卡死
-                setTimeout(() => {
-                    const modal = document.getElementById('event-schedule-modal');
-                    if (modal) {
-                        modal.classList.remove('hidden');
-                        
-                        // 延遲 1.5 秒等待 Firebase 活動資料確實載入後，再執行消除紅點與標記已讀的邏輯
-                        setTimeout(() => {
-                            const badge = document.getElementById('badge-event-schedule');
-                            if (badge) badge.classList.add('hidden');
-                            if (window.latestEventsHash) {
-                                localStorage.setItem('mori_seen_events', window.latestEventsHash);
-                            }
-                        }, 1500); 
-                    }
-                }, 100);
-            }
         });
     </script>
 </body>
