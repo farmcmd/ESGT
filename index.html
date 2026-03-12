@@ -55,6 +55,25 @@
             opacity: 0; transition: all 0.3s ease; pointer-events: none; text-align: center; white-space: nowrap;
         }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* Google 翻譯套件美化與防跑版 */
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0px !important; }
+        .goog-te-combo {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #2C3E28;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 9999px;
+            padding: 2px 6px; /* 優化：縮減下拉選單的上下左右留白 */
+            font-size: 12px;  /* 保持字體大小不變，確保閱讀清晰 */
+            font-weight: bold;
+            outline: none;
+            cursor: pointer;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        #google_translate_element { display: flex; align-items: center; }
+        .goog-logo-link { display: none !important; }
+        .goog-te-gadget { color: transparent !important; font-size: 0 !important; }
     </style>
 </head>
 <body class="font-sans antialiased">
@@ -70,6 +89,12 @@
     </div>
 
     <header class="bg-gradient-to-b from-mori-forest to-mori-sage text-white p-8 md:p-12 text-center shadow-lg relative min-h-[300px] flex flex-col justify-center items-center">
+        <!-- 優化：縮減網頁翻譯工具的外層留白 (px-2 py-1) 與間距 (gap-1.5) -->
+        <div class="absolute top-4 right-4 z-[100] flex items-center gap-1.5 bg-black/20 backdrop-blur-sm px-2 py-1 rounded-full border border-white/20 shadow-sm">
+            <i class="fas fa-language text-white/90 text-base mt-0.5"></i>
+            <div id="google_translate_element"></div>
+        </div>
+
         <canvas id="header-canvas"></canvas>
         <div class="header-content w-full max-w-4xl mx-auto">
             <h1 class="text-3xl md:text-5xl font-bold tracking-wide mb-2 drop-shadow-md">探探里山-永續旅遊</h1>
@@ -3483,5 +3508,18 @@
             initNotificationUI();  // 啟動推播通知模組
         });
     </script>
+
+    <!-- 新增：Google Translate 核心腳本 -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'zh-TW',
+                // 預設鎖定提供常見旅客語系，避免選單過長。若想開放全語系可將此行刪除
+                includedLanguages: 'en,ja,ko,vi,th,id,ms,zh-CN',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
