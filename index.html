@@ -3247,13 +3247,36 @@
                     const badge = document.getElementById('badge-event-schedule');
                     
                     if (docSnap.exists() && docSnap.data().events && Array.isArray(docSnap.data().events)) {
-                        // 新增：複製陣列並進行智慧日期排序 (升冪：即將發生的活動自動排在最上面)
+                        // 新增：提取判斷是否過期的共用函數，供排序與渲染共同使用
+                        const checkExpired = (dateStr) => {
+                            try {
+                                const dateParts = (dateStr || '').match(/(\d{4})[^\d](\d{1,2})[^\d](\d{1,2})/);
+                                if (dateParts) {
+                                    const yyyy = parseInt(dateParts[1]);
+                                    const mm = parseInt(dateParts[2]) - 1;
+                                    const dd = parseInt(dateParts[3]);
+                                    const eventDateObj = new Date(yyyy, mm, dd);
+                                    const todayObj = new Date();
+                                    todayObj.setHours(0,0,0,0); // 基準設為今日凌晨 0點
+                                    return eventDateObj < todayObj;
+                                }
+                            } catch(e) {}
+                            return false;
+                        };
+
+                        // 優化：雙層排序邏輯 (1. 進行中優先於已結束, 2. 日期由近到遠排列)
                         const events = [...docSnap.data().events].sort((a, b) => {
-                            // 將常見的分隔符(如 - 或 .) 替換為 '/' 以確保各品牌手機瀏覽器都能正確解析時間
+                            const expA = checkExpired(a.date);
+                            const expB = checkExpired(b.date);
+                            
+                            // 第一層：若狀態不同，已結束(true)的排後面
+                            if (expA !== expB) {
+                                return expA ? 1 : -1;
+                            }
+                            
+                            // 第二層：狀態相同時，依日期近到遠排 (升冪)
                             const dateA = new Date((a.date || '').replace(/[-.]/g, '/')).getTime();
                             const dateB = new Date((b.date || '').replace(/[-.]/g, '/')).getTime();
-                            
-                            // 若都能成功解析為時間，則由近到遠排列；若遇無法解析的文字則退回字串比對
                             if (!isNaN(dateA) && !isNaN(dateB)) {
                                 return dateA - dateB;
                             }
@@ -3329,20 +3352,8 @@
 
                                 const gCalBtn = `<a href="${gCalUrl}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-[11px] font-bold rounded-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition shadow-sm shrink-0"><i class="far fa-calendar-plus mr-1.5 text-blue-500"></i>加入行事曆</a>`;
 
-                                // 新增：判斷活動日期是否已經結束
-                                let isExpired = false;
-                                try {
-                                    const dateParts = ev.date.match(/(\d{4})[^\d](\d{1,2})[^\d](\d{1,2})/);
-                                    if (dateParts) {
-                                        const yyyy = parseInt(dateParts[1]);
-                                        const mm = parseInt(dateParts[2]) - 1;
-                                        const dd = parseInt(dateParts[3]);
-                                        const eventDateObj = new Date(yyyy, mm, dd);
-                                        const todayObj = new Date();
-                                        todayObj.setHours(0,0,0,0); // 基準設為今日凌晨 0點
-                                        isExpired = eventDateObj < todayObj;
-                                    }
-                                } catch(e) {}
+                                // 使用共用函數判斷活動日期是否已經結束
+                                let isExpired = checkExpired(ev.date);
 
                                 let statusBadge = '';
                                 let actionAreaHtml = '';
@@ -3366,7 +3377,7 @@
                                                 }, 500);
                                             }
                                         " class="w-full py-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:text-blue-700 font-bold rounded-lg text-sm transition flex items-center justify-center shadow-sm">
-                                            <i class="fas fa-chart-pie mr-2"></i>前往查詢永續成效
+                                            <i class="fas fa-chart-pie mr-2"></i>前往儀錶板查詢活動成效
                                         </button>
                                     `;
                                 } else {
