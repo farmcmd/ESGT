@@ -3247,7 +3247,18 @@
                     const badge = document.getElementById('badge-event-schedule');
                     
                     if (docSnap.exists() && docSnap.data().events && Array.isArray(docSnap.data().events)) {
-                        const events = docSnap.data().events;
+                        // 新增：複製陣列並進行智慧日期排序 (升冪：即將發生的活動自動排在最上面)
+                        const events = [...docSnap.data().events].sort((a, b) => {
+                            // 將常見的分隔符(如 - 或 .) 替換為 '/' 以確保各品牌手機瀏覽器都能正確解析時間
+                            const dateA = new Date((a.date || '').replace(/[-.]/g, '/')).getTime();
+                            const dateB = new Date((b.date || '').replace(/[-.]/g, '/')).getTime();
+                            
+                            // 若都能成功解析為時間，則由近到遠排列；若遇無法解析的文字則退回字串比對
+                            if (!isNaN(dateA) && !isNaN(dateB)) {
+                                return dateA - dateB;
+                            }
+                            return (a.date || '').localeCompare(b.date || '');
+                        });
                         
                         // 新增：智慧已讀/未讀邏輯 (Smart Badge Logic)
                         const currentHash = JSON.stringify(events); // 將目前資料轉為字串作為特徵碼
@@ -3318,22 +3329,70 @@
 
                                 const gCalBtn = `<a href="${gCalUrl}" target="_blank" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-[11px] font-bold rounded-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition shadow-sm shrink-0"><i class="far fa-calendar-plus mr-1.5 text-blue-500"></i>加入行事曆</a>`;
 
+                                // 新增：判斷活動日期是否已經結束
+                                let isExpired = false;
+                                try {
+                                    const dateParts = ev.date.match(/(\d{4})[^\d](\d{1,2})[^\d](\d{1,2})/);
+                                    if (dateParts) {
+                                        const yyyy = parseInt(dateParts[1]);
+                                        const mm = parseInt(dateParts[2]) - 1;
+                                        const dd = parseInt(dateParts[3]);
+                                        const eventDateObj = new Date(yyyy, mm, dd);
+                                        const todayObj = new Date();
+                                        todayObj.setHours(0,0,0,0); // 基準設為今日凌晨 0點
+                                        isExpired = eventDateObj < todayObj;
+                                    }
+                                } catch(e) {}
+
+                                let statusBadge = '';
+                                let actionAreaHtml = '';
+                                let indicatorColor = 'bg-yellow-400';
+                                let cardOpacity = '';
+
+                                if (isExpired) {
+                                    // 過期狀態：樣式轉為低調灰階，並替換為「查詢成效」導流按鈕
+                                    statusBadge = '<div class="absolute top-0 right-0 bg-gray-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-sm z-10"><i class="fas fa-flag-checkered mr-1"></i>活動已圓滿結束</div>';
+                                    indicatorColor = 'bg-gray-400';
+                                    cardOpacity = 'opacity-80 grayscale-[15%]';
+                                    actionAreaHtml = `
+                                        <button onclick="
+                                            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); 
+                                            const btn = document.getElementById('gov-version-btn');
+                                            if(btn) {
+                                                btn.scrollIntoView({behavior: 'smooth', block: 'center'}); 
+                                                setTimeout(() => {
+                                                    btn.classList.add('ring-4', 'ring-blue-400', 'scale-105', 'transition-all', 'duration-500');
+                                                    setTimeout(() => btn.classList.remove('ring-4', 'ring-blue-400', 'scale-105'), 2000);
+                                                }, 500);
+                                            }
+                                        " class="w-full py-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:text-blue-700 font-bold rounded-lg text-sm transition flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-chart-pie mr-2"></i>前往查詢永續成效
+                                        </button>
+                                    `;
+                                } else {
+                                    // 進行中狀態：保留原有的報名與行事曆按鈕
+                                    actionAreaHtml = `
+                                        <div class="flex-1">${regHtml}</div>
+                                        ${gCalBtn}
+                                    `;
+                                }
+
                                 // 優化卡片：加上 h-full flex flex-col justify-between 確保在 Grid 排版時按鈕都能切齊底部
                                 return `
-                                <div class="bg-white border border-gray-200 p-4 md:p-5 rounded-xl shadow-sm hover:shadow-md transition relative overflow-hidden h-full flex flex-col justify-between">
-                                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
+                                <div class="bg-white border border-gray-200 p-4 md:p-5 rounded-xl shadow-sm hover:shadow-md transition relative overflow-hidden h-full flex flex-col justify-between ${cardOpacity}">
+                                    ${statusBadge}
+                                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${indicatorColor}"></div>
                                     <div>
                                         <div class="flex flex-col md:flex-row justify-between md:items-start mb-3 gap-2">
-                                            <h4 class="font-bold text-lg text-mori-dark leading-tight">${ev.name}</h4>
-                                            <span class="bg-yellow-50 text-yellow-800 text-[11px] font-bold px-2.5 py-1 rounded border border-yellow-200 whitespace-nowrap w-fit shrink-0"><i class="fas fa-clock mr-1"></i> ${ev.date}</span>
+                                            <h4 class="font-bold text-lg text-mori-dark leading-tight ${isExpired ? 'pr-16 md:mt-1' : ''}">${ev.name}</h4>
+                                            <span class="${isExpired ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-yellow-50 text-yellow-800 border-yellow-200'} text-[11px] font-bold px-2.5 py-1 rounded border whitespace-nowrap w-fit shrink-0"><i class="fas fa-clock mr-1"></i> ${ev.date}</span>
                                         </div>
                                         <p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-sitemap w-4 text-center text-gray-400 mr-1.5"></i> <span class="font-bold mr-1">執行單位:</span> ${ev.executor}</p>
                                         ${ev.location ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-map-marker-alt w-4 text-center text-red-400 mr-1.5"></i> <span class="font-bold mr-1">活動地點:</span> ${ev.location}</p>` : ''}
                                         ${ev.deadline ? `<p class="text-sm text-gray-600 mb-1 flex items-center"><i class="fas fa-hourglass-half w-4 text-center text-orange-500 mr-1.5"></i> <span class="font-bold mr-1">報名截止:</span> <span class="text-orange-600 font-bold">${ev.deadline}</span></p>` : ''}
                                     </div>
                                     <div class="mt-3 pt-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
-                                        <div class="flex-1">${regHtml}</div>
-                                        ${gCalBtn}
+                                        ${actionAreaHtml}
                                     </div>
                                 </div>
                                 `;
