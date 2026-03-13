@@ -949,6 +949,11 @@
                 <div id="poi-modal-fb-container" class="hidden mb-2 w-full flex justify-center overflow-hidden rounded-lg border border-gray-100">
                     <iframe id="poi-modal-fb-iframe" src="" width="340" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
                 </div>
+                
+                <!-- 新增：通用型網站嵌入框架 (供政府機關或無FB之網站使用) -->
+                <div id="poi-modal-website-container" class="hidden mb-2 w-full flex justify-center overflow-hidden rounded-lg border border-gray-200 shadow-inner h-[400px]">
+                    <iframe id="poi-modal-website-iframe" src="" width="100%" height="100%" style="border:none;" title="官方網站"></iframe>
+                </div>
             </div>
         </div>
     </div>
@@ -1127,7 +1132,40 @@
             { categoryId: 3, id: 'poi17', name: '水里星光市集(周六市集)', coords: { lat: 23.813636, lng: 120.850816 }, icon: '💡', description: '星光市集2022年開始營運，為地方創生市集，集結地方小農、返鄉青年一同於水里溪畔左岸於周六夜間營業。<br>2025年起營運時間調整為每月營運2天(逢週六夜間18:00~22:00)，詳細營運時間另有公告於粉絲專頁。或詢問當地民宿櫃台。', fbUrl: "https://www.facebook.com/profile.php?id=100076220760859&locale=zh_TW" },
             
             // 地圖專屬隱藏地標 (不顯示於側邊列表)
-            { categoryId: 'map_only', id: 'poi31', name: '老五冒煙饅頭', coords: { lat: 23.74130203918579, lng: 120.85731020062596 }, icon: '♨️', description: '預約活動: 手工饅頭DIY(在地友善農產+柴燒)', fbUrl: "https://www.facebook.com/smokingmantou/?locale=zh_TW" }
+            { categoryId: 'map_only', id: 'poi31', name: '老五冒煙饅頭', coords: { lat: 23.74130203918579, lng: 120.85731020062596 }, icon: '♨️', description: '預約活動: 手工饅頭DIY(在地友善農產+柴燒)', fbUrl: "https://www.facebook.com/smokingmantou/?locale=zh_TW" },
+            
+            // 新增：藍色隱藏地標 (台中農改場)
+            { 
+                categoryId: 'map_only_blue', 
+                id: 'poi32', 
+                name: '台中農改場', 
+                coords: { lat: 24.0012657178268, lng: 120.53376924232782 }, 
+                icon: '🏛️', 
+                description: '<span class="font-bold text-blue-700"><i class="fas fa-history mr-1"></i>歷史活動: 台中農改場開放日</span><br><span class="text-gray-600 mt-1 inline-block">請查閱粉專年度開放日訊息。</span>', 
+                fbUrl: "https://www.facebook.com/tdares/?locale=zh_TW" 
+            },
+            
+            // 新增：藍色隱藏地標 (南投縣青農快閃市集)
+            { 
+                categoryId: 'map_only_blue', 
+                id: 'poi33', 
+                name: '南投縣青農快閃市集', 
+                coords: { lat: 23.900079318730885, lng: 120.71133340256445 }, 
+                icon: '⛺', 
+                description: '<span class="font-bold text-blue-700"><i class="fas fa-history mr-1"></i>歷史活動: 南投縣青農快閃市集 / 南投縣食農教育成果市集 / 其他農業成果市集</span><br><span class="text-gray-700 font-bold mt-1 inline-block"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i>辦理地點: 國道南投服務區</span><br><span class="text-gray-600 mt-1 inline-block">請查閱粉專南投青農快閃市集年度辦理場次。</span>', 
+                fbUrl: "https://www.facebook.com/ncfa.tw" 
+            },
+            
+            // 修改：校正水里鄉農會精準座標，並將地址綁定 Google Maps 外部連結
+            { 
+                categoryId: 'map_only_blue', 
+                id: 'poi34', 
+                name: '水里鄉農會青農研習/家政班/四健會', 
+                coords: { lat: 23.817368, lng: 120.854835 }, 
+                icon: '🏢', 
+                description: '<span class="font-bold text-blue-700"><i class="fas fa-history mr-1"></i>歷史活動: 青農研習 / 家政班 / 四健會研習課程及成果展<br><i class="fas fa-seedling mr-1 mt-1"></i>3~5月 脆梅季 DIY活動</span><br><span class="text-gray-700 font-bold mt-1 inline-block"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i>辦理地點: <a href="https://maps.app.goo.gl/hXDKHrsK5xLyPpHH6" target="_blank" class="text-blue-600 hover:text-blue-800 underline">水里鄉農會推廣部 (民生路362號)</a></span><br><span class="text-gray-600 mt-1 inline-block">請查閱水里鄉農會推廣部年度辦理場次。</span>', 
+                fbUrl: "https://www.facebook.com/shuli2778417/?locale=zh_TW" 
+            }
         ];
 
         const transportData = {
@@ -2298,6 +2336,10 @@
                     if (poi.categoryId === 'map_only') {
                         markerOpts.icon = 'http://maps.google.com/mapfiles/ms/icons/green-dot.png';
                         delete markerOpts.label; 
+                    } else if (poi.categoryId === 'map_only_blue') {
+                        // 新增：藍色隱藏地標圖示
+                        markerOpts.icon = 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+                        delete markerOpts.label; 
                     }
                     
                     const marker = new google.maps.Marker(markerOpts);
@@ -2328,6 +2370,17 @@
             } else {
                 fbIframe.src = '';
                 fbContainer.classList.add('hidden');
+            }
+            
+            // 新增：處理通用網站的 iframe 嵌入顯示
+            const webContainer = document.getElementById('poi-modal-website-container');
+            const webIframe = document.getElementById('poi-modal-website-iframe');
+            if (poi.iframeUrl) {
+                webIframe.src = poi.iframeUrl;
+                webContainer.classList.remove('hidden');
+            } else {
+                webIframe.src = '';
+                webContainer.classList.add('hidden');
             }
             
             const dynamicBtns = document.getElementById('poi-modal-dynamic-buttons');
