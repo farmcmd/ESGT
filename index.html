@@ -2253,9 +2253,22 @@
                 if(!pendingEntEvalSubmission) return;
                 const { projId, selectedProj, carbon, green } = pendingEntEvalSubmission;
                 
-                let isComplete = true, sum = 0;
+                // 新增：獨立計算 E, S, G 的分數加總
+                let isComplete = true, sum = 0, sumE = 0, sumS = 0, sumG = 0;
                 document.querySelectorAll('#ent-eval-questions-container .number-rating').forEach(c => {
-                    const v = parseInt(c.getAttribute('data-value')); if(!v) isComplete = false; else sum += v;
+                    const v = parseInt(c.getAttribute('data-value')); 
+                    if(!v) isComplete = false; 
+                    else {
+                        sum += v;
+                        const qContainer = c.closest('.ent-eval-q');
+                        if (qContainer) {
+                            const qid = qContainer.dataset.qid; // e.g., 'ent-q1'
+                            const qNum = parseInt(qid.replace('ent-q', ''));
+                            if(qNum >= 1 && qNum <= 4) sumE += v;
+                            else if(qNum >= 5 && qNum <= 8) sumS += v;
+                            else if(qNum >= 9 && qNum <= 12) sumG += v;
+                        }
+                    }
                 });
                 if(!isComplete) return window.showToast('請完成所有 12 題評分！');
                 
@@ -2273,17 +2286,27 @@
 
                     if (!isOfflineMode && db && typeof arrayUnion === 'function') {
                         try { 
-                            const updateData = { carbon: increment(carbon), green: increment(green), total_score: increment(sum), eval_count: increment(1), updatedAt: serverTimestamp() };
+                            const updateData = { 
+                                carbon: increment(carbon), green: increment(green), 
+                                total_score: increment(sum), 
+                                score_e: increment(sumE), score_s: increment(sumS), score_g: increment(sumG),
+                                eval_count: increment(1), updatedAt: serverTimestamp() 
+                            };
                             if (feedbackObj) updateData.feedbacks = arrayUnion(feedbackObj);
                             await setDoc(doc(db, 'ent_projects', projId), updateData, { merge: true }); 
                         } catch(err) { console.error(err); }
                     } else {
-                        selectedProj.eval_count = (selectedProj.eval_count || 0) + 1; selectedProj.total_score = (selectedProj.total_score || 0) + sum;
+                        selectedProj.eval_count = (selectedProj.eval_count || 0) + 1; 
+                        selectedProj.total_score = (selectedProj.total_score || 0) + sum;
+                        selectedProj.score_e = (selectedProj.score_e || 0) + sumE;
+                        selectedProj.score_s = (selectedProj.score_s || 0) + sumS;
+                        selectedProj.score_g = (selectedProj.score_g || 0) + sumG;
                         selectedProj.carbon = (selectedProj.carbon || 0) + carbon; selectedProj.green = (selectedProj.green || 0) + green;
                         if (feedbackObj) { if (!selectedProj.feedbacks) selectedProj.feedbacks = []; selectedProj.feedbacks.unshift(feedbackObj); }
                     }
 
-                    resetStats(); document.getElementById('ent-eval-modal').classList.add('hidden');
+                    // 確保呼叫正確的歸零函式
+                    resetPlayerStats(); document.getElementById('ent-eval-modal').classList.add('hidden');
                     if(document.getElementById('ent-eval-feedback')) document.getElementById('ent-eval-feedback').value = '';
                     renderEntProjectsDashboard(); renderCheckoutHistory();
                 } catch(e) { window.showToast("結算過程發生異常，請重試"); } finally { btn.disabled = false; btn.innerHTML = '確認結算歸戶'; }
