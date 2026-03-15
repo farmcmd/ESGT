@@ -591,6 +591,14 @@
                         <div class="space-y-3 mb-3">
                             <input type="text" id="host-proj-name" class="w-full p-2 border rounded-lg text-sm" placeholder="輸入計畫名稱 (必填)">
                             <input type="text" id="host-proj-event" class="w-full p-2 border rounded-lg text-sm" placeholder="輸入活動名稱 (必填)">
+                            
+                            <!-- 新增：執行日期與計畫說明 -->
+                            <div class="flex items-center gap-2">
+                                <label class="text-[11px] text-gray-500 font-bold whitespace-nowrap ml-1 w-14">執行日期</label>
+                                <input type="date" id="host-proj-date" class="w-full p-2 border rounded-lg text-sm text-gray-600 bg-white">
+                            </div>
+                            <input type="text" id="host-proj-desc" class="w-full p-2 border rounded-lg text-sm" placeholder="計畫說明 (選填)">
+                            
                             <input type="text" id="host-proj-supervisor" class="w-full p-2 border rounded-lg text-sm" placeholder="指導單位 (選填)">
                             <input type="text" id="host-proj-organizer" class="w-full p-2 border rounded-lg text-sm" placeholder="主辦單位 (選填)">
                             <input type="text" id="host-proj-executor" class="w-full p-2 border rounded-lg text-sm" placeholder="執行單位 (選填)">
@@ -1384,7 +1392,18 @@
                         <p class="text-[11px] text-gray-500 font-bold mb-1"><i class="fas fa-calendar-alt mr-1.5 text-blue-400"></i>${proj.date || '未提供'}</p>
                         <h4 class="text-lg font-bold text-gray-800 mb-1.5 pr-20 leading-snug">${proj.name}</h4>
                         <p class="text-sm font-bold text-blue-600 flex items-start"><i class="fas fa-flag mr-1.5 mt-0.5"></i>${proj.event || ''}</p>
+                        ${proj.desc ? `<p class="text-[11px] text-gray-500 mt-1.5 leading-relaxed bg-gray-50 p-2 rounded-lg border border-gray-100 shadow-inner"><i class="fas fa-info-circle text-gray-400 mr-1"></i>${proj.desc}</p>` : ''}
                     </div>
+                    
+                    <!-- 新增：計畫辦理單位資訊區塊 -->
+                    ${(proj.supervisor || proj.organizer || proj.coOrganizer || proj.executor) ? `
+                    <div class="mb-3 bg-blue-50/40 p-3 rounded-xl border border-blue-100/50 space-y-1.5 shadow-sm">
+                        ${proj.supervisor ? `<div class="flex items-start text-[11px]"><span class="w-12 flex-shrink-0 text-blue-600/80 font-bold"><i class="fas fa-user-tie mr-1"></i>指導</span><span class="text-gray-700 font-medium leading-relaxed">${proj.supervisor}</span></div>` : ''}
+                        ${proj.organizer ? `<div class="flex items-start text-[11px]"><span class="w-12 flex-shrink-0 text-blue-600/80 font-bold"><i class="fas fa-sitemap mr-1"></i>主辦</span><span class="text-gray-700 font-medium leading-relaxed">${proj.organizer}</span></div>` : ''}
+                        ${proj.coOrganizer ? `<div class="flex items-start text-[11px]"><span class="w-12 flex-shrink-0 text-blue-600/80 font-bold"><i class="fas fa-hands-helping mr-1"></i>協辦</span><span class="text-gray-700 font-medium leading-relaxed">${proj.coOrganizer}</span></div>` : ''}
+                        ${proj.executor ? `<div class="flex items-start text-[11px]"><span class="w-12 flex-shrink-0 text-blue-600/80 font-bold"><i class="fas fa-tools mr-1"></i>執行</span><span class="text-gray-700 font-medium leading-relaxed">${proj.executor}</span></div>` : ''}
+                    </div>
+                    ` : ''}
                     
                     <!-- 美化：滿意度進度條圖表 -->
                     <div class="mb-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
