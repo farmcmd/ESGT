@@ -1818,13 +1818,16 @@
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app); auth = getAuth(app);
                 signInAnonymously(auth).catch(() => { isOfflineMode = true; loadMockData(); });
+                
+                let pageLoaded = false; // 新增單次載入防呆，確保每次網頁重整只加 1 次
+
                 onAuthStateChanged(auth, user => { 
                     if(user && db) {
                         initGlobalCounters(); 
                         
-                        // 寫入瀏覽人次防呆機制 (單一 Session 期間只加 1 次)
-                        if (!sessionStorage.getItem('mori_visited')) {
-                            sessionStorage.setItem('mori_visited', 'true');
+                        // 寫入寬鬆的瀏覽人次 (移除 sessionStorage 限制，改為每次重新整理/載入皆加 1 次)
+                        if (!pageLoaded) {
+                            pageLoaded = true;
                             setDoc(doc(db, 'system_stats', 'global_absolute'), {
                                 visitor_count: increment(1)
                             }, { merge: true }).catch(e => console.warn("Visitor count update failed"));
