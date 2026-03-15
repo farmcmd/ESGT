@@ -1348,8 +1348,8 @@
                     const sroiTotal = Math.floor(proj.budget * sroiWeight);
                     sroiHtml = `
                         <div class="mt-3 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100/50 shadow-sm relative overflow-hidden group">
-                            <!-- 背景浮水印圖表 -->
-                            <i class="fas fa-chart-area absolute -bottom-3 -right-2 text-6xl text-blue-500/10 group-hover:text-blue-500/20 transition-colors"></i>
+                            <!-- 背景浮水印圖表 (截圖時自動隱藏以防遮蓋) -->
+                            <i class="fas fa-chart-area absolute -bottom-3 -right-2 text-6xl text-blue-500/10 group-hover:text-blue-500/20 transition-colors" data-html2canvas-ignore="true"></i>
                             
                             <div class="flex justify-between items-center mb-3 relative z-10">
                                 <div class="flex items-center gap-2">
@@ -1555,8 +1555,8 @@
                     const sroiTotal = Math.floor(proj.linkedProject.amount * sroiWeight);
                     sroiHtml = `
                         <div class="mt-3 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-xl border border-teal-100/50 shadow-sm relative overflow-hidden group">
-                            <!-- 背景浮水印圖表 -->
-                            <i class="fas fa-chart-area absolute -bottom-3 -right-2 text-6xl text-teal-500/10 group-hover:text-teal-500/20 transition-colors"></i>
+                            <!-- 背景浮水印圖表 (截圖時自動隱藏以防遮蓋) -->
+                            <i class="fas fa-chart-area absolute -bottom-3 -right-2 text-6xl text-teal-500/10 group-hover:text-teal-500/20 transition-colors" data-html2canvas-ignore="true"></i>
                             
                             <div class="flex justify-between items-center mb-3 relative z-10">
                                 <div class="flex items-center gap-2">
@@ -2337,13 +2337,18 @@
                 const executor = document.getElementById('host-proj-executor').value.trim(), coOrganizer = document.getElementById('host-proj-coorganizer').value.trim();
                 const budget = Number(document.getElementById('host-proj-budget').value) || 0, sroi = Number(document.getElementById('host-proj-sroi').value) || 0;
                 const deadline = document.getElementById('host-proj-deadline').value;
+                
+                // 新增：抓取計畫說明與執行日期
+                const desc = document.getElementById('host-proj-desc')?.value.trim() || '';
+                const dateInput = document.getElementById('host-proj-date')?.value;
+                const projDate = dateInput ? dateInput.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW');
 
-                if(!name) return showToast('請輸入計畫名稱');
+                if(!name) return window.showToast('請輸入計畫名稱');
                 const newId = `gov_${Date.now()}`;
-                const newProj = { id: newId, name, event, supervisor, organizer, executor, coOrganizer, budget, sroi, deadline: deadline || null, date: new Date().toLocaleDateString('zh-TW'), eval_count: 0, total_score: 0, carbon: 0, green: 0, updatedAt: new Date() };
+                const newProj = { id: newId, name, event, desc, supervisor, organizer, executor, coOrganizer, budget, sroi, deadline: deadline || null, date: projDate, eval_count: 0, total_score: 0, carbon: 0, green: 0, updatedAt: new Date() };
 
                 if (!isOfflineMode && db) { try { await setDoc(doc(db, 'gov_projects', newId), newProj); } catch(e) {} } else { globalGovData.projects.unshift(newProj); }
-                renderGovDashboard(); updateProjectDropdown(); showToast('建立成功！');
+                renderGovDashboard(); updateProjectDropdown(); window.showToast('建立成功！');
             });
         }
 
