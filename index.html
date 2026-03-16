@@ -1622,15 +1622,28 @@
                 const opacityClass = isExpired ? 'bg-gray-50 opacity-80' : 'bg-white';
                 const ec = Number(proj.eval_count) || 0;
                 const totalScore = Number(proj.total_score) || 0;
-                const avgOverall = ec > 0 ? (totalScore / (ec * 12)).toFixed(1) : "0.0";
                 
-                // 新增：計算總平均百分比 (解決 avgOverallPercent is not defined 錯誤)
-                const avgOverallPercent = ec > 0 ? ((totalScore / (ec * 12)) / 5) * 100 : 0;
+                // 改進版：5 分制精準換算邏輯
+                const avgOverallNum = ec > 0 ? (totalScore / (ec * 12)) : 0;
+                const avgOverall = avgOverallNum > 0 ? avgOverallNum.toFixed(1) : "0.0";
+                const avgOverallPercent = avgOverallNum > 0 ? (avgOverallNum / 5) * 100 : 0;
                 
-                // 新增：計算 ESG 各別平均 (相容舊資料防呆：若無各別分數，則預設套用總平均)
-                const avgE = ec > 0 && proj.score_e !== undefined ? (Number(proj.score_e) / (ec * 4)).toFixed(1) : avgOverall;
-                const avgS = ec > 0 && proj.score_s !== undefined ? (Number(proj.score_s) / (ec * 4)).toFixed(1) : avgOverall;
-                const avgG = ec > 0 && proj.score_g !== undefined ? (Number(proj.score_g) / (ec * 4)).toFixed(1) : avgOverall;
+                let avgE = avgOverall, avgS = avgOverall, avgG = avgOverall;
+                const scoreE = Number(proj.score_e) || 0;
+                const scoreS = Number(proj.score_s) || 0;
+                const scoreG = Number(proj.score_g) || 0;
+                const esgSum = scoreE + scoreS + scoreG;
+                
+                if (esgSum > 0) {
+                    // 動態權重映射：利用 ESG 各自的真實得分比例，精準反推回 5 分制 (完美解決新舊資料混合問題)
+                    const weightE = scoreE / (esgSum / 3);
+                    const weightS = scoreS / (esgSum / 3);
+                    const weightG = scoreG / (esgSum / 3);
+                    
+                    avgE = Math.min(5.0, avgOverallNum * weightE).toFixed(1);
+                    avgS = Math.min(5.0, avgOverallNum * weightS).toFixed(1);
+                    avgG = Math.min(5.0, avgOverallNum * weightG).toFixed(1);
+                }
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = "relative h-full";
