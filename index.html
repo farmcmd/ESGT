@@ -204,10 +204,38 @@
                             <i class="fas fa-question font-black"></i>
                         </button>
                     </h2>
+                    
+                    <!-- 升級版：將說明文字與手動輸入框整合在同一個隱藏容器內 -->
                     <div id="transport-info-text" class="hidden max-w-3xl mx-auto bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner text-sm text-gray-600 leading-relaxed text-left md:text-center mt-2 relative transition-all">
                         <button onclick="document.getElementById('transport-info-text').classList.add('hidden')" class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-lg"><i class="fas fa-times"></i></button>
-                        <i class="fas fa-info-circle text-mori-sage mr-1"></i> 此處碳里程計算以「學習體驗」為目的，用概算的方法讓使用者瞭解低碳交通方式。期能讓使用者學習後直覺應用於日常生活。
+                        
+                        <div class="mb-3 pr-6">
+                            <i class="fas fa-info-circle text-mori-sage mr-1"></i> 此處碳里程計算以「學習體驗」為目的，用概算的方法讓使用者瞭解低碳交通方式。期能讓使用者學習後直覺應用於日常生活。
+                        </div>
+
+                        <!-- 移入內部的快速手動計算里程區塊 -->
+                        <div class="bg-emerald-50/80 p-3 md:p-4 rounded-xl border border-emerald-200 shadow-sm transition-all text-left mt-2">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                    <div class="flex flex-col">
+                                        <span class="text-[13px] font-bold text-emerald-800 whitespace-nowrap"><i class="fas fa-keyboard mr-1.5"></i>快速手動輸入里程：</span>
+                                        <span class="text-[10px] text-emerald-600 font-bold mt-0.5"><i class="fas fa-train mr-1"></i>適用: 鐵路 / 高載交通</span>
+                                    </div>
+                                    <div class="flex items-center bg-white px-2 py-1.5 rounded-lg border border-emerald-200 focus-within:border-emerald-500 transition-colors shadow-inner w-full sm:w-32">
+                                        <input type="number" id="quick-manual-km" class="w-full bg-transparent text-sm focus:outline-none font-bold text-gray-700 text-center" placeholder="例如: 15" min="0.1" step="0.1">
+                                        <span class="font-bold text-gray-500 text-[11px] mr-1">km</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                                    <div id="quick-manual-result" class="text-[13px] font-bold text-emerald-800 min-w-[90px] text-right">減碳 0 g</div>
+                                    <button id="quick-manual-submit-btn" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-black tracking-wide rounded-lg shadow-md transition opacity-50 cursor-not-allowed whitespace-nowrap" disabled>
+                                        <i class="fas fa-check mr-1"></i> 登錄成就
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
                 <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3 bg-gray-50/80 p-3 md:p-5 rounded-xl border border-gray-100 shadow-inner" id="transport-grid"></div>
             </div>
@@ -2306,6 +2334,54 @@
                     document.getElementById('hsr-modal')?.classList.add('hidden');
                     hsrStartSel.value = ''; hsrEndSel.value = ''; calculateHsr();
                     startMission('thsr', transportData['thsr']);
+                });
+            }
+
+            // 新增：首頁快速手動輸入里程邏輯
+            const quickManualKm = document.getElementById('quick-manual-km');
+            const quickManualResult = document.getElementById('quick-manual-result');
+            const quickManualSubmitBtn = document.getElementById('quick-manual-submit-btn');
+            let pendingQuickTrip = { distKm: 0, reduction: 0, isValid: false };
+
+            if (quickManualKm && quickManualResult && quickManualSubmitBtn) {
+                quickManualKm.addEventListener('input', () => {
+                    const km = parseFloat(quickManualKm.value);
+                    if (km > 0) {
+                        const reduction = Math.round(km * 40); // 採用通用大眾運輸概算基準 (40g/km)
+                        pendingQuickTrip = { distKm: km, reduction: reduction, isValid: true };
+                        quickManualResult.innerHTML = `減碳 <span class="text-lg text-emerald-600 font-black">${reduction}</span> g`;
+                        quickManualSubmitBtn.disabled = false;
+                        quickManualSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        pendingQuickTrip.isValid = false;
+                        quickManualResult.innerHTML = '減碳 0 g';
+                        quickManualSubmitBtn.disabled = true;
+                        quickManualSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+
+                quickManualSubmitBtn.addEventListener('click', () => {
+                    if (!pendingQuickTrip.isValid) return;
+
+                    // 新增：專屬密碼防呆驗證
+                    const pwd = prompt("🔒 請輸入手動登錄授權密碼：\n(適用於鐵路或高載交通之里程補登)");
+                    if (pwd !== "545366") {
+                        if (pwd !== null) window.showToast("密碼錯誤，拒絕登錄！");
+                        return;
+                    }
+
+                    state.totalMileage = (state.totalMileage || 0) + (pendingQuickTrip.distKm * 1000);
+                    state.totalCarbon = (state.totalCarbon || 0) + pendingQuickTrip.reduction;
+                    state.totalScore = (state.totalScore || 0) + (Math.floor(pendingQuickTrip.reduction / 10) || 5);
+                    addToGlobalTotal(pendingQuickTrip.reduction, 0);
+
+                    window.addLog(`通用交通 (手動輸入 ${pendingQuickTrip.distKm.toFixed(1)}km)，減碳 ${pendingQuickTrip.reduction}g`);
+                    updateDisplays();
+                    saveData();
+                    window.showToast('手動里程記錄成功！');
+
+                    quickManualKm.value = '';
+                    quickManualKm.dispatchEvent(new Event('input')); // 觸發重置狀態
                 });
             }
         }
