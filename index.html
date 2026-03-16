@@ -2267,33 +2267,58 @@
             });
 
             const hsrStartSel = document.getElementById('hsr-start'), hsrEndSel = document.getElementById('hsr-end');
+            const hsrManualKm = document.getElementById('hsr-manual-km');
             const hsrResultDiv = document.getElementById('hsr-result'), hsrConfirmBtn = document.getElementById('hsr-confirm-btn');
-            let pendingHsrTrip = { distKm: 0, reduction: 0, isValid: false };
+            let pendingHsrTrip = { distKm: 0, reduction: 0, isValid: false, type: '' };
 
-            if (hsrStartSel && hsrEndSel) {
+            if (hsrStartSel && hsrEndSel && hsrManualKm) {
                 let opts = '<option value="">-- 請選擇站點 --</option>' + hsrStations.map(s => `<option value="${s.name}">${s.name}站</option>`).join('');
                 hsrStartSel.innerHTML = opts; hsrEndSel.innerHTML = opts;
 
-                const calculateHsr = () => {
+                const calculateHsr = (source) => {
+                    // 互斥防呆：清除另一邊的數值
+                    if (source === 'manual') {
+                        hsrStartSel.value = ''; hsrEndSel.value = '';
+                    } else if (source === 'dropdown') {
+                        hsrManualKm.value = '';
+                    }
+
+                    const manualVal = parseFloat(hsrManualKm.value);
                     const startName = hsrStartSel.value, endName = hsrEndSel.value;
-                    if (startName && endName && startName !== endName) {
+
+                    if (manualVal > 0) {
+                        // 處理選項 B：手動輸入計算
+                        let distKm = manualVal;
+                        const reduction = Math.round(distKm * 65); 
+                        pendingHsrTrip = { distKm: distKm, reduction: reduction, isValid: true, type: 'manual' };
+                        hsrResultDiv.innerHTML = `<span class="text-gray-600">自行輸入距離: <span class="font-mono text-gray-800">${distKm.toFixed(1)}</span> km</span><br><i class="fas fa-leaf text-mori-forest mr-1 mt-2"></i>減碳量: <span class="text-xl text-orange-500 font-bold">${reduction}</span> g`;
+                        hsrConfirmBtn.disabled = false; hsrConfirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else if (startName && endName && startName !== endName) {
+                        // 處理選項 A：起訖站自動計算
                         const s1 = hsrStations.find(s => s.name === startName), s2 = hsrStations.find(s => s.name === endName);
                         const R = 6371; const dLat = (s2.lat - s1.lat) * Math.PI / 180; const dLon = (s2.lng - s1.lng) * Math.PI / 180;
                         const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(s1.lat * Math.PI / 180) * Math.cos(s2.lat * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
                         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                         let distKm = R * c * 1.15; 
                         const reduction = Math.round(distKm * 65); 
-                        pendingHsrTrip = { distKm: distKm, reduction: reduction, isValid: true };
+                        pendingHsrTrip = { distKm: distKm, reduction: reduction, isValid: true, type: 'auto' };
                         hsrResultDiv.innerHTML = `<span class="text-gray-600">預估軌道距離: <span class="font-mono text-gray-800">${distKm.toFixed(1)}</span> km</span><br><i class="fas fa-leaf text-mori-forest mr-1 mt-2"></i>減碳量: <span class="text-xl text-orange-500 font-bold">${reduction}</span> g`;
                         hsrConfirmBtn.disabled = false; hsrConfirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     } else {
+                        // 錯誤或留空狀態
                         pendingHsrTrip.isValid = false;
-                        hsrResultDiv.innerHTML = (startName === endName && startName !== "") ? '<span class="text-red-500"><i class="fas fa-exclamation-circle mr-1"></i>起訖站不可相同</span>' : '請選擇起訖站進行計算';
+                        if (startName === endName && startName !== "") {
+                            hsrResultDiv.innerHTML = '<span class="text-red-500"><i class="fas fa-exclamation-circle mr-1"></i>起訖站不可相同</span>';
+                        } else {
+                            hsrResultDiv.innerHTML = '請選擇起訖站 或 輸入里程進行計算';
+                        }
                         hsrConfirmBtn.disabled = true; hsrConfirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
                     }
                 };
 
-                hsrStartSel.addEventListener('change', calculateHsr); hsrEndSel.addEventListener('change', calculateHsr);
+                hsrStartSel.addEventListener('change', () => calculateHsr('dropdown')); 
+                hsrEndSel.addEventListener('change', () => calculateHsr('dropdown'));
+                hsrManualKm.addEventListener('input', () => calculateHsr('manual'));
 
                 hsrConfirmBtn.addEventListener('click', () => {
                     if (!pendingHsrTrip.isValid) return;
@@ -2301,10 +2326,19 @@
                     state.totalCarbon = (state.totalCarbon || 0) + pendingHsrTrip.reduction;
                     state.totalScore = (state.totalScore || 0) + (Math.floor(pendingHsrTrip.reduction / 10) || 5);
                     addToGlobalTotal(pendingHsrTrip.reduction, 0);
-                    window.addLog(`搭乘鐵路 (${hsrStartSel.value}站至${hsrEndSel.value}站)，減碳 ${pendingHsrTrip.reduction}g`);
+                    
+                    // 根據輸入來源給予不同的 Log 紀錄文字
+                    let logMsg = '';
+                    if (pendingHsrTrip.type === 'manual') {
+                        logMsg = `搭乘鐵路 (手動輸入 ${pendingHsrTrip.distKm.toFixed(1)}km)，減碳 ${pendingHsrTrip.reduction}g`;
+                    } else {
+                        logMsg = `搭乘鐵路 (${hsrStartSel.value}站至${hsrEndSel.value}站)，減碳 ${pendingHsrTrip.reduction}g`;
+                    }
+                    
+                    window.addLog(logMsg);
                     updateDisplays(); saveData(); window.showToast('鐵路旅程記錄成功！');
                     document.getElementById('hsr-modal')?.classList.add('hidden');
-                    hsrStartSel.value = ''; hsrEndSel.value = ''; calculateHsr();
+                    hsrStartSel.value = ''; hsrEndSel.value = ''; hsrManualKm.value = ''; calculateHsr('reset');
                     startMission('thsr', transportData['thsr']);
                 });
             }
