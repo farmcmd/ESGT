@@ -1623,27 +1623,32 @@
                 const ec = Number(proj.eval_count) || 0;
                 const totalScore = Number(proj.total_score) || 0;
                 
-                // 改進版：5 分制精準換算邏輯
-                const avgOverallNum = ec > 0 ? (totalScore / (ec * 12)) : 0;
-                const avgOverall = avgOverallNum > 0 ? avgOverallNum.toFixed(1) : "0.0";
-                const avgOverallPercent = avgOverallNum > 0 ? (avgOverallNum / 5) * 100 : 0;
+                // 修正版：UI 數值絕對一致化邏輯
+                // 1. 先計算基礎的平均基準值 (最高限制為 5.0)
+                let baseAvgNum = ec > 0 ? (totalScore / (ec * 12)) : 0;
+                baseAvgNum = Math.min(5.0, baseAvgNum);
                 
-                let avgE = avgOverall, avgS = avgOverall, avgG = avgOverall;
+                let avgE = baseAvgNum.toFixed(1), avgS = baseAvgNum.toFixed(1), avgG = baseAvgNum.toFixed(1);
                 const scoreE = Number(proj.score_e) || 0;
                 const scoreS = Number(proj.score_s) || 0;
                 const scoreG = Number(proj.score_g) || 0;
                 const esgSum = scoreE + scoreS + scoreG;
                 
                 if (esgSum > 0) {
-                    // 動態權重映射：利用 ESG 各自的真實得分比例，精準反推回 5 分制 (完美解決新舊資料混合問題)
+                    // 2. 利用真實得分比例映射，計算各自的最終分數 (最高不超過 5.0)
                     const weightE = scoreE / (esgSum / 3);
                     const weightS = scoreS / (esgSum / 3);
                     const weightG = scoreG / (esgSum / 3);
                     
-                    avgE = Math.min(5.0, avgOverallNum * weightE).toFixed(1);
-                    avgS = Math.min(5.0, avgOverallNum * weightS).toFixed(1);
-                    avgG = Math.min(5.0, avgOverallNum * weightG).toFixed(1);
+                    avgE = Math.min(5.0, baseAvgNum * weightE).toFixed(1);
+                    avgS = Math.min(5.0, baseAvgNum * weightS).toFixed(1);
+                    avgG = Math.min(5.0, baseAvgNum * weightG).toFixed(1);
                 }
+                
+                // 3. 關鍵修正：右上角的總平均，必須是 E、S、G 三者的算術平均，確保 UI 數字邏輯絕對一致
+                const finalOverallNum = (Number(avgE) + Number(avgS) + Number(avgG)) / 3;
+                const avgOverall = finalOverallNum > 0 ? finalOverallNum.toFixed(1) : "0.0";
+                const avgOverallPercent = finalOverallNum > 0 ? (finalOverallNum / 5) * 100 : 0;
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = "relative h-full";
