@@ -1632,15 +1632,17 @@
                     }
                     
                     const clone = wrapper.cloneNode(true);
-                    // 終極修復：拔除所有會撐開版面的彈性屬性 (h-full 與 flex-grow)
-                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: auto !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
+                    
+                    // 終極修復：拔除容器撐版屬性，精準收合 (保護裝飾用 h-full 不受影響)
+                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: max-content !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
                     clone.classList.remove('h-full');
                     
-                    const cloneCard = clone.firstElementChild;
-                    if(cloneCard) {
-                        cloneCard.classList.remove('h-full');
-                        cloneCard.style.height = 'auto';
+                    const mainCard = clone.firstElementChild;
+                    if(mainCard) {
+                        mainCard.classList.remove('h-full');
+                        mainCard.style.height = 'max-content';
                     }
+                    
                     const flexGrowEl = clone.querySelector('.flex-grow');
                     if(flexGrowEl) flexGrowEl.classList.remove('flex-grow');
 
@@ -1896,7 +1898,20 @@
                     }
                     
                     const clone = wrapper.cloneNode(true);
-                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
+                    
+                    // 終極修復：拔除容器撐版屬性，精準收合 (保護裝飾用 h-full 不受影響)
+                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: max-content !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
+                    clone.classList.remove('h-full');
+                    
+                    const mainCard = clone.firstElementChild;
+                    if(mainCard) {
+                        mainCard.classList.remove('h-full');
+                        mainCard.style.height = 'max-content';
+                    }
+                    
+                    const flexGrowEl = clone.querySelector('.flex-grow');
+                    if(flexGrowEl) flexGrowEl.classList.remove('flex-grow');
+
                     const btnsClone = clone.querySelector('.card-action-btns'); if(btnsClone) btnsClone.style.display = 'none';
                     const titleClone = clone.querySelector('h4'); if(titleClone) titleClone.classList.remove('pr-20');
                     document.body.appendChild(clone);
