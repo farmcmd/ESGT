@@ -541,7 +541,7 @@
                             </button>
                         </div>
                         <textarea id="sustainable-action-log" class="w-full p-3 border rounded-lg text-sm outline-none bg-gray-50 focus:border-mori-sage" rows="2" placeholder="記錄您的永續心得..."></textarea>
-                        <button id="log-action-button" class="w-full mt-2 py-2 bg-mori-sage text-white rounded-lg hover:bg-mori-forest font-bold transition"><i class="fas fa-check mr-1"></i> 記錄積分</button>
+                        <button id="log-action-button" class="w-full mt-2 py-2 bg-mori-sage text-white rounded-lg hover:bg-mori-forest font-bold transition shadow-sm"><i class="fas fa-edit mr-1"></i> 記錄心得</button>
                     </div>
                     
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
@@ -1632,7 +1632,14 @@
                     }
                     
                     const clone = wrapper.cloneNode(true);
-                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
+                    // 升級修復：加入 height: max-content !important，避免繼承全螢幕高度
+                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: max-content !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
+                    
+                    // 升級修復：移除內部元素的 h-full，強制讓排版自動收合緊貼內容
+                    clone.classList.remove('h-full');
+                    const cloneCard = clone.querySelector('.h-full');
+                    if(cloneCard) cloneCard.classList.remove('h-full');
+
                     const btnsClone = clone.querySelector('.card-action-btns'); if(btnsClone) btnsClone.style.display = 'none';
                     const titleClone = clone.querySelector('h4'); if(titleClone) titleClone.classList.remove('pr-20');
                     document.body.appendChild(clone);
