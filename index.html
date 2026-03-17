@@ -1322,8 +1322,14 @@
             }
         };
 
+        // 新增：統一的精確時間格式產生器 (YYYY/MM/DD HH:mm)
+        function getFormattedTime() {
+            const d = new Date();
+            return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+
         window.addLog = function(text) {
-            const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+            const time = getFormattedTime();
             if(!state.activityLogs) state.activityLogs = [];
             state.activityLogs.unshift({ time, text });
             if(state.activityLogs.length > 50) state.activityLogs.pop();
@@ -1338,7 +1344,8 @@
                 list.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">尚無活動紀錄</p>';
                 return;
             }
-            list.innerHTML = state.activityLogs.map(l => `<div class="bg-white p-2 rounded text-xs border border-gray-100 mb-1 shadow-sm"><span class="text-[10px] text-mori-forest font-bold">${l.time}</span><br>${l.text}</div>`).join('');
+            // 升級：加入 font-mono 讓日期時間對齊更好看
+            list.innerHTML = state.activityLogs.map(l => `<div class="bg-white p-2 rounded text-xs border border-gray-100 mb-1 shadow-sm"><span class="text-[10px] text-mori-forest font-bold font-mono tracking-tight">${l.time}</span><br>${l.text}</div>`).join('');
         }
 
         function saveData() { 
@@ -1410,7 +1417,8 @@
             if(!state.checkoutHistory || state.checkoutHistory.length === 0) {
                 list.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">尚無結算紀錄</p>'; return;
             }
-            list.innerHTML = state.checkoutHistory.map(r => `<div class="bg-white p-2 rounded border border-yellow-100 shadow-sm mb-1"><p class="text-xs font-bold text-gray-700">${r.target}</p><p class="text-[10px] text-gray-500">減碳 ${r.carbon}g | 綠消 $${r.green}</p></div>`).join('');
+            // 升級：將時間 (r.time) 加入 UI 右上角顯示
+            list.innerHTML = state.checkoutHistory.map(r => `<div class="bg-white p-2 rounded border border-yellow-100 shadow-sm mb-1"><div class="flex justify-between items-start"><p class="text-xs font-bold text-gray-700">${r.target}</p><span class="text-[9px] text-gray-400 font-mono tracking-tighter mt-0.5">${r.time || ''}</span></div><p class="text-[10px] text-gray-500 mt-0.5">減碳 ${r.carbon}g | 綠消 $${r.green}</p></div>`).join('');
         }
 
         function updateGlobalSummary() {
@@ -2507,9 +2515,10 @@
                 });
             });
 
+            // 1. 企業員工準備歸戶
             document.getElementById('log-ent-proj-btn')?.addEventListener('click', () => {
                 const id = document.getElementById('ent-proj-select').value;
-                if(!id) return showToast('請先選擇企業活動！');
+                if(!id) return window.showToast('請先選擇企業活動！');
                 const proj = globalEntData.projects.find(p => p.id === id);
                 if (proj.deadline && new Date() > new Date(proj.deadline)) return window.showToast('此活動已過歸戶截止時間，無法再登錄！');
                 const currentGreen = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
@@ -2520,12 +2529,12 @@
                 document.getElementById('ent-eval-modal').classList.remove('hidden');
             });
 
+            // 2. 企業員工送出結算 (修正資料寫入錯置 Bug，加入 E, S, G 分別計分)
             document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async (e) => {
                 const btn = e.currentTarget; if(btn.disabled) return;
                 if(!pendingEntEvalSubmission) return;
                 const { projId, selectedProj, carbon, green } = pendingEntEvalSubmission;
                 
-                // 新增：獨立計算 E, S, G 的分數加總
                 let isComplete = true, sum = 0, sumE = 0, sumS = 0, sumG = 0;
                 document.querySelectorAll('#ent-eval-questions-container .number-rating').forEach(c => {
                     const v = parseInt(c.getAttribute('data-value')); 
@@ -2534,7 +2543,7 @@
                         sum += v;
                         const qContainer = c.closest('.ent-eval-q');
                         if (qContainer) {
-                            const qid = qContainer.dataset.qid; // e.g., 'ent-q1'
+                            const qid = qContainer.dataset.qid; 
                             const qNum = parseInt(qid.replace('ent-q', ''));
                             if(qNum >= 1 && qNum <= 4) sumE += v;
                             else if(qNum >= 5 && qNum <= 8) sumS += v;
@@ -2549,7 +2558,6 @@
                 
                 try {
                     if (!state.checkoutHistory) state.checkoutHistory = [];
-                    // 升級：寫入精確時間格式
                     state.checkoutHistory.unshift({ time: getFormattedTime(), target: `[企業] ${selectedProj.orgName}`, carbon: Math.round(carbon), green: green });
                     window.addLog(`✅ 企業歸戶：數據歸戶至 ${selectedProj.orgName}`);
 
@@ -2557,52 +2565,59 @@
 
                     const feedbackObj = feedbackText.trim() !== '' ? { text: feedbackText.trim(), user: document.getElementById('player-name')?.value || '匿名', code: document.getElementById('player-code')?.textContent || '', time: new Date().toISOString() } : null;
 
+                    // 關鍵修正：確保寫入的是 ent_projects，且加上 score_e, score_s, score_g
                     if (!isOfflineMode && db && typeof arrayUnion === 'function') {
                         try { 
-                            const updateData = { 
-                                carbon: increment(carbon), green: increment(green), 
-                                total_score: increment(sum), 
-                                score_e: increment(sumE), score_s: increment(sumS), score_g: increment(sumG),
-                                eval_count: increment(1), updatedAt: serverTimestamp() 
-                            };
+                            const updateData = { carbon: increment(carbon), green: increment(green), total_score: increment(sum), eval_count: increment(1), score_e: increment(sumE), score_s: increment(sumS), score_g: increment(sumG), updatedAt: serverTimestamp() };
                             if (feedbackObj) updateData.feedbacks = arrayUnion(feedbackObj);
                             await setDoc(doc(db, 'ent_projects', projId), updateData, { merge: true }); 
                         } catch(err) { console.error(err); }
                     } else {
-                        selectedProj.eval_count = (selectedProj.eval_count || 0) + 1; 
-                        selectedProj.total_score = (selectedProj.total_score || 0) + sum;
-                        selectedProj.score_e = (selectedProj.score_e || 0) + sumE;
-                        selectedProj.score_s = (selectedProj.score_s || 0) + sumS;
-                        selectedProj.score_g = (selectedProj.score_g || 0) + sumG;
+                        selectedProj.eval_count = (selectedProj.eval_count || 0) + 1; selectedProj.total_score = (selectedProj.total_score || 0) + sum;
+                        selectedProj.score_e = (selectedProj.score_e || 0) + sumE; selectedProj.score_s = (selectedProj.score_s || 0) + sumS; selectedProj.score_g = (selectedProj.score_g || 0) + sumG;
                         selectedProj.carbon = (selectedProj.carbon || 0) + carbon; selectedProj.green = (selectedProj.green || 0) + green;
                         if (feedbackObj) { if (!selectedProj.feedbacks) selectedProj.feedbacks = []; selectedProj.feedbacks.unshift(feedbackObj); }
                     }
-
-                    // 確保呼叫正確的歸零函式
-                    resetPlayerStats(); document.getElementById('ent-eval-modal').classList.add('hidden');
+                    
+                    resetPlayerStats(); 
+                    document.getElementById('ent-eval-modal').classList.add('hidden'); // 修正：關閉正確的企業 Modal
                     if(document.getElementById('ent-eval-feedback')) document.getElementById('ent-eval-feedback').value = '';
                     renderEntProjectsDashboard(); renderCheckoutHistory();
                 } catch(e) { window.showToast("結算過程發生異常，請重試"); } finally { btn.disabled = false; btn.innerHTML = '確認結算歸戶'; }
             });
 
+            // 3. 建立企業專屬儀表板
             document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
-                const orgName = document.getElementById('ent-create-org').value.trim(), eventName = document.getElementById('ent-create-event').value.trim();
-                const websiteUrl = document.getElementById('ent-create-website').value.trim(), year = document.getElementById('ent-create-year').value.trim();
-                const remark = document.getElementById('ent-create-remark').value.trim(), deadline = document.getElementById('ent-create-deadline').value;
-                const projType = document.getElementById('ent-create-proj-type').value, projAmount = Number(document.getElementById('ent-create-proj-amount').value) || 0, projSroi = Number(document.getElementById('ent-create-proj-sroi').value) || 1;
+                const orgName = document.getElementById('ent-create-org').value.trim();
+                const event = document.getElementById('ent-create-event').value.trim();
+                const websiteUrl = document.getElementById('ent-create-website').value.trim();
+                const year = document.getElementById('ent-create-year').value.trim();
+                const remark = document.getElementById('ent-create-remark').value.trim();
+                const deadline = document.getElementById('ent-create-deadline').value;
+                const projType = document.getElementById('ent-create-proj-type').value;
+                const projAmount = Number(document.getElementById('ent-create-proj-amount').value) || 0;
+                const projSroi = Number(document.getElementById('ent-create-proj-sroi').value) || 1.0;
 
-                if(!orgName) return showToast('請輸入企業名稱');
+                if (!orgName || !event) return window.showToast('請輸入企業/集團名稱與活動名稱！');
+
                 const newId = `ent_${Date.now()}`;
-                const newProj = { id: newId, orgName, event: eventName, websiteUrl, year, remark, deadline: deadline || null, linkedProject: projAmount > 0 ? { type: projType, amount: projAmount, sroiWeight: projSroi } : null, eval_count: 0, total_score: 0, carbon: 0, green: 0, updatedAt: new Date() };
+                const newProj = {
+                    id: newId, orgName, event, websiteUrl, year, remark, deadline: deadline || null,
+                    linkedProject: { type: projType, amount: projAmount, sroiWeight: projSroi },
+                    eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, carbon: 0, green: 0, updatedAt: new Date()
+                };
 
                 if (!isOfflineMode && db) { try { await setDoc(doc(db, 'ent_projects', newId), newProj); } catch(e) {} } else { globalEntData.projects.unshift(newProj); }
-                renderEntProjectsDashboard(); updateEntProjectDropdown(); window.showToast('企業儀表板建立成功！');
+                renderEntProjectsDashboard(); updateEntProjectDropdown(); window.showToast('企業活動儀表板建立成功！');
             });
         }
 
+        // 補回遺失的政府專區專屬函數
         function bindGovernmentFlow() {
+            // 1. 計畫參與者準備歸戶
             document.getElementById('log-user-proj-btn')?.addEventListener('click', () => {
-                const id = document.getElementById('user-proj-select').value; if(!id) return window.showToast('請先選擇參與計畫！');
+                const id = document.getElementById('user-proj-select').value;
+                if(!id) return window.showToast('請先選擇參與計畫！');
                 const proj = globalGovData.projects.find(p => p.id === id);
                 if (proj.deadline && new Date() > new Date(proj.deadline)) return window.showToast('此計畫已過歸戶截止時間，無法再登錄！');
                 const currentGreen = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
@@ -2613,21 +2628,24 @@
                 document.getElementById('gov-eval-modal').classList.remove('hidden');
             });
 
+            // 2. 計畫參與者送出結算
             document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async (e) => {
                 const btn = e.currentTarget; if(btn.disabled) return;
                 if(!pendingGovEvalSubmission) return;
                 const { projId, selectedProj, carbon, green } = pendingGovEvalSubmission;
                 
                 let isComplete = true, sum = 0;
-                document.querySelectorAll('#gov-eval-questions-container .number-rating').forEach(c => { const v = parseInt(c.getAttribute('data-value')); if(!v) isComplete = false; else sum += v; });
-                if(!isComplete) return window.showToast('請完成所有 11 題星級評分！');
+                document.querySelectorAll('#gov-eval-questions-container .number-rating').forEach(c => {
+                    const v = parseInt(c.getAttribute('data-value')); if(!v) isComplete = false; else sum += v;
+                });
+                if(!isComplete) return window.showToast('請完成所有 11 題評分！');
                 
                 const feedbackText = document.getElementById('gov-eval-feedback')?.value || '';
                 btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>結算生成中...';
 
                 try {
                     if (!state.checkoutHistory) state.checkoutHistory = [];
-                    state.checkoutHistory.unshift({ time: new Date().toLocaleTimeString('zh-TW'), target: `[計畫] ${selectedProj.name}`, carbon: Math.round(carbon), green: green });
+                    state.checkoutHistory.unshift({ time: getFormattedTime(), target: `[計畫] ${selectedProj.name}`, carbon: Math.round(carbon), green: green });
                     window.addLog(`✅ 計畫歸戶：數據歸戶至 ${selectedProj.name}`);
                     
                     if(typeof window.generateAndDownloadCertificate === 'function') await window.generateAndDownloadCertificate(true, `【政府計畫】${selectedProj.name}`);
@@ -2652,6 +2670,7 @@
                 } catch(e) { window.showToast("結算過程發生異常，請重試"); } finally { btn.disabled = false; btn.innerHTML = '確認結算歸戶'; }
             });
 
+            // 3. 建立政府專案計畫
             document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
                 const name = document.getElementById('host-proj-name').value.trim(), event = document.getElementById('host-proj-event').value.trim();
                 const supervisor = document.getElementById('host-proj-supervisor').value.trim(), organizer = document.getElementById('host-proj-organizer').value.trim();
@@ -2659,7 +2678,6 @@
                 const budget = Number(document.getElementById('host-proj-budget').value) || 0, sroi = Number(document.getElementById('host-proj-sroi').value) || 0;
                 const deadline = document.getElementById('host-proj-deadline').value;
                 
-                // 新增：抓取計畫說明與執行日期
                 const desc = document.getElementById('host-proj-desc')?.value.trim() || '';
                 const dateInput = document.getElementById('host-proj-date')?.value;
                 const projDate = dateInput ? dateInput.replace(/-/g, '/') : new Date().toLocaleDateString('zh-TW');
