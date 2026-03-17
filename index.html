@@ -1633,18 +1633,14 @@
                     
                     const clone = wrapper.cloneNode(true);
                     
-                    // 終極修復：拔除容器撐版屬性，精準收合 (保護裝飾用 h-full 不受影響)
-                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: max-content !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
+                    // 終極修復：強制清除所有彈性與填滿高度屬性，並獨立於視窗外渲染
+                    clone.style.cssText = 'position: absolute !important; top: -9999px !important; left: -9999px !important; width: 500px !important; height: auto !important; min-height: 0 !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important;';
                     clone.classList.remove('h-full');
-                    
-                    const mainCard = clone.firstElementChild;
-                    if(mainCard) {
-                        mainCard.classList.remove('h-full');
-                        mainCard.style.height = 'max-content';
-                    }
-                    
-                    const flexGrowEl = clone.querySelector('.flex-grow');
-                    if(flexGrowEl) flexGrowEl.classList.remove('flex-grow');
+                    clone.querySelectorAll('*').forEach(el => {
+                        el.classList.remove('h-full', 'flex-grow');
+                        el.style.height = 'auto';
+                        el.style.minHeight = '0';
+                    });
 
                     const btnsClone = clone.querySelector('.card-action-btns'); if(btnsClone) btnsClone.style.display = 'none';
                     const titleClone = clone.querySelector('h4'); if(titleClone) titleClone.classList.remove('pr-20');
@@ -1652,7 +1648,10 @@
 
                     try {
                         await new Promise(r => setTimeout(r, 300));
-                        const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#F7F4EF', useCORS: true });
+                        // 強制 html2canvas 鎖定最終計算出的實際高度
+                        const canvas = await html2canvas(clone, { 
+                            scale: 2, backgroundColor: '#F7F4EF', useCORS: true, height: clone.offsetHeight 
+                        });
                         const link = document.createElement('a');
                         link.download = `探探里山_政府儀表板_${proj.name || '未命名'}.png`;
                         link.href = canvas.toDataURL('image/png'); link.click(); window.showToast('下載成功！');
@@ -1899,18 +1898,14 @@
                     
                     const clone = wrapper.cloneNode(true);
                     
-                    // 終極修復：拔除容器撐版屬性，精準收合 (保護裝飾用 h-full 不受影響)
-                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: max-content !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
+                    // 終極修復：強制清除所有彈性與填滿高度屬性，並獨立於視窗外渲染
+                    clone.style.cssText = 'position: absolute !important; top: -9999px !important; left: -9999px !important; width: 500px !important; height: auto !important; min-height: 0 !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important;';
                     clone.classList.remove('h-full');
-                    
-                    const mainCard = clone.firstElementChild;
-                    if(mainCard) {
-                        mainCard.classList.remove('h-full');
-                        mainCard.style.height = 'max-content';
-                    }
-                    
-                    const flexGrowEl = clone.querySelector('.flex-grow');
-                    if(flexGrowEl) flexGrowEl.classList.remove('flex-grow');
+                    clone.querySelectorAll('*').forEach(el => {
+                        el.classList.remove('h-full', 'flex-grow');
+                        el.style.height = 'auto';
+                        el.style.minHeight = '0';
+                    });
 
                     const btnsClone = clone.querySelector('.card-action-btns'); if(btnsClone) btnsClone.style.display = 'none';
                     const titleClone = clone.querySelector('h4'); if(titleClone) titleClone.classList.remove('pr-20');
@@ -1918,7 +1913,10 @@
 
                     try {
                         await new Promise(r => setTimeout(r, 300));
-                        const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#F7F4EF', useCORS: true });
+                        // 強制 html2canvas 鎖定最終計算出的實際高度
+                        const canvas = await html2canvas(clone, { 
+                            scale: 2, backgroundColor: '#F7F4EF', useCORS: true, height: clone.offsetHeight 
+                        });
                         const link = document.createElement('a');
                         link.download = `探探里山_企業儀表板_${proj.orgName || '未命名'}.png`;
                         link.href = canvas.toDataURL('image/png'); link.click(); window.showToast('下載成功！');
