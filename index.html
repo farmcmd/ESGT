@@ -1632,13 +1632,17 @@
                     }
                     
                     const clone = wrapper.cloneNode(true);
-                    // 升級修復：加入 height: max-content !important，避免繼承全螢幕高度
-                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: max-content !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
-                    
-                    // 升級修復：移除內部元素的 h-full，強制讓排版自動收合緊貼內容
+                    // 終極修復：拔除所有會撐開版面的彈性屬性 (h-full 與 flex-grow)
+                    clone.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 500px !important; height: auto !important; padding: 24px !important; background-color: #F7F4EF !important; border-radius: 16px !important; z-index: -9999 !important; pointer-events: none !important;';
                     clone.classList.remove('h-full');
-                    const cloneCard = clone.querySelector('.h-full');
-                    if(cloneCard) cloneCard.classList.remove('h-full');
+                    
+                    const cloneCard = clone.firstElementChild;
+                    if(cloneCard) {
+                        cloneCard.classList.remove('h-full');
+                        cloneCard.style.height = 'auto';
+                    }
+                    const flexGrowEl = clone.querySelector('.flex-grow');
+                    if(flexGrowEl) flexGrowEl.classList.remove('flex-grow');
 
                     const btnsClone = clone.querySelector('.card-action-btns'); if(btnsClone) btnsClone.style.display = 'none';
                     const titleClone = clone.querySelector('h4'); if(titleClone) titleClone.classList.remove('pr-20');
