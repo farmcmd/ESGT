@@ -919,7 +919,8 @@
             <div id="tab-green" class="tab-content space-y-5">
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-3">1. 選擇標章類型 (點擊選擇)</label>
-                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    <!-- 微調排版：將 sm:grid-cols-5 改為 sm:grid-cols-4 以完美容納 7 個選項 -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         <div class="label-card flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition" data-type="有機農產">
                             <i class="fas fa-leaf text-2xl text-gray-500 mb-2 transition-colors"></i><span class="text-[11px] font-bold text-gray-600 transition-colors">有機農產</span>
                         </div>
@@ -934,6 +935,14 @@
                         </div>
                         <div class="label-card flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition" data-type="在地小農">
                             <i class="fas fa-tractor text-2xl text-gray-500 mb-2 transition-colors"></i><span class="text-[11px] font-bold text-gray-600 transition-colors">在地小農</span>
+                        </div>
+                        <!-- 新增：碳足跡標籤 -->
+                        <div class="label-card flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition" data-type="碳足跡標籤">
+                            <i class="fas fa-shoe-prints text-2xl text-gray-500 mb-2 transition-colors"></i><span class="text-[11px] font-bold text-gray-600 transition-colors">碳足跡標籤</span>
+                        </div>
+                        <!-- 新增：環保標章(旅宿) -->
+                        <div class="label-card flex flex-col items-center justify-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition text-center" data-type="環保標章(旅宿)">
+                            <i class="fas fa-hotel text-2xl text-gray-500 mb-2 transition-colors"></i><span class="text-[10px] font-bold text-gray-600 transition-colors leading-tight">環保標章<br>(旅宿)</span>
                         </div>
                     </div>
                 </div>
@@ -2274,6 +2283,49 @@
                 } else { fallbackCopy(url, msg); }
             });
             
+            // PWA 智慧安裝邏輯
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e; // 捕獲原生的安裝提示
+            });
+
+            document.getElementById('install-pwa-btn')?.addEventListener('click', () => {
+                const modal = document.getElementById('pwa-install-modal');
+                if (!modal) return;
+                
+                // 每次點擊都重新判斷設備類型
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isAndroid = /Android/.test(navigator.userAgent);
+                
+                document.getElementById('pwa-native-install-section')?.classList.add('hidden');
+                document.getElementById('pwa-ios-instruction')?.classList.add('hidden');
+                document.getElementById('pwa-android-instruction')?.classList.add('hidden');
+
+                if (deferredPrompt) {
+                    // 若有攔截到原生安裝事件，顯示一鍵安裝按鈕
+                    document.getElementById('pwa-native-install-section')?.classList.remove('hidden');
+                } else if (isIOS) {
+                    // Apple 設備只能手動加入
+                    document.getElementById('pwa-ios-instruction')?.classList.remove('hidden');
+                } else {
+                    // Android 但未觸發原生事件，或其他設備，顯示通用 Android 教學
+                    document.getElementById('pwa-android-instruction')?.classList.remove('hidden');
+                }
+                
+                modal.classList.remove('hidden');
+            });
+
+            document.getElementById('pwa-native-install-btn')?.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') window.showToast('感謝您安裝探探里山 APP！');
+                    deferredPrompt = null;
+                    document.getElementById('pwa-install-modal')?.classList.add('hidden');
+                }
+            });
+
             // 觸發開啟聊天娃娃 Modal (任務頁)
             document.getElementById('open-chat-modal-btn')?.addEventListener('click', () => {
                 document.getElementById('chat-bot-modal')?.classList.remove('hidden');
@@ -2644,9 +2696,12 @@
             document.getElementById('log-green-procure-btn')?.addEventListener('click', () => {
                 const total = (parseFloat(qtyInput?.value)||1) * (parseFloat(priceInput?.value)||0);
                 if(total > 0) { 
-                    state.greenProcure = (state.greenProcure || 0) + total; addToGlobalTotal(0, total);
-                    const labelText = selectedGreenLabel ? `(${selectedGreenLabel})` : ''; window.addLog(`登錄綠消 ${labelText} $${total.toLocaleString()}`); 
-                    updateDisplays(); window.showToast('綠消登錄成功'); document.getElementById('green-consumption-modal')?.classList.add('hidden');
+                    state.greenProcure = (state.greenProcure || 0) + total; 
+                    state.totalScore = (state.totalScore || 0) + 5; // 新增：給予 5 點永續積分獎勵
+                    addToGlobalTotal(0, total);
+                    const labelText = selectedGreenLabel ? `(${selectedGreenLabel})` : ''; 
+                    window.addLog(`🛒 綠色採購 ${labelText}：$${total.toLocaleString()} (獲得 5 積分)`); 
+                    updateDisplays(); window.showToast('綠消登錄成功！獲得 5 積分'); document.getElementById('green-consumption-modal')?.classList.add('hidden');
                     if(priceInput) priceInput.value = ''; updateGreenTotal();
                 } else { window.showToast('請輸入消費單價'); }
             });
@@ -2654,8 +2709,13 @@
             document.getElementById('log-sroi-btn')?.addEventListener('click', () => {
                 const price = parseFloat(document.getElementById('sroi-price')?.value)||0, weight = parseFloat(document.getElementById('sroi-unit-select')?.value)||1, total = Math.floor(price * weight);
                 if(total > 0) { 
-                    state.sroiProcure = (state.sroiProcure || 0) + total; addToGlobalTotal(0, total); window.addLog(`登錄 SROI 價值 $${total.toLocaleString()}`); 
-                    updateDisplays(); window.showToast('SROI 登錄成功'); document.getElementById('green-consumption-modal')?.classList.add('hidden');
+                    state.sroiProcure = (state.sroiProcure || 0) + total; 
+                    state.totalScore = (state.totalScore || 0) + 5; // 新增：給予 5 點永續積分獎勵
+                    addToGlobalTotal(0, total); 
+                    const sroiSelect = document.getElementById('sroi-unit-select');
+                    const sroiName = sroiSelect ? sroiSelect.options[sroiSelect.selectedIndex].text.split(' ')[0] : '';
+                    window.addLog(`🌟 SROI 社會價值 (${sroiName})：$${total.toLocaleString()} (獲得 5 積分)`); 
+                    updateDisplays(); window.showToast('SROI 登錄成功！獲得 5 積分'); document.getElementById('green-consumption-modal')?.classList.add('hidden');
                     if(document.getElementById('sroi-price')) document.getElementById('sroi-price').value = '';
                 } else { window.showToast('請輸入消費金額'); }
             });
