@@ -992,7 +992,7 @@
             </div>
             <div class="flex-grow w-full bg-gray-50 rounded-b-2xl overflow-y-auto p-4 md:p-6 no-scrollbar">
 
-                <!-- 新增：網站操作員認證名單 -->
+                <!-- 恢復：網站操作員認證名單 -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
                     <div class="bg-slate-50 border-b border-gray-200 p-3 md:p-4">
                         <h4 class="font-bold text-slate-700 text-lg flex items-center"><i class="fas fa-user-cog text-blue-500 mr-2"></i>網站操作員認證名單</h4>
@@ -1000,8 +1000,8 @@
                     </div>
                     <div class="p-0">
                         <div class="flex justify-between items-center bg-gray-100/80 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-200">
-                            <span class="flex-1">授權單位</span>
-                            <span class="w-32 text-right">操作員姓名</span>
+                            <span class="flex-1">認證人員單位</span>
+                            <span class="w-32 text-right">操作管理師</span>
                         </div>
                         <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition">
                             <span class="flex-1 font-bold text-gray-700 text-sm">里山餐桌團隊</span>
@@ -1010,9 +1010,7 @@
                     </div>
                 </div>
 
-                <!-- 新增：企業儀表管理名單 -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-                <!-- 新增：企業/計畫儀表管理名單 (動態授權版) -->
+                <!-- 恢復：企業/計畫儀表管理名單 (動態授權版) -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
                     <div class="bg-indigo-50/40 border-b border-gray-200 p-3 md:p-4"><h4 class="font-bold text-indigo-800 text-lg flex items-center"><i class="fas fa-chart-pie text-indigo-500 mr-2"></i>企業 / 計畫儀表管理名單</h4></div>
                     <div class="p-0">
@@ -1027,10 +1025,14 @@
                     </div>
                 </div>
 
+                <!-- 原有：網站應用操作講師認證 -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-                    <div class="bg-mori-light/30 border-b border-gray-200 p-3 md:p-4"><h4 class="font-bold text-mori-forest text-lg flex items-center"><i class="fas fa-medal text-yellow-500 mr-2"></i>網站應用操作講師認證</h4></div>
+                    <div class="bg-mori-light/30 border-b border-gray-200 p-3 md:p-4">
+                        <h4 class="font-bold text-mori-forest text-lg flex items-center"><i class="fas fa-medal text-yellow-500 mr-2"></i>網站應用操作講師認證</h4>
+                        <p class="text-[11px] text-slate-500 mt-1.5 font-medium leading-relaxed"><i class="fas fa-info-circle mr-1"></i>說明：此區提供可授課解說本網站功能及應用之種子講師名單。</p>
+                    </div>
                     <div class="p-0">
-                        <div class="flex justify-between items-center bg-gray-100/80 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-200"><span class="flex-1">認證單位</span><span class="w-32 text-right">講師姓名</span></div>
+                        <div class="flex justify-between items-center bg-gray-100/80 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-200"><span class="flex-1">認證講師所屬單位</span><span class="w-32 text-right">講師姓名</span></div>
                         <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm">水里里山基地</span><span class="w-32 text-right font-medium text-gray-600 text-sm">測試員 A</span></div>
                         <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm">社團法人南投縣水里鄉商圈創生共好協會</span><span class="w-32 text-right font-medium text-gray-600 text-sm">測試員 B</span></div>
                         <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm">社團法人南投縣青年農民永續發展協會</span><span class="w-32 text-right font-medium text-gray-600 text-sm">測試員 C</span></div>
@@ -1650,6 +1652,15 @@
                 onSnapshot(doc(db, 'system_messages', 'broadcast'), (docSnap) => {
                     const bar = document.getElementById('system-broadcast-bar'), textEl = document.getElementById('system-broadcast-text');
                     if(docSnap.exists() && docSnap.data().message) { textEl.textContent = docSnap.data().message; bar.classList.remove('hidden'); } else { bar.classList.add('hidden'); }
+                });
+
+                onSnapshot(doc(db, 'system_messages', 'certifications'), (docSnap) => {
+                    if(docSnap.exists()) {
+                        globalCerts = docSnap.data();
+                    } else {
+                        globalCerts = { operators: [], lecturers: [] };
+                    }
+                    renderCertifications();
                 });
 
                 onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
