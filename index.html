@@ -1003,9 +1003,8 @@
                             <span class="flex-1">認證人員單位</span>
                             <span class="w-32 text-right">操作管理師</span>
                         </div>
-                        <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition">
-                            <span class="flex-1 font-bold text-gray-700 text-sm">里山餐桌團隊</span>
-                            <span class="w-32 text-right font-medium text-gray-600 text-sm">系統管理員 A</span>
+                        <div id="operator-list-container" class="max-h-60 overflow-y-auto custom-scrollbar">
+                            <div class="p-4 text-center text-gray-400 text-[13px]"><i class="fas fa-spinner fa-spin mr-2"></i>資料同步中...</div>
                         </div>
                     </div>
                 </div>
@@ -1033,9 +1032,9 @@
                     </div>
                     <div class="p-0">
                         <div class="flex justify-between items-center bg-gray-100/80 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-200"><span class="flex-1">認證講師所屬單位</span><span class="w-32 text-right">講師姓名</span></div>
-                        <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm">水里里山基地</span><span class="w-32 text-right font-medium text-gray-600 text-sm">測試員 A</span></div>
-                        <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm">社團法人南投縣水里鄉商圈創生共好協會</span><span class="w-32 text-right font-medium text-gray-600 text-sm">測試員 B</span></div>
-                        <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm">社團法人南投縣青年農民永續發展協會</span><span class="w-32 text-right font-medium text-gray-600 text-sm">測試員 C</span></div>
+                        <div id="lecturer-list-container" class="max-h-60 overflow-y-auto custom-scrollbar">
+                            <div class="p-4 text-center text-gray-400 text-[13px]"><i class="fas fa-spinner fa-spin mr-2"></i>資料同步中...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1139,6 +1138,7 @@
         let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], currentTransport: null };
         let globalGovData = { projects: [] };
         let globalEntData = { projects: [] };
+        let globalCerts = { operators: [], lecturers: [] };
         let selectedStart = null, selectedEnd = null, currentModalPoi = null, pendingTrip = { distMeters: 0, distKm: 0, reduction: 0, isValid: false };
         let mapInitialized = false;
         let pendingGovEvalSubmission = null, pendingEntEvalSubmission = null;
@@ -1590,6 +1590,24 @@
             }
         }
 
+        function renderCertifications() {
+            const opContainer = document.getElementById('operator-list-container');
+            const lecContainer = document.getElementById('lecturer-list-container');
+            
+            if(opContainer) {
+                const ops = globalCerts.operators || [];
+                opContainer.innerHTML = ops.length > 0 
+                    ? ops.map(o => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm truncate pr-2">${o.unit}</span><span class="w-32 text-right font-medium text-gray-600 text-sm truncate pl-2">${o.name}</span></div>`).join('')
+                    : '<div class="p-4 text-center text-gray-400 text-[13px]">目前尚無認證名單</div>';
+            }
+            if(lecContainer) {
+                const lecs = globalCerts.lecturers || [];
+                lecContainer.innerHTML = lecs.length > 0 
+                    ? lecs.map(l => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition"><span class="flex-1 font-bold text-gray-700 text-sm truncate pr-2">${l.unit}</span><span class="w-32 text-right font-medium text-gray-600 text-sm truncate pl-2">${l.name}</span></div>`).join('')
+                    : '<div class="p-4 text-center text-gray-400 text-[13px]">目前尚無認證名單</div>';
+            }
+        }
+
         function loadMockData() {
             isBackendReady = true; 
             if (globalEntData.projects.length === 0) {
@@ -1600,9 +1618,17 @@
                 globalGovData.projects = [{ id: 'mock_gov_1', name: '里山創生示範計畫', event: '地方青農推廣', date: '2026-03-05', budget: 50000, sroi: 1.95, supervisor: '農業部', organizer: '南投縣政府', executor: '水里鄉商圈創生共好協會', carbon: 3200, green: 15000, eval_count: 10, total_score: 480, isAuthorized: true }];
                 renderGovDashboard(); updateProjectDropdown();
             }
+
+            // 離線預設資料 (已清空，交由 Firebase 真實資料庫接管)
+            globalCerts = {
+                operators: [],
+                lecturers: []
+            };
+
             const todayStr = getTodayKey(); globalAbsolute = { carbon: 22647, green: 186500, visitor_count: 1250 }; globalAbsolute[`daily_${todayStr}_carbon`] = 350; 
             updateGlobalSummary();
             renderAuthList();
+            renderCertifications();
         }
 
         // ==========================================
