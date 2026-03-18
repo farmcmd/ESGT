@@ -1478,7 +1478,8 @@
             if(select) {
                 select.innerHTML = '<option value="">-- 請選擇參與計畫 --</option>' + globalGovData.projects.map(p => {
                     const isExpired = p.deadline && new Date() > new Date(p.deadline);
-                    return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${p.name} ${isExpired ? '(已截止)' : ''}</option>`;
+                    const statusIndicator = p.isAuthorized ? '🟢 ' : '🔴 [等待授權] ';
+                    return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${statusIndicator}${p.name} ${isExpired ? '(已截止)' : ''}</option>`;
                 }).join('');
             }
         }
@@ -1583,9 +1584,10 @@
         function updateEntProjectDropdown() {
             const select = document.getElementById('ent-proj-select');
             if(select) {
-                select.innerHTML = '<option value="">-- 選擇企業 --</option>' + globalEntData.projects.filter(p => p.isAuthorized).map(p => {
+                select.innerHTML = '<option value="">-- 選擇企業 --</option>' + globalEntData.projects.map(p => {
                     const isExpired = p.deadline && new Date() > new Date(p.deadline);
-                    return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${p.orgName} ${isExpired ? '(已截止)' : ''}</option>`;
+                    const statusIndicator = p.isAuthorized ? '🟢 ' : '🔴 [等待授權] ';
+                    return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${statusIndicator}${p.orgName} ${isExpired ? '(已截止)' : ''}</option>`;
                 }).join('');
             }
         }
@@ -2027,7 +2029,9 @@
         function bindGovernmentFlow() {
             document.getElementById('log-user-proj-btn')?.addEventListener('click', () => {
                 const id = document.getElementById('user-proj-select').value; if(!id) return window.showToast('請先選擇參與計畫！');
-                const proj = globalGovData.projects.find(p => p.id === id); if (proj.deadline && new Date() > new Date(proj.deadline)) return window.showToast('此計畫已過歸戶截止時間，無法再登錄！');
+                const proj = globalGovData.projects.find(p => p.id === id); 
+                if (!proj.isAuthorized) return window.showToast('此計畫尚未完成授權，無法歸戶！');
+                if (proj.deadline && new Date() > new Date(proj.deadline)) return window.showToast('此計畫已過歸戶截止時間，無法再登錄！');
                 const currentGreen = (state.greenProcure || 0) + (state.sroiProcure || 0) + (state.projectProcure || 0);
                 document.getElementById('gov-eval-target-name').textContent = proj.name; document.getElementById('gov-eval-target-carbon').textContent = Math.round(state.totalCarbon || 0); document.getElementById('gov-eval-target-green').textContent = currentGreen.toLocaleString();
                 pendingGovEvalSubmission = { projId: id, selectedProj: proj, carbon: state.totalCarbon, green: currentGreen };
