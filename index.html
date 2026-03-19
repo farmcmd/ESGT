@@ -2427,8 +2427,13 @@
             });
             document.getElementById('generate-ent-summary-btn')?.addEventListener('click', () => {
                 if (summaryState.entSelected.size === 0) return window.showToast('請至少選擇一張已結案的活動卡片');
+                
+                const customTitle = prompt("📝 請輸入本次總承報表的專案/企劃名稱：", "【年度/專案總結】企業綜合永續旅遊/永續活動績效");
+                if (customTitle === null) return; // 使用者按下取消，安全中斷
+                const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【年度/專案總結】企業綜合永續旅遊/永續活動績效";
+
                 let combined = {
-                    orgName: '【年度/專案總結】企業綜合 ESG 績效', event: `共彙整 ${summaryState.entSelected.size} 個專案活動`, year: new Date().getFullYear(),
+                    orgName: finalTitle, event: `共彙整 ${summaryState.entSelected.size} 個專案活動`, year: new Date().getFullYear(),
                     eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, carbon: 0, green: 0,
                     linkedProject: { type: '綜合社會價值創造', amount: 0, sroiWeight: 1 }, feedbacks: []
                 };
@@ -2472,8 +2477,13 @@
             });
             document.getElementById('generate-gov-summary-btn')?.addEventListener('click', () => {
                 if (summaryState.govSelected.size === 0) return window.showToast('請至少選擇一張已結案的計畫卡片');
+                
+                const customTitle = prompt("📝 請輸入本次總承報表的計畫名稱：", "【專案總結】計畫執行綜合績效");
+                if (customTitle === null) return; // 使用者按下取消，安全中斷
+                const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【專案總結】計畫執行綜合績效";
+
                 let combined = {
-                    name: '【專案總結】計畫執行綜合績效', event: `共彙整 ${summaryState.govSelected.size} 個計畫活動`,
+                    name: finalTitle, event: `共彙整 ${summaryState.govSelected.size} 個計畫活動`,
                     eval_count: 0, total_score: 0, carbon: 0, green: 0, budget: 0, sroi: 1, feedbacks: []
                 };
                 let sroiSum = 0;
