@@ -2085,55 +2085,32 @@
                 });
             });
 
-            // 語言轉換連動邏輯 (單點修復：離屏渲染 + 無感輪詢喚醒 + 暴力重啟，絕不閃退)
+            // 終極修復：語言轉換連動邏輯 (原生穩定版，確保下拉選單存在再觸發)
             const langSelect = document.getElementById('custom-lang-select');
             if (langSelect) {
-                // 1. 同步目前語系 Cookie 狀態
+                // 同步 Cookie 狀態
                 const match = document.cookie.match(/(?:^|;)\s*googtrans=([^;]+)/);
                 if (match) {
                     const currentLang = match[1].split('/').pop();
-                    if(currentLang) langSelect.value = currentLang;
+                    if (currentLang) langSelect.value = currentLang;
                 }
 
-                // 2. 綁定切換事件
                 langSelect.addEventListener('change', function(e) {
                     const lang = e.target.value;
-                    const domain = window.location.hostname;
+                    const selectField = document.querySelector('.goog-te-combo');
                     
-                    // 雙重 Cookie 寫入
-                    document.cookie = `googtrans=/zh-TW/${lang}; path=/;`;
-                    if (domain) document.cookie = `googtrans=/zh-TW/${lang}; path=/; domain=${domain};`;
-
-                    const triggerTranslation = () => {
-                        const selectField = document.querySelector('.goog-te-combo');
-                        if (selectField) {
-                            selectField.value = lang;
-                            selectField.dispatchEvent(new Event('change'));
-                            window.showToast('🌐 語言切換成功！');
-                            return true;
+                    if (selectField) {
+                        selectField.value = lang;
+                        selectField.dispatchEvent(new Event('change'));
+                        window.showToast('🌐 語言切換成功！');
+                    } else {
+                        window.showToast('⏳ 翻譯模組載入中，請稍候再試...');
+                        // 暴力寫入 Cookie 並重整作為最終備案
+                        document.cookie = `googtrans=/zh-TW/${lang}; path=/;`;
+                        if (window.location.hostname) {
+                            document.cookie = `googtrans=/zh-TW/${lang}; path=/; domain=${window.location.hostname};`;
                         }
-                        return false;
-                    };
-
-                    if (!triggerTranslation()) {
-                        window.showToast('⏳ 翻譯模組喚醒中...');
-                        let retryCount = 0;
-                        const retryInterval = setInterval(() => {
-                            if (triggerTranslation()) {
-                                clearInterval(retryInterval);
-                            } else if (retryCount > 15) {
-                                clearInterval(retryInterval);
-                                if (window.google && window.google.translate) {
-                                    window.showToast('⚠️ 嘗試強制喚醒引擎...');
-                                    document.getElementById('google_translate_element').innerHTML = '';
-                                    if(typeof window.googleTranslateElementInit === 'function') window.googleTranslateElementInit();
-                                    setTimeout(triggerTranslation, 1000);
-                                } else {
-                                    window.showToast('❌ 模組載入延遲，請稍後再次嘗試');
-                                }
-                            }
-                            retryCount++;
-                        }, 500);
+                        setTimeout(() => { window.location.reload(); }, 1000);
                     }
                 });
             }
