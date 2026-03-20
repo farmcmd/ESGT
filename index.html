@@ -1709,7 +1709,17 @@
         function updateEntProjectDropdown() {
             const select = document.getElementById('ent-proj-select');
             if(select) {
-                select.innerHTML = '<option value="">-- 選擇企業 --</option>' + globalEntData.projects.map(p => {
+                // 導入搜尋過濾邏輯 (連動下拉選單)
+                const keyword = document.getElementById('ent-search-input')?.value.toLowerCase().trim() || '';
+                let displayProjects = globalEntData.projects;
+                if (keyword) {
+                    displayProjects = displayProjects.filter(proj => 
+                        (proj.orgName && proj.orgName.toLowerCase().includes(keyword)) ||
+                        (proj.event && proj.event.toLowerCase().includes(keyword)) ||
+                        (proj.year && String(proj.year).toLowerCase().includes(keyword))
+                    );
+                }
+                select.innerHTML = '<option value="">-- 選擇企業 --</option>' + displayProjects.map(p => {
                     const isExpired = p.deadline && new Date() > new Date(p.deadline);
                     const statusIndicator = p.isAuthorized ? '🟢 ' : '🔴 [等待授權] ';
                     return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${statusIndicator}${p.orgName} ${isExpired ? '(已截止)' : ''}</option>`;
