@@ -2085,26 +2085,55 @@
                 });
             });
 
-            // 語言轉換連動邏輯 (絕對防禦版：Cookie 強制注入與狀態同步)
+            // 語言轉換連動邏輯 (單點修復：離屏渲染 + 無感輪詢喚醒 + 暴力重啟，絕不閃退)
             const langSelect = document.getElementById('custom-lang-select');
             if (langSelect) {
-                // 1. 頁面載入時，同步目前語系 Cookie 狀態，避免選單顯示錯誤
-                const match = document.cookie.match(/googtrans=\/zh-TW\/([^;]+)/);
-                if (match) langSelect.value = match[1];
+                // 1. 同步目前語系 Cookie 狀態
+                const match = document.cookie.match(/(?:^|;)\s*googtrans=([^;]+)/);
+                if (match) {
+                    const currentLang = match[1].split('/').pop();
+                    if(currentLang) langSelect.value = currentLang;
+                }
 
                 // 2. 綁定切換事件
                 langSelect.addEventListener('change', function(e) {
                     const lang = e.target.value;
-                    const selectField = document.querySelector('.goog-te-combo');
-                    if (selectField) {
-                        selectField.value = lang;
-                        selectField.dispatchEvent(new Event('change'));
-                        window.showToast('🌐 語言切換中...');
-                    } else {
-                        // 啟動終極防禦：直接寫入 Google Translate Cookie 並重整
-                        document.cookie = `googtrans=/zh-TW/${lang}; path=/`;
-                        window.showToast('🌐 語言切換中，系統準備重載...');
-                        setTimeout(() => window.location.reload(), 500);
+                    const domain = window.location.hostname;
+                    
+                    // 雙重 Cookie 寫入
+                    document.cookie = `googtrans=/zh-TW/${lang}; path=/;`;
+                    if (domain) document.cookie = `googtrans=/zh-TW/${lang}; path=/; domain=${domain};`;
+
+                    const triggerTranslation = () => {
+                        const selectField = document.querySelector('.goog-te-combo');
+                        if (selectField) {
+                            selectField.value = lang;
+                            selectField.dispatchEvent(new Event('change'));
+                            window.showToast('🌐 語言切換成功！');
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    if (!triggerTranslation()) {
+                        window.showToast('⏳ 翻譯模組喚醒中...');
+                        let retryCount = 0;
+                        const retryInterval = setInterval(() => {
+                            if (triggerTranslation()) {
+                                clearInterval(retryInterval);
+                            } else if (retryCount > 15) {
+                                clearInterval(retryInterval);
+                                if (window.google && window.google.translate) {
+                                    window.showToast('⚠️ 嘗試強制喚醒引擎...');
+                                    document.getElementById('google_translate_element').innerHTML = '';
+                                    if(typeof window.googleTranslateElementInit === 'function') window.googleTranslateElementInit();
+                                    setTimeout(triggerTranslation, 1000);
+                                } else {
+                                    window.showToast('❌ 模組載入延遲，請稍後再次嘗試');
+                                }
+                            }
+                            retryCount++;
+                        }, 500);
                     }
                 });
             }
