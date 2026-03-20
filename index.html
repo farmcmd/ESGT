@@ -2187,6 +2187,11 @@
                 if (!isOfflineMode && db) { try { await setDoc(doc(db, 'ent_projects', newId), newProj); } catch(e) {} } else { globalEntData.projects.unshift(newProj); }
                 renderEntProjectsDashboard(); updateEntProjectDropdown(); window.showToast('企業活動儀表板建立成功！');
             });
+            
+            document.getElementById('ent-search-input')?.addEventListener('input', () => {
+                renderEntProjectsDashboard();
+                updateEntProjectDropdown();
+            });
         }
 
         function bindGovernmentFlow() {
@@ -2238,8 +2243,11 @@
                 renderGovDashboard(); updateProjectDropdown(); window.showToast('建立成功！');
             });
             
-            // 綁定搜尋輸入事件，即時觸發重新渲染過濾
-            document.getElementById('gov-search-input')?.addEventListener('input', renderGovDashboard);
+            // 綁定搜尋輸入事件 (連動卡片與下拉選單)
+            document.getElementById('gov-search-input')?.addEventListener('input', () => {
+                renderGovDashboard();
+                updateProjectDropdown();
+            });
         }
 
         function bindStarRatings() {
