@@ -2016,6 +2016,57 @@
                 });
             });
 
+            // 匯出與匯入個人進度檔邏輯
+            document.getElementById('export-data-button')?.addEventListener('click', () => {
+                try {
+                    const dataStr = JSON.stringify(state, null, 2);
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `探探里山_個人進度備份_${window.getFormattedTime().replace(/[\/ :]/g, '')}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    window.showToast('✅ 個人進度檔匯出成功！');
+                } catch (e) {
+                    window.showToast('❌ 匯出失敗，請稍後再試。');
+                }
+            });
+
+            document.getElementById('import-data-btn-trigger')?.addEventListener('click', () => {
+                document.getElementById('import-data-input')?.click();
+            });
+
+            document.getElementById('import-data-input')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedState = JSON.parse(event.target.result);
+                        if (importedState && typeof importedState === 'object') {
+                            state = { ...state, ...importedState };
+                            saveData();
+                            updateDisplays();
+                            if(typeof renderCheckoutHistory === 'function') renderCheckoutHistory();
+                            if(typeof renderLogs === 'function') renderLogs();
+                            // 同步更新畫面上的姓名與代碼
+                            if(document.getElementById('player-name')) document.getElementById('player-name').value = state.playerName || '';
+                            if(document.getElementById('player-code')) document.getElementById('player-code').textContent = state.playerCode || '...';
+                            window.showToast('✅ 進度檔匯入成功！所有資料已還原。');
+                        } else {
+                            window.showToast('❌ 檔案格式不符，無法匯入。');
+                        }
+                    } catch (err) {
+                        window.showToast('❌ 檔案解析失敗，請確認是否為有效的備份檔。');
+                    }
+                    e.target.value = ''; // 清空 input 值，允許使用者重複選取同一個檔案
+                };
+                reader.readAsText(file);
+            });
+
             // 其他通用邏輯
             document.getElementById('header-share-btn')?.addEventListener('click', () => window.openModal('qrcode-modal'));
             
