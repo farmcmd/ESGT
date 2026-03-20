@@ -2085,6 +2085,30 @@
                 });
             });
 
+            // 語言轉換連動邏輯 (絕對防禦版：Cookie 強制注入與狀態同步)
+            const langSelect = document.getElementById('custom-lang-select');
+            if (langSelect) {
+                // 1. 頁面載入時，同步目前語系 Cookie 狀態，避免選單顯示錯誤
+                const match = document.cookie.match(/googtrans=\/zh-TW\/([^;]+)/);
+                if (match) langSelect.value = match[1];
+
+                // 2. 綁定切換事件
+                langSelect.addEventListener('change', function(e) {
+                    const lang = e.target.value;
+                    const selectField = document.querySelector('.goog-te-combo');
+                    if (selectField) {
+                        selectField.value = lang;
+                        selectField.dispatchEvent(new Event('change'));
+                        window.showToast('🌐 語言切換中...');
+                    } else {
+                        // 啟動終極防禦：直接寫入 Google Translate Cookie 並重整
+                        document.cookie = `googtrans=/zh-TW/${lang}; path=/`;
+                        window.showToast('🌐 語言切換中，系統準備重載...');
+                        setTimeout(() => window.location.reload(), 500);
+                    }
+                });
+            }
+
             // 匯出與匯入個人進度檔邏輯
             document.getElementById('export-data-button')?.addEventListener('click', () => {
                 try {
