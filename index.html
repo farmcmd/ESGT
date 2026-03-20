@@ -728,7 +728,7 @@
                     <!-- 移至登錄區塊正下方：政府全局搜尋列 (強化視覺橋樑) -->
                     <div class="relative mt-2 mb-2">
                         <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
-                        <input type="text" id="gov-search-input" class="w-full pl-12 pr-4 py-3 border-2 border-blue-300 rounded-xl text-[15px] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 bg-white shadow-sm transition-all font-bold text-gray-700 placeholder-gray-400" placeholder="🔍 輸入關鍵字，同步過濾上方選單與下方卡片...">
+                        <input type="text" id="gov-search-input" oninput="window.triggerGovSearch()" onkeyup="if(event.key==='Enter') this.blur(); window.triggerGovSearch()" class="w-full pl-12 pr-4 py-3 border-2 border-blue-300 rounded-xl text-[15px] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 bg-white shadow-sm transition-all font-bold text-gray-700 placeholder-gray-400" placeholder="🔍 輸入關鍵字，同步過濾上方選單與下方卡片...">
                     </div>
 
                     <div class="relative pb-16">
@@ -1205,6 +1205,18 @@
         // ==========================================
         // 3. 核心工具函數 (Core Utils)
         // ==========================================
+        
+        // 全局搜尋驅動引擎：強制綁定於最高層級
+        window.triggerEntSearch = function() {
+            if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard();
+            if(typeof updateEntProjectDropdown === 'function') updateEntProjectDropdown();
+        };
+
+        window.triggerGovSearch = function() {
+            if(typeof renderGovDashboard === 'function') renderGovDashboard();
+            if(typeof updateProjectDropdown === 'function') updateProjectDropdown();
+        };
+
         window.toastTimer = null;
         window.showToast = function(msg) {
             let toast = document.getElementById('custom-toast');
@@ -1709,7 +1721,6 @@
         function updateEntProjectDropdown() {
             const select = document.getElementById('ent-proj-select');
             if(select) {
-                // 導入搜尋過濾邏輯 (連動下拉選單)
                 const keyword = document.getElementById('ent-search-input')?.value.toLowerCase().trim() || '';
                 let displayProjects = globalEntData.projects;
                 if (keyword) {
