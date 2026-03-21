@@ -2116,16 +2116,33 @@
                 });
             });
 
-            // 終極修復：偷偷置入自動重載邏輯 (完美落實您的決策，100% 成功率)
+            // 終極修復：偷偷置入自動重載邏輯 (結合嚴格初始化與快取淨化)
             const langSelect = document.getElementById('custom-lang-select');
             if (langSelect) {
-                // 同步 Cookie 狀態，讓選單維持在使用者的選擇
+                // 1. 安全讀取 Cookie 並驗證
                 const match = document.cookie.match(/(?:^|;)\s*googtrans=([^;]+)/);
+                let currentLang = 'zh-TW'; // 絕對預設值
+                
                 if (match) {
-                    const currentLang = match[1].split('/').pop();
-                    if (currentLang) langSelect.value = currentLang;
+                    const parsedLang = match[1].split('/').pop();
+                    // 檢查 Cookie 的語言是否真的在我們的支援清單中
+                    const validLangs = Array.from(langSelect.options).map(o => o.value);
+                    if (validLangs.includes(parsedLang)) {
+                        currentLang = parsedLang;
+                    }
                 }
 
+                // 2. 強制設定 UI 顯示，不受瀏覽器干擾
+                langSelect.value = currentLang;
+
+                // 3. 若預設為繁體中文，主動淨化可能殘留的 Google 翻譯 Cookie
+                if (currentLang === 'zh-TW') {
+                    const domain = window.location.hostname;
+                    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                    if (domain) document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`;
+                }
+
+                // 4. 綁定切換事件
                 langSelect.addEventListener('change', function(e) {
                     const lang = e.target.value;
                     const domain = window.location.hostname;
