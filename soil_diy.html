@@ -187,8 +187,64 @@ body {
     transform: scale(1.1);
 }
 
+/* Test Tube */
+#test-tube-container {
+    position: fixed;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 90;
+    pointer-events: none;
+}
+.tube-glass {
+    width: 60px;
+    height: 250px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-top: none;
+    border-radius: 0 0 30px 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(255,255,255,0.2), 0 10px 20px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.tube-glass::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 5px; right: 40px; bottom: 10px;
+    background: linear-gradient(to right, rgba(255,255,255,0.3), transparent);
+    border-radius: 20px;
+    z-index: 10;
+}
+#tube-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.tube-layer {
+    width: 100%;
+    transition: height 1s ease-out;
+}
+.tube-label {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 3px #000;
+}
+
 /* Responsive Design for Mobile Devices */
 @media screen and (max-width: 768px) {
+    #test-tube-container { right: 45px; width: 40px; height: 200px; }
+    .tube-glass { width: 40px; height: 160px; }
+    .tube-label { font-size: 0.8rem; }
     .hero h1 { font-size: 2.5rem; }
     .hero p { font-size: 1.1rem; padding: 0 15px; }
     #start-btn { padding: 0.8rem 1.8rem; font-size: 1rem; }
@@ -306,23 +362,64 @@ body {
                 <li data-target="layer-agri" style="font-size: 0.8rem; line-height: 1;">農</li>
             </ul>
         </nav>
+        
+        <div id="test-tube-container" class="hidden">
+            <div class="tube-glass">
+                <div id="tube-content"></div>
+            </div>
+            <div class="tube-label">土壤剖面</div>
+        </div>
     </div>
 
     <!-- Game Scripts -->
     <script>
+window.globalScores = { r: 0, c: 0, b: 0, a: 0, o: 0 };
+window.layerCompletionOrder = [];
+window.addSoilToTube = function(layerId, colorHex, score) {
+    if(!window.layerCompletionOrder.includes(layerId)) {
+        window.layerCompletionOrder.push(layerId);
+    }
+    
+    document.getElementById('test-tube-container').classList.remove('hidden');
+
+    const labelMap = { 'r': 'R', 'c': 'C', 'b': 'B', 'a': 'A', 'o': 'O', 'agri': '農' };
+
+    const tubeContent = document.getElementById('tube-content');
+    const layerDiv = document.createElement('div');
+    layerDiv.className = 'tube-layer';
+    layerDiv.style.backgroundColor = colorHex;
+    layerDiv.style.display = 'flex';
+    layerDiv.style.justifyContent = 'center';
+    layerDiv.style.alignItems = 'center';
+    layerDiv.style.color = 'rgba(255,255,255,0.8)';
+    layerDiv.style.fontWeight = 'bold';
+    layerDiv.style.fontSize = '14px';
+    layerDiv.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+    layerDiv.textContent = labelMap[layerId] || '';
+    
+    // Base height 5%, + up to 15% based on score
+    const finalHeight = 5 + (score / 100 * 15);
+    layerDiv.style.height = '0%';
+    tubeContent.insertBefore(layerDiv, tubeContent.firstChild);
+    setTimeout(() => {
+        layerDiv.style.height = finalHeight + '%';
+    }, 50);
+};
+
 function initGameR() {
     const container = document.getElementById('game-r');
     
     // Create UI elements
     container.innerHTML = `
-        <div class="shakes-counter">板塊能量: <span id="shake-energy">0</span>%</div>
+        <div class="shakes-counter">板塊能量: <span id="shake-energy">0</span></div>
+        <div class="timer" style="font-size: 1.2rem; color: #ffeb3b; margin-top: 5px;">剩餘時間: <span id="r-timer">15</span>秒</div>
         <div class="plate-container">
             <div id="plate-left" class="tectonic-plate">歐亞板塊</div>
             <div id="plate-right" class="tectonic-plate">菲律賓海板塊</div>
             <div id="bedrock"></div>
         </div>
         <button id="quake-btn">引發地震 (點擊或按空白鍵)</button>
-        <div id="r-message" class="game-message hidden">岩床已碎裂！進入下一層（C層）</div>
+        <div id="r-message" class="game-message hidden">時間到！能量轉換為地層分數。</div>
     `;
 
     // Inject local styles dynamically
@@ -415,52 +512,67 @@ function initGameR() {
     document.head.appendChild(style);
 
     let energy = 0;
-    const maxEnergy = 100;
     const energyDisplay = document.getElementById('shake-energy');
     const bedrock = document.getElementById('bedrock');
     const plates = document.querySelectorAll('.tectonic-plate');
     const msg = document.getElementById('r-message');
     let isCompleted = false;
+    
+    let timeLeft = 15;
+    const timerSpan = document.getElementById('r-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                completeGame();
+            }
+        }, 1000);
+    }
 
     function triggerQuake() {
         if (isCompleted) return;
+        startTimer();
         
         energy += 5;
-        if (energy > maxEnergy) energy = maxEnergy;
         energyDisplay.textContent = energy;
 
-        // Visual effects for plates squeezing together
-        plates[0].style.transform = `translateX(${energy / 2}px) skewX(-${energy/10}deg)`;
-        plates[1].style.transform = `translateX(-${energy / 2}px) skewX(${energy/10}deg)`;
+        let visualEnergy = Math.min(energy, 100);
+        plates[0].style.transform = `translateX(${visualEnergy / 2}px) skewX(-${visualEnergy/10}deg)`;
+        plates[1].style.transform = `translateX(-${visualEnergy / 2}px) skewX(${visualEnergy/10}deg)`;
 
-        // Shake bedrock
         bedrock.classList.add('shake');
         setTimeout(() => bedrock.classList.remove('shake'), 200);
 
-        // Cracking phases
         if (energy > 30) bedrock.classList.add('crack-1');
         if (energy > 60) bedrock.classList.add('crack-2');
-
-        if (energy >= maxEnergy) {
-            completeGame();
-        }
+        if (energy >= 100) bedrock.classList.add('crack-final');
     }
 
     function completeGame() {
+        if(isCompleted) return;
         isCompleted = true;
         bedrock.classList.add('crack-final');
         msg.classList.remove('hidden');
         document.getElementById('quake-btn').disabled = true;
+
+        const score = Math.min(energy, 100);
+        window.globalScores.r = score;
+        window.addSoilToTube('r', '#4a4a4a', score);
 
         setTimeout(() => {
             document.getElementById('layer-c').scrollIntoView({ behavior: 'smooth' });
         }, 2000);
     }
 
-    // Event Listeners
     document.getElementById('quake-btn').addEventListener('click', triggerQuake);
     document.addEventListener('keydown', (e) => {
-        // Spacebar triggers if we're focused on this layer roughly
         if (e.code === 'Space' && !isCompleted && window.getSelection().toString() === '') {
             const rect = container.getBoundingClientRect();
             if (rect.top >= 0 && rect.bottom <= window.innerHeight + 200) {
@@ -477,14 +589,15 @@ function initGameC() {
     
     container.innerHTML = `
         <div class="weathering-ui">
-            <div class="weathering-progress">風化程度: <span id="weather-pct">0</span>%</div>
+            <div class="weathering-progress">風化程度: <span id="weather-pct">0</span></div>
+            <div class="timer" style="font-size: 1.2rem; color: #ffeb3b; margin-bottom: 10px;">剩餘時間: <span id="c-timer">15</span>秒</div>
             <div class="tools-panel">
                 <button class="tool-btn" id="tool-rain" data-tool="rain">🌧️ 降雨</button>
                 <button class="tool-btn" id="tool-sun" data-tool="sun">☀️ 烈日</button>
             </div>
             <div id="c-rock" class="c-rock-base"></div>
         </div>
-        <div id="c-message" class="game-message hidden">岩石已風化碎裂成母質！進入下一層（B層）</div>
+        <div id="c-message" class="game-message hidden">時間到！風化程度轉換為分數。</div>
     `;
 
     const style = document.createElement('style');
@@ -500,7 +613,7 @@ function initGameC() {
         .weathering-progress {
             font-size: 1.2rem;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
         .tools-panel {
             display: flex;
@@ -579,7 +692,6 @@ function initGameC() {
     const pctSpan = document.getElementById('weather-pct');
     const msg = document.getElementById('c-message');
 
-    // Add visual effects layers to rock
     const rainEffect = document.createElement('div');
     rainEffect.className = 'c-rain-effect';
     const sunEffect = document.createElement('div');
@@ -587,7 +699,6 @@ function initGameC() {
     rock.appendChild(rainEffect);
     rock.appendChild(sunEffect);
 
-    // Add gravel pile
     const gravel = document.createElement('div');
     gravel.className = 'gravel-pile';
     document.querySelector('.weathering-ui').appendChild(gravel);
@@ -596,8 +707,27 @@ function initGameC() {
     let weatherPct = 0;
     let isCompleted = false;
 
+    let timeLeft = 15;
+    const timerSpan = document.getElementById('c-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                completeGame();
+            }
+        }, 1000);
+    }
+
     function selectTool(toolKey, btn) {
         if(isCompleted) return;
+        startTimer();
         activeTool = toolKey;
         document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active-tool'));
         btn.classList.add('active-tool');
@@ -608,8 +738,8 @@ function initGameC() {
 
     rock.addEventListener('click', (e) => {
         if(isCompleted || !activeTool) return;
+        startTimer();
 
-        // Visual flash based on tool
         if(activeTool === 'rain') {
             rainEffect.classList.add('flash');
             setTimeout(() => rainEffect.classList.remove('flash'), 200);
@@ -618,7 +748,6 @@ function initGameC() {
             setTimeout(() => sunEffect.classList.remove('flash'), 200);
         }
 
-        // Spawn rock chips
         for(let i=0; i<3; i++) {
             const chip = document.createElement('div');
             chip.className = 'rock-chip';
@@ -629,25 +758,28 @@ function initGameC() {
         }
 
         weatherPct += 4;
-        if(weatherPct > 100) weatherPct = 100;
         pctSpan.textContent = weatherPct;
         
-        // Shrink the rock
-        const scale = 1 - (weatherPct * 0.005);
+        const scale = Math.max(0.1, 1 - (weatherPct * 0.005));
         rock.style.transform = `scale(${scale})`;
         
-        // Show gravel forming
-        gravel.style.opacity = weatherPct / 100;
-
-        if(weatherPct >= 100) {
-            isCompleted = true;
-            rock.style.display = 'none';
-            msg.classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('layer-b').scrollIntoView({ behavior: 'smooth' });
-            }, 2000);
-        }
+        gravel.style.opacity = Math.min(weatherPct / 100, 1);
     });
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true;
+        rock.style.display = 'none';
+        msg.classList.remove('hidden');
+
+        const score = Math.min(weatherPct, 100);
+        window.globalScores.c = score;
+        window.addSoilToTube('c', '#8b7355', score);
+
+        setTimeout(() => {
+            document.getElementById('layer-b').scrollIntoView({ behavior: 'smooth' });
+        }, 2000);
+    }
 }
 
 
@@ -657,11 +789,12 @@ function initGameB() {
     container.innerHTML = `
         <div class="b-game-ui">
             <div class="b-progress">紅土化程度: <span id="b-pct">0</span>%</div>
+            <div class="timer" style="font-size: 1.2rem; color: #ffeb3b; margin-bottom: 5px;">剩餘時間: <span id="b-timer">15</span>秒</div>
             <div id="b-game-area">
                 <div id="catcher">澱積區</div>
             </div>
         </div>
-        <div id="b-message" class="game-message hidden">礦物質已澱積成紅土！進入下一層（A層）</div>
+        <div id="b-message" class="game-message hidden">時間到！礦物沉澱轉換為分數。</div>
     `;
 
     const style = document.createElement('style');
@@ -676,7 +809,7 @@ function initGameB() {
         .b-progress {
             font-size: 1.2rem;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             z-index: 10;
         }
         #b-game-area {
@@ -736,6 +869,25 @@ function initGameB() {
     let gameLoop;
     let minerals = [];
     
+    // Timer Logic
+    let timeLeft = 15;
+    const timerSpan = document.getElementById('b-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                completeGame();
+            }
+        }, 1000);
+    }
+    
     // Catcher Drag Logic
     let isDragging = false;
     let catcherX = gameArea.clientWidth / 2;
@@ -744,10 +896,12 @@ function initGameB() {
     catcher.style.left = catcherX + 'px';
 
     const startDrag = (e) => {
+        if(isCompleted) return;
         isDragging = true;
     };
     const moveDrag = (e) => {
-        if(!isDragging) return;
+        if(!isDragging || isCompleted) return;
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
         const rect = gameArea.getBoundingClientRect();
         let clientX = e.clientX || (e.touches && e.touches[0].clientX);
         if(!clientX) return;
@@ -766,9 +920,9 @@ function initGameB() {
     };
 
     catcher.addEventListener('mousedown', startDrag);
-    catcher.addEventListener('touchstart', startDrag);
+    catcher.addEventListener('touchstart', startDrag, {passive: false});
     document.addEventListener('mousemove', moveDrag);
-    document.addEventListener('touchmove', moveDrag);
+    document.addEventListener('touchmove', moveDrag, {passive: false});
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('touchend', endDrag);
 
@@ -794,7 +948,7 @@ function initGameB() {
             active: true
         });
         
-        setTimeout(spawnMineral, Math.random() * 1000 + 500);
+        setTimeout(spawnMineral, Math.random() * 800 + 400); // spawned a bit faster to allow up to 100% in 15s
     }
     
     // Check intersection observation for animation loop
@@ -809,6 +963,8 @@ function initGameB() {
     observer.observe(document.getElementById('layer-b'));
 
     function startGame() {
+        if(isCompleted) return;
+        startTimer();
         spawnMineral();
         updateGame();
     }
@@ -836,15 +992,10 @@ function initGameB() {
                     m.el.remove();
                     
                     catchPct += 5;
-                    if(catchPct > 100) catchPct = 100;
-                    pctSpan.textContent = catchPct;
+                    pctSpan.textContent = Math.min(catchPct, 100);
                     
                     // Change background color to redder
-                    gameArea.style.backgroundColor = 'rgba(178, 77, 46, ' + (catchPct/100 * 0.5) + ')';
-                    
-                    if(catchPct >= 100) {
-                        completeGame();
-                    }
+                    gameArea.style.backgroundColor = 'rgba(178, 77, 46, ' + (Math.min(catchPct, 100)/100 * 0.5) + ')';
                 }
             }
             
@@ -863,10 +1014,15 @@ function initGameB() {
     }
 
     function completeGame() {
+        if(isCompleted) return;
         isCompleted = true;
         msg.classList.remove('hidden');
         minerals.forEach(m => m.el.remove());
         
+        const score = Math.min(catchPct, 100);
+        window.globalScores.b = score;
+        window.addSoilToTube('b', '#b24d2e', score);
+
         setTimeout(() => {
             document.getElementById('layer-a').scrollIntoView({ behavior: 'smooth' });
         }, 2000);
@@ -880,12 +1036,13 @@ function initGameA() {
     container.innerHTML = `
         <div class="a-game-ui">
             <div class="a-progress">養分吸收: <span id="a-pct">0</span>%</div>
+            <div class="timer" style="font-size: 1.2rem; color: #ffeb3b; margin-bottom: 5px;">剩餘時間: <span id="a-timer">15</span>秒</div>
             <p style="font-size: 0.9rem; color: #ccc;">拖拉從種子畫出根系吸收養分粒子</p>
             <div id="a-canvas-container">
                 <canvas id="a-canvas" width="400" height="250"></canvas>
             </div>
         </div>
-        <div id="a-message" class="game-message hidden">表土層生機蓬勃！進入最高層（O層）</div>
+        <div id="a-message" class="game-message hidden">時間到！養分吸收轉換為分數。</div>
     `;
 
     const style = document.createElement('style');
@@ -899,7 +1056,7 @@ function initGameA() {
         .a-progress {
             font-size: 1.2rem;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 5px 0;
             z-index: 10;
         }
         #a-canvas-container {
@@ -932,13 +1089,33 @@ function initGameA() {
     const maxNutrition = 100;
     let isCompleted = false;
 
+    // Timer Logic
+    let timeLeft = 15;
+    const timerSpan = document.getElementById('a-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                completeGame();
+            }
+        }, 1000);
+    }
+
     // Roots
-    let roots = []; // array of points {x, y}
+    let rootPaths = []; // array of paths, where each path is an array of points {x, y}
+    let currentPath = null;
     let isDrawing = false;
     
     // Nutrients
     let nutrients = [];
-    for(let i=0; i<15; i++) {
+    for(let i=0; i<20; i++) { // Increased to 20 to give plenty to collect in 15s
         nutrients.push({
             x: Math.random() * 360 + 20,
             y: Math.random() * 200 + 40,
@@ -972,19 +1149,32 @@ function initGameA() {
         ctx.fillStyle = '#f9ca24';
         ctx.fill();
 
-        // Draw Roots
-        if (roots.length > 0) {
-            ctx.beginPath();
-            ctx.moveTo(roots[0].x, roots[0].y);
-            for(let i=1; i<roots.length; i++) {
-                ctx.lineTo(roots[i].x, roots[i].y);
-            }
-            ctx.strokeStyle = '#f6e58d';
-            ctx.lineWidth = 4;
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.stroke();
+        // Draw Groundwater based on nutrition
+        const gwHeight = (nutrition / 100) * 60; // Max 60px height
+        if (gwHeight > 0) {
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.4)';
+            ctx.fillRect(0, canvas.height - gwHeight, canvas.width, gwHeight);
+            
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.font = '12px Noto Sans TC, sans-serif';
+            ctx.fillText('地下水脈', 10, canvas.height - 10);
         }
+
+        // Draw Roots
+        rootPaths.forEach(path => {
+            if (path.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(path[0].x, path[0].y);
+                for(let i=1; i<path.length; i++) {
+                    ctx.lineTo(path[i].x, path[i].y);
+                }
+                ctx.strokeStyle = '#f6e58d';
+                ctx.lineWidth = 4;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        });
     }
 
     render();
@@ -994,7 +1184,6 @@ function initGameA() {
         const clientX = e.clientX || (e.touches && e.touches[0].clientX);
         const clientY = e.clientY || (e.touches && e.touches[0].clientY);
         
-        // Scale dynamically if canvas CSS size differs from its intrinsic size
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         
@@ -1006,42 +1195,49 @@ function initGameA() {
 
     const startDraw = (e) => {
         if(isCompleted) return;
+        startTimer();
         const pos = getPos(e);
-        // Start from seed or last root end
-        if(roots.length === 0) {
-            const dist = Math.hypot(pos.x - seed.x, pos.y - seed.y);
-            if(dist < 30) {
-                isDrawing = true;
-                roots.push(pos);
-            }
+        
+        let canStart = false;
+        
+        // Start from seed
+        if(Math.hypot(pos.x - seed.x, pos.y - seed.y) < 30) {
+            canStart = true;
         } else {
-            const last = roots[roots.length - 1];
-            const dist = Math.hypot(pos.x - last.x, pos.y - last.y);
-            if(dist < 40) {
-                isDrawing = true;
+            // Or start from anywhere along an existing root
+            for(let path of rootPaths) {
+                for(let pt of path) {
+                    if(Math.hypot(pos.x - pt.x, pos.y - pt.y) < 30) {
+                        canStart = true;
+                        break;
+                    }
+                }
+                if(canStart) break;
             }
+        }
+        
+        if(canStart) {
+            isDrawing = true;
+            currentPath = [pos];
+            rootPaths.push(currentPath);
         }
     };
 
     const moveDraw = (e) => {
-        if(!isDrawing || isCompleted) return;
+        if(!isDrawing || isCompleted || !currentPath) return;
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
         const pos = getPos(e);
         
-        roots.push(pos);
+        currentPath.push(pos);
         
         // Check nutrient collision
         nutrients.forEach(n => {
             if(!n.collected) {
                 const dist = Math.hypot(pos.x - n.x, pos.y - n.y);
-                if(dist < n.radius + 10) {
+                if(dist < n.radius + 15) { // increased hit radius slightly
                     n.collected = true;
-                    nutrition += 100/15;
-                    if(nutrition > 100) nutrition = 100;
-                    pctSpan.textContent = Math.round(nutrition);
-                    
-                    if(nutrition >= 99) {
-                        completeGame();
-                    }
+                    nutrition += 5; // 20 nutrients * 5 = 100
+                    pctSpan.textContent = Math.min(Math.round(nutrition), 100);
                 }
             }
         });
@@ -1051,20 +1247,25 @@ function initGameA() {
 
     const endDraw = () => {
         isDrawing = false;
+        currentPath = null;
     };
 
     canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive: false});
     canvas.addEventListener('mousemove', moveDraw);
-    canvas.addEventListener('touchmove', moveDraw);
+    canvas.addEventListener('touchmove', moveDraw, {passive: false});
     document.addEventListener('mouseup', endDraw);
     document.addEventListener('touchend', endDraw);
 
     function completeGame() {
         if(isCompleted) return;
         isCompleted = true;
-        pctSpan.textContent = "100";
+        const score = Math.min(Math.round(nutrition), 100);
+        pctSpan.textContent = score;
         msg.classList.remove('hidden');
+        
+        window.globalScores.a = score;
+        window.addSoilToTube('a', '#5c3a21', score);
         
         setTimeout(() => {
             document.getElementById('layer-o').scrollIntoView({ behavior: 'smooth' });
@@ -1079,6 +1280,7 @@ function initGameO() {
     container.innerHTML = `
         <div class="o-game-ui">
             <div class="o-progress">腐植質累積: <span id="o-pct">0</span>%</div>
+            <div class="timer" style="font-size: 1.2rem; color: #ffeb3b; margin-bottom: 5px;">剩餘時間: <span id="o-timer">15</span>秒</div>
             <p style="font-size: 0.9rem; color: #ccc;">左右滑動接住落葉。點擊下方按鈕切換分解者！接住特殊落花可長出真菌幫忙分解。</p>
             <div class="decomposer-controls">
                 <button class="d-btn active" data-type="millipede">🐛 馬陸 (快速)</button>
@@ -1088,7 +1290,7 @@ function initGameO() {
                 <div id="player-org">🐛</div>
             </div>
         </div>
-        <div id="o-message" class="game-message hidden">太棒了！進入最終的農業抉擇層</div>
+        <div id="o-message" class="game-message hidden">時間到！腐植質轉換為分數。進入最終層！</div>
     `;
 
     const style = document.createElement('style');
@@ -1118,6 +1320,25 @@ function initGameO() {
     let leaves = [];
     let fungis = []; // Store stationary fungi
     
+    // Timer Logic
+    let timeLeft = 15;
+    const timerSpan = document.getElementById('o-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                completeGame();
+            }
+        }, 1000);
+    }
+
     let playerX = gameArea.clientWidth / 2;
     playerOrg.style.left = playerX + 'px';
 
@@ -1142,6 +1363,8 @@ function initGameO() {
 
     const handleMove = (e) => {
         if(isCompleted) return;
+        if(!hasStarted) startTimer();
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
         const rect = gameArea.getBoundingClientRect();
         let clientX = e.clientX || (e.touches && e.touches[0].clientX);
         if(!clientX) return;
@@ -1160,7 +1383,7 @@ function initGameO() {
     };
 
     gameArea.addEventListener('mousemove', handleMove);
-    gameArea.addEventListener('touchmove', handleMove);
+    gameArea.addEventListener('touchmove', handleMove, {passive: false});
 
     const normalLeaves = ['🍂', '🍃', '🍁'];
     function spawnLeaf() {
@@ -1180,14 +1403,31 @@ function initGameO() {
         gameArea.appendChild(el);
         
         leaves.push({ el, x, y: -30, speed: Math.random() * 1.5 + 1, isSpecial, active: true });
-        setTimeout(spawnLeaf, Math.random() * 800 + 400);
+        setTimeout(spawnLeaf, Math.random() * 600 + 300); // 15secs is fast, make them drop faster
     }
 
-    function spawnFungi(x) {
+    const extraOrgs = [
+        { emoji: '🍄', name: '真菌' },
+        { emoji: '🪱', name: '線蟲' },
+        { emoji: '🐛', name: '雞母蟲' },
+        { emoji: '🐜', name: '螞蟻' },
+        { emoji: '🦠', name: '細菌' }
+    ];
+
+    function spawnOrganism(x) {
+        const orgInfo = extraOrgs[Math.floor(Math.random() * extraOrgs.length)];
         const f = document.createElement('div');
         f.className = 'fungi';
-        f.textContent = '🍄';
         f.style.left = x + 'px';
+        f.style.display = 'flex';
+        f.style.flexDirection = 'column';
+        f.style.alignItems = 'center';
+        
+        f.innerHTML = `
+            <span style="font-size: 1.8rem;">${orgInfo.emoji}</span>
+            <span style="font-size: 0.7rem; color: #fff; text-shadow: 1px 1px 2px #000; white-space: nowrap; margin-top: -5px;">${orgInfo.name}</span>
+        `;
+        
         gameArea.appendChild(f);
         fungis.push({ x: x });
     }
@@ -1202,7 +1442,11 @@ function initGameO() {
     });
     observer.observe(document.getElementById('layer-o'));
 
-    function startGame() { spawnLeaf(); updateGame(); }
+    function startGame() { 
+        startTimer();
+        spawnLeaf(); 
+        updateGame(); 
+    }
 
     function updateGame() {
         if(isCompleted) return;
@@ -1238,14 +1482,13 @@ function initGameO() {
                 l.active = false;
                 l.el.remove();
                 
-                if(l.isSpecial) spawnFungi(l.x);
+                if(l.isSpecial) spawnOrganism(l.x);
 
                 humusPct += l.isSpecial ? 15 : 5;
-                if(humusPct > 100) humusPct = 100;
-                pctSpan.textContent = Math.round(humusPct);
-                gameArea.style.backgroundColor = 'rgba(0,0,0,' + (0.2 + (humusPct/100)*0.5) + ')';
+                pctSpan.textContent = Math.min(Math.round(humusPct), 100);
+                gameArea.style.backgroundColor = 'rgba(0,0,0,' + (0.2 + (Math.min(humusPct, 100)/100)*0.5) + ')';
                 
-                if(humusPct >= 99) completeGame();
+                // Allow >100 score internally but cap visually.
             } else if(l.y > areaRect.height) {
                 l.active = false;
                 l.el.remove();
@@ -1257,10 +1500,16 @@ function initGameO() {
     }
 
     function completeGame() {
+        if(isCompleted) return;
         isCompleted = true;
-        pctSpan.textContent = "100";
+        const score = Math.min(Math.round(humusPct), 100);
+        pctSpan.textContent = score;
         msg.classList.remove('hidden');
         leaves.forEach(l => l.el.remove());
+        
+        window.globalScores.o = score;
+        window.addSoilToTube('o', '#2c1e16', score);
+
         setTimeout(() => {
             document.getElementById('layer-agri').scrollIntoView({ behavior: 'smooth' });
         }, 2000);
@@ -1273,169 +1522,295 @@ function initGameAgri() {
     
     container.innerHTML = `
         <div class="agri-game-ui">
-            <div class="agri-status">土壤活力: <span id="agri-vitality">50</span>%</div>
-            <p style="font-size: 0.9rem; color: #ccc;">選擇一種農業經營模式觀察土壤變化</p>
+            <div class="agri-status">當前選擇: <span id="agri-vitality">尚未選擇</span></div>
+            <p style="font-size: 0.9rem; color: #ccc; text-align: center;">可以切換不同農法觀察變化，決定後點擊「結算收成」查看香蕉獲取量！</p>
             
             <div class="farming-options">
-                <button class="farm-btn action-organic" id="btn-organic">🌱 有機/草生栽培</button>
-                <button class="farm-btn action-chemical" id="btn-chemical">🧪 化學肥料/農藥</button>
+                <button class="farm-btn action-nature" id="btn-nature">🌱 自然栽培</button>
+                <button class="farm-btn action-biopest" id="btn-biopest">🦠 生物農藥</button>
+                <button class="farm-btn action-chemical" id="btn-chemical">🧪 化學農藥</button>
             </div>
             
             <div id="farm-field">
-                <div class="soil-surface" id="soil-surface"></div>
+                <div class="soil-surface" id="soil-surface">
+                    <!-- Pores rendered by JS -->
+                </div>
+                <!-- Weeds rendered by JS -->
                 <div class="crop" id="crop">🌱</div>
+                
+                <!-- Main visible organisms -->
                 <div class="soil-organisms" id="soil-orgs">
-                    <span class="org">🐛</span>
-                    <span class="org">🪱</span>
-                    <span class="org">🦠</span>
+                    <span class="org friendly" id="org-worm">🪱</span>
+                    <span class="org pest" id="org-pest">🐛</span>
+                    <span class="org friendly" id="org-microbe">🦠</span>
                 </div>
             </div>
+            
+            <button id="calc-harvest-btn" class="hidden" style="margin-top: 20px; padding: 12px 25px; font-size: 1.2rem; background: #f39c12; color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: transform 0.2s;">🍌 結算收成</button>
             <button id="final-restart-btn" class="hidden">重新一趟旅程</button>
         </div>
-        <div id="agri-message" class="game-message hidden" style="font-size:1.2rem; width:80%;"></div>
+        <div id="agri-message" class="game-message hidden" style="font-size:1rem; width:90%; line-height: 1.4;"></div>
+        
+        <!-- Scorecard Overlay -->
+        <div id="final-scorecard-overlay" class="hidden" style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; padding: 20px;">
+            <h1 style="color:#f1c40f; margin-bottom: 20px; font-size: 2.5rem;">🎉 土壤之旅結算 🎉</h1>
+            <div id="scorecard-text" style="font-size: 1.2rem; line-height: 2; margin-bottom: 20px; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; width: 100%; max-width: 400px; text-align: left;"></div>
+            <div id="banana-reward" style="font-size: 3.5rem; margin-bottom: 30px; filter: drop-shadow(0 0 10px rgba(241,196,15,0.8));"></div>
+            <button id="overlay-restart-btn" style="padding: 15px 30px; font-size: 1.2rem; background: #2ecc71; color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">🔄 再玩一次</button>
+        </div>
     `;
 
     const style = document.createElement('style');
     style.innerHTML = `
         .agri-game-ui { display: flex; flex-direction: column; align-items: center; height: 100%; padding-top: 10px; }
         .agri-status { font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; }
-        .farming-options { display: flex; gap: 15px; margin: 15px 0; z-index: 10; }
-        .farm-btn { padding: 10px 20px; font-size: 1.1rem; border-radius: 8px; border: 2px solid white; cursor: pointer; color: white; background: rgba(0,0,0,0.4); transition: transform 0.2s; }
-        .farm-btn:active { transform: scale(0.95); }
-        .action-organic:hover { background: #27ae60; }
+        .farming-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0; z-index: 10; max-width: 100%; padding: 0 10px; }
+        .farm-btn { padding: 8px 12px; font-size: 1rem; border-radius: 8px; border: 2px solid white; cursor: pointer; color: white; background: rgba(0,0,0,0.6); transition: transform 0.2s, background 0.3s; }
+        .farm-btn:active, #calc-harvest-btn:active { transform: scale(0.95); }
+        .farm-btn.active-choice { box-shadow: 0 0 10px white; border-color: #f1c40f; }
+        .action-nature:hover { background: #27ae60; }
+        .action-biopest:hover { background: #f39c12; }
         .action-chemical:hover { background: #e74c3c; }
         
         #farm-field {
-            position: relative;
-            width: 100%;
-            max-width: 300px;
-            height: 200px;
+            position: relative; width: 100%; max-width: 320px; height: 220px;
             background: linear-gradient(to bottom, #87CEEB 40%, transparent 40%);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 10px;
-            border: 2px solid rgba(255,255,255,0.2);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 10px; overflow: hidden; margin-top: 5px;
+            border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .soil-surface {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 60%;
-            background: #5a3c21;
-            transition: all 2s ease;
-        }
-        .crop {
-            position: absolute;
-            bottom: 60%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 3rem;
-            transition: all 2s ease;
-            transform-origin: bottom center;
-        }
-        .soil-organisms {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            font-size: 1.5rem;
-            transition: opacity 2s ease;
-        }
-        .org { animation: wiggle 2s infinite alternate; }
-        @keyframes wiggle { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+        .soil-surface { position: absolute; bottom: 0; width: 100%; height: 60%; background: #5a3c21; transition: all 2s ease; }
         
-        /* States */
-        .soil-organic { background: #3e2723 !important; }
-        .soil-chemical { background: #795548 !important; border-top: 5px solid #d7ccc8; } /* Hardened pale top */
+        /* Crop */
+        .crop { position: absolute; bottom: 60%; left: 50%; transform: translateX(-50%); font-size: 3rem; transition: all 2s ease; transform-origin: bottom center; z-index: 5; }
         
-        .crop-organic { font-size: 5rem; filter: drop-shadow(0 0 10px #2ecc71); }
+        /* Organisms */
+        .soil-organisms { position: absolute; bottom: 10px; width: 100%; display: flex; justify-content: space-around; font-size: 1.5rem; transition: opacity 2s ease; z-index: 6; }
+        .org { animation: wiggle 2s infinite alternate; transition: opacity 2s ease; transform-origin: center; }
+        @keyframes wiggle { 0% { transform: translateY(0) rotate(-5deg); } 100% { transform: translateY(-5px) rotate(5deg); } }
+        
+        /* Pores */
+        .soil-pore { position: absolute; background: #2a1608; border-radius: 50%; opacity: 0; transition: opacity 2s ease; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; }
+        .pore-org { font-size: 0.8rem; opacity: 0; transition: opacity 2s ease; animation: peek 3s infinite alternate; }
+        @keyframes peek { 0% { transform: translateY(5px); } 100% { transform: translateY(-3px); } }
+
+        /* Weeds */
+        .weed { position: absolute; bottom: 58%; font-size: 1.2rem; opacity: 0; transition: all 2s ease; transform-origin: bottom center; z-index: 4; }
+
+        /* States - Nature */
+        .soil-nature { background: #3e2723 !important; }
+        .soil-nature .soil-pore { opacity: 1; }
+        .soil-nature .pore-org { opacity: 1; }
+        .crop-nature { font-size: 4.5rem; filter: drop-shadow(0 0 10px #2ecc71); }
+        .weed-show { opacity: 1 !important; transform: scale(1.2); }
+        
+        /* States - Biopest */
+        .soil-biopest { background: #4e342e !important; }
+        .soil-biopest .soil-pore { opacity: 0.8; }
+        .soil-biopest .pore-org.friendly { opacity: 1; }
+        .soil-biopest .pore-org.pest { opacity: 0; }
+        .crop-biopest { font-size: 4.5rem; filter: drop-shadow(0 0 5px #f1c40f); }
+        .org-dead { opacity: 0 !important; transform: scale(0) rotate(180deg); }
+
+        /* States - Chemical */
+        .soil-chemical { background: #795548 !important; border-top: 5px solid #d7ccc8; } 
+        .soil-chemical .soil-pore { opacity: 0 !important; }
         .crop-chemical { font-size: 4rem; filter: grayscale(50%); animation: wither 2s forwards; }
         @keyframes wither { 100% { transform: translateX(-50%) scaleY(0.8) rotate(15deg); filter: grayscale(80%) sepia(50%); } }
         
-        #final-restart-btn {
-            margin-top: 20px;
-            padding: 10px 30px;
-            font-size: 1.2rem;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s;
-            z-index: 20;
-        }
-        #final-restart-btn:hover { transform: scale(1.05); }
+        #final-restart-btn { margin-top: 15px; padding: 10px 20px; font-size: 1.1rem; background: var(--accent); color: white; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.3s; z-index: 20; }
+        #final-restart-btn:hover, #overlay-restart-btn:hover { transform: scale(1.05); }
     `;
     document.head.appendChild(style);
 
-    const btnOrganic = document.getElementById('btn-organic');
+    const btnNature = document.getElementById('btn-nature');
+    const btnBiopest = document.getElementById('btn-biopest');
     const btnChemical = document.getElementById('btn-chemical');
     const soil = document.getElementById('soil-surface');
     const crop = document.getElementById('crop');
-    const orgs = document.getElementById('soil-orgs');
+    const field = document.getElementById('farm-field');
     const vitalitySpan = document.getElementById('agri-vitality');
     const msg = document.getElementById('agri-message');
     const restartBtn = document.getElementById('final-restart-btn');
+    const calcHarvestBtn = document.getElementById('calc-harvest-btn');
 
-    function animateVitality(target) {
-        let current = parseInt(vitalitySpan.textContent);
-        const diff = target - current;
-        const step = diff > 0 ? 1 : -1;
+    const orgWorm = document.getElementById('org-worm');
+    const orgPest = document.getElementById('org-pest');
+    const orgMicrobe = document.getElementById('org-microbe');
+
+    // Generate Pores
+    const targetPores = [];
+    for(let i=0; i<8; i++) {
+        const pore = document.createElement('div');
+        pore.className = 'soil-pore';
+        const size = Math.random() * 20 + 20; // 20-40px
+        pore.style.width = size + 'px';
+        pore.style.height = size + 'px';
+        pore.style.left = (Math.random() * 80 + 5) + '%';
+        pore.style.top = (Math.random() * 60 + 20) + '%';
         
-        const interval = setInterval(() => {
-            if(current === target) {
-                clearInterval(interval);
-                return;
-            }
-            current += step;
-            vitalitySpan.textContent = current;
-            
-            if(current > 70) vitalitySpan.style.color = '#2ecc71';
-            else if(current < 30) vitalitySpan.style.color = '#e74c3c';
-            else vitalitySpan.style.color = 'white';
-            
-        }, 30);
+        const isPest = Math.random() > 0.6;
+        pore.innerHTML = `<div class="pore-org ${isPest ? 'pest' : 'friendly'}">${isPest ? '🕷️' : '🐜'}</div>`;
+        soil.appendChild(pore);
     }
 
-    btnOrganic.addEventListener('click', () => {
-        btnOrganic.disabled = true;
-        btnChemical.disabled = true;
+    // Generate Weeds
+    const weeds = [];
+    for(let i=0; i<5; i++) {
+        const weed = document.createElement('div');
+        weed.className = 'weed';
+        weed.textContent = i%2===0 ? '🌿' : '🌾';
+        weed.style.left = (Math.random() * 80 + 10) + '%';
+        field.appendChild(weed);
+        weeds.push(weed);
+    }
+
+    function resetOrganisms() {
+        orgWorm.classList.remove('org-dead');
+        orgPest.classList.remove('org-dead');
+        orgMicrobe.classList.remove('org-dead');
+        weeds.forEach(w => w.classList.remove('weed-show'));
+        soil.className = 'soil-surface'; // Reset soil class
+        crop.className = 'crop'; // Reset crop class
+        document.querySelectorAll('.farm-btn').forEach(btn => btn.classList.remove('active-choice'));
+    }
+
+    let currentModifier = 1.0;
+    let selectedMethodName = "";
+    let isCalculated = false;
+
+    // Option 1: Nature / Grassed
+    btnNature.addEventListener('click', () => {
+        if(isCalculated) return;
+        resetOrganisms();
+        btnNature.classList.add('active-choice');
+        currentModifier = 1.0;
+        selectedMethodName = "自然栽培";
         
-        soil.className = 'soil-surface soil-organic';
-        crop.className = 'crop crop-organic';
+        soil.className = 'soil-surface soil-nature';
+        crop.className = 'crop crop-nature';
         crop.textContent = '🌳';
-        orgs.style.opacity = '1';
-        orgs.innerHTML = '<span class="org">🐛</span><span class="org">🪱</span><span class="org">🦠</span><span class="org">🍄</span><span class="org">🐞</span>'; // More life
+        weeds.forEach(w => w.classList.add('weed-show'));
         
-        animateVitality(100);
+        vitalitySpan.textContent = "自然栽培 (乘數 1.0x)";
+        vitalitySpan.style.color = '#2ecc71';
+        calcHarvestBtn.classList.remove('hidden');
         
-        setTimeout(() => {
-            msg.innerHTML = "<strong>永續的選擇</strong><br>友善農業維持了土壤生態系，讓土壤變得鬆軟、保水，生機盎然！";
-            msg.style.color = '#2ecc71';
-            msg.classList.remove('hidden');
-            restartBtn.classList.remove('hidden');
-        }, 2500);
+        msg.innerHTML = "<strong>完美的生態平衡</strong><br>雜草與作物共存，根系創造生物孔隙。土壤保水、生機盎然！";
+        msg.style.color = '#2ecc71';
+        msg.classList.remove('hidden');
     });
 
+    // Option 2: Biological Pesticide
+    btnBiopest.addEventListener('click', () => {
+        if(isCalculated) return;
+        resetOrganisms();
+        btnBiopest.classList.add('active-choice');
+        currentModifier = 0.8;
+        selectedMethodName = "生物農藥";
+        
+        soil.className = 'soil-surface soil-biopest';
+        crop.className = 'crop crop-biopest';
+        crop.textContent = '🌳';
+        
+        // Kill pests, keep friendly
+        orgPest.classList.add('org-dead');
+        
+        // Show few weeds
+        weeds[0].classList.add('weed-show');
+        weeds[1].classList.add('weed-show');
+        
+        vitalitySpan.textContent = "生物農藥 (乘數 0.8x)";
+        vitalitySpan.style.color = '#f1c40f';
+        calcHarvestBtn.classList.remove('hidden');
+        
+        msg.innerHTML = "<strong>友善的折衷</strong><br>專一性驅蟲！消滅特定害蟲，保留多數益蟲與較少孔隙。";
+        msg.style.color = '#f1c40f';
+        msg.classList.remove('hidden');
+    });
+
+    // Option 3: Chemical
     btnChemical.addEventListener('click', () => {
-        btnOrganic.disabled = true;
-        btnChemical.disabled = true;
+        if(isCalculated) return;
+        resetOrganisms();
+        btnChemical.classList.add('active-choice');
+        currentModifier = 0.1;
+        selectedMethodName = "化學農藥";
         
         soil.className = 'soil-surface soil-chemical';
         crop.className = 'crop crop-chemical';
-        orgs.style.opacity = '0'; // Organisms die
         
-        animateVitality(10);
+        // Kill all
+        orgWorm.classList.add('org-dead');
+        orgPest.classList.add('org-dead');
+        orgMicrobe.classList.add('org-dead');
         
-        setTimeout(() => {
-            msg.innerHTML = "<strong>短視的後果</strong><br>過度化肥使土壤鹽化、板結變硬，失去生物分解能力，最終導致農地退化休耕。";
-            msg.style.color = '#e74c3c';
-            msg.classList.remove('hidden');
-            restartBtn.classList.remove('hidden');
-        }, 2500);
+        vitalitySpan.textContent = "化學農藥 (乘數 0.1x)";
+        vitalitySpan.style.color = '#e74c3c';
+        calcHarvestBtn.classList.remove('hidden');
+        
+        msg.innerHTML = "<strong>短視的後果</strong><br>無差別毒殺！失去生物孔隙。土壤快速鹽化、板結變硬。";
+        msg.style.color = '#e74c3c';
+        msg.classList.remove('hidden');
+    });
+
+    // Calc Harvest Button
+    calcHarvestBtn.addEventListener('click', () => {
+        if(isCalculated) return;
+        isCalculated = true;
+        
+        window.addSoilToTube('agri', '#3b592d', 100);
+
+        const scores = window.globalScores;
+        const r = scores.r || 0;
+        const c = scores.c || 0;
+        const b = scores.b || 0;
+        const a = scores.a || 0;
+        const o = scores.o || 0;
+        const baseScore = r + c + b + a + o;
+        const finalVitality = Math.round(baseScore * currentModifier);
+        
+        const expectedOrder = ['r', 'c', 'b', 'a', 'o', 'agri'];
+        const actualOrder = window.layerCompletionOrder;
+        let isOrderCorrect = (actualOrder.join(',') === expectedOrder.join(','));
+        
+        let rewardIcon = isOrderCorrect ? "🍌" : "🐒";
+        let bananas = "";
+        let count = 1;
+        if(finalVitality >= 400) count = 5;
+        else if(finalVitality >= 300) count = 4;
+        else if(finalVitality >= 200) count = 3;
+        else if(finalVitality >= 100) count = 2;
+        
+        for(let i=0; i<count; i++) bananas += rewardIcon;
+
+        const scorecard = document.getElementById('final-scorecard-overlay');
+        const textArea = document.getElementById('scorecard-text');
+        const rewardArea = document.getElementById('banana-reward');
+        
+        let msgExtra = !isOrderCorrect ? '<div style="color:#e74c3c; margin-top:20px; font-weight:bold; text-align:center;">⚠️ 試管收集順序錯誤！香蕉變成猴子了！(正確順序應為 R➔C➔B➔A➔O➔農)</div>' : '';
+
+        textArea.innerHTML = `
+            R層分數: ${r} <br>
+            C層分數: ${c} <br>
+            B層分數: ${b} <br>
+            A層分數: ${a} <br>
+            O層分數: ${o} <br>
+            <hr style="border-color: rgba(255,255,255,0.2); margin: 10px 0;">
+            前五層累積分數: <strong>${baseScore}</strong> / 500<br>
+            農法選擇: <strong>${selectedMethodName}</strong> (x${currentModifier})<br>
+            <br>
+            <div style="font-size:1.5rem; text-align:center;">最終土壤活力: <strong style="color:#2ecc71;">${finalVitality}</strong></div>
+            ${msgExtra}
+        `;
+        rewardArea.innerHTML = `${bananas}`;
+        
+        scorecard.classList.remove('hidden');
+    });
+
+    // Restart inside overlay
+    document.getElementById('overlay-restart-btn').addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => location.reload(), 800);
     });
 
     restartBtn.addEventListener('click', () => {
