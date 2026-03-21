@@ -187,6 +187,35 @@ body {
     transform: scale(1.1);
 }
 
+/* Responsive Design for Mobile Devices */
+@media screen and (max-width: 768px) {
+    .hero h1 { font-size: 2.5rem; }
+    .hero p { font-size: 1.1rem; padding: 0 15px; }
+    #start-btn { padding: 0.8rem 1.8rem; font-size: 1rem; }
+    
+    .soil-layer { padding: 1rem 0.5rem; display: flex; align-items: stretch; }
+    .layer-content { 
+        padding: 1rem;
+        margin: auto;
+        max-width: 95%; 
+        max-height: 95vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+    
+    .layer-content h2 { font-size: 1.5rem; margin-top: 0; }
+    .info-card { padding: 0.8rem; margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.5; }
+    .info-card strong { font-size: 1.1rem; }
+    
+    .game-container { height: auto; min-height: 280px; flex-grow: 1; display: flex; flex-direction: column; }
+    
+    #layer-nav { right: 5px; }
+    #layer-nav ul { gap: 8px; }
+    #layer-nav li { width: 32px; height: 32px; font-size: 0.8rem; }
+    #layer-nav li[data-target="layer-agri"] { font-size: 0.7rem !important; }
+}
 </style>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
@@ -303,15 +332,15 @@ function initGameR() {
             display: flex;
             justify-content: center;
             align-items: flex-end;
-            height: 250px;
-            margin-top: 20px;
+            height: 200px; /* Reduced for better mobile fit */
+            margin-top: 10px;
             position: relative;
             overflow: hidden;
             border-bottom: 5px solid var(--color-r);
         }
         .tectonic-plate {
             width: 45%;
-            height: 150px;
+            height: 120px;
             background: #333;
             border: 2px solid #222;
             display: flex;
@@ -319,6 +348,7 @@ function initGameR() {
             align-items: center;
             color: #ccc;
             font-weight: bold;
+            font-size: 0.9rem;
             transition: transform 0.1s;
         }
         #bedrock {
@@ -874,16 +904,21 @@ function initGameA() {
         }
         #a-canvas-container {
             position: relative;
-            width: 400px;
+            width: 100%;
+            max-width: 400px;
             height: 250px;
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
             cursor: crosshair;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
             touch-action: none;
+            overflow: hidden;
         }
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
     `;
     document.head.appendChild(style);
@@ -958,9 +993,14 @@ function initGameA() {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.clientX || (e.touches && e.touches[0].clientX);
         const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        
+        // Scale dynamically if canvas CSS size differs from its intrinsic size
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
         return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
         };
     }
 
@@ -1267,7 +1307,8 @@ function initGameAgri() {
         
         #farm-field {
             position: relative;
-            width: 300px;
+            width: 100%;
+            max-width: 300px;
             height: 200px;
             background: linear-gradient(to bottom, #87CEEB 40%, transparent 40%);
             border-radius: 10px;
