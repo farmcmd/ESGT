@@ -457,31 +457,50 @@ body {
     .layer-header { flex-direction: column; margin-bottom: 5px; }
 
     /* --- PPT Mobile Adjustments (完美修復) --- */
+    #ppt-modal { height: 100dvh; } /* 針對 iOS 底部導覽列問題使用 dvh 動態高度 */
+    
+    .ppt-header { flex-direction: column; gap: 10px; padding: 10px; }
+    .ppt-controls { flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .ppt-controls button { padding: 8px 12px; font-size: 0.9rem; }
+    #close-ppt-btn { margin-left: 0; }
+    
+    .ppt-main { 
+        padding: 10px; 
+        display: block; /* 放棄 flex 佈局以解除高度被鎖死的限制 */
+        height: calc(100% - 100px); /* 留出空間給上方的 Header */
+    } 
+    
+    .slide-container {
+        aspect-ratio: auto; /* 徹底解除 16:9 限制 */
+        height: 100%;       /* 填滿剩餘高度 */
         border-radius: 8px;
     }
     
     .slide { 
-        padding: 25px 15px; 
-        justify-content: flex-start; 
-        overflow-y: auto; 
-        padding-bottom: 40px; 
+        padding: 20px 15px 60px 15px; /* 底部加大留白，避免跳轉按鈕被進度條遮擋 */
+        display: block; /* 【關鍵修復】將 flex 改為 block，徹底解放內部元素滾動條 */
+        overflow-y: auto; /* 啟動垂直滑動 */
+        -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
     }
     
-    .slide.title-slide { justify-content: center; } 
+    .slide.title-slide { 
+        display: flex; /* 僅有標題頁仍保持置中 */
+        justify-content: center; 
+    } 
     .slide.title-slide h1 { font-size: 1.8rem; margin-bottom: 15px; }
     .slide.title-slide h2 { font-size: 1.2rem; }
     
     .slide-header { margin-bottom: 15px; padding-bottom: 10px; }
     .slide-header h2 { font-size: 1.4rem; }
     
-    .slide-content { font-size: 1.1rem; line-height: 1.6; }
+    .slide-content { font-size: 1.1rem; line-height: 1.6; display: block; }
     .slide-content ul { margin-left: 20px; }
     .slide-content li { margin-bottom: 12px; }
     
-    .ppt-play-btn { font-size: 1.1rem; padding: 10px 20px; margin-top: 15px; }
+    .ppt-play-btn { font-size: 1.1rem; padding: 10px 20px; margin-top: 15px; display: block; margin-left: auto; margin-right: auto; }
 }
 </style>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
