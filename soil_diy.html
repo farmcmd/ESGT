@@ -268,7 +268,7 @@ body {
 }
 
 /* =========================================
-   PPT Modal Styles 
+   PPT Modal Styles (New Ergonomic Layout)
    ========================================= */
 #ppt-modal {
     position: fixed;
@@ -286,7 +286,7 @@ body {
     padding: 15px 30px;
     background: #2c3e50;
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    flex-wrap: wrap; 
+    z-index: 10;
 }
 
 .ppt-title {
@@ -295,14 +295,43 @@ body {
     color: var(--ppt-text-accent);
 }
 
-.ppt-controls {
+.ppt-footer {
     display: flex;
-    gap: 15px;
+    justify-content: center;
     align-items: center;
+    gap: 15px;
+    padding: 15px 30px;
+    background: #2c3e50;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+    z-index: 10;
 }
 
-.ppt-controls button {
+.ppt-footer button {
     background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.ppt-footer button:hover { background-color: #2ecc71; }
+.ppt-footer button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+
+#ppt-page-wrapper {
+    color: white; 
+    font-size: 1.1rem; 
+    background: rgba(255,255,255,0.2); 
+    padding: 8px 20px; 
+    border-radius: 25px;
+    font-weight: bold;
+}
+
+#close-ppt-btn {
+    background-color: #e74c3c;
     color: white;
     border: none;
     padding: 8px 15px;
@@ -310,14 +339,6 @@ body {
     cursor: pointer;
     font-weight: bold;
     transition: background-color 0.2s;
-}
-
-.ppt-controls button:hover { background-color: #2ecc71; }
-.ppt-controls button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-
-#close-ppt-btn {
-    background-color: #e74c3c;
-    margin-left: 20px;
 }
 #close-ppt-btn:hover { background-color: #c0392b; }
 
@@ -444,7 +465,6 @@ body {
     .info-card strong { font-size: 1rem; margin-bottom: 0.2rem; }
     .game-container { height: auto; min-height: 250px; flex-grow: 1; display: flex; flex-direction: column; }
     
-    /* 縮小手機版遊戲內的提示文字與按鈕，節省垂直空間 */
     .game-container [style*="font-size:1.2rem"], 
     .game-container [style*="font-size: 1.2rem"] { font-size: 0.9rem !important; margin-bottom: 2px !important; margin-top: 2px !important; }
     .game-container p { font-size: 0.8rem !important; margin-bottom: 2px !important; }
@@ -456,35 +476,39 @@ body {
     .open-ppt-btn { padding: 0.4rem 1rem; font-size: 0.85rem; margin-left: 0; width: 100%; }
     .layer-header { flex-direction: column; margin-bottom: 5px; }
 
-    /* --- PPT Mobile Adjustments (完美修復) --- */
-    #ppt-modal { height: 100dvh; } /* 針對 iOS 底部導覽列問題使用 dvh 動態高度 */
+    /* --- PPT Mobile Adjustments --- */
+    #ppt-modal { height: 100dvh; } 
     
-    .ppt-header { flex-direction: column; gap: 10px; padding: 10px; }
-    .ppt-controls { flex-wrap: wrap; justify-content: center; gap: 8px; }
-    .ppt-controls button { padding: 8px 12px; font-size: 0.9rem; }
-    #close-ppt-btn { margin-left: 0; }
+    .ppt-header { padding: 12px 15px; }
+    .ppt-title { font-size: 1rem; width: 65%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #close-ppt-btn { padding: 6px 10px; font-size: 0.9rem; }
+    
+    /* 置底按鈕排版優化：方便大拇指操作 */
+    .ppt-footer { padding: 10px; gap: 8px; justify-content: space-between; }
+    .ppt-footer button { padding: 12px 10px; font-size: 1rem; flex-grow: 1; }
+    #ppt-page-wrapper { font-size: 1rem; padding: 8px 12px; }
     
     .ppt-main { 
         padding: 10px; 
-        display: block; /* 放棄 flex 佈局以解除高度被鎖死的限制 */
-        height: calc(100% - 100px); /* 留出空間給上方的 Header */
+        display: block; 
+        height: calc(100% - 110px); /* 扣除 Header 與 Footer 的高度 */
     } 
     
     .slide-container {
-        aspect-ratio: auto; /* 徹底解除 16:9 限制 */
-        height: 100%;       /* 填滿剩餘高度 */
+        aspect-ratio: auto; 
+        height: 100%;       
         border-radius: 8px;
     }
     
     .slide { 
-        padding: 20px 15px 60px 15px; /* 底部加大留白，避免跳轉按鈕被進度條遮擋 */
-        display: block; /* 【關鍵修復】將 flex 改為 block，徹底解放內部元素滾動條 */
-        overflow-y: auto; /* 啟動垂直滑動 */
-        -webkit-overflow-scrolling: touch; /* 讓 iOS 滑動更順暢 */
+        padding: 25px 15px 40px 15px; 
+        display: block;
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch; 
     }
     
     .slide.title-slide { 
-        display: flex; /* 僅有標題頁仍保持置中 */
+        display: flex; 
         justify-content: center; 
     } 
     .slide.title-slide h1 { font-size: 1.8rem; margin-bottom: 15px; }
@@ -620,22 +644,27 @@ body {
 
     <!-- PPT Modal Overlay -->
     <div id="ppt-modal" class="hidden">
+        <!-- 頂部：標題與關閉按鈕 -->
         <div class="ppt-header">
-            <div class="ppt-title">教學簡報系統</div>
-            <div class="ppt-controls">
-                <button id="ppt-prev">◄ 上一頁</button>
-                <div style="color:white; font-size:1.1rem; background:rgba(255,255,255,0.2); padding:5px 15px; border-radius:20px;">
-                    <span id="ppt-current-page">1</span> / 31
-                </div>
-                <button id="ppt-next">下一頁 ►</button>
-                <button id="close-ppt-btn">✖ 關閉</button>
-            </div>
+            <div class="ppt-title">探探里山(里山餐桌)教學簡報系統</div>
+            <button id="close-ppt-btn">✖ 關閉</button>
         </div>
+        
+        <!-- 中央：簡報內容區 -->
         <div class="ppt-main">
             <div class="slide-container" id="ppt-slide-container">
                 <!-- Slides will be injected here -->
                 <div class="progress-bar" id="ppt-progress-bar" style="width: 3.33%;"></div>
             </div>
+        </div>
+
+        <!-- 底部：導航按鈕區 (符合拇指熱區) -->
+        <div class="ppt-footer">
+            <button id="ppt-prev">◄ 上一頁</button>
+            <div id="ppt-page-wrapper">
+                <span id="ppt-current-page">1</span> / 31
+            </div>
+            <button id="ppt-next">下一頁 ►</button>
         </div>
     </div>
 
@@ -648,9 +677,13 @@ window.globalScores = { r: 0, c: 0, b: 0, a: 0, o: 0 };
 window.layerCompletionOrder = [];
 window.isFullCourseMode = false; 
 
-// 新增：智慧過場跳轉器
 window.triggerNextCourseStep = function(nextLayerId, nextPPTIndex) {
-    document.getElementById(nextLayerId).scrollIntoView({ behavior: 'smooth' });
+    const container = document.getElementById('soil-layers');
+    const targetEl = document.getElementById(nextLayerId);
+    
+    if (targetEl && container) {
+        container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+    }
     
     if (window.isFullCourseMode) {
         setTimeout(() => {
@@ -747,7 +780,8 @@ const pptBtnPrev = document.getElementById('ppt-prev');
 const pptBtnNext = document.getElementById('ppt-next');
 const pptModal = document.getElementById('ppt-modal');
 
-document.querySelector('#ppt-modal .ppt-controls div').innerHTML = `<span id="ppt-current-page">1</span> / ${pptTotalPages}`;
+// 更新進度條總頁數的顯示
+document.getElementById('ppt-page-wrapper').innerHTML = `<span id="ppt-current-page">1</span> / ${pptTotalPages}`;
 
 function initPPT() {
     slidesData.forEach((data, index) => {
@@ -818,7 +852,11 @@ document.addEventListener('click', function(e) {
             document.getElementById('layer-nav').classList.remove('hidden');
         }
         setTimeout(() => {
-            document.getElementById(targetSectionId).scrollIntoView({ behavior: 'smooth' });
+            const container = document.getElementById('soil-layers');
+            const targetEl = document.getElementById(targetSectionId);
+            if (targetEl && container) {
+                container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }
         }, 100);
     }
 });
@@ -1009,7 +1047,7 @@ function initGameB() {
         if(isCompleted) return; 
         isDragging = true; 
         startGameLogic(); 
-        moveDrag(e); // 讓點擊瞬間就能移動橫桿
+        moveDrag(e); 
     };
     const moveDrag = (e) => {
         if(!isDragging || isCompleted) return;
@@ -1029,7 +1067,6 @@ function initGameB() {
     };
     const endDrag = () => { isDragging = false; };
 
-    // 改綁定至整個 gameArea，解決手機難以點中橫桿的問題
     gameArea.addEventListener('mousedown', startDrag); 
     gameArea.addEventListener('touchstart', startDrag, {passive: false});
     gameArea.addEventListener('mousemove', moveDrag); 
@@ -1506,8 +1543,8 @@ function initAllSystems() {
             mainContent.classList.remove('hidden'); 
             nav.classList.remove('hidden');
             setTimeout(() => {
-                const layerR = document.getElementById('layer-r');
-                if(layerR) layerR.scrollIntoView({ behavior: 'smooth' });
+                const targetEl = document.getElementById('layer-r');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
             }, 100);
         });
     }
@@ -1519,8 +1556,8 @@ function initAllSystems() {
             mainContent.classList.remove('hidden'); 
             nav.classList.remove('hidden');
             setTimeout(() => {
-                const layerR = document.getElementById('layer-r');
-                if(layerR) layerR.scrollIntoView({ behavior: 'smooth' });
+                const targetEl = document.getElementById('layer-r');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
             }, 100);
         });
     }
@@ -1529,7 +1566,7 @@ function initAllSystems() {
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const target = document.getElementById(item.getAttribute('data-target'));
-            if(target) target.scrollIntoView({ behavior: 'smooth' });
+            if(target && mainContent) mainContent.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
         });
     });
 
