@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="台灣梅子食農教育互動學習網頁">
+    <title>梅好時光 | Plum Food & Agriculture Education</title>
+    <style>
+:root {
+    --color-s1: #5D4037; /* 枝幹/土壤 */
+    --color-s2: #81C784; /* 青梅生長 */
+    --color-s3: #4CAF50; /* 採收青梅 */
+    --color-s4: #BCAAA4; /* 殺青揉捻 (鹽) */
+    --color-s5: #FFB300; /* 醃製發酵 (琥珀色) */
+    --color-agri: #E65100; /* 最終成品 */
+    
+    --bg-dark: #121212;
+    --text-light: #f5f5f5;
+    --accent: #FFCA28; /* 梅花/陽光黃 */
+
+    /* PPT Variables */
+    --ppt-text-main: #ecf0f1;
+    --ppt-text-accent: #f39c12;
+    --ppt-slide-bg: #2c3e50;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    overflow: hidden; 
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Hero Section */
+.hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #33691E 0%, #827717 100%);
+}
+
+.hero h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.hero p {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+}
+
+#start-btn, .open-ppt-btn {
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    background-color: var(--accent);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.3s, background-color 0.3s;
+    box-shadow: 0 4px 15px rgba(255, 202, 40, 0.4);
+}
+
+#start-btn:hover, .open-ppt-btn:hover {
+    transform: scale(1.05);
+    background-color: #FFD54F;
+}
+
+.open-ppt-btn {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    background-color: #8D6E63;
+    color: white;
+    box-shadow: 0 4px 15px rgba(141, 110, 99, 0.4);
+    margin-left: 15px;
+    vertical-align: middle;
+}
+
+.open-ppt-btn:hover {
+    background-color: #A1887F;
+}
+
+/* Main Layers Container */
+#soil-layers {
+    height: 100vh;
+    width: 100vw;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+}
+
+/* Individual Layer */
+.soil-layer {
+    height: 100vh;
+    width: 100vw;
+    scroll-snap-align: start;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 2rem;
+}
+
+.layer-1 { background-color: var(--color-s1); }
+.layer-2 { background-color: var(--color-s2); }
+.layer-3 { background-color: var(--color-s3); }
+.layer-4 { background-color: var(--color-s4); }
+.layer-5 { background-color: var(--color-s5); }
+.layer-6 { background-color: var(--color-agri); }
+
+.layer-content {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+.layer-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.layer-content h2 {
+    font-size: 2.2rem;
+    color: #fff;
+    margin: 0;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-left: 5px solid var(--accent);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    border-radius: 0 10px 10px 0;
+}
+
+.info-card strong {
+    color: var(--accent);
+    font-size: 1.3rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+/* Game Containers */
+.game-container {
+    width: 100%;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Navigation */
+#layer-nav {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+#layer-nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#layer-nav li {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+#layer-nav li:hover, #layer-nav li.active {
+    background: var(--accent);
+    color: #333;
+    border-color: #fff;
+    transform: scale(1.1);
+}
+
+/* Test Tube -> Jar Container */
+#test-tube-container {
+    position: fixed;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 90;
+    pointer-events: none;
+}
+.tube-glass {
+    width: 80px;
+    height: 250px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 4px solid rgba(255, 255, 255, 0.6);
+    border-top: 8px solid #8D6E63; /* 罐子蓋子的感覺 */
+    border-radius: 10px 10px 30px 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(255,255,255,0.2), 0 10px 20px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.tube-glass::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 5px; right: 50px; bottom: 10px;
+    background: linear-gradient(to right, rgba(255,255,255,0.3), transparent);
+    border-radius: 20px;
+    z-index: 10;
+}
+#tube-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.tube-layer {
+    width: 100%;
+    transition: height 1s ease-out;
+}
+.tube-label {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 3px #000;
+}
+
+/* PPT Modal Styles */
+#ppt-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 4000; 
+    display: flex;
+    flex-direction: column;
+}
+
+.ppt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: #1e272e;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+.ppt-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--ppt-text-accent);
+}
+
+.ppt-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 30px;
+    background: #1e272e;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+.ppt-footer button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.ppt-footer button:hover { background-color: #2ecc71; }
+.ppt-footer button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+
+#ppt-page-wrapper {
+    color: white; 
+    font-size: 1.1rem; 
+    background: rgba(255,255,255,0.2); 
+    padding: 8px 20px; 
+    border-radius: 25px;
+    font-weight: bold;
+}
+
+#close-ppt-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+#close-ppt-btn:hover { background-color: #c0392b; }
+
+.ppt-main {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden; 
+}
+
+.slide-container {
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    background-color: var(--ppt-slide-bg);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.slide {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    padding: 60px;
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateX(20px);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto; 
+}
+
+.slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.slide.title-slide {
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #33691E 0%, #827717 100%);
+}
+
+.slide.title-slide h1 {
+    font-size: 3.5rem; margin-bottom: 20px; color: #fff; text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+}
+.slide.title-slide h2 { font-size: 1.8rem; color: var(--ppt-text-accent); font-weight: normal; }
+
+.slide-header { border-bottom: 3px solid var(--ppt-text-accent); margin-bottom: 30px; padding-bottom: 15px; flex-shrink: 0; }
+.slide-header h2 { font-size: 2.5rem; color: var(--ppt-text-accent); margin:0; }
+
+.slide-content { font-size: 1.5rem; line-height: 1.8; text-align: left; }
+.slide-content ul { margin-left: 40px; }
+.slide-content li { margin-bottom: 15px; color: var(--ppt-text-main); }
+.slide-content .highlight { color: #f1c40f; font-weight: bold; }
+
+.unit-1 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s1)); }
+.unit-2 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s2)); }
+.unit-3 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s3)); }
+.unit-4 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s4)); }
+.unit-5 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s5)); }
+.unit-6 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-agri)); }
+
+.progress-bar {
+    position: absolute; bottom: 0; left: 0; height: 5px;
+    background-color: var(--ppt-text-accent); transition: width 0.3s ease;
+    z-index: 10;
+}
+
+.ppt-play-btn {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 12px 30px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #333;
+    background: #FFCA28;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 202, 40, 0.5);
+    transition: transform 0.2s, background 0.2s;
+    text-align: center;
+}
+.ppt-play-btn:hover { background: #FFD54F; transform: scale(1.05); }
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    #test-tube-container { right: 45px; width: 50px; height: 200px; }
+    .tube-glass { width: 50px; height: 160px; }
+    .hero h1 { font-size: 2.5rem; }
+    .hero p { font-size: 1.1rem; padding: 0 15px; }
+    .soil-layer { padding: 0.5rem; display: flex; align-items: stretch; }
+    .layer-content { padding: 0.8rem; margin: auto; max-width: 98%; max-height: 98vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .layer-content h2 { font-size: 1.2rem; }
+    .info-card { padding: 0.6rem; margin-bottom: 8px; font-size: 0.85rem; line-height: 1.4; }
+    .info-card strong { font-size: 1rem; margin-bottom: 0.2rem; }
+    .game-container { height: auto; min-height: 250px; flex-grow: 1; display: flex; flex-direction: column; }
+    
+    #layer-nav { right: 5px; }
+    #layer-nav li { width: 32px; height: 32px; font-size: 0.8rem; }
+    
+    .open-ppt-btn { padding: 0.4rem 1rem; font-size: 0.85rem; margin-left: 0; width: 100%; }
+    .layer-header { flex-direction: column; margin-bottom: 5px; }
+
+    #ppt-modal { height: 100dvh; } 
+    .ppt-header { padding: 12px 15px; }
+    .ppt-title { font-size: 1rem; width: 65%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ppt-footer { padding: 10px; gap: 8px; justify-content: space-between; }
+    .ppt-footer button { padding: 12px 10px; font-size: 1rem; flex-grow: 1; }
+    .ppt-main { padding: 10px; display: block; height: calc(100% - 110px); } 
+    .slide-container { aspect-ratio: auto; height: 100%; border-radius: 8px; }
+    .slide { padding: 25px 15px 40px 15px; display: block; overflow-y: auto; }
+    .slide.title-slide h1 { font-size: 1.8rem; margin-bottom: 15px; }
+    .slide.title-slide h2 { font-size: 1.2rem; }
+    .slide-header { margin-bottom: 15px; padding-bottom: 10px; }
+    .slide-header h2 { font-size: 1.4rem; }
+    .slide-content { font-size: 1.1rem; line-height: 1.6; display: block; }
+    .slide-content ul { margin-left: 20px; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header class="hero">
+            <h1>梅好時光</h1>
+            <p>點擊開始，跟著我們從梅樹開花、結實、採收到醃製，體驗梅子的食農之旅。</p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <button id="start-btn">開始體驗</button>
+                <button class="open-ppt-btn" data-ppt-start="0" id="hero-ppt-btn">📖 完整課程簡報</button>
+            </div>
+        </header>
+
+        <main id="soil-layers" class="hidden">
+            <!-- Stage 1 -->
+            <section id="layer-1" class="soil-layer layer-1">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>一、凜冬綻放：梅樹開花</h2>
+                        <button class="open-ppt-btn" data-ppt-start="4">📖 關於開花 (簡報 5-9)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>越冷越開花</strong><br>
+                        每年12月至隔年1月是梅花盛開的季節。梅樹需要經歷冬天的低溫刺激，才能在初春綻放出滿樹白花。蜜蜂此時扮演著授粉的重要角色。
+                    </div>
+                    <div class="game-container" id="game-1"></div>
+                </div>
+            </section>
+            
+            <!-- Stage 2 -->
+            <section id="layer-2" class="soil-layer layer-2">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>二、孕育果實：結青梅</h2>
+                        <button class="open-ppt-btn" data-ppt-start="9">📖 關於青梅</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>春雨滋潤的綠寶石</strong><br>
+                        授粉後，梅樹開始結出小果實。到了3、4月，果實逐漸膨大，變成翠綠的「青梅」。充足的春雨和陽光是果實飽滿的關鍵。
+                    </div>
+                    <div class="game-container" id="game-2"></div>
+                </div>
+            </section>
+            
+            <!-- Stage 3 -->
+            <section id="layer-3" class="soil-layer layer-3">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>三、豐收時刻：採收青梅</h2>
+                        <button class="open-ppt-btn" data-ppt-start="13">📖 關於採收</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>手採與竿採的智慧</strong><br>
+                        採梅分為兩種：「手採」能保持果實完整，適合做高級脆梅；「竿採」則是敲打樹枝讓梅子掉落網中，效率高，適合做梅精或紫蘇梅。
+                    </div>
+                    <div class="game-container" id="game-3"></div>
+                </div>
+            </section>
+            
+            <!-- Stage 4 -->
+            <section id="layer-4" class="soil-layer layer-4">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>四、去澀工序：殺青與揉捻</h2>
+                        <button class="open-ppt-btn" data-ppt-start="17">📖 關於殺青</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>與粗鹽的親密接觸</strong><br>
+                        剛採下的青梅又酸又澀。我們必須加入粗鹽用力搓揉，破壞梅子表面的細胞質，讓苦澀的汁液流出，這個過程稱為「殺青」。
+                    </div>
+                    <div class="game-container" id="game-4"></div>
+                </div>
+            </section>
+
+            <!-- Stage 5 -->
+            <section id="layer-5" class="soil-layer layer-5">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>五、時間淬鍊：醃製與發酵</h2>
+                        <button class="open-ppt-btn" data-ppt-start="21">📖 關於醃製</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>滲透壓的化學魔術</strong><br>
+                        洗淨鹽分後，將梅子放入罐中，一層糖、一層梅子層層疊加。利用糖的「滲透壓」防腐並逼出水分，經過數個月的發酵，梅子才會變得甘甜。
+                    </div>
+                    <div class="game-container" id="game-5"></div>
+                </div>
+            </section>
+
+            <!-- Stage 6 -->
+            <section id="layer-6" class="soil-layer layer-6">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>六、梅好滋味：最終成品</h2>
+                        <button class="open-ppt-btn" data-ppt-start="25">📖 關於梅子加工</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>百變的梅子風味</strong><br>
+                        不同成熟度的梅子與不同的醃製法，能創造出脆梅、Q梅、紫蘇梅或梅酒。食農教育不僅是體驗，更是學會珍惜土地賜予的每一分酸甜。
+                    </div>
+                    <div class="game-container" id="game-6"></div>
+                </div>
+            </section>
+        </main>
+        
+        <nav id="layer-nav" class="hidden">
+            <ul>
+                <li data-target="layer-1" class="active">花</li>
+                <li data-target="layer-2">果</li>
+                <li data-target="layer-3">採</li>
+                <li data-target="layer-4">揉</li>
+                <li data-target="layer-5">醃</li>
+                <li data-target="layer-6">嚐</li>
+            </ul>
+        </nav>
+        
+        <div id="test-tube-container" class="hidden">
+            <div class="tube-glass">
+                <div id="tube-content"></div>
+            </div>
+            <div class="tube-label">梅子釀造罐</div>
+        </div>
+    </div>
+
+    <!-- PPT Modal -->
+    <div id="ppt-modal" class="hidden">
+        <div class="ppt-header">
+            <div class="ppt-title">梅好時光：食農教育教學簡報</div>
+            <button id="close-ppt-btn">✖ 關閉</button>
+        </div>
+        
+        <div class="ppt-main">
+            <div class="slide-container" id="ppt-slide-container">
+                <div class="progress-bar" id="ppt-progress-bar" style="width: 3.33%;"></div>
+            </div>
+        </div>
+
+        <div class="ppt-footer">
+            <button id="ppt-prev">◄ 上一頁</button>
+            <div id="ppt-page-wrapper">
+                <span id="ppt-current-page">1</span> / 31
+            </div>
+            <button id="ppt-next">下一頁 ►</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+/* =========================================
+   全域狀態與 PPT 邏輯
+   ========================================= */
+window.globalScores = { s1: 0, s2: 0, s3: 0, s4: 0, s5: 0 };
+window.layerCompletionOrder = [];
+window.isFullCourseMode = false; 
+
+window.triggerNextCourseStep = function(nextLayerId, nextPPTIndex) {
+    const container = document.getElementById('soil-layers');
+    const targetEl = document.getElementById(nextLayerId);
+    
+    if (targetEl && container) {
+        container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+    }
+    
+    if (window.isFullCourseMode) {
+        setTimeout(() => {
+            pptCurrentPage = nextPPTIndex;
+            updatePPT();
+            pptModal.classList.remove('hidden');
+        }, 800);
+    }
+};
+
+window.addLayerToJar = function(layerId, colorHex, score) {
+    if(!window.layerCompletionOrder.includes(layerId)) {
+        window.layerCompletionOrder.push(layerId);
+    }
+    
+    document.getElementById('test-tube-container').classList.remove('hidden');
+
+    const labelMap = { 's1': '花', 's2': '果', 's3': '採', 's4': '揉', 's5': '醃', 'agri': '品' };
+
+    const tubeContent = document.getElementById('tube-content');
+    const layerDiv = document.createElement('div');
+    layerDiv.className = 'tube-layer';
+    layerDiv.style.backgroundColor = colorHex;
+    layerDiv.style.display = 'flex';
+    layerDiv.style.justifyContent = 'center';
+    layerDiv.style.alignItems = 'center';
+    layerDiv.style.color = 'rgba(255,255,255,0.9)';
+    layerDiv.style.fontWeight = 'bold';
+    layerDiv.style.fontSize = '14px';
+    layerDiv.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+    layerDiv.textContent = labelMap[layerId] || '';
+    
+    const finalHeight = 5 + (score / 100 * 15);
+    layerDiv.style.height = '0%';
+    tubeContent.insertBefore(layerDiv, tubeContent.firstChild);
+    setTimeout(() => { layerDiv.style.height = finalHeight + '%'; }, 50);
+};
+
+const slidesData = [
+    // --- 前導 (頁 1-4) ---
+    { title: "梅好時光", content: "梅子的食農教育之旅<br><br><span style='font-size:1.2rem; color:#ccc;'>從產地到餐桌的酸甜體會</span>", type: "title-slide" },
+    { title: "課程動機", content: "<ul><li>你知道我們吃的梅子是怎麼來的嗎？</li><li>梅子不僅是傳統零嘴，更蘊含了<span class='highlight'>傳統農業智慧與食品加工科學</span></li><li>透過認識梅子，了解節氣、農法與食物保存的奧秘</li></ul>" },
+    { title: "食農六部曲", content: "<ul><li>我們將親身體驗梅子的六大階段：</li><li><span class='highlight'>1. 開花</span>：凜冬綻放</li><li><span class='highlight'>2. 結果</span>：孕育青梅</li><li><span class='highlight'>3. 採收</span>：豐收時刻</li><li><span class='highlight'>4. 殺青</span>：去澀工序</li><li><span class='highlight'>5. 醃製</span>：時間淬鍊</li><li><span class='highlight'>6. 品嚐</span>：成品多樣性</li></ul>" },
+    { title: "台灣的梅子產區", content: "<ul><li>主要分佈在<span class='highlight'>中南部山區</span>（如南投信義鄉、水里鄉、高雄甲仙等）</li><li>適合生長在海拔400-1200公尺，氣候日夜溫差大的坡地</li><li>清明前後是青梅盛產的關鍵節氣</li></ul>" },
+    
+    // --- 階段1：開花 (頁 5-9) ---
+    { title: "【第一部】凜冬綻放", content: "<ul><li>梅樹的生命週期從冬天的花季開始</li><li>俗話說「不經一番寒徹骨，焉得梅花撲鼻香」</li><li>低溫刺激是梅樹開花的<span class='highlight'>必要條件</span></li></ul>", class: "unit-1" },
+    { title: "越冷越開花", content: "<ul><li>當氣溫驟降，梅樹會感受到生存危機</li><li>促使它將養分集中在花苞，準備繁衍後代</li><li>花期多在<span class='highlight'>一月上旬至二月</span></li></ul>", class: "unit-1" },
+    { title: "蜜蜂的重要任務", content: "<ul><li>梅花盛開時會散發淡淡清香</li><li>吸引蜜蜂等昆蟲前來採蜜並進行<span class='highlight'>授粉</span></li><li>沒有授粉，就結不出果實</li></ul>", class: "unit-1" },
+    { title: "氣候變遷的危機", content: "<ul><li>若遭遇「暖冬」，梅樹可能無法順利開花</li><li>或者開花時遇到連日大雨，導致蜜蜂無法出門授粉</li><li>這會嚴重影響當年的梅子產量</li></ul>", class: "unit-1" },
+    { title: "互動環節解析：陽光與開花", content: "<ul><li>在互動遊戲中：</li><li>點擊累積「春日暖陽」能量</li><li>幫助經歷寒冬的梅樹綻放出一朵朵<span class='highlight'>白色的梅花</span></li></ul>", class: "unit-1", gameTarget: "layer-1" },
+
+    // --- 階段2：結果 (頁 10-13) ---
+    { title: "【第二部】孕育果實", content: "<ul><li>授粉成功後，花瓣凋謝，子房開始膨大</li><li>漸漸結出翠綠色的果實，這就是我們說的<span class='highlight'>「青梅」</span></li></ul>", class: "unit-2" },
+    { title: "春雨的滋潤", content: "<ul><li>三月到四月，正是果實需要水分快速成長的時期</li><li>這時候的降雨被農民稱為「梅雨」的前奏</li><li><span class='highlight'>充足的水分與適當的日照</span>能讓果實飽滿</li></ul>", class: "unit-2" },
+    { title: "六分熟與九分熟", content: "<ul><li>清明節前後採收的梅子約為<span class='highlight'>六七分熟</span>（青梅）</li><li>到了穀雨（四月下旬），梅子變黃變軟，稱為<span class='highlight'>黃梅</span></li><li>不同熟度適合做成不同的加工品</li></ul>", class: "unit-2" },
+    { title: "互動環節解析：灌溉與施肥", content: "<ul><li>在互動遊戲中：</li><li>玩家使用「澆水」與「施肥」工具</li><li>補充青梅成長所需的養分，看著它從小變大</li></ul>", class: "unit-2", gameTarget: "layer-2" },
+
+    // --- 階段3：採收 (頁 14-17) ---
+    { title: "【第三部】豐收時刻", content: "<ul><li>當梅子長到適當大小，農民就要準備採收</li><li>採收是一場與時間賽跑的體力活</li><li>通常分為<span class='highlight'>「手採」與「竿採」</span>兩種方式</li></ul>", class: "unit-3" },
+    { title: "手採梅 (保護果實)", content: "<ul><li>農民爬上樹梯，一顆顆手工摘下</li><li><span class='highlight'>優點：</span>梅子外表完整漂亮，無傷口</li><li><span class='highlight'>用途：</span>適合製作高級的「脆梅」、梅酒</li></ul>", class: "unit-3" },
+    { title: "竿採梅 (效率優先)", content: "<ul><li>在樹下鋪上大網子，用長竹竿敲打樹枝讓梅子掉落</li><li><span class='highlight'>優點：</span>速度極快，節省大量人工</li><li><span class='highlight'>用途：</span>表面可能有些微碰撞，適合做梅精、紫蘇梅、梅醋</li></ul>", class: "unit-3" },
+    { title: "互動環節解析：竹簍接梅", content: "<ul><li>在互動遊戲中：</li><li>移動下方的竹簍捕捉從樹上掉落的青梅</li><li>體驗農民豐收接果實的樂趣與辛勞</li></ul>", class: "unit-3", gameTarget: "layer-3" },
+
+    // --- 階段4：殺青 (頁 18-21) ---
+    { title: "【第四部】去澀工序 (殺青)", content: "<ul><li>剛採下來的青梅含有大量單寧酸，<span class='highlight'>又酸又苦澀</span></li><li>絕對不能直接生吃！</li><li>必須經過「殺青」與「去澀」的步驟</li></ul>", class: "unit-4" },
+    { title: "粗鹽的作用", content: "<ul><li>加入大量的<span class='highlight'>粗鹽</span>與青梅一起大力搓揉</li><li>粗鹽的晶體可以刮破梅子表面的天然蠟質與細毛</li><li>同時破壞表皮細胞，讓內部的苦澀汁液流出</li></ul>", class: "unit-4" },
+    { title: "敲裂與走水", content: "<ul><li>如果是做脆梅，還會將梅子輕輕敲裂</li><li>接著用活水沖洗數小時（走水）</li><li>徹底帶走苦澀味，留下梅子本身的清香</li></ul>", class: "unit-4" },
+    { title: "互動環節解析：粗鹽揉捻", content: "<ul><li>在互動遊戲中：</li><li>在畫面上快速滑動模擬「雙手搓揉」</li><li>幫畫面上這顆大青梅進行去澀殺青的按摩！</li></ul>", class: "unit-4", gameTarget: "layer-4" },
+
+    // --- 階段5：醃製 (頁 22-25) ---
+    { title: "【第五部】時間淬鍊 (醃製)", content: "<ul><li>殺青洗淨並晾乾後的梅子，準備進入醃製罐</li><li>這是一場<span class='highlight'>食材、文化與食品科學</span>的結合</li><li>醃製的核心原理是「滲透壓」</li></ul>", class: "unit-5" },
+    { title: "滲透壓的化學魔術", content: "<ul><li>利用高濃度的<span class='highlight'>糖或鹽</span></li><li>將梅子內部的水分與酸味逼出來</li><li>同時讓糖分慢慢滲入果肉中，達到防腐與調味的效果</li></ul>", class: "unit-5" },
+    { title: "一層梅子一層糖", content: "<ul><li>傳統做法會將糖、鹽分次加入</li><li>確保梅子不會因為瞬間脫水而變得乾癟</li><li>裝罐後密封，交給時間去發酵與轉化</li></ul>", class: "unit-5" },
+    { title: "互動環節解析：配料入罐", content: "<ul><li>在互動遊戲中：</li><li>操作梅子罐，接住天上掉下來的「糖」與「鹽」</li><li>完成正確的醃製比例，準備封罐！</li></ul>", class: "unit-5", gameTarget: "layer-5" },
+
+    // --- 階段6：品嚐 (頁 26-29) ---
+    { title: "【第六部】梅好滋味", content: "<ul><li>經過幾週甚至幾年的等待，醃製好的梅子終於可以開封了</li><li>不同的製程，會誕生出完全不同的<span class='highlight'>梅子風味</span></li></ul>", class: "unit-6" },
+    { title: "青梅的變身 (脆梅與梅酒)", content: "<ul><li><span class='highlight'>脆梅：</span>使用六分熟青梅，殺青敲裂後糖漬，口感清脆酸甜。</li><li><span class='highlight'>梅酒：</span>使用青梅或黃梅，加入冰糖與基底酒浸泡數月，散發迷人果香。</li></ul>", class: "unit-6" },
+    { title: "黃梅的變身 (Q梅與紫蘇梅)", content: "<ul><li><span class='highlight'>紫蘇梅/Q梅：</span>使用八九分熟較軟的梅子，加入鹽、糖與紫蘇葉長時間醃漬，果肉軟Q入味。</li><li><span class='highlight'>梅醬：</span>將熟透的黃梅熬煮，香氣極其濃郁。</li></ul>", class: "unit-6" },
+    { title: "互動環節解析：選擇你的成果", content: "<ul><li>回顧從開花到醃製的過程</li><li>選擇你想製作的最終梅子產品</li><li>看看你的食農大考驗能獲得幾顆星！</li></ul>", class: "unit-6", gameTarget: "layer-6" },
+
+    // --- 總結 (頁 30-31) ---
+    { title: "永續共好：從產地到餐桌", content: "<ul><li>每一顆小小的梅子，都包含了農民的汗水與大自然的恩賜</li><li>下次吃到酸甜的梅子時：</li><li>記得它經歷了開花、結果、採收、殺青與漫長醃製的旅程</li><li>支持在地農產，珍惜我們所擁有的美好食物</li></ul>" },
+    { title: "Q&A 與交流", content: "<div style='text-align:center; font-size:2rem; margin-top:50px; color:#f39c12;'>感謝您的聆聽與參與！</div><br><div style='text-align:center;'>大家最喜歡哪一種梅子產品呢？</div>", type: "title-slide" }
+];
+
+let pptCurrentPage = 0;
+const pptTotalPages = slidesData.length;
+const pptContainer = document.getElementById('ppt-slide-container');
+const pptProgressBar = document.getElementById('ppt-progress-bar');
+const pptBtnPrev = document.getElementById('ppt-prev');
+const pptBtnNext = document.getElementById('ppt-next');
+const pptModal = document.getElementById('ppt-modal');
+
+document.getElementById('ppt-page-wrapper').innerHTML = `<span id="ppt-current-page">1</span> / ${pptTotalPages}`;
+
+function initPPT() {
+    slidesData.forEach((data, index) => {
+        const slideDiv = document.createElement('div');
+        slideDiv.className = `slide ${data.type === 'title-slide' ? 'title-slide' : ''} ${data.class || ''}`;
+        slideDiv.id = `slide-${index}`;
+
+        let innerHTMLStr = '';
+        if (data.type === 'title-slide') {
+            innerHTMLStr = `<h1>${data.title}</h1><h2>${data.content}</h2>`;
+        } else {
+            innerHTMLStr = `<div class="slide-header"><h2>${data.title}</h2></div><div class="slide-content">${data.content}`;
+            if (data.gameTarget) {
+                innerHTMLStr += `<br><div style="text-align:center;"><button class="ppt-play-btn" data-target="${data.gameTarget}">🎮 進入互動關卡</button></div>`;
+            }
+            innerHTMLStr += `</div>`;
+        }
+        slideDiv.innerHTML = innerHTMLStr;
+        pptContainer.appendChild(slideDiv);
+    });
+}
+
+function updatePPT() {
+    document.querySelectorAll('#ppt-slide-container .slide').forEach((slide, index) => {
+        if (index === pptCurrentPage) {
+            slide.classList.add('active');
+            slide.scrollTop = 0;
+        } else {
+            slide.classList.remove('active');
+        }
+    });
+    document.getElementById('ppt-current-page').textContent = pptCurrentPage + 1;
+    pptProgressBar.style.width = `${((pptCurrentPage + 1) / pptTotalPages) * 100}%`;
+    pptBtnPrev.disabled = pptCurrentPage === 0;
+    pptBtnNext.disabled = pptCurrentPage === pptTotalPages - 1;
+}
+
+pptBtnNext.addEventListener('click', () => { if (pptCurrentPage < pptTotalPages - 1) { pptCurrentPage++; updatePPT(); }});
+pptBtnPrev.addEventListener('click', () => { if (pptCurrentPage > 0) { pptCurrentPage--; updatePPT(); }});
+
+document.addEventListener('keydown', (e) => {
+    if (!pptModal.classList.contains('hidden')) {
+        if (e.key === 'ArrowRight') { pptBtnNext.click(); }
+        else if (e.key === 'ArrowLeft') { pptBtnPrev.click(); }
+    }
+});
+
+document.querySelectorAll('.open-ppt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const startIdx = parseInt(btn.getAttribute('data-ppt-start') || 0);
+        pptCurrentPage = startIdx;
+        updatePPT();
+        pptModal.classList.remove('hidden');
+    });
+});
+
+document.getElementById('close-ppt-btn').addEventListener('click', () => {
+    pptModal.classList.add('hidden');
+});
+
+document.addEventListener('click', function(e) {
+    if(e.target && e.target.classList.contains('ppt-play-btn')){
+        const targetSectionId = e.target.getAttribute('data-target');
+        pptModal.classList.add('hidden');
+        if(document.getElementById('soil-layers').classList.contains('hidden')) {
+            document.querySelector('.hero').classList.add('hidden');
+            document.getElementById('soil-layers').classList.remove('hidden');
+            document.getElementById('layer-nav').classList.remove('hidden');
+        }
+        setTimeout(() => {
+            const container = document.getElementById('soil-layers');
+            const targetEl = document.getElementById(targetSectionId);
+            if (targetEl && container) {
+                container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }
+        }, 100);
+    }
+});
+
+initPPT();
+
+/* =========================================
+   互動遊戲邏輯 (梅子版)
+   ========================================= */
+
+// --- Game 1: 開花 (點擊累積能量開花) ---
+function initGame1() {
+    const container = document.getElementById('game-1');
+    container.innerHTML = `
+        <div style="font-size:1.2rem;font-weight:bold;margin-top:10px;">開花進度: <span id="bloom-pct">0</span>%</div>
+        <div style="font-size: 1.2rem; color: #ffeb3b; margin-top: 5px;">剩餘時間: <span id="g1-timer">15</span>秒</div>
+        <div style="position:relative;height:220px;width:100%;margin-top:10px;border-bottom:3px solid #6D4C41;overflow:hidden;">
+            <!-- 樹幹 -->
+            <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:20px;height:100%;background:#5D4037;border-radius:10px 10px 0 0;"></div>
+            <!-- 樹枝 -->
+            <div style="position:absolute;bottom:60px;left:50%;width:80px;height:12px;background:#5D4037;transform:rotate(-30deg);transform-origin:left center;border-radius:5px;"></div>
+            <div style="position:absolute;bottom:100px;left:50%;width:70px;height:10px;background:#5D4037;transform:rotate(40deg);transform-origin:left center;border-radius:5px;"></div>
+            <div style="position:absolute;bottom:150px;left:50%;width:50px;height:8px;background:#5D4037;transform:rotate(-45deg);transform-origin:left center;border-radius:5px;"></div>
+            <div style="position:absolute;bottom:40px;right:50%;width:90px;height:12px;background:#5D4037;transform:rotate(25deg);transform-origin:right center;border-radius:5px;"></div>
+            <div style="position:absolute;bottom:120px;right:50%;width:60px;height:10px;background:#5D4037;transform:rotate(-20deg);transform-origin:right center;border-radius:5px;"></div>
+            
+            <div id="flowers-container" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+        </div>
+        <button id="sun-btn" style="margin-top:15px;padding:10px 20px;font-size:1.1rem;background:var(--accent);color:#333;font-weight:bold;border:none;border-radius:5px;cursor:pointer;">☀️ 注入春日暖陽 (點擊)</button>
+        <div id="g1-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#FFCA28;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">春暖花開！<br>梅花綻放完成。</div>
+    `;
+
+    let energy = 0;
+    const bloomDisplay = document.getElementById('bloom-pct');
+    const flowersContainer = document.getElementById('flowers-container');
+    const msg = document.getElementById('g1-message');
+    let isCompleted = false;
+    let timeLeft = 15;
+    const timerSpan = document.getElementById('g1-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    // 預定花朵出現位置 (相對於樹幹中心)
+    const flowerSpots = [
+        { x: 40, y: 150 }, { x: 70, y: 130 }, { x: 90, y: 110 },
+        { x: -50, y: 170 }, { x: -80, y: 180 }, { x: -20, y: 100 },
+        { x: 30, y: 80 }, { x: 60, y: 60 }, { x: -40, y: 80 },
+        { x: 0, y: 50 }, { x: -60, y: 130 }, { x: 20, y: 200 }
+    ];
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+    }
+
+    function triggerBloom() {
+        if (isCompleted) return;
+        startTimer();
+        energy += 5; 
+        const displayScore = Math.min(energy, 100);
+        bloomDisplay.textContent = displayScore;
+
+        // 新增花朵
+        if (energy % 10 === 0 && energy <= 100) {
+            const spot = flowerSpots[(energy/10)-1] || {x: (Math.random()-0.5)*100, y: Math.random()*150+50};
+            const f = document.createElement('div');
+            f.textContent = '❀'; // 改為白色梅花符號
+            f.style.color = '#FFFFFF'; // 設定為純白色
+            f.style.textShadow = '0 0 8px rgba(255,255,255,0.8), 1px 1px 3px rgba(0,0,0,0.8)'; // 加入白色發光與黑色深陰影增加立體感
+            f.style.position = 'absolute';
+            f.style.fontSize = '1.8rem';
+            f.style.left = `calc(50% + ${spot.x}px)`;
+            f.style.bottom = `${spot.y}px`;
+            f.style.transform = 'translate(-50%, 50%) scale(0)';
+            f.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            flowersContainer.appendChild(f);
+            
+            // Trigger animation
+            setTimeout(() => { f.style.transform = 'translate(-50%, 50%) scale(1)'; }, 10);
+        }
+
+        if (energy >= 100) { completeGame(); }
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true;
+        clearInterval(timerInterval);
+        msg.classList.remove('hidden');
+        document.getElementById('sun-btn').disabled = true;
+        const score = Math.min(energy, 100);
+        window.globalScores.s1 = score;
+        window.addLayerToJar('s1', '#F8BBD0', score); // 粉白色代表花
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-2', 9); }, 2000);
+    }
+
+    document.getElementById('sun-btn').addEventListener('click', triggerBloom);
+}
+
+// --- Game 2: 成長 (澆水/日照 養青梅) ---
+function initGame2() {
+    const container = document.getElementById('game-2');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:20px;position:relative;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;">果實成長: <span id="plum-size-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:10px;">剩餘時間: <span id="g2-timer">15</span>秒</div>
+            <div style="display:flex;gap:15px;margin-bottom:30px;z-index:10;">
+                <button class="tool-btn" id="tool-water" style="padding:10px;font-size:1.2rem;background:rgba(255,255,255,0.2);border:2px solid white;color:white;cursor:pointer;border-radius:10px;">🌧️ 澆水</button>
+                <button class="tool-btn" id="tool-sun2" style="padding:10px;font-size:1.2rem;background:rgba(255,255,255,0.2);border:2px solid white;color:white;cursor:pointer;border-radius:10px;">☀️ 日照</button>
+            </div>
+            
+            <div style="position:relative;width:200px;height:200px;display:flex;justify-content:center;align-items:center;">
+                <!-- 梅子本體 -->
+                <div id="green-plum" style="width:20px;height:20px;background:radial-gradient(circle at 30% 30%, #AED581, #689F38);border-radius:50%;box-shadow:inset -5px -5px 10px rgba(0,0,0,0.3);transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);cursor:pointer;display:flex;justify-content:center;align-items:flex-start;">
+                    <!-- 蒂頭 -->
+                    <div style="width:4px;height:6px;background:#3E2723;border-radius:2px;margin-top:-2px;"></div>
+                </div>
+            </div>
+        </div>
+        <div id="g2-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;">時間到！<br>青梅長大囉。</div>
+    `;
+
+    const waterBtn = document.getElementById('tool-water');
+    const sunBtn = document.getElementById('tool-sun2');
+    const plum = document.getElementById('green-plum');
+    const pctSpan = document.getElementById('plum-size-pct');
+    const msg = document.getElementById('g2-message');
+
+    let activeTool = null; let growthPct = 0; let isCompleted = false;
+    let timeLeft = 15; const timerSpan = document.getElementById('g2-timer');
+    let timerInterval = null; let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+    }
+
+    function selectTool(toolKey, btn) {
+        if(isCompleted) return;
+        startTimer();
+        activeTool = toolKey;
+        waterBtn.style.background = 'rgba(255,255,255,0.2)'; sunBtn.style.background = 'rgba(255,255,255,0.2)';
+        btn.style.background = 'var(--color-s2)';
+    }
+
+    waterBtn.addEventListener('click', () => selectTool('water', waterBtn));
+    sunBtn.addEventListener('click', () => selectTool('sun', sunBtn));
+
+    plum.addEventListener('click', () => {
+        if(isCompleted || !activeTool) return;
+        startTimer();
+        growthPct += 5; pctSpan.textContent = Math.min(growthPct, 100);
+        
+        // Size mapping: 20px to 120px
+        const currentSize = 20 + (Math.min(growthPct, 100) * 1);
+        plum.style.width = currentSize + 'px';
+        plum.style.height = currentSize + 'px';
+        
+        // Add particle effect
+        const particle = document.createElement('div');
+        particle.textContent = activeTool === 'water' ? '💧' : '✨';
+        particle.style.position = 'absolute';
+        particle.style.fontSize = '20px';
+        particle.style.left = '50%';
+        particle.style.top = '50%';
+        particle.style.transform = `translate(-50%, -50%) translate(${(Math.random()-0.5)*50}px, ${(Math.random()-0.5)*50}px)`;
+        particle.style.opacity = '1';
+        particle.style.transition = 'all 0.5s ease-out';
+        particle.style.pointerEvents = 'none';
+        plum.parentElement.appendChild(particle);
+        
+        setTimeout(() => {
+            particle.style.opacity = '0';
+            particle.style.transform += ' translateY(-20px)';
+            setTimeout(() => particle.remove(), 500);
+        }, 50);
+
+        if(growthPct >= 100) completeGame();
+    });
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true; clearInterval(timerInterval); msg.classList.remove('hidden');
+        const score = Math.min(growthPct, 100);
+        window.globalScores.s2 = score; window.addLayerToJar('s2', '#81C784', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-3', 13); }, 2000);
+    }
+}
+
+// --- Game 3: 採收 (移動竹簍接青梅) ---
+function initGame3() {
+    const container = document.getElementById('game-3');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;">採收數量: <span id="g3-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g3-timer">15</span>秒</div>
+            <p style="font-size:1rem;color:#fff;margin-bottom:5px;font-weight:bold;text-align:center;background:rgba(230, 126, 34, 0.8);padding:5px 15px;border-radius:20px;">💡 滑動下方竹簍接住掉落的青梅！</p>
+            <div id="g3-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(255,255,255,0.05);border-radius:10px;cursor:pointer;">
+                <div id="basket" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:80px;height:50px;background:#8D6E63;border-radius:10px 10px 30px 30px;display:flex;justify-content:center;align-items:center;font-size:2rem;box-shadow:0 4px 10px rgba(0,0,0,0.5);user-select:none;touch-action:none;border-top:5px solid #5D4037;">🧺</div>
+            </div>
+        </div>
+        <div id="g3-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>大豐收。</div>
+    `;
+
+    const gameArea = document.getElementById('g3-game-area');
+    const basket = document.getElementById('basket');
+    const pctSpan = document.getElementById('g3-pct');
+    const msg = document.getElementById('g3-message');
+
+    let catchPct = 0; let isCompleted = false; let gameLoop; let plums = [];
+    let timeLeft = 15; const timerSpan = document.getElementById('g3-timer');
+    let timerInterval = null; let gameActive = false;
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        
+        spawnPlum();
+        updateGame();
+    }
+    
+    let isDragging = false; let basketX = gameArea.clientWidth / 2;
+    basket.style.left = basketX + 'px';
+
+    const startDrag = (e) => { 
+        if(isCompleted) return; 
+        isDragging = true; 
+        startGameLogic(); 
+        moveDrag(e); 
+    };
+    const moveDrag = (e) => {
+        if(!isDragging || isCompleted) return;
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        const rect = gameArea.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        if(clientX === undefined) return;
+
+        let x = clientX - rect.left;
+        const halfWidth = basket.clientWidth / 2;
+        if(x < halfWidth) x = halfWidth;
+        if(x > gameArea.clientWidth - halfWidth) x = gameArea.clientWidth - halfWidth;
+        basketX = x; basket.style.left = basketX + 'px';
+    };
+    const endDrag = () => { isDragging = false; };
+
+    gameArea.addEventListener('mousedown', startDrag); gameArea.addEventListener('touchstart', startDrag, {passive: false});
+    gameArea.addEventListener('mousemove', moveDrag); gameArea.addEventListener('touchmove', moveDrag, {passive: false});
+    document.addEventListener('mouseup', endDrag); document.addEventListener('touchend', endDrag);
+
+    function spawnPlum() {
+        if(isCompleted) return;
+        const el = document.createElement('div');
+        el.style.position='absolute'; 
+        el.style.width='24px'; el.style.height='24px'; 
+        el.style.borderRadius='50%';
+        el.style.background = 'radial-gradient(circle at 30% 30%, #AED581, #689F38)';
+        el.style.boxShadow = 'inset -2px -2px 5px rgba(0,0,0,0.3)';
+        
+        const x = Math.random() * (gameArea.clientWidth - 30) + 15;
+        el.style.left = x + 'px'; el.style.top = '-20px';
+        gameArea.appendChild(el);
+        plums.push({ el: el, x: x, y: -20, speed: Math.random() * 3 + 2, active: true });
+        
+        if(!isCompleted) setTimeout(spawnPlum, Math.random() * 600 + 400); 
+    }
+
+    function updateGame() {
+        if(isCompleted) return;
+        const basketTop = basket.offsetTop;
+        const basketLeft = basketX - basket.clientWidth/2;
+        const basketRight = basketX + basket.clientWidth/2;
+        const areaRect = gameArea.getBoundingClientRect();
+
+        plums.forEach(p => {
+            if(!p.active) return;
+            p.y += p.speed; p.el.style.top = p.y + 'px';
+            if(p.y > basketTop - 10 && p.y < basketTop + 20) {
+                if(p.x > basketLeft && p.x < basketRight) {
+                    p.active = false; p.el.remove();
+                    catchPct += 5; pctSpan.textContent = Math.min(catchPct, 100);
+                }
+            }
+            if(p.y > areaRect.height) { p.active = false; p.el.remove(); }
+        });
+        plums = plums.filter(p => p.active);
+        if(!isCompleted) gameLoop = requestAnimationFrame(updateGame);
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true; clearInterval(timerInterval); msg.classList.remove('hidden'); plums.forEach(p => p.el.remove());
+        const score = Math.min(catchPct, 100);
+        window.globalScores.s3 = score; window.addLayerToJar('s3', '#4CAF50', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-4', 17); }, 2000);
+    }
+}
+
+// --- Game 4: 殺青 (摩擦去澀) ---
+function initGame4() {
+    const container = document.getElementById('game-4');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;">
+            <div style="font-size:1.2rem;font-weight:bold;margin:5px 0;z-index:10;">殺青進度: <span id="g4-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g4-timer">15</span>秒</div>
+            <p style="font-size:0.9rem;color:#ccc;">在梅子上按住並<span style="color:#FFCA28;">來回快速滑動搓揉</span>加粗鹽去澀！</p>
+            <div style="position:relative;width:100%;max-width:300px;height:250px;display:flex;justify-content:center;align-items:center;cursor:crosshair;touch-action:none;overflow:hidden;">
+                <!-- 大梅子 -->
+                <div id="big-plum" style="position:relative;width:180px;height:180px;background:radial-gradient(circle at 30% 30%, #81C784, #388E3C);border-radius:50%;box-shadow:inset -10px -10px 30px rgba(0,0,0,0.5);overflow:hidden;">
+                    <!-- 鹽巴刮痕效果區 -->
+                    <div id="scratch-area" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.8;"></div>
+                </div>
+            </div>
+        </div>
+        <div id="g4-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>苦澀味去除完畢。</div>
+    `;
+
+    const bigPlum = document.getElementById('big-plum');
+    const scratchArea = document.getElementById('scratch-area');
+    const pctSpan = document.getElementById('g4-pct');
+    const msg = document.getElementById('g4-message');
+
+    let rubProgress = 0; let isCompleted = false;
+    let timeLeft = 15; const timerSpan = document.getElementById('g4-timer');
+    let timerInterval = null; let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+    }
+
+    let isRubbing = false;
+    let lastPos = {x: 0, y: 0};
+
+    const startRub = (e) => {
+        if(isCompleted) return;
+        startTimer();
+        isRubbing = true;
+        lastPos = getPos(e);
+    };
+
+    const moveRub = (e) => {
+        if(!isRubbing || isCompleted) return;
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        
+        const pos = getPos(e);
+        const dist = Math.hypot(pos.x - lastPos.x, pos.y - lastPos.y);
+        
+        if (dist > 5) {
+            rubProgress += dist * 0.1; // 摩擦換算進度
+            pctSpan.textContent = Math.min(Math.round(rubProgress), 100);
+            
+            // 視覺效果：變色與加上鹽巴顆粒
+            const darkRatio = Math.min(rubProgress, 100) / 100;
+            bigPlum.style.background = `radial-gradient(circle at 30% 30%, rgb(${129-darkRatio*40}, ${199-darkRatio*40}, ${132-darkRatio*40}), rgb(${56-darkRatio*20}, ${142-darkRatio*20}, ${60-darkRatio*20}))`;
+            
+            // 隨機產生刮痕或鹽巴點
+            if(Math.random() < 0.3) {
+                const salt = document.createElement('div');
+                salt.style.position = 'absolute';
+                salt.style.width = Math.random()*4+2 + 'px';
+                salt.style.height = salt.style.width;
+                salt.style.background = 'rgba(255,255,255,0.7)';
+                salt.style.borderRadius = '50%';
+                salt.style.left = Math.random()*100 + '%';
+                salt.style.top = Math.random()*100 + '%';
+                scratchArea.appendChild(salt);
+            }
+
+            lastPos = pos;
+        }
+
+        if(rubProgress >= 100) completeGame();
+    };
+
+    const endRub = () => { isRubbing = false; };
+
+    function getPos(e) {
+        const rect = bigPlum.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    bigPlum.addEventListener('mousedown', startRub); bigPlum.addEventListener('touchstart', startRub, {passive: false});
+    window.addEventListener('mousemove', moveRub); window.addEventListener('touchmove', moveRub, {passive: false});
+    window.addEventListener('mouseup', endRub); window.addEventListener('touchend', endRub);
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true; clearInterval(timerInterval);
+        const score = Math.min(Math.round(rubProgress), 100);
+        pctSpan.textContent = score; msg.classList.remove('hidden');
+        window.globalScores.s4 = score; window.addLayerToJar('s4', '#BCAAA4', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-5', 21); }, 2000);
+    }
+}
+
+// --- Game 5: 醃製 (接糖與鹽入罐) ---
+function initGame5() {
+    const container = document.getElementById('game-5');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;">醃製進度: <span id="g5-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g5-timer">15</span>秒</div>
+            <p style="font-size:1rem;color:#fff;margin-bottom:5px;font-weight:bold;text-align:center;background:rgba(230, 126, 34, 0.8);padding:5px 15px;border-radius:20px;">💡 左右滑動下方罐子，接住糖(🧊)與鹽(🧂)</p>
+            
+            <div id="g5-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(0,0,0,0.2);border-radius:10px;cursor:pointer;">
+                <div id="pickle-jar" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:60px;height:70px;background:rgba(255,255,255,0.2);border:3px solid rgba(255,255,255,0.8);border-top:none;border-radius:0 0 15px 15px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;user-select:none;touch-action:none;">
+                    <div id="jar-fill" style="width:100%;height:0%;background:#FFB300;transition:height 0.2s;"></div>
+                </div>
+            </div>
+        </div>
+        <div id="g5-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>封罐發酵中。</div>
+    `;
+
+    const gameArea = document.getElementById('g5-game-area');
+    const jar = document.getElementById('pickle-jar');
+    const jarFill = document.getElementById('jar-fill');
+    const pctSpan = document.getElementById('g5-pct');
+    const msg = document.getElementById('g5-message');
+
+    let picklePct = 0; let isCompleted = false; let gameLoop; let ingredients = [];
+    let timeLeft = 15; const timerSpan = document.getElementById('g5-timer');
+    let timerInterval = null; let gameActive = false;
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        
+        spawnIngredient();
+        updateGame();
+    }
+
+    let jarX = gameArea.clientWidth / 2;
+    jar.style.left = jarX + 'px';
+    let catchRadius = 30;
+
+    const handleMove = (e) => {
+        if(isCompleted) return; 
+        startGameLogic();
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        
+        const rect = gameArea.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        if(clientX === undefined) return;
+        
+        let x = clientX - rect.left;
+        if(x < catchRadius) x = catchRadius;
+        if(x > gameArea.clientWidth - catchRadius) x = gameArea.clientWidth - catchRadius;
+        jarX = x; jar.style.left = jarX + 'px';
+    };
+
+    gameArea.addEventListener('mousedown', handleMove); gameArea.addEventListener('touchstart', handleMove, {passive: false});
+    gameArea.addEventListener('mousemove', handleMove); gameArea.addEventListener('touchmove', handleMove, {passive: false});
+
+    function spawnIngredient() {
+        if(isCompleted) return;
+        const isSugar = Math.random() > 0.4; // 糖比較多
+        const el = document.createElement('div');
+        el.style.position='absolute'; el.style.fontSize='1.8rem'; 
+        el.textContent = isSugar ? '🧊' : '🧂';
+        const x = Math.random() * (gameArea.clientWidth - 40) + 20;
+        el.style.left = x + 'px'; el.style.top = '-30px'; 
+        gameArea.appendChild(el);
+        ingredients.push({ el, x, y: -30, speed: Math.random() * 2 + 1.5, active: true });
+        
+        if(!isCompleted) setTimeout(spawnIngredient, Math.random() * 500 + 400);
+    }
+
+    function updateGame() {
+        if(isCompleted) return;
+        const jarTop = jar.offsetTop; const areaRect = gameArea.getBoundingClientRect();
+        ingredients.forEach(i => {
+            if(!i.active) return;
+            i.y += i.speed; i.el.style.top = i.y + 'px';
+            if(i.y > jarTop - 10 && i.y < jarTop + 20 && i.x > jarX - catchRadius && i.x < jarX + catchRadius) {
+                i.active = false; i.el.remove();
+                picklePct += 6; 
+                const score = Math.min(Math.round(picklePct), 100);
+                pctSpan.textContent = score; 
+                jarFill.style.height = score + '%';
+            } else if(i.y > areaRect.height) { i.active = false; i.el.remove(); }
+        });
+        ingredients = ingredients.filter(i => i.active);
+        if(!isCompleted) gameLoop = requestAnimationFrame(updateGame);
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true; clearInterval(timerInterval);
+        msg.classList.remove('hidden'); ingredients.forEach(i => i.el.remove());
+        const score = Math.min(Math.round(picklePct), 100); 
+        pctSpan.textContent = score;
+        window.globalScores.s5 = score; window.addLayerToJar('s5', '#FFB300', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-6', 25); }, 2000);
+    }
+}
+
+// --- Game 6: 成品選擇與結算 ---
+function initGame6() {
+    const container = document.getElementById('game-6');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;">你決定製作: <span id="product-name" style="color:#FFCA28;">尚未選擇</span></div>
+            <div style="display:flex;gap:8px;margin:10px 0;z-index:10;padding:0 10px;">
+                <button class="farm-btn" id="btn-crispy" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">🟢 脆梅 (手採青梅)</button>
+                <button class="farm-btn" id="btn-wine" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">🍾 梅酒 (時光陳釀)</button>
+                <button class="farm-btn" id="btn-perilla" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">🟣 紫蘇梅 (黃梅醃製)</button>
+            </div>
+            
+            <div id="product-showcase" style="position:relative;width:100%;max-width:320px;height:220px;background:rgba(255,255,255,0.1);border-radius:10px;display:flex;justify-content:center;align-items:center;margin-top:5px;border:2px solid rgba(255,255,255,0.2);flex-direction:column;">
+                <div id="product-icon" style="font-size:5rem;opacity:0;transition:opacity 0.5s;">❓</div>
+                <div id="product-desc" style="font-size:1rem;margin-top:10px;padding:0 15px;text-align:center;opacity:0;transition:opacity 0.5s;">請選擇一種梅子加工品</div>
+            </div>
+            
+            <button id="calc-harvest-btn" class="hidden" style="margin-top:20px;padding:12px 25px;font-size:1.2rem;background:#f39c12;color:white;border:none;border-radius:30px;cursor:pointer;font-weight:bold;">✨ 開甕品嚐 (結算)</button>
+        </div>
+        
+        <div id="final-scorecard-overlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:5000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;padding:20px;">
+            <h1 style="color:#FFCA28;margin-bottom:20px;font-size:2.5rem;">🎉 梅好食光大結算 🎉</h1>
+            <div id="scorecard-text" style="font-size:1.2rem;line-height:2;margin-bottom:20px;background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;text-align:left;"></div>
+            <div id="star-reward" style="font-size:3rem;margin-bottom:30px;color:#FFCA28;letter-spacing:10px;"></div>
+            <button id="overlay-restart-btn" style="padding:15px 30px;font-size:1.2rem;background:#2ecc71;color:white;border:none;border-radius:30px;cursor:pointer;font-weight:bold;">🔄 再玩一次</button>
+        </div>
+    `;
+
+    const btnCrispy = document.getElementById('btn-crispy');
+    const btnWine = document.getElementById('btn-wine');
+    const btnPerilla = document.getElementById('btn-perilla');
+    const icon = document.getElementById('product-icon');
+    const desc = document.getElementById('product-desc');
+    const calcBtn = document.getElementById('calc-harvest-btn');
+    const nameSpan = document.getElementById('product-name');
+    
+    let isCalculated = false; let selectedMethod = ""; let multiplier = 1;
+
+    function setProduct(btn, name, emoji, description, mult) {
+        if(isCalculated) return;
+        
+        [btnCrispy, btnWine, btnPerilla].forEach(b => { b.style.boxShadow = 'none'; b.style.borderColor = 'white'; });
+        btn.style.boxShadow = '0 0 10px white'; btn.style.borderColor = '#FFCA28';
+        selectedMethod = name; multiplier = mult;
+        
+        icon.style.opacity = '0'; desc.style.opacity = '0';
+        
+        setTimeout(() => {
+            icon.textContent = emoji;
+            desc.textContent = description;
+            icon.style.opacity = '1';
+            desc.style.opacity = '1';
+        }, 300);
+
+        nameSpan.textContent = name;
+        calcBtn.classList.remove('hidden');
+    }
+
+    btnCrispy.addEventListener('click', () => setProduct(btnCrispy, "脆梅", "🟢", "六分熟青梅，手採防撞，口感清脆酸甜爽口！", 1.0));
+    btnWine.addEventListener('click', () => setProduct(btnWine, "梅酒", "🍾", "青梅與黃梅皆可，冰糖基酒長時間陳釀，迷人微醺。", 1.2));
+    btnPerilla.addEventListener('click', () => setProduct(btnPerilla, "紫蘇梅", "🟣", "熟成黃梅加鹽加紫蘇，果肉軟Q，生津止渴。", 1.1));
+
+    calcBtn.addEventListener('click', () => {
+        if(isCalculated) return; isCalculated = true;
+        window.addLayerToJar('agri', '#E65100', 100);
+        
+        const s = window.globalScores;
+        const total = s.s1 + s.s2 + s.s3 + s.s4 + s.s5;
+        const finalScore = Math.round(total * multiplier);
+        
+        let stars = "";
+        if(finalScore >= 500) stars = "⭐⭐⭐⭐⭐"; else if(finalScore >= 400) stars = "⭐⭐⭐⭐"; else if(finalScore >= 300) stars = "⭐⭐⭐"; else if(finalScore >= 200) stars = "⭐⭐"; else stars = "⭐";
+
+        document.getElementById('scorecard-text').innerHTML = `
+            🌸 開花進度：${s.s1}分<br>
+            🌧️ 青梅成長：${s.s2}分<br>
+            🧺 採收技術：${s.s3}分<br>
+            🧂 去澀殺青：${s.s4}分<br>
+            🧊 醃製入味：${s.s5}分<br>
+            <hr style="margin:10px 0;border-color:rgba(255,255,255,0.3);">
+            最終成品：<strong>${selectedMethod}</strong><br>
+            <div style="font-size:1.5rem;text-align:center;margin-top:10px;">總合評價分數: <strong style="color:#FFCA28;">${finalScore}</strong></div>
+        `;
+        document.getElementById('star-reward').innerHTML = stars;
+        document.getElementById('final-scorecard-overlay').classList.remove('hidden');
+
+        if (window.isFullCourseMode) {
+            setTimeout(() => {
+                pptCurrentPage = 29;
+                updatePPT();
+                pptModal.classList.remove('hidden');
+            }, 3500);
+        }
+    });
+
+    document.getElementById('overlay-restart-btn').addEventListener('click', () => { location.reload(); });
+}
+
+function initAllSystems() {
+    const startBtn = document.getElementById('start-btn');
+    const heroPPTBtn = document.getElementById('hero-ppt-btn'); 
+    const hero = document.querySelector('.hero');
+    const mainContent = document.getElementById('soil-layers');
+    const nav = document.getElementById('layer-nav');
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            window.isFullCourseMode = false;
+            hero.classList.add('hidden'); 
+            mainContent.classList.remove('hidden'); 
+            nav.classList.remove('hidden');
+            setTimeout(() => {
+                const targetEl = document.getElementById('layer-1');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+
+    if (heroPPTBtn) {
+        heroPPTBtn.addEventListener('click', () => {
+            window.isFullCourseMode = true; 
+            hero.classList.add('hidden'); 
+            mainContent.classList.remove('hidden'); 
+            nav.classList.remove('hidden');
+            setTimeout(() => {
+                const targetEl = document.getElementById('layer-1');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+
+    const navItems = document.querySelectorAll('#layer-nav li');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const target = document.getElementById(item.getAttribute('data-target'));
+            if(target && mainContent) mainContent.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+        });
+    });
+
+    if (mainContent) {
+        mainContent.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('.soil-layer').forEach(section => {
+                if (mainContent.scrollTop >= (section.offsetTop - section.clientHeight / 3)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navItems.forEach(li => {
+                li.classList.remove('active');
+                if (li.getAttribute('data-target') === current) li.classList.add('active');
+            });
+        });
+    }
+    
+    initGame1(); initGame2(); initGame3(); initGame4(); initGame5(); initGame6();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAllSystems);
+} else {
+    initAllSystems();
+}
+
+</script>
+</body>
+</html>
