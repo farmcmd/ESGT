@@ -623,6 +623,70 @@ body {
     <!-- Scripts -->
     <script>
 /* =========================================
+   音效管理系統 (AudioContext)
+   ========================================= */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    if (type === 'tick') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    } else if (type === 'pop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+    } else if (type === 'catch') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    } else if (type === 'error') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    } else if (type === 'success') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+    } else if (type === 'rub') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(50 + Math.random()*50, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+}
+
+/* =========================================
    全域狀態與 PPT 邏輯
    ========================================= */
 window.globalScores = { s1: 0, s2: 0, s3: 0, s4: 0, s5: 0 };
@@ -868,6 +932,7 @@ function initGame1() {
 
     function triggerBloom() {
         if (isCompleted) return;
+        playSound('pop');
         startTimer();
         energy += 5; 
         const displayScore = Math.min(energy, 100);
@@ -897,6 +962,7 @@ function initGame1() {
 
     function completeGame() {
         if(isCompleted) return;
+        playSound('success');
         isCompleted = true;
         clearInterval(timerInterval);
         msg.classList.remove('hidden');
@@ -955,6 +1021,7 @@ function initGame2() {
 
     function selectTool(toolKey, btn) {
         if(isCompleted) return;
+        playSound('tick');
         startTimer();
         activeTool = toolKey;
         waterBtn.style.background = 'rgba(255,255,255,0.2)'; sunBtn.style.background = 'rgba(255,255,255,0.2)';
@@ -966,6 +1033,7 @@ function initGame2() {
 
     plum.addEventListener('click', () => {
         if(isCompleted || !activeTool) return;
+        playSound('pop');
         startTimer();
         growthPct += 5; pctSpan.textContent = Math.min(growthPct, 100);
         
@@ -998,6 +1066,7 @@ function initGame2() {
 
     function completeGame() {
         if(isCompleted) return;
+        playSound('success');
         isCompleted = true; clearInterval(timerInterval); msg.classList.remove('hidden');
         const score = Math.min(growthPct, 100);
         window.globalScores.s2 = score; window.addLayerToJar('s2', '#81C784', score);
@@ -1101,6 +1170,7 @@ function initGame3() {
             if(p.y > basketTop - 10 && p.y < basketTop + 20) {
                 if(p.x > basketLeft && p.x < basketRight) {
                     p.active = false; p.el.remove();
+                    playSound('catch');
                     catchPct += 5; pctSpan.textContent = Math.min(catchPct, 100);
                 }
             }
@@ -1112,6 +1182,7 @@ function initGame3() {
 
     function completeGame() {
         if(isCompleted) return;
+        playSound('success');
         isCompleted = true; clearInterval(timerInterval); msg.classList.remove('hidden'); plums.forEach(p => p.el.remove());
         const score = Math.min(catchPct, 100);
         window.globalScores.s3 = score; window.addLayerToJar('s3', '#4CAF50', score);
@@ -1175,6 +1246,7 @@ function initGame4() {
         const dist = Math.hypot(pos.x - lastPos.x, pos.y - lastPos.y);
         
         if (dist > 5) {
+            playSound('rub');
             rubProgress += dist * 0.1; // 摩擦換算進度
             pctSpan.textContent = Math.min(Math.round(rubProgress), 100);
             
@@ -1216,6 +1288,7 @@ function initGame4() {
 
     function completeGame() {
         if(isCompleted) return;
+        playSound('success');
         isCompleted = true; clearInterval(timerInterval);
         const score = Math.min(Math.round(rubProgress), 100);
         pctSpan.textContent = score; msg.classList.remove('hidden');
@@ -1351,11 +1424,14 @@ function initGame5() {
                 // 依據選擇的配方計算分數
                 if (selectedRecipe === 'crispy') {
                     if (i.isSugar) {
+                        playSound('catch');
                         picklePct += 8; showFloatingText('✨', i.x, jarTop); // 接對糖加分
                     } else {
+                        playSound('error');
                         picklePct = Math.max(0, picklePct - 5); showFloatingText('❌', i.x, jarTop); // 接錯鹽扣分
                     }
                 } else if (selectedRecipe === 'qplum') {
+                    playSound('catch');
                     picklePct += 6; showFloatingText('✨', i.x, jarTop); // 紫蘇梅兩者都加分
                 }
 
@@ -1370,6 +1446,7 @@ function initGame5() {
 
     function completeGame() {
         if(isCompleted) return;
+        playSound('success');
         isCompleted = true; clearInterval(timerInterval);
         msg.classList.remove('hidden'); ingredients.forEach(i => i.el.remove());
         const score = Math.min(Math.round(picklePct), 100); 
@@ -1420,6 +1497,7 @@ function initGame6() {
 
     function setProduct(btn, name, emoji, description, mult) {
         if(isCalculated) return;
+        playSound('pop');
         
         [btnCrispy, btnWine, btnPerilla].forEach(b => { b.style.boxShadow = 'none'; b.style.borderColor = 'white'; });
         btn.style.boxShadow = '0 0 10px white'; btn.style.borderColor = '#FFCA28';
@@ -1444,6 +1522,7 @@ function initGame6() {
 
     calcBtn.addEventListener('click', () => {
         if(isCalculated) return; isCalculated = true;
+        playSound('success');
         window.addLayerToJar('agri', '#E65100', 100);
         
         const s = window.globalScores;
