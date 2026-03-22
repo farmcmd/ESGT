@@ -803,8 +803,19 @@ pptBtnPrev.addEventListener('click', () => { if (pptCurrentPage > 0) { pptCurren
 
 document.addEventListener('keydown', (e) => {
     if (!pptModal.classList.contains('hidden')) {
-        if (e.key === 'ArrowRight') { pptBtnNext.click(); }
-        else if (e.key === 'ArrowLeft') { pptBtnPrev.click(); }
+        // 支援左右方向鍵、PageDown/PageUp、空白鍵 (相容市面上99%簡報筆)
+        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { 
+            e.preventDefault(); // 防止空白鍵或PageDown造成背景網頁非預期捲動
+            pptBtnNext.click(); 
+        }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { 
+            e.preventDefault();
+            pptBtnPrev.click(); 
+        }
+        // 支援 ESC 鍵快速關閉簡報
+        else if (e.key === 'Escape') {
+            document.getElementById('close-ppt-btn').click();
+        }
     }
 });
 
