@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="台灣金線連食農教育互動學習網頁">
+    <title>金線尋蹤 | Jewel Orchid Education</title>
+    <style>
+:root {
+    /* 金線連專屬色系 */
+    --color-s1: #1B4F29; /* 深邃森林綠 (介紹) */
+    --color-s2: #4A3320; /* 腐植泥土棕 (傳說) */
+    --color-s3: #0F3A15; /* 濃蔭遮蔽綠 (環境) */
+    --color-s4: #5D4037; /* 樹幹混林棕 (混林) */
+    --color-s5: #B87333; /* 養生茶湯銅 (藥用) */
+    --color-agri: #27AE60; /* 植栽生機綠 (DIY) */
+    
+    --bg-dark: #0a110d;
+    --text-light: #f5f5f5;
+    --accent: #D4AF37; /* 金線連的金色葉脈 */
+
+    /* PPT Variables */
+    --ppt-text-main: #ecf0f1;
+    --ppt-text-accent: #F1C40F;
+    --ppt-slide-bg: #1e272e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    overflow: hidden; 
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Hero Section */
+.hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    position: relative;
+}
+
+.hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at center, transparent 0%, #000 100%);
+    pointer-events: none;
+}
+
+.hero h1 {
+    font-size: 4.5rem;
+    margin-bottom: 1rem;
+    color: var(--accent);
+    text-shadow: 0 0 15px rgba(212, 175, 55, 0.5), 2px 2px 4px rgba(0,0,0,0.8);
+    z-index: 1;
+}
+
+.hero p {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    z-index: 1;
+    line-height: 1.6;
+}
+
+#start-btn, .open-ppt-btn {
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #111;
+    background-color: var(--accent);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+    z-index: 1;
+}
+
+#start-btn:hover, .open-ppt-btn:hover {
+    transform: scale(1.05);
+    background-color: #F1C40F;
+    box-shadow: 0 4px 20px rgba(241, 196, 15, 0.6);
+}
+
+.open-ppt-btn {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    background-color: #34495e;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    margin-left: 15px;
+    vertical-align: middle;
+}
+
+.open-ppt-btn:hover {
+    background-color: #2c3e50;
+}
+
+/* Main Layers Container */
+#soil-layers {
+    height: 100vh;
+    width: 100vw;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+}
+
+/* Individual Layer */
+.soil-layer {
+    height: 100vh;
+    width: 100vw;
+    scroll-snap-align: start;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 2rem;
+}
+
+.layer-1 { background-color: var(--color-s1); }
+.layer-2 { background-color: var(--color-s2); }
+.layer-3 { background-color: var(--color-s3); }
+.layer-4 { background-color: var(--color-s4); }
+.layer-5 { background-color: var(--color-s5); }
+.layer-6 { background-color: var(--color-agri); }
+
+.layer-content {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 2rem;
+    border-radius: 15px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    z-index: 10;
+}
+
+.layer-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.layer-content h2 {
+    font-size: 2.2rem;
+    color: var(--accent);
+    margin: 0;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 5px solid var(--accent);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    border-radius: 0 10px 10px 0;
+}
+
+.info-card strong {
+    color: var(--accent);
+    font-size: 1.3rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+/* Game Containers */
+.game-container {
+    width: 100%;
+    height: 400px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px dashed rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Navigation */
+#layer-nav {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+#layer-nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#layer-nav li {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ccc;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+#layer-nav li:hover, #layer-nav li.active {
+    background: var(--accent);
+    color: #111;
+    border-color: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+/* Test Tube -> Jar Container */
+#test-tube-container {
+    position: fixed;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 90;
+    pointer-events: none;
+}
+.tube-glass {
+    width: 80px;
+    height: 250px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 8px solid #5D4037; /* 木塞感覺 */
+    border-radius: 5px 5px 30px 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.tube-glass::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 5px; right: 50px; bottom: 10px;
+    background: linear-gradient(to right, rgba(255,255,255,0.15), transparent);
+    border-radius: 20px;
+    z-index: 10;
+}
+#tube-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.tube-layer {
+    width: 100%;
+    transition: height 1s ease-out;
+}
+.tube-label {
+    margin-top: 10px;
+    font-weight: bold;
+    color: var(--accent);
+    text-shadow: 1px 1px 3px #000;
+}
+
+/* PPT Modal Styles */
+#ppt-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 4000; 
+    display: flex;
+    flex-direction: column;
+}
+
+.ppt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: #111;
+    border-bottom: 1px solid var(--accent);
+    z-index: 10;
+}
+
+.ppt-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--ppt-text-accent);
+}
+
+.ppt-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 30px;
+    background: #111;
+    border-top: 1px solid var(--accent);
+    z-index: 10;
+}
+
+.ppt-footer button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.ppt-footer button:hover { background-color: #2ecc71; }
+.ppt-footer button:disabled { background-color: #444; color: #888; cursor: not-allowed; }
+
+#ppt-page-wrapper {
+    color: var(--accent); 
+    font-size: 1.1rem; 
+    background: rgba(255,255,255,0.1); 
+    padding: 8px 20px; 
+    border-radius: 25px;
+    font-weight: bold;
+}
+
+#close-ppt-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+#close-ppt-btn:hover { background-color: #c0392b; }
+
+.ppt-main {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden; 
+}
+
+.slide-container {
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    background-color: var(--ppt-slide-bg);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    position: relative;
+    overflow: hidden;
+}
+
+.slide {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    padding: 60px;
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateX(20px);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto; 
+}
+
+.slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.slide.title-slide {
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+}
+
+.slide.title-slide h1 {
+    font-size: 3.5rem; margin-bottom: 20px; color: var(--accent); text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+}
+.slide.title-slide h2 { font-size: 1.8rem; color: #ddd; font-weight: normal; }
+
+.slide-header { border-bottom: 3px solid var(--accent); margin-bottom: 30px; padding-bottom: 15px; flex-shrink: 0; }
+.slide-header h2 { font-size: 2.5rem; color: var(--accent); margin:0; }
+
+.slide-content { font-size: 1.5rem; line-height: 1.8; text-align: left; }
+.slide-content ul { margin-left: 40px; }
+.slide-content li { margin-bottom: 15px; color: var(--ppt-text-main); }
+.slide-content .highlight { color: var(--accent); font-weight: bold; }
+
+.unit-1 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s1)); }
+.unit-2 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #2c3e50); }
+.unit-3 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s3)); }
+.unit-4 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-s4)); }
+.unit-5 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #6E2C00); }
+.unit-6 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), var(--color-agri)); }
+
+.progress-bar {
+    position: absolute; bottom: 0; left: 0; height: 5px;
+    background-color: var(--accent); transition: width 0.3s ease;
+    z-index: 10;
+}
+
+.ppt-play-btn {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 12px 30px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #111;
+    background: var(--accent);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+    transition: transform 0.2s, background 0.2s;
+    text-align: center;
+}
+.ppt-play-btn:hover { background: #F1C40F; transform: scale(1.05); }
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    #test-tube-container { right: 45px; width: 50px; height: 200px; }
+    .tube-glass { width: 50px; height: 160px; }
+    .hero h1 { font-size: 2.5rem; }
+    .hero p { font-size: 1.1rem; padding: 0 15px; }
+    .soil-layer { padding: 0.5rem; display: flex; align-items: stretch; }
+    .layer-content { padding: 0.8rem; margin: auto; max-width: 98%; max-height: 98vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .layer-content h2 { font-size: 1.2rem; }
+    .info-card { padding: 0.6rem; margin-bottom: 8px; font-size: 0.85rem; line-height: 1.4; }
+    .info-card strong { font-size: 1rem; margin-bottom: 0.2rem; }
+    .game-container { height: auto; min-height: 280px; flex-grow: 1; display: flex; flex-direction: column; }
+    
+    #layer-nav { right: 5px; }
+    #layer-nav li { width: 32px; height: 32px; font-size: 0.8rem; }
+    
+    .open-ppt-btn { padding: 0.4rem 1rem; font-size: 0.85rem; margin-left: 0; width: 100%; }
+    .layer-header { flex-direction: column; margin-bottom: 5px; }
+
+    #ppt-modal { height: 100dvh; } 
+    .ppt-header { padding: 12px 15px; }
+    .ppt-title { font-size: 1rem; width: 65%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ppt-footer { padding: 10px; gap: 8px; justify-content: space-between; }
+    .ppt-footer button { padding: 12px 10px; font-size: 1rem; flex-grow: 1; }
+    .ppt-main { padding: 10px; display: block; height: calc(100% - 110px); } 
+    .slide-container { aspect-ratio: auto; height: 100%; border-radius: 8px; }
+    .slide { padding: 25px 15px 40px 15px; display: block; overflow-y: auto; }
+    .slide.title-slide h1 { font-size: 1.8rem; margin-bottom: 15px; }
+    .slide.title-slide h2 { font-size: 1.2rem; }
+    .slide-header { margin-bottom: 15px; padding-bottom: 10px; }
+    .slide-header h2 { font-size: 1.4rem; }
+    .slide-content { font-size: 1.1rem; line-height: 1.6; display: block; }
+    .slide-content ul { margin-left: 20px; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header class="hero">
+            <h1>金線尋蹤</h1>
+            <p>森林中的綠寶石——台灣金線連<br>從認識生態、林下保育到親手打造專屬綠色紓壓生態包</p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; z-index: 10;">
+                <button id="start-btn">開始探索</button>
+                <button class="open-ppt-btn" data-ppt-start="0" id="hero-ppt-btn">📖 完整教學簡報</button>
+            </div>
+            
+            <div style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.6); padding: 15px 25px; border-radius: 15px; border: 1px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://example.com/jewel-orchid" alt="分享 QR Code" style="border-radius: 10px; margin-bottom: 10px; border: 2px solid var(--accent); pointer-events: none;">
+                <p style="font-size: 1rem; color: var(--accent); margin: 0; font-weight: bold; letter-spacing: 1px;">📱 掃描網址，一起探索</p>
+            </div>
+        </header>
+
+        <main id="soil-layers" class="hidden">
+            <!-- Stage 1 -->
+            <section id="layer-1" class="soil-layer layer-1">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>一、初識瑰寶：原生台灣金線連</h2>
+                        <button class="open-ppt-btn" data-ppt-start="4">📖 認識外觀 (簡報 5-8)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>森林中的璀璨星網</strong><br>
+                        台灣金線連（Anoectochilus formosanus）是台灣特有種蘭科植物。其墨綠色的絨布般葉面上，佈滿了如黃金般閃耀的網狀葉脈，被譽為「森林中的綠寶石」。
+                    </div>
+                    <div class="game-container" id="game-1"></div>
+                </div>
+            </section>
+            
+            <!-- Stage 2 -->
+            <section id="layer-2" class="soil-layer layer-2">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>二、傳說尋蹤：別名與故事</h2>
+                        <button class="open-ppt-btn" data-ppt-start="8">📖 傳說故事</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>雉雞草與鳥人參的傳說</strong><br>
+                        傳說百步蛇會默默守護著金線連？其實是因為「帝雉」等鳥類喜食，百步蛇只是在守株待兔！早年養鴿人也會讓賽鴿食用以增強耐力，因此金線連又被稱為「雉雞草」或「鳥人參」。
+                    </div>
+                    <div class="game-container" id="game-2"></div>
+                </div>
+            </section>
+            
+            <!-- Stage 3 -->
+            <section id="layer-3" class="soil-layer layer-3">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>三、尋覓棲地：林下種植環境</h2>
+                        <button class="open-ppt-btn" data-ppt-start="12">📖 生長環境</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>嬌客的嚴苛要求</strong><br>
+                        它天生嬌貴，無法承受陽光直射，喜歡生長在海拔500~1500公尺、遮蔭率高達70%-80%、相對濕度極高且排水良好的原始闊葉林底層。
+                    </div>
+                    <div class="game-container" id="game-3"></div>
+                </div>
+            </section>
+            
+            <!-- Stage 4 -->
+            <section id="layer-4" class="soil-layer layer-4">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>四、混林共生：永續林下經濟</h2>
+                        <button class="open-ppt-btn" data-ppt-start="16">📖 混林農業</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>不砍樹也能有收益</strong><br>
+                        傳統農業常砍伐森林，而「林下經濟」提倡在既有的竹林、杉林或檳榔林下種植金線連。既保護了水土保持，也為農民帶來高經濟價值。
+                    </div>
+                    <div class="game-container" id="game-4"></div>
+                </div>
+            </section>
+
+            <!-- Stage 5 -->
+            <section id="layer-5" class="soil-layer layer-5">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>五、百草之王：傳統食用與藥用</h2>
+                        <button class="open-ppt-btn" data-ppt-start="20">📖 營養與功效</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>甘甜微苦的養生聖品</strong><br>
+                        傳統醫學認為金線連能清熱涼血、保肝護肝。現代常將其乾燥後與枸杞、紅棗一同熬煮成「金線連茶」，或加入雞湯中燉煮，是極佳的食膳材料。
+                    </div>
+                    <div class="game-container" id="game-5"></div>
+                </div>
+            </section>
+
+            <!-- Stage 6 -->
+            <section id="layer-6" class="soil-layer layer-6">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>六、療癒手作：DIY生態包教學</h2>
+                        <button class="open-ppt-btn" data-ppt-start="24">📖 DIY 產品包</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>把森林帶回書桌</strong><br>
+                        透過綠色紓壓產品包，我們能在生態包中重建林下微氣候。保持袋內盆栽土壤濕潤不積水、加入泥炭土，植入金線連並維持微環境清潔，打造專屬的療癒小宇宙。
+                    </div>
+                    <div class="game-container" id="game-6"></div>
+                </div>
+            </section>
+        </main>
+        
+        <nav id="layer-nav" class="hidden">
+            <ul>
+                <li data-target="layer-1" class="active">識</li>
+                <li data-target="layer-2">傳</li>
+                <li data-target="layer-3">境</li>
+                <li data-target="layer-4">林</li>
+                <li data-target="layer-5">藥</li>
+                <li data-target="layer-6">植</li>
+            </ul>
+        </nav>
+        
+        <div id="test-tube-container" class="hidden">
+            <div class="tube-glass">
+                <div id="tube-content"></div>
+            </div>
+            <div class="tube-label">學習進度</div>
+        </div>
+    </div>
+
+    <!-- PPT Modal -->
+    <div id="ppt-modal" class="hidden">
+        <div class="ppt-header">
+            <div class="ppt-title">台灣金線連：食農與生態教育簡報</div>
+            <button id="close-ppt-btn">✖ 關閉</button>
+        </div>
+        
+        <div class="ppt-main">
+            <div class="slide-container" id="ppt-slide-container">
+                <div class="progress-bar" id="ppt-progress-bar" style="width: 3.33%;"></div>
+            </div>
+        </div>
+
+        <div class="ppt-footer">
+            <button id="ppt-prev">◄ 上一頁</button>
+            <div id="ppt-page-wrapper">
+                <span id="ppt-current-page">1</span> / 30
+            </div>
+            <button id="ppt-next">下一頁 ►</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+/* =========================================
+   音效管理系統 (AudioContext)
+   ========================================= */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    if (type === 'tick') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    } else if (type === 'pop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+    } else if (type === 'catch') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    } else if (type === 'error') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    } else if (type === 'success') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+    } else if (type === 'rub') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(50 + Math.random()*50, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+}
+
+/* =========================================
+   全域狀態與 PPT 邏輯
+   ========================================= */
+window.globalScores = { s1: 0, s2: 0, s3: 0, s4: 0, s5: 0 };
+window.layerCompletionOrder = [];
+window.isFullCourseMode = false; 
+
+window.triggerNextCourseStep = function(nextLayerId, nextPPTIndex) {
+    const container = document.getElementById('soil-layers');
+    const targetEl = document.getElementById(nextLayerId);
+    
+    if (targetEl && container) {
+        container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+    }
+    
+    if (window.isFullCourseMode) {
+        setTimeout(() => {
+            pptCurrentPage = nextPPTIndex;
+            updatePPT();
+            pptModal.classList.remove('hidden');
+        }, 800);
+    }
+};
+
+window.addLayerToJar = function(layerId, colorHex, score) {
+    if(!window.layerCompletionOrder.includes(layerId)) {
+        window.layerCompletionOrder.push(layerId);
+    }
+    
+    document.getElementById('test-tube-container').classList.remove('hidden');
+
+    const labelMap = { 's1': '脈', 's2': '傳', 's3': '境', 's4': '林', 's5': '茶', 'agri': '盆' };
+
+    const tubeContent = document.getElementById('tube-content');
+    const layerDiv = document.createElement('div');
+    layerDiv.className = 'tube-layer';
+    layerDiv.style.backgroundColor = colorHex;
+    layerDiv.style.display = 'flex';
+    layerDiv.style.justifyContent = 'center';
+    layerDiv.style.alignItems = 'center';
+    layerDiv.style.color = 'rgba(255,255,255,0.9)';
+    layerDiv.style.fontWeight = 'bold';
+    layerDiv.style.fontSize = '14px';
+    layerDiv.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+    layerDiv.textContent = labelMap[layerId] || '';
+    
+    const finalHeight = 5 + (score / 100 * 15);
+    layerDiv.style.height = '0%';
+    tubeContent.insertBefore(layerDiv, tubeContent.firstChild);
+    setTimeout(() => { layerDiv.style.height = finalHeight + '%'; }, 50);
+};
+
+const slidesData = [
+    // --- 前導 (頁 0-3) ---
+    { title: "金線尋蹤", content: "台灣金線連食農與生態教育<br><br><span style='font-size:1.2rem; color:#ccc;'>從林下復育到桌上的綠色療癒</span>", type: "title-slide" },
+    { title: "課程動機", content: "<ul><li>你聽過「藥王」金線連嗎？知道它長什麼樣子嗎？</li><li>金線連不僅是珍貴的藥用植物，更是<span class='highlight'>台灣特有種</span>的驕傲</li><li>透過這堂課，了解它的生長奧秘與林下經濟的永續價值</li></ul>" },
+    { title: "探索六部曲", content: "<ul><li>我們將從六個面向深入了解金線連：</li><li><span class='highlight'>1. 認識外觀</span>：原生特徵</li><li><span class='highlight'>2. 傳說故事</span>：別名與由來</li><li><span class='highlight'>3. 棲地環境</span>：嚴苛的生長條件</li><li><span class='highlight'>4. 混林農業</span>：與森林共存的智慧</li><li><span class='highlight'>5. 傳統功用</span>：食用與保健價值</li><li><span class='highlight'>6. 療癒手作</span>：DIY生態包教學</li></ul>" },
+    { title: "為什麼它如此珍貴？", content: "<ul><li>生長極為緩慢，對環境變化<span class='highlight'>非常敏感</span></li><li>早期遭遇過度採摘，野外族群曾瀕臨絕種</li><li>現在多仰賴組織培養與林下人工復育來延續命脈</li></ul>" },
+    
+    // --- 階段1：認識 (頁 4-7) ---
+    { title: "【第一部】初識瑰寶", content: "<ul><li>學名：<span class='highlight'>Anoectochilus formosanus</span>，蘭科開唇蘭屬</li><li>是台灣土生土長的「特有種」植物</li></ul>", class: "unit-1" },
+    { title: "獨特的葉片特徵", content: "<ul><li>葉面呈現墨綠色，帶有天鵝絨般的霧面質感</li><li>葉脈呈現<span class='highlight'>金黃色或白色的網狀交織</span>，因此得名「金線連」</li><li>葉背則是帶有酒紅色的光澤</li></ul>", class: "unit-1" },
+    { title: "植物界的綠寶石", content: "<ul><li>植株通常矮小，匍匐於林下落葉堆中</li><li>會開出白色帶有特殊流蘇狀唇瓣的小花</li><li>是許多植物愛好者眼中的夢幻逸品</li></ul>", class: "unit-1" },
+    { title: "互動環節解析：點亮金線", content: "<ul><li>在互動遊戲中：</li><li>透過點擊為葉片注入靈氣</li><li>觀察黯淡的葉片如何浮現出<span class='highlight'>璀璨的金色網脈</span></li></ul>", class: "unit-1", gameTarget: "layer-1" },
+
+    // --- 階段2：傳說 (頁 8-11) ---
+    { title: "【第二部】傳說尋蹤", content: "<ul><li>金線連因為傳統藥用、藥補養生，以及多項功效研究報告，擁有多個響亮別名。</li><li>金線連別名：<span class='highlight'>藥王、藥虎、金蟬</span></li></ul>", class: "unit-2" },
+    { title: "百步蛇在守護金草？", content: "<ul><li>老一輩常說：有金線連的地方，必有百步蛇在旁邊守護，難道蛇也懂草藥？</li><li>其實是因為台灣特有種<span class='highlight'>「帝雉」</span>極愛啄食金線連。</li><li>百步蛇只是在旁邊「守株待兔」，等著獵捕前來覓食的鳥類！</li></ul>", class: "unit-2" },
+    { title: "雉雞草與鳥人參", content: "<ul><li>因為帝雉喜食，所以金線連在民間又被稱為<span class='highlight'>「雉雞草」</span>。</li><li>此外，早期養鴿人家發現，賽鴿食用金線連能有效<span class='highlight'>增強飛行耐力</span>。</li><li>因此金線連又多了<span class='highlight'>「鳥蔘」或「鳥人蔘」</span>的傳奇稱號！</li></ul>", class: "unit-2" },
+    { title: "互動環節解析：鳥人參傳說", content: "<ul><li>生態系中總是獵物與獵食者並存。</li><li>遊戲中考驗你的反應，點擊出現的<span class='highlight'>帝雉與賽鴿</span>來收集傳說能量！</li><li>⚠️ 警告：千萬別點到潛伏的<span class='highlight'>百步蛇</span>，以免被咬傷扣分喔！</li></ul>", class: "unit-2", gameTarget: "layer-2" },
+
+    // --- 階段3：環境 (頁 12-15) ---
+    { title: "【第三部】尋覓棲地", content: "<ul><li>金線連是一位極度挑剔的「嬌客」</li><li>無法適應一般的農田或溫室直射環境</li></ul>", class: "unit-3" },
+    { title: "嚴苛的氣候要求", content: "<ul><li><span class='highlight'>日照：</span>極度怕曬，需要高達 70%~80% 的遮蔭率</li><li><span class='highlight'>水分：</span>喜歡高濕度的空氣，但根部又<span class='highlight'>忌諱積水</span>，需良好排水</li><li><span class='highlight'>溫度：</span>最適合生長在 20°C~25°C 的涼爽環境</li></ul>", class: "unit-3" },
+    { title: "微氣候的守護者", content: "<ul><li>只有在原始闊葉林下，厚厚的落葉堆與樹冠層才能提供這樣的環境</li><li>一旦森林被破壞，金線連就會消失</li></ul>", class: "unit-3" },
+    { title: "互動環節解析：控溫保濕", content: "<ul><li>在互動遊戲中：</li><li>扮演林下微氣候的守護者</li><li><span class='highlight'>接住水滴(保濕)、雲朵(遮蔭)</span>，避開烈日直射，讓植物健康成長！</li></ul>", class: "unit-3", gameTarget: "layer-3" },
+
+    // --- 階段4：混林 (頁 16-19) ---
+    { title: "【第四部】混林農業", content: "<ul><li>傳統農業為了種植高經濟作物，常將山坡地「剃光頭」</li><li>這不僅破壞生態，更造成土石流危機</li></ul>", class: "unit-4" },
+    { title: "什麼是「林下經濟」？", content: "<ul><li>在<span class='highlight'>不破壞現有森林（不砍樹）</span>的前提下。</li><li>利用林下空間種植耐陰的經濟植物。段木香菇與木耳、臺灣金線連、森林蜂產品、臺灣山茶、馬藍（藍靛）、天仙果；最新修訂更增列了竹笙、絞股藍（七葉膽）與臺灣白及。</li><li>讓森林保護植物，植物為農民帶來收益。</li></ul>", class: "unit-4" },
+    { title: "創造雙贏的永續模式", content: "<ul><li>農民為了保護金線連，會主動維護上層的樹林（如竹林、杉木林）</li><li>達成<span class='highlight'>生態保育與經濟發展</span>的完美平衡</li></ul>", class: "unit-4" },
+    { title: "互動環節解析：林下尋寶", content: "<ul><li>在互動遊戲中：</li><li>模擬在落葉堆中尋找金線連的過程</li><li>用手指輕輕撥開（滑動摩擦）落葉，找到隱藏的綠寶石！</li></ul>", class: "unit-4", gameTarget: "layer-4" },
+
+    // --- 階段5：藥用 (頁 20-23) ---
+    { title: "【第五部】百草之王", content: "<ul><li>《本草綱目》等古籍雖未記載，但在台灣民間醫學中享有盛名</li><li>全草皆可入藥或入菜</li></ul>", class: "unit-5" },
+    { title: "傳統保健功效", content: "<ul><li>民間認為它能<span class='highlight'>清熱涼血、護肝解毒</span></li><li>現代科學也證實其含有豐富的氨基酸、多醣體與微量元素</li><li>具有良好的抗氧化效果</li></ul>", class: "unit-5" },
+    { title: "如何食用？", content: "<ul><li><span class='highlight'>熬茶：</span>將乾燥金線連與枸杞、紅棗一同熬煮，茶湯呈現琥珀色，甘甜微苦</li><li><span class='highlight'>燉湯：</span>新鮮或乾燥植株用來燉煮烏骨雞湯，是極為滋補的藥膳</li></ul>", class: "unit-5" },
+    { title: "互動環節解析：熬煮養生茶", content: "<ul><li>在互動遊戲中：</li><li>移動小鍋子，接住掉落的<span class='highlight'>金線連與枸杞</span></li><li>小心避開有毒的蘑菇，熬出一鍋好茶！</li></ul>", class: "unit-5", gameTarget: "layer-5" },
+
+    // --- 階段6：DIY (頁 24-27) ---
+    { title: "【第六部】療癒手作", content: "<ul><li>我們無法把森林搬回家，但可以<span class='highlight'>把森林縮小放入生態包中</span></li><li>製作專屬的「金線連生態包」</li></ul>", class: "unit-6" },
+    { title: "生態包組裝步驟", content: "<ul><li><span class='highlight'>1. 排水層：</span>保持袋內盆栽土壤濕潤，注意底部不淹水，防止根部泡水腐爛</li><li><span class='highlight'>2. 介質層：</span>加入保水透氣的泥炭土或培養土</li><li><span class='highlight'>3. 主角入盆：</span>輕柔植入金線連小苗</li><li><span class='highlight'>4. 注意袋內環境：</span>袋內不可汙染，維持微環境濕度，因為辛苦維持的環境同樣也適合黴菌生長。</li></ul>", class: "unit-6" },
+    { title: "日常養護須知", content: "<ul><li><span class='highlight'>光照：</span>放在明亮散光處（如室內窗邊），絕對不可太陽直曬！</li><li><span class='highlight'>水分：</span>觀察袋內變乾才用噴霧器稍微噴濕，打開袋子要注意手部或噴霧器、水源的乾淨。</li><li><span class='highlight'>溫度：</span>避免放在冷氣直吹或悶熱不通風的地方</li></ul>", class: "unit-6" },
+    { title: "互動環節解析：組裝生態包", content: "<ul><li>在互動遊戲中：</li><li>依照正確的步驟點擊按鈕</li><li>我們模擬前面章節介紹的環境，一層層組裝出美麗的金線連生態包！</li></ul>", class: "unit-6", gameTarget: "layer-6" },
+
+    // --- 總結 (頁 28-29) ---
+    { title: "永續共好：從森林到桌面", content: "<ul><li>金線連的故事，告訴我們植物與森林環境是密不可分的</li><li>透過生態瓶的照顧，我們學會觀察環境的濕度與光線</li><li>進而體會<span class='highlight'>尊重自然、保護棲地</span>的重要性</li></ul>" },
+    { title: "Q&A 與交流", content: "<div style='text-align:center; font-size:2rem; margin-top:50px; color:var(--accent);'>感謝您的參與！</div><br><div style='text-align:center;'>讓我們一起成為保護台灣森林的小尖兵！</div>", type: "title-slide" }
+];
+
+let pptCurrentPage = 0;
+const pptTotalPages = slidesData.length; // 目前剛好 30 頁
+const pptContainer = document.getElementById('ppt-slide-container');
+const pptProgressBar = document.getElementById('ppt-progress-bar');
+const pptBtnPrev = document.getElementById('ppt-prev');
+const pptBtnNext = document.getElementById('ppt-next');
+const pptModal = document.getElementById('ppt-modal');
+
+document.getElementById('ppt-page-wrapper').innerHTML = `<span id="ppt-current-page">1</span> / ${pptTotalPages}`;
+
+function initPPT() {
+    slidesData.forEach((data, index) => {
+        const slideDiv = document.createElement('div');
+        slideDiv.className = `slide ${data.type === 'title-slide' ? 'title-slide' : ''} ${data.class || ''}`;
+        slideDiv.id = `slide-${index}`;
+
+        let innerHTMLStr = '';
+        if (data.type === 'title-slide') {
+            innerHTMLStr = `<h1>${data.title}</h1><h2>${data.content}</h2>`;
+        } else {
+            innerHTMLStr = `<div class="slide-header"><h2>${data.title}</h2></div><div class="slide-content">${data.content}`;
+            if (data.gameTarget) {
+                innerHTMLStr += `<br><div style="text-align:center;"><button class="ppt-play-btn" data-target="${data.gameTarget}">🎮 進入互動關卡</button></div>`;
+            }
+            innerHTMLStr += `</div>`;
+        }
+        slideDiv.innerHTML = innerHTMLStr;
+        pptContainer.appendChild(slideDiv);
+    });
+}
+
+function updatePPT() {
+    document.querySelectorAll('#ppt-slide-container .slide').forEach((slide, index) => {
+        if (index === pptCurrentPage) {
+            slide.classList.add('active');
+            slide.scrollTop = 0;
+        } else {
+            slide.classList.remove('active');
+        }
+    });
+    document.getElementById('ppt-current-page').textContent = pptCurrentPage + 1;
+    pptProgressBar.style.width = `${((pptCurrentPage + 1) / pptTotalPages) * 100}%`;
+    pptBtnPrev.disabled = pptCurrentPage === 0;
+    pptBtnNext.disabled = pptCurrentPage === pptTotalPages - 1;
+}
+
+pptBtnNext.addEventListener('click', () => { if (pptCurrentPage < pptTotalPages - 1) { pptCurrentPage++; updatePPT(); }});
+pptBtnPrev.addEventListener('click', () => { if (pptCurrentPage > 0) { pptCurrentPage--; updatePPT(); }});
+
+document.addEventListener('keydown', (e) => {
+    if (!pptModal.classList.contains('hidden')) {
+        if (e.key === 'ArrowRight') { pptBtnNext.click(); }
+        else if (e.key === 'ArrowLeft') { pptBtnPrev.click(); }
+    }
+});
+
+document.querySelectorAll('.open-ppt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const startIdx = parseInt(btn.getAttribute('data-ppt-start') || 0);
+        pptCurrentPage = startIdx;
+        updatePPT();
+        pptModal.classList.remove('hidden');
+    });
+});
+
+document.getElementById('close-ppt-btn').addEventListener('click', () => {
+    pptModal.classList.add('hidden');
+});
+
+document.addEventListener('click', function(e) {
+    if(e.target && e.target.classList.contains('ppt-play-btn')){
+        const targetSectionId = e.target.getAttribute('data-target');
+        pptModal.classList.add('hidden');
+        if(document.getElementById('soil-layers').classList.contains('hidden')) {
+            document.querySelector('.hero').classList.add('hidden');
+            document.getElementById('soil-layers').classList.remove('hidden');
+            document.getElementById('layer-nav').classList.remove('hidden');
+        }
+        setTimeout(() => {
+            const container = document.getElementById('soil-layers');
+            const targetEl = document.getElementById(targetSectionId);
+            if (targetEl && container) {
+                container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }
+        }, 100);
+    }
+});
+
+initPPT();
+
+/* =========================================
+   互動遊戲邏輯 (金線連版)
+   ========================================= */
+
+// --- Game 1: 點亮金線 (點擊讓葉脈發光) ---
+function initGame1() {
+    const container = document.getElementById('game-1');
+    container.innerHTML = `
+        <div style="font-size:1.2rem;font-weight:bold;margin-top:10px;color:var(--accent);">靈氣注入進度: <span id="glow-pct">0</span>%</div>
+        <div style="font-size: 1.2rem; color: #fff; margin-top: 5px;">剩餘時間: <span id="g1-timer">15</span>秒</div>
+        
+        <div style="display:flex; justify-content:center; gap:20px; width:100%; margin-top:15px; position:relative;">
+            <!-- 葉面 (Front) -->
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <div style="font-size:0.9rem; color:#ccc; margin-bottom:8px;">正面：浮現網脈</div>
+                <div id="orchid-leaf-front" style="position:relative;width:100px;height:140px;background:#0d2a15;border-radius:100px 0px 100px 0px;box-shadow:inset 0 0 20px #000;cursor:pointer;overflow:hidden;border:1px solid #1a4524;transition:all 0.3s;">
+                    <!-- SVG 擬真網狀葉脈 -->
+                    <svg width="100%" height="100%" viewBox="0 0 100 140" style="position:absolute; top:0; left:0; pointer-events:none;">
+                        <g id="svg-veins" stroke="var(--accent)" fill="none" stroke-linecap="round" style="opacity:0; transition: opacity 0.2s; filter: drop-shadow(0 0 3px var(--accent));">
+                            <!-- 主脈 -->
+                            <path d="M 10 130 Q 40 70 90 10" stroke-width="2.5" />
+                            <!-- 側脈 -->
+                            <path d="M 25 105 Q 50 115 80 130" stroke-width="1.5" />
+                            <path d="M 45 70 Q 75 75 95 90" stroke-width="1.5" />
+                            <path d="M 70 35 Q 90 40 95 60" stroke-width="1.5" />
+                            <path d="M 25 105 Q 15 70 5 50" stroke-width="1.5" />
+                            <path d="M 45 70 Q 30 40 20 25" stroke-width="1.5" />
+                            <!-- 網狀細脈 (虛線模擬) -->
+                            <path d="M 35 90 Q 55 90 65 70" stroke-width="1" stroke-dasharray="2 3" />
+                            <path d="M 60 55 Q 70 60 80 80" stroke-width="1" stroke-dasharray="2 3" />
+                            <path d="M 25 60 Q 40 50 45 70" stroke-width="1" stroke-dasharray="2 3" />
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- 葉背 (Back) -->
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <div style="font-size:0.9rem; color:#ccc; margin-bottom:8px;">背面：酒紅渲染</div>
+                <div id="orchid-leaf-back" style="position:relative;width:100px;height:140px;background:#2A3B2E;border-radius:0px 100px 0px 100px;box-shadow:inset 0 0 20px #000;cursor:pointer;overflow:hidden;border:1px solid #1a4524;transition:all 0.3s;">
+                    <!-- 酒紅色渲染層 -->
+                    <div id="leaf-back-red" style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg, #722F37 0%, #4A1C24 100%);opacity:0;transition:opacity 0.2s;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <button id="aura-btn" style="margin-top:20px;padding:10px 20px;font-size:1.1rem;background:var(--accent);color:#111;font-weight:bold;border:none;border-radius:5px;cursor:pointer;">✨ 注入自然靈氣 (點擊葉片或按鈕)</button>
+        <div id="g1-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:var(--accent);padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;border:1px solid var(--accent);">璀璨綻放！<br>成功點亮金線。</div>
+    `;
+
+    let energy = 0;
+    const glowDisplay = document.getElementById('glow-pct');
+    const svgVeins = document.getElementById('svg-veins');
+    const leafFront = document.getElementById('orchid-leaf-front');
+    const leafBack = document.getElementById('orchid-leaf-back');
+    const leafBackRed = document.getElementById('leaf-back-red');
+    const msg = document.getElementById('g1-message');
+    const btn = document.getElementById('aura-btn');
+    let isCompleted = false;
+    let timeLeft = 15;
+    const timerSpan = document.getElementById('g1-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+    }
+
+    function triggerGlow() {
+        if (isCompleted) return;
+        playSound('tick');
+        startTimer();
+        energy += 6; 
+        const displayScore = Math.min(energy, 100);
+        glowDisplay.textContent = displayScore;
+        
+        // 計算比例並套用視覺變化
+        const opacityRatio = displayScore / 100;
+        if(svgVeins) svgVeins.style.opacity = opacityRatio;
+        if(leafBackRed) leafBackRed.style.opacity = opacityRatio;
+        
+        leafFront.style.boxShadow = `inset 0 0 20px #000, 0 0 ${opacityRatio * 20}px rgba(212,175,55,0.4)`;
+        leafBack.style.boxShadow = `inset 0 0 20px #000, 0 0 ${opacityRatio * 20}px rgba(114,47,55,0.4)`;
+
+        // 點擊特效
+        const spark = document.createElement('div');
+        spark.textContent = '✨';
+        spark.style.position = 'absolute';
+        spark.style.fontSize = '24px';
+        spark.style.left = `calc(50% + ${(Math.random()-0.5)*120}px)`;
+        spark.style.top = `calc(50% + ${(Math.random()-0.5)*100}px)`;
+        spark.style.transform = 'translate(-50%, -50%)';
+        spark.style.opacity = '1';
+        spark.style.transition = 'all 0.5s';
+        btn.parentElement.appendChild(spark);
+        setTimeout(() => { spark.style.transform = 'translate(-50%, -100px)'; spark.style.opacity = '0'; }, 10);
+        setTimeout(() => spark.remove(), 500);
+
+        if (energy >= 100) { completeGame(); }
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        playSound('success');
+        isCompleted = true;
+        clearInterval(timerInterval);
+        msg.classList.remove('hidden');
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        const score = Math.min(energy, 100);
+        window.globalScores.s1 = score;
+        window.addLayerToJar('s1', '#1B4F29', score); 
+        
+        // 跳轉到第二關，PPT 從索引 8 開始
+        setTimeout(() => { window.triggerNextCourseStep('layer-2', 8); }, 2000);
+    }
+
+    btn.addEventListener('click', triggerGlow);
+    leafFront.addEventListener('click', triggerGlow);
+    leafBack.addEventListener('click', triggerGlow);
+}
+
+// --- Game 2: 傳說尋蹤 (百步蛇與帝雉、賽鴿) ---
+function initGame2() {
+    const container = document.getElementById('game-2');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;position:relative;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;color:var(--accent);">收集傳說能量: <span id="bird-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#fff;margin-bottom:5px;">剩餘時間: <span id="g2-timer">15</span>秒</div>
+            <p style="font-size:0.9rem;color:#ccc;margin-bottom:10px;text-align:center;padding:0 10px;">點擊來覓食的<span style="color:var(--accent);">帝雉🦚與賽鴿🕊️</span><br>小心避開潛伏的<span style="color:#e74c3c;">百步蛇🐍</span>！</p>
+            
+            <div id="creature-area" style="position:relative;width:100%;flex-grow:1;min-height:220px;background:rgba(255,255,255,0.05);border-radius:10px;overflow:hidden;cursor:crosshair;border:1px solid #4A3320; transition: background-color 0.2s;">
+                <!-- 生物將在這裡生成 -->
+            </div>
+        </div>
+        <div id="g2-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:var(--accent);padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;border:1px solid var(--accent);text-align:center;">時間到！<br>成功見證鳥人參傳說。</div>
+    `;
+
+    const area = document.getElementById('creature-area');
+    const pctSpan = document.getElementById('bird-pct');
+    const msg = document.getElementById('g2-message');
+
+    let catchScore = 0; let isCompleted = false;
+    let timeLeft = 15; const timerSpan = document.getElementById('g2-timer');
+    let timerInterval = null; let hasStarted = false; let spawnTimeout = null;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        spawnCreature();
+    }
+
+    function spawnCreature() {
+        if(isCompleted) return;
+        
+        const creature = document.createElement('div');
+        const isSnake = Math.random() < 0.35; // 35% 機率出現百步蛇
+        const isPheasant = Math.random() < 0.5; // 帝雉與賽鴿的機率各半
+
+        if(isSnake) {
+            creature.textContent = '🐍';
+            creature.dataset.type = 'bad';
+        } else {
+            creature.textContent = isPheasant ? '🦚' : '🕊️';
+            creature.dataset.type = 'good';
+        }
+
+        creature.style.position = 'absolute';
+        creature.style.fontSize = '2.5rem';
+        creature.style.cursor = 'pointer';
+        creature.style.userSelect = 'none';
+        
+        // 加點發光特效區分
+        if(!isSnake) {
+            creature.style.filter = 'drop-shadow(0 0 5px rgba(212,175,55,0.8))'; 
+        } else {
+            creature.style.filter = 'drop-shadow(0 0 5px rgba(231,76,60,0.8))'; 
+        }
+        
+        const maxX = area.clientWidth - 50;
+        const maxY = area.clientHeight - 50;
+        creature.style.left = Math.random() * maxX + 'px';
+        creature.style.top = Math.random() * maxY + 'px';
+        
+        // 簡單彈跳/浮現動畫
+        creature.style.transition = 'top 0.3s ease-in-out';
+        
+        creature.addEventListener('mousedown', () => {
+            if(isCompleted) return;
+            
+            if(creature.dataset.type === 'good') {
+                playSound('pop');
+                catchScore += 15; // 點對鳥類加分快一點
+                pctSpan.textContent = Math.min(catchScore, 100);
+                creature.textContent = '✨';
+                creature.style.filter = 'none';
+                creature.style.opacity = '0';
+                creature.style.transform = 'translateY(-20px)';
+            } else {
+                playSound('error');
+                catchScore = Math.max(0, catchScore - 15); // 點到蛇扣分
+                pctSpan.textContent = catchScore;
+                creature.textContent = '❌';
+                // 畫面閃紅光
+                area.style.backgroundColor = 'rgba(231,76,60,0.3)';
+                setTimeout(() => { if(!isCompleted) area.style.backgroundColor = 'rgba(255,255,255,0.05)'; }, 200);
+            }
+
+            creature.style.transition = 'all 0.3s';
+            setTimeout(() => creature.remove(), 300);
+            
+            if(catchScore >= 100) completeGame();
+        });
+
+        // 手機版觸控
+        creature.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            const mouseEvent = new MouseEvent('mousedown');
+            creature.dispatchEvent(mouseEvent);
+        });
+
+        area.appendChild(creature);
+
+        // 生物自動消失時間 (蛇留久一點，鳥跑快一點)
+        const disappearTime = isSnake ? (Math.random() * 1000 + 1000) : (Math.random() * 800 + 600);
+        setTimeout(() => {
+            if(creature.parentElement && (creature.textContent === '🐍' || creature.textContent === '🦚' || creature.textContent === '🕊️')) {
+                creature.remove();
+            }
+        }, disappearTime);
+
+        if(!isCompleted) {
+            spawnTimeout = setTimeout(spawnCreature, Math.random() * 600 + 400);
+        }
+    }
+
+    // 第一次點擊區域開始遊戲
+    area.addEventListener('click', startTimer, {once:true});
+    area.addEventListener('touchstart', startTimer, {once:true, passive: true});
+    
+    // 初始提示閃爍
+    const initHint = document.createElement('div');
+    initHint.textContent = '點擊此處開始尋找';
+    initHint.style.position = 'absolute';
+    initHint.style.top = '50%'; initHint.style.left = '50%';
+    initHint.style.transform = 'translate(-50%, -50%)';
+    initHint.style.color = '#ccc';
+    area.appendChild(initHint);
+    
+    area.addEventListener('mousedown', () => { if(initHint.parentElement) initHint.remove(); });
+    area.addEventListener('touchstart', () => { if(initHint.parentElement) initHint.remove(); }, {passive: true});
+
+    function completeGame() {
+        if(isCompleted) return;
+        playSound('success');
+        isCompleted = true; clearInterval(timerInterval); clearTimeout(spawnTimeout);
+        msg.classList.remove('hidden');
+        area.innerHTML = ''; // 清空
+        const score = Math.min(catchScore, 100);
+        window.globalScores.s2 = score; window.addLayerToJar('s2', '#4A3320', score);
+        
+        // 跳轉到第三關，PPT 從索引 12 開始
+        setTimeout(() => { window.triggerNextCourseStep('layer-3', 12); }, 2000);
+    }
+}
+
+// --- Game 3: 棲地環境 (接水滴與雲朵，躲太陽) ---
+function initGame3() {
+    const container = document.getElementById('game-3');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;color:var(--accent);">健康度: <span id="g3-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#fff;margin-bottom:5px;">剩餘時間: <span id="g3-timer">15</span>秒</div>
+            <p style="font-size:0.9rem;color:#ccc;margin-bottom:5px;text-align:center;">💡 左右滑動植株，接住<span style="color:#3498db;">水滴💧</span>與<span style="color:#bdc3c7;">雲朵☁️</span>，避開<span style="color:#e74c3c;">烈日☀️</span>！</p>
+            <div id="g3-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:linear-gradient(to bottom, #111, #0F3A15);border-radius:10px;cursor:pointer;">
+                <div id="plant-basket" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:2.5rem;display:flex;justify-content:center;align-items:flex-end;user-select:none;touch-action:none;filter:drop-shadow(0 0 5px rgba(212,175,55,0.5));">🌱</div>
+            </div>
+        </div>
+        <div id="g3-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:var(--accent);padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;border:1px solid var(--accent);">時間到！<br>成功營造微氣候。</div>
+    `;
+
+    const gameArea = document.getElementById('g3-game-area');
+    const basket = document.getElementById('plant-basket');
+    const pctSpan = document.getElementById('g3-pct');
+    const msg = document.getElementById('g3-message');
+
+    let healthPct = 0; let isCompleted = false; let gameLoop; let drops = [];
+    let timeLeft = 15; const timerSpan = document.getElementById('g3-timer');
+    let timerInterval = null; let gameActive = false;
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        
+        spawnDrop();
+        updateGame();
+    }
+    
+    let isDragging = false; let basketX = gameArea.clientWidth / 2;
+    basket.style.left = basketX + 'px';
+
+    const startDrag = (e) => { 
+        if(isCompleted) return; 
+        isDragging = true; 
+        startGameLogic(); 
+        moveDrag(e); 
+    };
+    const moveDrag = (e) => {
+        if(!isDragging || isCompleted) return;
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        const rect = gameArea.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        if(clientX === undefined) return;
+
+        let x = clientX - rect.left;
+        const halfWidth = 20; // 植株感應半徑
+        if(x < halfWidth) x = halfWidth;
+        if(x > gameArea.clientWidth - halfWidth) x = gameArea.clientWidth - halfWidth;
+        basketX = x; basket.style.left = basketX + 'px';
+    };
+    const endDrag = () => { isDragging = false; };
+
+    gameArea.addEventListener('mousedown', startDrag); gameArea.addEventListener('touchstart', startDrag, {passive: false});
+    gameArea.addEventListener('mousemove', moveDrag); gameArea.addEventListener('touchmove', moveDrag, {passive: false});
+    document.addEventListener('mouseup', endDrag); document.addEventListener('touchend', endDrag);
+
+    function spawnDrop() {
+        if(isCompleted) return;
+        const el = document.createElement('div');
+        el.style.position='absolute'; 
+        el.style.fontSize='1.8rem';
+        
+        const rand = Math.random();
+        let type = '';
+        if (rand < 0.4) { type = '💧'; el.dataset.type = 'good'; } // 水
+        else if (rand < 0.7) { type = '☁️'; el.dataset.type = 'good'; } // 陰影
+        else { type = '☀️'; el.dataset.type = 'bad'; } // 烈日
+
+        el.textContent = type;
+        const x = Math.random() * (gameArea.clientWidth - 30) + 15;
+        el.style.left = x + 'px'; el.style.top = '-20px';
+        gameArea.appendChild(el);
+        drops.push({ el: el, x: x, y: -20, speed: Math.random() * 2 + 2, active: true, type: el.dataset.type });
+        
+        if(!isCompleted) setTimeout(spawnDrop, Math.random() * 500 + 400); 
+    }
+
+    // 漂浮文字回饋
+    function showFloatingText(text, x, y, color) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = (x - 10) + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.2rem'; f.style.color = color; f.style.fontWeight = 'bold'; f.style.transition = 'all 0.4s ease-out'; f.style.zIndex = '30';
+        gameArea.appendChild(f);
+        setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 450);
+    }
+
+    function updateGame() {
+        if(isCompleted) return;
+        const basketTop = basket.offsetTop;
+        const basketLeft = basketX - 25;
+        const basketRight = basketX + 25;
+        const areaRect = gameArea.getBoundingClientRect();
+
+        drops.forEach(p => {
+            if(!p.active) return;
+            p.y += p.speed; p.el.style.top = p.y + 'px';
+            if(p.y > basketTop - 10 && p.y < basketTop + 20) {
+                if(p.x > basketLeft && p.x < basketRight) {
+                    p.active = false; p.el.remove();
+                    if(p.type === 'good') {
+                        playSound('catch');
+                        healthPct += 5; 
+                        showFloatingText('+5', p.x, basketTop, '#2ecc71');
+                    } else {
+                        playSound('error');
+                        healthPct = Math.max(0, healthPct - 10);
+                        showFloatingText('燒焦!', p.x, basketTop, '#e74c3c');
+                        // 植株閃爍紅光
+                        basket.style.filter = 'drop-shadow(0 0 10px red)';
+                        setTimeout(()=> { if(!isCompleted) basket.style.filter = 'drop-shadow(0 0 5px rgba(212,175,55,0.5))';}, 300);
+                    }
+                    pctSpan.textContent = Math.min(healthPct, 100);
+                }
+            }
+            if(p.y > areaRect.height) { p.active = false; p.el.remove(); }
+        });
+        drops = drops.filter(p => p.active);
+        if(!isCompleted) gameLoop = requestAnimationFrame(updateGame);
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        playSound('success');
+        isCompleted = true; clearInterval(timerInterval); msg.classList.remove('hidden'); drops.forEach(p => p.el.remove());
+        const score = Math.min(healthPct, 100);
+        window.globalScores.s3 = score; window.addLayerToJar('s3', '#0F3A15', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-4', 16); }, 2000);
+    }
+}
+
+// --- Game 4: 林下尋寶 (摩擦撥開落葉) ---
+function initGame4() {
+    const container = document.getElementById('game-4');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;">
+            <div style="font-size:1.2rem;font-weight:bold;margin:5px 0;z-index:10;color:var(--accent);">尋寶進度: <span id="g4-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#fff;margin-bottom:5px;">剩餘時間: <span id="g4-timer">20</span>秒</div>
+            <p style="font-size:0.9rem;color:#ccc;text-align:center;">💡 在畫面上<span style="color:var(--accent);">滑動雙手(游標)撥開落葉</span><br>發現並點擊隱藏的<span style="color:#2ecc71;">金線連🌱</span>！</p>
+            <div id="g4-game-area" style="position:relative;width:100%;max-width:320px;height:220px;margin-top:5px;cursor:crosshair;touch-action:none;overflow:hidden;border-radius:10px;border:2px solid #5D4037;background:#1A110D; box-shadow:inset 0 0 20px #000;">
+                <!-- 內部將動態生成落葉與金線連 -->
+            </div>
+        </div>
+        <div id="g4-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:var(--accent);padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;border:1px solid var(--accent);white-space:nowrap;">時間到！<br>發現珍貴林下瑰寶。</div>
+    `;
+
+    const area = document.getElementById('g4-game-area');
+    const pctSpan = document.getElementById('g4-pct');
+    const msg = document.getElementById('g4-message');
+
+    let foundCount = 0;
+    const totalOrchids = 5;
+    let isCompleted = false;
+    let timeLeft = 20; 
+    const timerSpan = document.getElementById('g4-timer');
+    let timerInterval = null;
+    let hasStarted = false;
+
+    function startTimer() {
+        if(hasStarted) return;
+        hasStarted = true;
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+    }
+
+    // 1. 生成隱藏的金線連 (底層)
+    for(let i=0; i<totalOrchids; i++) {
+        const orchid = document.createElement('div');
+        orchid.textContent = '🌱';
+        orchid.style.position = 'absolute';
+        orchid.style.fontSize = '2.5rem';
+        orchid.style.cursor = 'pointer';
+        orchid.style.filter = 'drop-shadow(0 0 5px rgba(212,175,55,0.8))';
+        
+        const x = 20 + Math.random() * (280 - 40);
+        const y = 20 + Math.random() * (180 - 40);
+        orchid.style.left = x + 'px';
+        orchid.style.top = y + 'px';
+        orchid.style.transition = 'all 0.3s';
+        orchid.style.zIndex = '5';
+
+        orchid.addEventListener('mousedown', (e) => {
+            if(isCompleted) return;
+            e.stopPropagation(); 
+            startTimer();
+            playSound('catch');
+            foundCount++;
+            pctSpan.textContent = Math.round((foundCount / totalOrchids) * 100);
+            
+            orchid.textContent = '✨';
+            orchid.style.transform = 'translateY(-20px) scale(1.5)';
+            orchid.style.opacity = '0';
+            setTimeout(() => orchid.remove(), 300);
+
+            if(foundCount >= totalOrchids) completeGame();
+        });
+        
+        orchid.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            orchid.dispatchEvent(new MouseEvent('mousedown'));
+        }, {passive: false});
+
+        area.appendChild(orchid);
+    }
+
+    // 2. 生成厚重的落葉堆 (覆蓋層 - 土、黃、黑、洪)
+    let leafData = [];
+    const leafColors = [
+        '#5D4037', '#6E2C00', // 土 (深棕色)
+        '#9A7D0A', '#B7950B', // 黃 (暗枯黃)
+        '#17202A', '#1C2833', // 黑 (腐植黑)
+        '#641E16', '#7B241C'  // 洪 (暗紅/酒紅)
+    ];
+    
+    // 增加數量確保畫面覆蓋率
+    for(let i=0; i<180; i++) {
+        const leaf = document.createElement('div');
+        leaf.style.position = 'absolute';
+        
+        // 隨機葉片大小
+        const leafWidth = 15 + Math.random() * 15;
+        const leafHeight = 25 + Math.random() * 20;
+        leaf.style.width = leafWidth + 'px';
+        leaf.style.height = leafHeight + 'px';
+        
+        // 應用 CSS 繪製擬真落葉形狀與大地色系
+        leaf.style.backgroundColor = leafColors[Math.floor(Math.random() * leafColors.length)];
+        leaf.style.borderRadius = '0 70% 0 70%';
+        leaf.style.boxShadow = 'inset 2px 2px 5px rgba(0,0,0,0.4), 2px 2px 4px rgba(0,0,0,0.6)';
+        
+        leaf.style.pointerEvents = 'none'; // 讓滑鼠可以穿透
+        leaf.style.zIndex = '10';
+        
+        const origX = Math.random() * 320 - 10;
+        const origY = Math.random() * 220 - 10;
+        const origRot = Math.random() * 360;
+        
+        leaf.style.left = origX + 'px';
+        leaf.style.top = origY + 'px';
+        leaf.style.transform = `rotate(${origRot}deg)`;
+        leaf.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s'; 
+        
+        area.appendChild(leaf);
+        
+        leafData.push({
+            el: leaf,
+            x: origX,
+            y: origY,
+            origX: origX,
+            origY: origY,
+            rot: origRot,
+            width: leafWidth,
+            height: leafHeight
+        });
+    }
+
+    // 3. 雙手撥開落葉互動核心邏輯
+    let isBrushing = false;
+    const brushRadius = 45; 
+    
+    const startBrush = (e) => {
+        if(isCompleted) return;
+        startTimer();
+        isBrushing = true;
+        brush(e);
+    };
+    const endBrush = () => { isBrushing = false; };
+    
+    const brush = (e) => {
+        if(!isBrushing || isCompleted) return;
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        
+        const rect = area.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const cursorX = clientX - rect.left;
+        const cursorY = clientY - rect.top;
+
+        let brushed = false;
+        
+        leafData.forEach(leaf => {
+            // 使用葉片中心點計算距離
+            let dx = (leaf.x + leaf.width/2) - cursorX;
+            let dy = (leaf.y + leaf.height/2) - cursorY;
+            if (dx === 0 && dy === 0) dx = 1; 
+            
+            const dist = Math.hypot(dx, dy);
+            
+            if (dist < brushRadius) {
+                const angle = Math.atan2(dy, dx);
+                const force = (brushRadius - dist) * 1.2; 
+                
+                leaf.x += Math.cos(angle) * force;
+                leaf.y += Math.sin(angle) * force;
+                leaf.rot += (Math.random() - 0.5) * force * 5; 
+                
+                leaf.el.style.transform = `translate(${leaf.x - leaf.origX}px, ${leaf.y - leaf.origY}px) rotate(${leaf.rot}deg)`;
+                brushed = true;
+            }
+        });
+        
+        if(brushed && Math.random() < 0.2) playSound('rub');
+    };
+
+    area.addEventListener('mousedown', startBrush);
+    area.addEventListener('touchstart', startBrush, {passive: false});
+    area.addEventListener('mousemove', brush);
+    area.addEventListener('touchmove', brush, {passive: false});
+    document.addEventListener('mouseup', endBrush);
+    document.addEventListener('touchend', endBrush);
+
+    function completeGame() {
+        if(isCompleted) return;
+        playSound('success');
+        isCompleted = true; 
+        clearInterval(timerInterval);
+        
+        const score = Math.round((foundCount / totalOrchids) * 100);
+        pctSpan.textContent = score; 
+        msg.classList.remove('hidden');
+        
+        leafData.forEach(leaf => { leaf.el.style.opacity = '0'; });
+
+        window.globalScores.s4 = score; 
+        window.addLayerToJar('s4', '#5D4037', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-5', 20); }, 2500);
+    }
+}
+
+// --- Game 5: 養生茶 (接材料入鍋) ---
+function initGame5() {
+    const container = document.getElementById('game-5');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;color:var(--accent);">熬煮進度: <span id="g5-pct">0</span>%</div>
+            <div style="font-size:1.2rem;color:#fff;margin-bottom:5px;">剩餘時間: <span id="g5-timer">15</span>秒</div>
+            <p id="g5-hint" style="font-size:0.9rem;color:#ccc;margin-bottom:5px;text-align:center;">💡 移動下方砂鍋，接住<span style="color:#2ecc71;">金草🌿</span>與<span style="color:#e74c3c;">枸杞🔴</span>，避開毒菇🍄！</p>
+            
+            <div id="g5-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(0,0,0,0.5);border-radius:10px;cursor:pointer;border:1px solid #B87333;">
+
+                <div id="tea-pot" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:3rem;display:flex;justify-content:center;align-items:flex-end;user-select:none;touch-action:none;filter:drop-shadow(0 5px 5px #000);">🍲</div>
+            </div>
+        </div>
+        <div id="g5-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:var(--accent);padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;border:1px solid var(--accent);">時間到！<br>養生茶湯完成。</div>
+    `;
+
+    const gameArea = document.getElementById('g5-game-area');
+    const pot = document.getElementById('tea-pot');
+    const pctSpan = document.getElementById('g5-pct');
+    const msg = document.getElementById('g5-message');
+    
+    let brewPct = 0; let isCompleted = false; let gameLoop; let items = [];
+    let timeLeft = 15; const timerSpan = document.getElementById('g5-timer');
+    let timerInterval = null; let gameActive = false;
+
+    // 點擊區域直接開始
+    gameArea.addEventListener('mousedown', startGameLogic, {once:true});
+    gameArea.addEventListener('touchstart', startGameLogic, {once:true, passive:true});
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        
+        spawnItem();
+        updateGame();
+    }
+
+    let potX = gameArea.clientWidth / 2;
+    pot.style.left = potX + 'px';
+    let catchRadius = 35;
+
+    const handleMove = (e) => {
+        if(isCompleted || !gameActive) return; 
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        
+        const rect = gameArea.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        if(clientX === undefined) return;
+        
+        let x = clientX - rect.left;
+        if(x < catchRadius) x = catchRadius;
+        if(x > gameArea.clientWidth - catchRadius) x = gameArea.clientWidth - catchRadius;
+        potX = x; pot.style.left = potX + 'px';
+    };
+
+    gameArea.addEventListener('mousedown', handleMove); gameArea.addEventListener('touchstart', handleMove, {passive: false});
+    gameArea.addEventListener('mousemove', handleMove); gameArea.addEventListener('touchmove', handleMove, {passive: false});
+
+    function showFloatingText(text, x, y, color) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = (x - 10) + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.2rem'; f.style.color=color; f.style.fontWeight='bold'; f.style.transition = 'all 0.4s ease-out'; f.style.zIndex = '30';
+        gameArea.appendChild(f);
+        setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 450);
+    }
+
+    function spawnItem() {
+        if(isCompleted) return;
+        const rand = Math.random();
+        let type = ''; let emoji = ''; let isGood = true;
+        
+        if (rand < 0.5) { emoji = '🌿'; type = 'orchid'; } 
+        else if (rand < 0.8) { emoji = '🔴'; type = 'goji'; }
+        else { emoji = '🍄'; type = 'poison'; isGood = false; }
+
+        const el = document.createElement('div');
+        el.style.position='absolute'; el.style.fontSize='1.8rem'; 
+        el.textContent = emoji;
+        const x = Math.random() * (gameArea.clientWidth - 40) + 20;
+        el.style.left = x + 'px'; el.style.top = '-30px'; 
+        gameArea.appendChild(el);
+        items.push({ el, x, y: -30, speed: Math.random() * 2 + 1.5, active: true, isGood });
+        
+        if(!isCompleted) setTimeout(spawnItem, Math.random() * 500 + 400);
+    }
+
+    function updateGame() {
+        if(isCompleted) return;
+        const potTop = pot.offsetTop + 10; const areaRect = gameArea.getBoundingClientRect();
+        items.forEach(i => {
+            if(!i.active) return;
+            i.y += i.speed; i.el.style.top = i.y + 'px';
+            if(i.y > potTop && i.y < potTop + 30 && i.x > potX - catchRadius && i.x < potX + catchRadius) {
+                i.active = false; i.el.remove();
+                
+                if (i.isGood) {
+                    playSound('catch');
+                    brewPct += 8; showFloatingText('+8', i.x, potTop, '#F1C40F');
+                } else {
+                    playSound('error');
+                    brewPct = Math.max(0, brewPct - 15); showFloatingText('中毒!', i.x, potTop, '#e74c3c'); 
+                }
+
+                const score = Math.min(Math.round(brewPct), 100);
+                pctSpan.textContent = score; 
+            } else if(i.y > areaRect.height) { i.active = false; i.el.remove(); }
+        });
+        items = items.filter(i => i.active);
+        if(!isCompleted) gameLoop = requestAnimationFrame(updateGame);
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        playSound('success');
+        isCompleted = true; clearInterval(timerInterval);
+        msg.classList.remove('hidden'); items.forEach(i => i.el.remove());
+        const score = Math.min(Math.round(brewPct), 100); 
+        pctSpan.textContent = score;
+        window.globalScores.s5 = score; window.addLayerToJar('s5', '#B87333', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-6', 24); }, 2000);
+    }
+}
+
+// --- Game 6: 組裝生態瓶 (依序點擊) ---
+function initGame6() {
+    const container = document.getElementById('game-6');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;color:var(--accent);">步驟: <span id="step-name">請依序組裝</span></div>
+            
+            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:10px 0;z-index:10;padding:0 10px;">
+                <button class="diy-btn" id="btn-stone" data-step="1" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">1. 鋪設排水層</button>
+                <button class="diy-btn" id="btn-soil" data-step="2" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">2. 加泥炭土</button>
+                <button class="diy-btn" id="btn-plant" data-step="3" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">3. 植金線連</button>
+                <button class="diy-btn" id="btn-moss" data-step="4" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">4. 維持袋內潔淨</button>
+            </div>
+            
+            <!-- 視覺生態包 -->
+            <div id="terrarium" style="position:relative;width:120px;height:150px;background:rgba(255,255,255,0.05);border-radius:10px 10px 10px 10px;border:3px dashed rgba(255,255,255,0.5);margin-top:10px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;box-shadow:inset 0 0 10px rgba(0,0,0,0.5);">
+                <!-- 各圖層初始為 height 0 -->
+                <div id="layer-moss" style="width:100%;height:0%;background:rgba(255,255,255,0.2);transition:height 0.5s;display:flex;justify-content:center;align-items:flex-end;font-size:2rem;position:relative;backdrop-filter:blur(2px);"></div>
+                <div id="layer-soil" style="width:100%;height:0%;background:#3E2723;transition:height 0.5s;"></div>
+                <div id="layer-stone" style="width:100%;height:0%;background:#A1887F;transition:height 0.5s;"></div>
+            </div>
+            
+            <button id="calc-harvest-btn" class="hidden" style="margin-top:20px;padding:12px 25px;font-size:1.2rem;background:var(--accent);color:#111;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 0 10px rgba(212,175,55,0.5);">✨ 封閉生態包 (結算)</button>
+        </div>
+        
+        <div id="final-scorecard-overlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:5000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;padding:20px;">
+            <h1 style="color:var(--accent);margin-bottom:20px;font-size:2.5rem;text-shadow:0 0 10px rgba(212,175,55,0.5);">🎉 金線尋蹤大結算 🎉</h1>
+            <div id="scorecard-text" style="font-size:1.2rem;line-height:2;margin-bottom:20px;background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;text-align:left;border:1px solid var(--accent);"></div>
+            <div id="star-reward" style="font-size:2.5rem;margin-bottom:30px;letter-spacing:5px;"></div>
+            <button id="overlay-restart-btn" style="padding:15px 30px;font-size:1.2rem;background:#2ecc71;color:white;border:none;border-radius:30px;cursor:pointer;font-weight:bold;">🔄 重新探索</button>
+        </div>
+    `;
+
+    const btns = document.querySelectorAll('.diy-btn');
+    const stepName = document.getElementById('step-name');
+    const calcBtn = document.getElementById('calc-harvest-btn');
+    
+    const lStone = document.getElementById('layer-stone');
+    const lSoil = document.getElementById('layer-soil');
+    const lMoss = document.getElementById('layer-moss'); // 也包含植物
+    
+    let currentStep = 0;
+    
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const stepNum = parseInt(btn.getAttribute('data-step'));
+            if(stepNum === currentStep + 1) {
+                playSound('pop');
+                currentStep = stepNum;
+                btn.style.borderColor = 'var(--accent)';
+                btn.style.color = 'var(--accent)';
+                
+                if(stepNum === 1) { lStone.style.height = '20%'; stepName.textContent = "保持濕潤不淹水"; }
+                if(stepNum === 2) { lSoil.style.height = '30%'; stepName.textContent = "透氣泥炭土加入"; }
+                if(stepNum === 3) { 
+                    lMoss.style.height = '10%'; // 空間給植物
+                    lMoss.innerHTML = '<span style="position:absolute;bottom:0;font-size:3.5rem;filter:drop-shadow(0 0 5px rgba(212,175,55,0.8));">🌱</span>';
+                    stepName.textContent = "主角金線連入盆"; 
+                }
+                if(stepNum === 4) { 
+                    lMoss.style.height = '20%'; // 改變氣氛
+                    stepName.textContent = "防護完成，生態包建立！"; 
+                    calcBtn.classList.remove('hidden');
+                }
+            } else if (stepNum > currentStep + 1) {
+                playSound('error');
+                stepName.textContent = "順序錯了！請依步驟來";
+                stepName.style.color = "#e74c3c";
+                setTimeout(()=> { stepName.style.color = "#fff"; }, 1000);
+            }
+        });
+    });
+
+    calcBtn.addEventListener('click', () => {
+        playSound('success');
+        window.addLayerToJar('agri', '#27AE60', 100);
+        
+        const s = window.globalScores;
+        const total = s.s1 + s.s2 + s.s3 + s.s4 + s.s5 + 100; // 加上最後一關100分
+        
+        let stars = "";
+        if(total >= 500) stars = "🌟🌟🌟🌟🌟"; else if(total >= 400) stars = "🌟🌟🌟🌟"; else if(total >= 300) stars = "🌟🌟🌟"; else if(total >= 200) stars = "🌟🌟"; else stars = "🌟";
+
+        document.getElementById('scorecard-text').innerHTML = `
+            ✨ 點亮靈氣：${s.s1}分<br>
+            🕊️ 捕捉傳說：${s.s2}分<br>
+            ⛅ 營造氣候：${s.s3}分<br>
+            🍂 林下尋寶：${s.s4}分<br>
+            🍲 熬煮好茶：${s.s5}分<br>
+            🌱 生態包DIY：100分<br>
+            <hr style="margin:10px 0;border-color:rgba(212,175,55,0.3);">
+            成品：<strong>專屬金線連療癒生態包</strong><br>
+            <div style="font-size:1.5rem;text-align:center;margin-top:10px;">總合評價分數: <strong style="color:var(--accent);">${total}</strong></div>
+        `;
+        document.getElementById('star-reward').innerHTML = stars;
+        document.getElementById('final-scorecard-overlay').classList.remove('hidden');
+
+        if (window.isFullCourseMode) {
+            setTimeout(() => {
+                pptCurrentPage = 28; // 跳轉至最後一頁總結
+                updatePPT();
+                pptModal.classList.remove('hidden');
+            }, 3500);
+        }
+    });
+
+    document.getElementById('overlay-restart-btn').addEventListener('click', () => { location.reload(); });
+}
+
+function initAllSystems() {
+    const startBtn = document.getElementById('start-btn');
+    const heroPPTBtn = document.getElementById('hero-ppt-btn'); 
+    const hero = document.querySelector('.hero');
+    const mainContent = document.getElementById('soil-layers');
+    const nav = document.getElementById('layer-nav');
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            window.isFullCourseMode = false;
+            hero.classList.add('hidden'); 
+            mainContent.classList.remove('hidden'); 
+            nav.classList.remove('hidden');
+            setTimeout(() => {
+                const targetEl = document.getElementById('layer-1');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+
+    if (heroPPTBtn) {
+        heroPPTBtn.addEventListener('click', () => {
+            window.isFullCourseMode = true; 
+            hero.classList.add('hidden'); 
+            mainContent.classList.remove('hidden'); 
+            nav.classList.remove('hidden');
+            setTimeout(() => {
+                const targetEl = document.getElementById('layer-1');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+
+    const navItems = document.querySelectorAll('#layer-nav li');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const target = document.getElementById(item.getAttribute('data-target'));
+            if(target && mainContent) mainContent.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+        });
+    });
+
+    if (mainContent) {
+        mainContent.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('.soil-layer').forEach(section => {
+                if (mainContent.scrollTop >= (section.offsetTop - section.clientHeight / 3)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navItems.forEach(li => {
+                li.classList.remove('active');
+                if (li.getAttribute('data-target') === current) li.classList.add('active');
+            });
+        });
+    }
+    
+    initGame1(); initGame2(); initGame3(); initGame4(); initGame5(); initGame6();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAllSystems);
+} else {
+    initAllSystems();
+}
+
+    </script>
+</body>
+</html>
