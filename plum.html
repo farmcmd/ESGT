@@ -483,7 +483,7 @@ body {
             <!-- 新增 QR Code 分享區塊 -->
             <div style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); padding: 15px 25px; border-radius: 15px; border: 2px dashed #FFCA28; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://farmcmd.github.io/ESGT/plum.html" alt="分享 QR Code" style="border-radius: 10px; margin-bottom: 10px; border: 4px solid white; pointer-events: none;">
-                <p style="font-size: 1.1rem; color: #FFCA28; margin: 0; font-weight: bold; letter-spacing: 1px;">📱 掃描後，打開分享給其他同學</p>
+                <p style="font-size: 1.1rem; color: #FFCA28; margin: 0; font-weight: bold; letter-spacing: 1px;">📱 停留畫面，邀請同學掃描</p>
             </div>
         </header>
 
@@ -1232,9 +1232,17 @@ function initGame5() {
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
             <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;">醃製進度: <span id="g5-pct">0</span>%</div>
             <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g5-timer">15</span>秒</div>
-            <p style="font-size:1rem;color:#fff;margin-bottom:5px;font-weight:bold;text-align:center;background:rgba(230, 126, 34, 0.8);padding:5px 15px;border-radius:20px;">💡 左右滑動下方罐子，接住糖(🧊)與鹽(🧂)</p>
+            <p id="g5-hint" style="font-size:1rem;color:#fff;margin-bottom:5px;font-weight:bold;text-align:center;background:rgba(230, 126, 34, 0.8);padding:5px 15px;border-radius:20px;">💡 準備開始釀製...</p>
             
             <div id="g5-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(0,0,0,0.2);border-radius:10px;cursor:pointer;">
+                
+                <!-- 選擇配方 UI 覆蓋層 -->
+                <div id="g5-recipe-select" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:20;display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:10px;">
+                    <p style="color:#FFCA28;font-size:1.1rem;font-weight:bold;margin-bottom:15px;text-align:center;">請先選擇你要釀製的配方：</p>
+                    <button id="btn-g5-crispy" style="padding:8px 15px;margin-bottom:10px;border-radius:8px;border:2px solid white;background:#2ecc71;color:white;font-size:1rem;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.3);">🟢 脆梅 (只需接糖🧊)</button>
+                    <button id="btn-g5-qplum" style="padding:8px 15px;border-radius:8px;border:2px solid white;background:#9b59b6;color:white;font-size:1rem;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.3);">🟣 紫蘇梅/Q梅 (接糖🧊與鹽🧂)</button>
+                </div>
+
                 <div id="pickle-jar" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:60px;height:70px;background:rgba(255,255,255,0.2);border:3px solid rgba(255,255,255,0.8);border-top:none;border-radius:0 0 15px 15px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;user-select:none;touch-action:none;">
                     <div id="jar-fill" style="width:100%;height:0%;background:#FFB300;transition:height 0.2s;"></div>
                 </div>
@@ -1248,13 +1256,32 @@ function initGame5() {
     const jarFill = document.getElementById('jar-fill');
     const pctSpan = document.getElementById('g5-pct');
     const msg = document.getElementById('g5-message');
+    const hint = document.getElementById('g5-hint');
+    
+    const recipeSelect = document.getElementById('g5-recipe-select');
+    const btnCrispy = document.getElementById('btn-g5-crispy');
+    const btnQplum = document.getElementById('btn-g5-qplum');
 
     let picklePct = 0; let isCompleted = false; let gameLoop; let ingredients = [];
     let timeLeft = 15; const timerSpan = document.getElementById('g5-timer');
     let timerInterval = null; let gameActive = false;
+    let selectedRecipe = null; // 'crispy' 或 'qplum'
+
+    // 處理配方選擇按鈕點擊
+    btnCrispy.addEventListener('click', (e) => {
+        e.stopPropagation(); selectedRecipe = 'crispy';
+        hint.innerHTML = '💡 左右滑動，<span style="color:#FFCA28;">只能接糖(🧊)！</span>避開鹽巴！';
+        recipeSelect.style.display = 'none'; startGameLogic();
+    });
+
+    btnQplum.addEventListener('click', (e) => {
+        e.stopPropagation(); selectedRecipe = 'qplum';
+        hint.innerHTML = '💡 左右滑動，<span style="color:#FFCA28;">接糖(🧊)與鹽(🧂)！</span>';
+        recipeSelect.style.display = 'none'; startGameLogic();
+    });
 
     function startGameLogic() {
-        if(gameActive || isCompleted) return;
+        if(gameActive || isCompleted || !selectedRecipe) return;
         gameActive = true;
         
         timerInterval = setInterval(() => {
@@ -1271,8 +1298,7 @@ function initGame5() {
     let catchRadius = 30;
 
     const handleMove = (e) => {
-        if(isCompleted) return; 
-        startGameLogic();
+        if(isCompleted || !selectedRecipe) return; 
         if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
         
         const rect = gameArea.getBoundingClientRect();
@@ -1288,16 +1314,27 @@ function initGame5() {
     gameArea.addEventListener('mousedown', handleMove); gameArea.addEventListener('touchstart', handleMove, {passive: false});
     gameArea.addEventListener('mousemove', handleMove); gameArea.addEventListener('touchmove', handleMove, {passive: false});
 
+    // 動態漂浮文字回饋機制
+    function showFloatingText(text, x, y) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = (x - 10) + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.5rem'; f.style.transition = 'all 0.4s ease-out'; f.style.zIndex = '30';
+        gameArea.appendChild(f);
+        setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 450);
+    }
+
     function spawnIngredient() {
         if(isCompleted) return;
-        const isSugar = Math.random() > 0.4; // 糖比較多
+        const isSugar = Math.random() > 0.4; // 糖掉落機率較高 (60%)
         const el = document.createElement('div');
         el.style.position='absolute'; el.style.fontSize='1.8rem'; 
         el.textContent = isSugar ? '🧊' : '🧂';
         const x = Math.random() * (gameArea.clientWidth - 40) + 20;
         el.style.left = x + 'px'; el.style.top = '-30px'; 
         gameArea.appendChild(el);
-        ingredients.push({ el, x, y: -30, speed: Math.random() * 2 + 1.5, active: true });
+        // 將 isSugar 記錄在物件中方便後續判斷
+        ingredients.push({ el, x, y: -30, speed: Math.random() * 2 + 1.5, active: true, isSugar });
         
         if(!isCompleted) setTimeout(spawnIngredient, Math.random() * 500 + 400);
     }
@@ -1310,7 +1347,18 @@ function initGame5() {
             i.y += i.speed; i.el.style.top = i.y + 'px';
             if(i.y > jarTop - 10 && i.y < jarTop + 20 && i.x > jarX - catchRadius && i.x < jarX + catchRadius) {
                 i.active = false; i.el.remove();
-                picklePct += 6; 
+                
+                // 依據選擇的配方計算分數
+                if (selectedRecipe === 'crispy') {
+                    if (i.isSugar) {
+                        picklePct += 8; showFloatingText('✨', i.x, jarTop); // 接對糖加分
+                    } else {
+                        picklePct = Math.max(0, picklePct - 5); showFloatingText('❌', i.x, jarTop); // 接錯鹽扣分
+                    }
+                } else if (selectedRecipe === 'qplum') {
+                    picklePct += 6; showFloatingText('✨', i.x, jarTop); // 紫蘇梅兩者都加分
+                }
+
                 const score = Math.min(Math.round(picklePct), 100);
                 pctSpan.textContent = score; 
                 jarFill.style.height = score + '%';
@@ -1403,7 +1451,7 @@ function initGame6() {
         const finalScore = Math.round(total * multiplier);
         
         let stars = "";
-        if(finalScore >= 500) stars = "⭐⭐⭐⭐⭐"; else if(finalScore >= 400) stars = "⭐⭐⭐⭐"; else if(finalScore >= 300) stars = "⭐⭐⭐"; else if(finalScore >= 200) stars = "⭐⭐"; else stars = "⭐";
+        if(finalScore >= 500) stars = "🍡🍡🍡🍡🍡"; else if(finalScore >= 400) stars = "🍡🍡🍡🍡"; else if(finalScore >= 300) stars = "🍡🍡🍡"; else if(finalScore >= 200) stars = "🍡🍡"; else stars = "🍡";
 
         document.getElementById('scorecard-text').innerHTML = `
             🌸 開花進度：${s.s1}分<br>
