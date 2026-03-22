@@ -387,6 +387,33 @@ body {
     background-color: var(--accent);
     color: #111;
 }
+
+/* Fullscreen Button Styles */
+#fullscreen-btn {
+    position: fixed;
+    top: 20px;
+    right: 80px; /* 放在 QR Code 按鈕左側 */
+    width: 50px;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent);
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 2000;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+#fullscreen-btn:hover {
+    transform: scale(1.1);
+    background-color: var(--accent);
+    color: #111;
+}
+
 #qr-modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -561,6 +588,8 @@ body {
 </head>
 <body>
     <div id="app">
+        <!-- 右上角 全螢幕 按鈕 -->
+        <button id="fullscreen-btn" title="切換全螢幕">⛶</button>
         <!-- 右上角 QR Code 開啟按鈕 -->
         <button id="qr-toggle-btn" title="分享本站">📱</button>
 
@@ -1836,6 +1865,32 @@ function initAllSystems() {
     const mainContent = document.getElementById('soil-layers');
     const nav = document.getElementById('layer-nav');
     
+    // 全螢幕邏輯
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log(`全螢幕請求失敗: ${err.message}`);
+            });
+            fullscreenBtn.textContent = '✖';
+            fullscreenBtn.title = '退出全螢幕';
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.title = '切換全螢幕';
+            }
+        }
+    });
+
+    // 監聽 ESC 鍵退出全螢幕時，恢復按鈕圖示
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            fullscreenBtn.textContent = '⛶';
+            fullscreenBtn.title = '切換全螢幕';
+        }
+    });
+
     // QR Code Modal 邏輯
     const qrToggleBtn = document.getElementById('qr-toggle-btn');
     const qrModalOverlay = document.getElementById('qr-modal-overlay');
