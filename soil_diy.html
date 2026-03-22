@@ -40,6 +40,12 @@ body {
     display: none !important;
 }
 
+/* 鎖定滾動 (用於畫筆模式) */
+.no-scroll {
+    overflow: hidden !important;
+    touch-action: none !important;
+}
+
 /* Hero Section */
 .hero {
     height: 100vh;
@@ -268,12 +274,12 @@ body {
 }
 
 /* =========================================
-   PPT Modal Styles (New Ergonomic Layout)
+   PPT Modal Styles 
    ========================================= */
 #ppt-modal {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
+    background: rgba(0,0,0,0.95); /* 加深背景，進入全螢幕更沉浸 */
     z-index: 4000; 
     display: flex;
     flex-direction: column;
@@ -287,6 +293,8 @@ body {
     background: #2c3e50;
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
     z-index: 10;
+    flex-wrap: wrap; 
+    gap: 10px;
 }
 
 .ppt-title {
@@ -294,6 +302,44 @@ body {
     font-weight: bold;
     color: var(--ppt-text-accent);
 }
+
+.ppt-top-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.ppt-top-controls button {
+    background-color: #34495e;
+    color: white;
+    border: 1px solid #7f8c8d;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.ppt-top-controls button:hover { background-color: #2c3e50; border-color: #bdc3c7; }
+
+/* 畫筆啟動時的按鈕樣式 */
+#ppt-pen-btn.active {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+}
+
+#close-ppt-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+#close-ppt-btn:hover { background-color: #c0392b; }
 
 .ppt-footer {
     display: flex;
@@ -330,18 +376,6 @@ body {
     font-weight: bold;
 }
 
-#close-ppt-btn {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.2s;
-}
-#close-ppt-btn:hover { background-color: #c0392b; }
-
 .ppt-main {
     flex-grow: 1;
     display: flex;
@@ -361,6 +395,23 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     position: relative;
     overflow: hidden;
+}
+
+/* 簡報畫布 */
+#ppt-drawing-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50; /* 覆蓋在文字之上，進度條之下 */
+    pointer-events: none; /* 預設不攔截點擊 */
+}
+
+/* 當畫筆啟動時，允許在畫布上作畫，並顯示十字游標 */
+#ppt-drawing-canvas.pen-mode {
+    pointer-events: auto;
+    cursor: crosshair;
 }
 
 .slide {
@@ -412,7 +463,7 @@ body {
 .progress-bar {
     position: absolute; bottom: 0; left: 0; height: 5px;
     background-color: var(--ppt-text-accent); transition: width 0.3s ease;
-    z-index: 10;
+    z-index: 60;
 }
 
 /* 跳轉遊戲按鈕樣式 */
@@ -479,9 +530,9 @@ body {
     /* --- PPT Mobile Adjustments --- */
     #ppt-modal { height: 100dvh; } 
     
-    .ppt-header { padding: 12px 15px; }
-    .ppt-title { font-size: 1rem; width: 65%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #close-ppt-btn { padding: 6px 10px; font-size: 0.9rem; }
+    .ppt-header { padding: 12px 15px; justify-content: center; } /* 手機板標題列重排 */
+    .ppt-title { font-size: 1rem; width: 100%; text-align: center; margin-bottom: 5px;}
+    .ppt-top-controls { width: 100%; justify-content: center; }
     
     /* 置底按鈕排版優化：方便大拇指操作 */
     .ppt-footer { padding: 10px; gap: 8px; justify-content: space-between; }
@@ -491,7 +542,7 @@ body {
     .ppt-main { 
         padding: 10px; 
         display: block; 
-        height: calc(100% - 110px); /* 扣除 Header 與 Footer 的高度 */
+        height: calc(100% - 145px); /* 扣除 Header 與 Footer 的高度 */
     } 
     
     .slide-container {
@@ -588,7 +639,7 @@ body {
                     </div>
                     <div class="info-card">
                         <strong>生命扎根的沃土</strong><br>
-                        A層混合了豐富的有機質（來自O層）與無機礦物質，顏色較深且土壤結構疏鬆，適合植物根系發展與儲存水分。像嘉南平原的沖積土，就是極具農業價值的A層。
+                        A層混合了豐富的有機質（來自O層）與無機礦物質，顏色較深且土壤結構疏鬆，適合植物根系發展與儲存水分。像嘉南平原的沖積土， বললো極具農業價值的A層。
                     </div>
                     <div class="game-container" id="game-a"></div>
                 </div>
@@ -644,16 +695,22 @@ body {
 
     <!-- PPT Modal Overlay -->
     <div id="ppt-modal" class="hidden">
-        <!-- 頂部：標題與關閉按鈕 -->
+        <!-- 頂部：標題與全螢幕/畫筆控制 -->
         <div class="ppt-header">
             <div class="ppt-title">探探里山(里山餐桌)教學簡報系統</div>
-            <button id="close-ppt-btn">✖ 關閉</button>
+            <div class="ppt-top-controls">
+                <button id="ppt-fullscreen-btn" title="切換全螢幕模式">⛶ 全螢幕</button>
+                <button id="ppt-pen-btn" title="開啟/關閉畫布與重點標記">🖍️ 畫筆</button>
+                <button id="ppt-clear-btn" class="hidden" title="清除所有筆跡">🗑️ 清除</button>
+                <button id="close-ppt-btn">✖ 關閉</button>
+            </div>
         </div>
         
-        <!-- 中央：簡報內容區 -->
+        <!-- 中央：簡報內容區與透明畫布 -->
         <div class="ppt-main">
             <div class="slide-container" id="ppt-slide-container">
                 <!-- Slides will be injected here -->
+                <canvas id="ppt-drawing-canvas"></canvas>
                 <div class="progress-bar" id="ppt-progress-bar" style="width: 3.33%;"></div>
             </div>
         </div>
@@ -817,6 +874,9 @@ function updatePPT() {
     pptProgressBar.style.width = `${((pptCurrentPage + 1) / pptTotalPages) * 100}%`;
     pptBtnPrev.disabled = pptCurrentPage === 0;
     pptBtnNext.disabled = pptCurrentPage === pptTotalPages - 1;
+    
+    // 翻頁時自動清空畫筆痕跡
+    if(pptCtx) pptCtx.clearRect(0, 0, pptCanvas.width, pptCanvas.height);
 }
 
 pptBtnNext.addEventListener('click', () => { if (pptCurrentPage < pptTotalPages - 1) { pptCurrentPage++; updatePPT(); }});
@@ -835,17 +895,22 @@ document.querySelectorAll('.open-ppt-btn').forEach(btn => {
         pptCurrentPage = startIdx;
         updatePPT();
         pptModal.classList.remove('hidden');
+        setTimeout(resizePptCanvas, 100); // 確保畫布尺寸正確
     });
 });
 
 document.getElementById('close-ppt-btn').addEventListener('click', () => {
     pptModal.classList.add('hidden');
+    // 如果是全螢幕狀態，關閉時一起退出
+    if (document.fullscreenElement) document.exitFullscreen();
 });
 
 document.addEventListener('click', function(e) {
     if(e.target && e.target.classList.contains('ppt-play-btn')){
         const targetSectionId = e.target.getAttribute('data-target');
         pptModal.classList.add('hidden');
+        if (document.fullscreenElement) document.exitFullscreen(); // 跳轉關卡時退出全螢幕
+        
         if(document.getElementById('soil-layers').classList.contains('hidden')) {
             document.querySelector('.hero').classList.add('hidden');
             document.getElementById('soil-layers').classList.remove('hidden');
@@ -860,6 +925,111 @@ document.addEventListener('click', function(e) {
         }, 100);
     }
 });
+
+/* --- 全螢幕 (Fullscreen) API 邏輯 --- */
+const fullscreenBtn = document.getElementById('ppt-fullscreen-btn');
+fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+        // 將整個簡報容器放大
+        pptModal.requestFullscreen().catch(err => {
+            alert(`您的設備或瀏覽器不支援全螢幕功能: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+});
+document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+        fullscreenBtn.textContent = '🗗 退出全螢幕';
+    } else {
+        fullscreenBtn.textContent = '⛶ 全螢幕';
+    }
+    setTimeout(resizePptCanvas, 200); // 重算畫布
+});
+
+/* --- 簡報畫筆 (Screen Pen) API 邏輯 --- */
+const pptCanvas = document.getElementById('ppt-drawing-canvas');
+const pptCtx = pptCanvas.getContext('2d');
+const penBtn = document.getElementById('ppt-pen-btn');
+const clearBtn = document.getElementById('ppt-clear-btn');
+
+let isPenActive = false;
+let isDrawingOnPpt = false;
+
+function resizePptCanvas() {
+    pptCanvas.width = pptCanvas.offsetWidth;
+    pptCanvas.height = pptCanvas.offsetHeight;
+}
+window.addEventListener('resize', resizePptCanvas);
+
+penBtn.addEventListener('click', () => {
+    isPenActive = !isPenActive;
+    if (isPenActive) {
+        pptCanvas.classList.add('pen-mode');
+        clearBtn.classList.remove('hidden');
+        penBtn.classList.add('active');
+        penBtn.textContent = '🖍️ 關閉畫筆';
+        // 鎖定當前 slide 的滾動，避免畫圖時畫面跑走
+        const activeSlide = document.querySelector('.slide.active');
+        if (activeSlide) activeSlide.classList.add('no-scroll');
+        resizePptCanvas();
+    } else {
+        pptCanvas.classList.remove('pen-mode');
+        clearBtn.classList.add('hidden');
+        penBtn.classList.remove('active');
+        penBtn.textContent = '🖍️ 畫筆';
+        // 解除滾動鎖定
+        const activeSlide = document.querySelector('.slide.active');
+        if (activeSlide) activeSlide.classList.remove('no-scroll');
+    }
+});
+
+clearBtn.addEventListener('click', () => {
+    pptCtx.clearRect(0, 0, pptCanvas.width, pptCanvas.height);
+});
+
+function getPptDrawPos(e) {
+    const rect = pptCanvas.getBoundingClientRect();
+    let clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+    let clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+const startPptDraw = (e) => {
+    if (!isPenActive) return;
+    isDrawingOnPpt = true;
+    const pos = getPptDrawPos(e);
+    pptCtx.beginPath();
+    pptCtx.moveTo(pos.x, pos.y);
+    pptCtx.strokeStyle = '#e74c3c'; // 紅色畫筆
+    pptCtx.lineWidth = 4;
+    pptCtx.lineCap = 'round';
+    pptCtx.lineJoin = 'round';
+    if(e.cancelable) e.preventDefault(); // 防止手機上觸發原生滑動
+};
+
+const movePptDraw = (e) => {
+    if (!isDrawingOnPpt || !isPenActive) return;
+    const pos = getPptDrawPos(e);
+    pptCtx.lineTo(pos.x, pos.y);
+    pptCtx.stroke();
+    if(e.cancelable) e.preventDefault();
+};
+
+const endPptDraw = () => {
+    if (isDrawingOnPpt) {
+        isDrawingOnPpt = false;
+        pptCtx.closePath();
+    }
+};
+
+pptCanvas.addEventListener('mousedown', startPptDraw);
+pptCanvas.addEventListener('mousemove', movePptDraw);
+window.addEventListener('mouseup', endPptDraw);
+
+pptCanvas.addEventListener('touchstart', startPptDraw, {passive: false});
+pptCanvas.addEventListener('touchmove', movePptDraw, {passive: false});
+window.addEventListener('touchend', endPptDraw);
 
 initPPT();
 
@@ -1403,7 +1573,7 @@ function initGameO() {
     }
 }
 
-// --- Game Agri Logic (生態系動態升級版) ---
+// --- Game Agri Logic ---
 function initGameAgri() {
     const container = document.getElementById('game-agri');
     container.innerHTML = `
@@ -1416,10 +1586,8 @@ function initGameAgri() {
             </div>
             
             <div id="farm-field" style="position:relative;width:100%;max-width:320px;height:220px;background:linear-gradient(to bottom, #87CEEB 40%, transparent 40%);border-radius:10px;overflow:hidden;margin-top:5px;border:2px solid rgba(255,255,255,0.2);">
-                <!-- 地面與地下生態容器 -->
                 <div id="soil-surface" style="position:absolute;bottom:0;width:100%;height:60%;background:#5a3c21;transition:all 1s ease;"></div>
                 
-                <!-- 動態注入的生態系結構 -->
                 <div id="ecosystem-above" style="position:absolute; bottom:60%; left:0; width:100%; height:40%; display:flex; justify-content:space-around; align-items:flex-end; font-size:2rem; z-index:5; transition:opacity 0.5s;">
                     <div style="font-size:3rem; margin-bottom:-10px;">🌱</div>
                 </div>
@@ -1459,7 +1627,6 @@ function initGameAgri() {
         btn.style.boxShadow = '0 0 10px white'; btn.style.borderColor = '#f1c40f';
         currentMod = mod; selectedMethod = name;
         
-        // 視覺與生態系切換
         soil.style.background = soilColor; 
         ecoAbove.style.opacity = '0';
         ecoBelow.style.opacity = '0';
@@ -1476,15 +1643,12 @@ function initGameAgri() {
         calcBtn.classList.remove('hidden');
     }
 
-    // 草生栽培生態系模板 (蜜蜂、蜻蜓/蝴蝶、瓢蟲、雜草 | 地下：蚯蚓、線蟲、細菌、大量孔隙、根系)
     const grassAbove = `<span class="eco-float" style="font-size:1.5rem; margin-bottom:20px;">🐝</span><span class="eco-float-fast" style="font-size:1.5rem; margin-bottom:30px;">🦋</span><span style="font-size:3rem; margin-bottom:-10px;">🌳</span><span class="eco-hop" style="font-size:1.2rem;">🐞</span><span style="font-size:1.5rem; margin-bottom:-5px;">🌿</span>`;
     const grassBelow = `<span>🪱</span><span class="eco-pore"></span><span>🦠</span><span>〰️</span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span><span class="eco-pore"></span><span style="transform:scaleY(-1);opacity:0.5;">🌿</span><span class="eco-pore"></span><span>🪱</span><span class="eco-pore"></span><span>🦠</span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span>`;
 
-    // 生物農藥生態系模板 (鳥、穿山甲/刺蝟、瓢蟲 | 地下：一般土壤，少許蟲與孔隙)
     const bioAbove = `<span class="eco-float" style="font-size:1.5rem; margin-bottom:35px;">🐦</span><span style="font-size:3rem; margin-bottom:-10px;">🌳</span><span class="eco-hop" style="font-size:1.2rem;">🐞</span><span style="font-size:1.8rem; transform:scaleX(-1);">🦔</span>`;
     const bioBelow = `<span style="transform:scaleY(-1);opacity:0.5;">🌱</span><span>🪱</span><span></span><span class="eco-pore"></span><span></span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span><span>〰️</span><span></span><span class="eco-pore"></span><span></span><span></span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span>`;
 
-    // 化學農藥生態系模板 (枯萎，無生物，無孔隙)
     const chemAbove = `<span style="font-size:3rem; margin-bottom:-10px; filter:grayscale(80%) sepia(50%);">🥀</span>`;
     const chemBelow = `<span style="opacity:0.2;">➖</span><span></span><span style="opacity:0.2;">➖</span><span></span><span></span><span style="opacity:0.2;">➖</span><span></span><span></span><span></span><span></span><span style="opacity:0.2;">➖</span><span></span>`;
 
@@ -1503,7 +1667,6 @@ function initGameAgri() {
         let count = 1;
         if(finalVitality >= 400) count = 5; else if(finalVitality >= 300) count = 4; else if(finalVitality >= 200) count = 3; else if(finalVitality >= 100) count = 2;
         
-        // 變更為彩蛋機率判定：每個水果有 1% 機率變成酪梨
         let rewardFruits = "";
         for(let i = 0; i < count; i++) {
             if(Math.random() < 0.01) {
