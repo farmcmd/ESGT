@@ -274,7 +274,7 @@ body {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.9);
-    z-index: 4000; /* 提升層級以蓋過所有 UI */
+    z-index: 4000; 
     display: flex;
     flex-direction: column;
 }
@@ -286,6 +286,7 @@ body {
     padding: 15px 30px;
     background: #2c3e50;
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    flex-wrap: wrap; 
 }
 
 .ppt-title {
@@ -327,6 +328,7 @@ body {
     align-items: center;
     padding: 20px;
     position: relative;
+    overflow: hidden; 
 }
 
 .slide-container {
@@ -351,6 +353,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    overflow-y: auto; 
 }
 
 .slide.active {
@@ -370,10 +373,10 @@ body {
 }
 .slide.title-slide h2 { font-size: 1.8rem; color: var(--ppt-text-accent); font-weight: normal; }
 
-.slide-header { border-bottom: 3px solid var(--ppt-text-accent); margin-bottom: 30px; padding-bottom: 15px; }
+.slide-header { border-bottom: 3px solid var(--ppt-text-accent); margin-bottom: 30px; padding-bottom: 15px; flex-shrink: 0; }
 .slide-header h2 { font-size: 2.5rem; color: var(--ppt-text-accent); margin:0; }
 
-.slide-content { font-size: 1.5rem; line-height: 1.8; text-align: left;}
+.slide-content { font-size: 1.5rem; line-height: 1.8; text-align: left; }
 .slide-content ul { margin-left: 40px; }
 .slide-content li { margin-bottom: 15px; color: var(--ppt-text-main); }
 .slide-content .highlight { color: #2ecc71; font-weight: bold; }
@@ -388,6 +391,7 @@ body {
 .progress-bar {
     position: absolute; bottom: 0; left: 0; height: 5px;
     background-color: var(--ppt-text-accent); transition: width 0.3s ease;
+    z-index: 10;
 }
 
 /* 跳轉遊戲按鈕樣式 */
@@ -411,6 +415,22 @@ body {
     transform: scale(1.05);
 }
 
+/* 農業生態系動畫 */
+@keyframes float-bug {
+    0% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-15px) translateX(5px); }
+    100% { transform: translateY(0px) translateX(0px); }
+}
+@keyframes hop-animal {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0px); }
+}
+.eco-float { animation: float-bug 2.5s infinite ease-in-out; display: inline-block; }
+.eco-float-fast { animation: float-bug 1.8s infinite ease-in-out; display: inline-block; animation-delay: 0.5s; }
+.eco-hop { animation: hop-animal 1.5s infinite ease-in-out; display: inline-block; }
+.eco-pore { width: 18px; height: 18px; background: rgba(0,0,0,0.4); border-radius: 50%; display: inline-block; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.6); margin:3px; }
+
 /* Responsive */
 @media screen and (max-width: 768px) {
     #test-tube-container { right: 45px; width: 40px; height: 200px; }
@@ -427,12 +447,38 @@ body {
     .open-ppt-btn { padding: 0.4rem 1rem; font-size: 0.9rem; margin-left: 0; width: 100%; }
     .layer-header { flex-direction: column; }
 
-    /* PPT Mobile Adjustments */
-    .slide { padding: 30px 20px; }
-    .slide.title-slide h1 { font-size: 2rem; }
-    .slide-header h2 { font-size: 1.5rem; }
-    .slide-content { font-size: 1.1rem; }
-    .ppt-controls { flex-wrap: wrap; justify-content: center; }
+    .ppt-header { flex-direction: column; gap: 10px; padding: 10px; }
+    .ppt-controls { flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .ppt-controls button { padding: 8px 12px; font-size: 0.9rem; }
+    #close-ppt-btn { margin-left: 0; }
+    
+    .ppt-main { padding: 10px; align-items: stretch; } 
+    
+    .slide-container {
+        aspect-ratio: auto; 
+        height: 100%;       
+        border-radius: 8px;
+    }
+    
+    .slide { 
+        padding: 25px 15px; 
+        justify-content: flex-start; 
+        overflow-y: auto; 
+        padding-bottom: 40px; 
+    }
+    
+    .slide.title-slide { justify-content: center; } 
+    .slide.title-slide h1 { font-size: 1.8rem; margin-bottom: 15px; }
+    .slide.title-slide h2 { font-size: 1.2rem; }
+    
+    .slide-header { margin-bottom: 15px; padding-bottom: 10px; }
+    .slide-header h2 { font-size: 1.4rem; }
+    
+    .slide-content { font-size: 1.1rem; line-height: 1.6; }
+    .slide-content ul { margin-left: 20px; }
+    .slide-content li { margin-bottom: 12px; }
+    
+    .ppt-play-btn { font-size: 1.1rem; padding: 10px 20px; margin-top: 15px; }
 }
 </style>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
@@ -527,7 +573,7 @@ body {
                     </div>
                     <div class="info-card">
                         <strong>土地的回饋取決於我們的對待</strong><br>
-                        人類在表土（O層與A層）上進行農作。友善農業與草生栽培能維護生態多樣性，讓土壤呼吸；而化肥與農藥雖能帶來短期增產，卻容易造成土壤板結（硬化），失去生命力與永續性。
+                        人類在表土（O層與A層）上進行農作。友善農業與「草生栽培」能維護生態多樣性，創造大量生物孔隙；而化肥與農藥雖能帶來短期增產，卻容易造成土壤板結（硬化）。
                     </div>
                     <div class="game-container" id="game-agri"></div>
                 </div>
@@ -581,13 +627,12 @@ body {
    ========================================= */
 window.globalScores = { r: 0, c: 0, b: 0, a: 0, o: 0 };
 window.layerCompletionOrder = [];
-window.isFullCourseMode = false; // 新增：完整課程模式追蹤旗標
+window.isFullCourseMode = false; 
 
 // 新增：智慧過場跳轉器
 window.triggerNextCourseStep = function(nextLayerId, nextPPTIndex) {
     document.getElementById(nextLayerId).scrollIntoView({ behavior: 'smooth' });
     
-    // 如果啟用了完整課程模式，在滾動後自動彈出下一階段的簡報
     if (window.isFullCourseMode) {
         setTimeout(() => {
             pptCurrentPage = nextPPTIndex;
@@ -665,8 +710,8 @@ const slidesData = [
 
     // --- 農作層 (頁 26-29) ---
     { title: "【農業層】農法選擇的十字路口", content: "<ul><li>人類在表土（O層與A層）上進行農作</li><li>土地的回饋，完全取決於我們的對待方式</li><li>每一個選擇都會改變土壤微棲地的命運</li></ul>", class: "unit-agri" },
-    { title: "化學與生物農藥的衝擊", content: "<ul><li><span class='highlight'>化學農藥 (0.1x)</span>：無差別毒殺，土壤快速鹽化、板結變硬，失去生命力。</li><li><span class='highlight'>生物農藥 (0.8x)</span>：友善折衷，專一性驅蟲，保留多數益蟲與較少孔隙。</li></ul>", class: "unit-agri" },
-    { title: "自然栽培的力量", content: "<ul><li><span class='highlight'>自然栽培 (1.0x)</span>：最完美的生態平衡。</li><li>雜草與作物共存，根系創造生物孔隙。</li><li>維護生態多樣性，讓土壤呼吸並保持極佳保水力。</li></ul>", class: "unit-agri" },
+    { title: "化學與生物農藥的衝擊", content: "<ul><li><span class='highlight'>化學農藥 (0.1x)</span>：無差別毒殺，土壤快速鹽化、板結變硬，失去生命力。</li><li><span class='highlight'>生物農藥 (0.8x)</span>：友善折衷，消滅特定害蟲，保留多數益蟲（如瓢蟲、鳥類、穿山甲）。</li></ul>", class: "unit-agri" },
+    { title: "草生栽培的力量", content: "<ul><li><span class='highlight'>草生栽培 (1.0x)</span>：最完美的生態平衡。</li><li>雜草與作物共存，根系創造豐富的生物孔隙。</li><li>地下有蚯蚓、線蟲與細菌；地上有蜜蜂、瓢蟲與蜻蜓。</li></ul>", class: "unit-agri" },
     { title: "互動環節解析：結算與收成", content: "<ul><li>先天的土壤層 (R到O) 奠定基礎分數</li><li>後天的農法選擇乘數，決定<span class='highlight'>最終土壤活力</span></li><li>友善土地，才能收穫豐碩健康的果實 (香蕉)</li></ul>", class: "unit-agri", gameTarget: "layer-agri" },
 
     // --- 總結 (頁 30-31) ---
@@ -683,7 +728,6 @@ const pptBtnPrev = document.getElementById('ppt-prev');
 const pptBtnNext = document.getElementById('ppt-next');
 const pptModal = document.getElementById('ppt-modal');
 
-// 動態更新指示器總頁數
 document.querySelector('#ppt-modal .ppt-controls div').innerHTML = `<span id="ppt-current-page">1</span> / ${pptTotalPages}`;
 
 function initPPT() {
@@ -697,8 +741,6 @@ function initPPT() {
             innerHTMLStr = `<h1>${data.title}</h1><h2>${data.content}</h2>`;
         } else {
             innerHTMLStr = `<div class="slide-header"><h2>${data.title}</h2></div><div class="slide-content">${data.content}`;
-            
-            // 如果此簡報有對應的遊戲目標，則加入跳轉按鈕
             if (data.gameTarget) {
                 innerHTMLStr += `<br><div style="text-align:center;"><button class="ppt-play-btn" data-target="${data.gameTarget}">🎮 進入對應遊戲關卡</button></div>`;
             }
@@ -711,8 +753,12 @@ function initPPT() {
 
 function updatePPT() {
     document.querySelectorAll('#ppt-slide-container .slide').forEach((slide, index) => {
-        if (index === pptCurrentPage) slide.classList.add('active');
-        else slide.classList.remove('active');
+        if (index === pptCurrentPage) {
+            slide.classList.add('active');
+            slide.scrollTop = 0;
+        } else {
+            slide.classList.remove('active');
+        }
     });
     document.getElementById('ppt-current-page').textContent = pptCurrentPage + 1;
     pptProgressBar.style.width = `${((pptCurrentPage + 1) / pptTotalPages) * 100}%`;
@@ -730,7 +776,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Bind Open PPT Buttons
 document.querySelectorAll('.open-ppt-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const startIdx = parseInt(btn.getAttribute('data-ppt-start') || 0);
@@ -744,19 +789,15 @@ document.getElementById('close-ppt-btn').addEventListener('click', () => {
     pptModal.classList.add('hidden');
 });
 
-// Bind Play Game Buttons inside PPT
 document.addEventListener('click', function(e) {
     if(e.target && e.target.classList.contains('ppt-play-btn')){
         const targetSectionId = e.target.getAttribute('data-target');
-        // 1. 關閉簡報Modal
         pptModal.classList.add('hidden');
-        // 2. 如果遊戲大框架被隱藏，則打開 (避免在首頁點擊時出錯)
         if(document.getElementById('soil-layers').classList.contains('hidden')) {
             document.querySelector('.hero').classList.add('hidden');
             document.getElementById('soil-layers').classList.remove('hidden');
             document.getElementById('layer-nav').classList.remove('hidden');
         }
-        // 3. 滾動到對應的層級
         setTimeout(() => {
             document.getElementById(targetSectionId).scrollIntoView({ behavior: 'smooth' });
         }, 100);
@@ -826,7 +867,6 @@ function initGameR() {
         window.globalScores.r = score;
         window.addSoilToTube('r', '#4a4a4a', score);
         
-        // 修改為智慧跳轉：滾動到層 C，且 C 層簡報從第 9 頁(索引 9)開始
         setTimeout(() => { window.triggerNextCourseStep('layer-c', 9); }, 2000);
     }
 
@@ -902,7 +942,6 @@ function initGameC() {
         const score = Math.min(weatherPct, 100);
         window.globalScores.c = score; window.addSoilToTube('c', '#8b7355', score);
         
-        // 修改為智慧跳轉：滾動到層 B，且 B 層簡報從第 14 頁(索引 13)開始
         setTimeout(() => { window.triggerNextCourseStep('layer-b', 13); }, 2000);
     }
 }
@@ -931,7 +970,6 @@ function initGameB() {
     let timeLeft = 15; const timerSpan = document.getElementById('b-timer');
     let timerInterval = null; let gameActive = false;
 
-    // 取消 IntersectionObserver 自動觸發，改為玩家互動觸發
     function startGameLogic() {
         if(gameActive || isCompleted) return;
         gameActive = true;
@@ -951,7 +989,7 @@ function initGameB() {
     const startDrag = (e) => { 
         if(isCompleted) return; 
         isDragging = true; 
-        startGameLogic(); // 玩家點擊瞬間才開始掉落與計時
+        startGameLogic(); 
     };
     const moveDrag = (e) => {
         if(!isDragging || isCompleted) return;
@@ -988,7 +1026,6 @@ function initGameB() {
         gameArea.appendChild(el);
         minerals.push({ el: el, x: x, y: -20, speed: Math.random() * 2 + 1.5, active: true });
         
-        // 確保 setTimeout 受到 gameActive 控管，防止暴增迴圈
         if(!isCompleted) setTimeout(spawnMineral, Math.random() * 800 + 400); 
     }
 
@@ -1021,7 +1058,6 @@ function initGameB() {
         const score = Math.min(catchPct, 100);
         window.globalScores.b = score; window.addSoilToTube('b', '#b24d2e', score);
         
-        // 修改為智慧跳轉：滾動到層 A，且 A 層簡報從第 18 頁(索引 17)開始
         setTimeout(() => { window.triggerNextCourseStep('layer-a', 17); }, 2000);
     }
 }
@@ -1149,7 +1185,6 @@ function initGameA() {
         pctSpan.textContent = score; msg.classList.remove('hidden');
         window.globalScores.a = score; window.addSoilToTube('a', '#5c3a21', score);
         
-        // 修改為智慧跳轉：滾動到層 O，且 O 層簡報從第 22 頁(索引 21)開始
         setTimeout(() => { window.triggerNextCourseStep('layer-o', 21); }, 2000);
     }
 }
@@ -1161,16 +1196,16 @@ function initGameO() {
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
             <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;">腐植質累積: <span id="o-pct">0</span>%</div>
             <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="o-timer">15</span>秒</div>
-            <p style="font-size:0.9rem;color:#ccc;margin-bottom:5px;">💡 提示：在畫布上滑動或點擊以開始分解落葉！</p>
+            <p id="o-hint" style="font-size:1rem;color:#fff;margin-bottom:5px;font-weight:bold;text-align:center;background:rgba(230, 126, 34, 0.8);padding:5px 15px;border-radius:20px;">💡 必須先點擊下方「馬陸」或「蚯蚓」才能開始遊戲！</p>
             <div style="display:flex;gap:10px;margin-bottom:10px;z-index:10;">
-                <button class="d-btn active" data-type="millipede" style="background:var(--accent);border:2px solid white;color:white;padding:5px 10px;border-radius:5px;cursor:pointer;">🐛 馬陸</button>
-                <button class="d-btn" data-type="earthworm" style="background:rgba(255,255,255,0.2);border:2px solid #ccc;color:white;padding:5px 10px;border-radius:5px;cursor:pointer;">🪱 蚯蚓</button>
+                <button class="d-btn" data-type="millipede" style="background:rgba(255,255,255,0.2);border:2px solid #ccc;color:white;padding:8px 15px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1rem;">🐛 選擇馬陸</button>
+                <button class="d-btn" data-type="earthworm" style="background:rgba(255,255,255,0.2);border:2px solid #ccc;color:white;padding:8px 15px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1rem;">🪱 選擇蚯蚓</button>
             </div>
             <div id="o-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(0,0,0,0.2);border-radius:10px;cursor:pointer;">
-                <div id="player-org" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:2rem;display:flex;justify-content:center;align-items:center;user-select:none;touch-action:none;">🐛</div>
+                <div id="player-org" class="hidden" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:2rem;display:flex;justify-content:center;align-items:center;user-select:none;touch-action:none;">🐛</div>
             </div>
         </div>
-        <div id="o-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;">時間到！腐植質轉換為分數。</div>
+        <div id="o-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>腐植質轉換為分數。</div>
     `;
 
     const gameArea = document.getElementById('o-game-area');
@@ -1182,8 +1217,8 @@ function initGameO() {
     let humusPct = 0; let isCompleted = false; let gameLoop; let leaves = []; let fungis = [];
     let timeLeft = 15; const timerSpan = document.getElementById('o-timer');
     let timerInterval = null; let gameActive = false;
+    let selectionMade = false; 
 
-    // 取消 IntersectionObserver 自動觸發，改為玩家互動觸發
     function startGameLogic() {
         if(gameActive || isCompleted) return;
         gameActive = true;
@@ -1203,22 +1238,30 @@ function initGameO() {
 
     dBtns.forEach(btn => {
         btn.addEventListener('click', () => {
+            if(isCompleted) return;
+            
             dBtns.forEach(b => { b.style.background='rgba(255,255,255,0.2)'; b.style.borderColor='#ccc'; });
             btn.style.background='var(--accent)'; btn.style.borderColor='white';
+            
             orgType = btn.getAttribute('data-type');
             if(orgType === 'millipede') { playerOrg.textContent = '🐛'; catchRadius = 25; }
             else { playerOrg.textContent = '🪱'; catchRadius = 45; }
+            
+            playerOrg.classList.remove('hidden');
+            const hintEl = document.getElementById('o-hint');
+            hintEl.textContent = '💡 已啟動！左右滑動接住落葉與特殊落花。';
+            hintEl.style.background = 'rgba(0,0,0,0.5)';
+            
+            selectionMade = true;
+            startGameLogic();
         });
     });
 
     const handleMove = (e) => {
-        if(isCompleted) return;
-        startGameLogic(); // 第一下觸控或移動即開始遊戲
+        if(isCompleted || !selectionMade) return; 
         if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
         
         const rect = gameArea.getBoundingClientRect();
-        
-        // 修復：正確提取觸控或滑鼠的 clientX 值，避免 0 值誤判為 false
         let clientX;
         if (e.touches && e.touches.length > 0) clientX = e.touches[0].clientX;
         else clientX = e.clientX;
@@ -1234,9 +1277,6 @@ function initGameO() {
         playerOrg.style.left = playerX + 'px';
     };
 
-    // 支援點擊、觸控開始與滑動
-    gameArea.addEventListener('mousedown', startGameLogic);
-    gameArea.addEventListener('touchstart', startGameLogic, {passive: true});
     gameArea.addEventListener('mousemove', handleMove); 
     gameArea.addEventListener('touchmove', handleMove, {passive: false});
 
@@ -1252,7 +1292,6 @@ function initGameO() {
         gameArea.appendChild(el);
         leaves.push({ el, x, y: -30, speed: Math.random() * 1.5 + 1, isSpecial, active: true });
         
-        // 確保受到 isCompleted 保護，防多重迴圈
         if(!isCompleted) setTimeout(spawnLeaf, Math.random() * 600 + 300);
     }
 
@@ -1261,7 +1300,6 @@ function initGameO() {
         const orgInfo = extraOrgs[Math.floor(Math.random() * extraOrgs.length)];
         const f = document.createElement('div');
         f.style.position='absolute'; f.style.bottom='5px'; 
-        // 修正真菌的置中偏移視覺
         f.style.left=x+'px'; f.style.transform='translateX(-50%)'; 
         f.style.display='flex'; f.style.flexDirection='column'; f.style.alignItems='center';
         f.innerHTML = `<span style="font-size:1.8rem;">${orgInfo.emoji}</span><span style="font-size:0.7rem;color:#fff;margin-top:-5px;">${orgInfo.name}</span>`;
@@ -1292,30 +1330,41 @@ function initGameO() {
 
     function completeGame() {
         if(isCompleted) return;
-        isCompleted = true; msg.classList.remove('hidden'); leaves.forEach(l => l.el.remove());
-        const score = Math.min(Math.round(humusPct), 100); pctSpan.textContent = score;
-        window.globalScores.o = score; window.addSoilToTube('o', '#2c1e16', score);
+        isCompleted = true; 
+        msg.classList.remove('hidden'); 
+        leaves.forEach(l => l.el.remove());
+        const score = Math.min(Math.round(humusPct), 100); 
+        pctSpan.textContent = score;
+        window.globalScores.o = score; 
+        window.addSoilToTube('o', '#2c1e16', score);
         
-        // 修改為智慧跳轉：滾動到農業層，且農業層簡報從第 26 頁(索引 25)開始
         setTimeout(() => { window.triggerNextCourseStep('layer-agri', 25); }, 2000);
     }
 }
 
-// --- Game Agri Logic ---
+// --- Game Agri Logic (生態系動態升級版) ---
 function initGameAgri() {
     const container = document.getElementById('game-agri');
     container.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
             <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;">當前選擇: <span id="agri-vitality">尚未選擇</span></div>
             <div style="display:flex;gap:8px;margin:10px 0;z-index:10;padding:0 10px;">
-                <button class="farm-btn action-nature" id="btn-nature" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">🌱 自然栽培</button>
+                <button class="farm-btn action-nature" id="btn-nature" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">🌱 草生栽培</button>
                 <button class="farm-btn action-biopest" id="btn-biopest" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">🦠 生物農藥</button>
                 <button class="farm-btn action-chemical" id="btn-chemical" style="padding:8px 12px;font-size:1rem;border-radius:8px;border:2px solid white;cursor:pointer;color:white;background:rgba(0,0,0,0.6);">🧪 化學農藥</button>
             </div>
             
             <div id="farm-field" style="position:relative;width:100%;max-width:320px;height:220px;background:linear-gradient(to bottom, #87CEEB 40%, transparent 40%);border-radius:10px;overflow:hidden;margin-top:5px;border:2px solid rgba(255,255,255,0.2);">
-                <div id="soil-surface" style="position:absolute;bottom:0;width:100%;height:60%;background:#5a3c21;transition:all 2s ease;"></div>
-                <div id="crop" style="position:absolute;bottom:60%;left:50%;transform:translateX(-50%);font-size:3rem;transition:all 2s ease;transform-origin:bottom center;z-index:5;">🌱</div>
+                <!-- 地面與地下生態容器 -->
+                <div id="soil-surface" style="position:absolute;bottom:0;width:100%;height:60%;background:#5a3c21;transition:all 1s ease;"></div>
+                
+                <!-- 動態注入的生態系結構 -->
+                <div id="ecosystem-above" style="position:absolute; bottom:60%; left:0; width:100%; height:40%; display:flex; justify-content:space-around; align-items:flex-end; font-size:2rem; z-index:5; transition:opacity 0.5s;">
+                    <div style="font-size:3rem; margin-bottom:-10px;">🌱</div>
+                </div>
+                
+                <div id="ecosystem-below" style="position:absolute; top:40%; left:0; width:100%; height:60%; z-index:4; display:grid; grid-template-columns: repeat(4, 1fr); align-items:center; justify-items:center; gap:5px; padding:10px; font-size:1.2rem; opacity:0; transition:opacity 0.5s;">
+                </div>
             </div>
             
             <button id="calc-harvest-btn" class="hidden" style="margin-top:20px;padding:12px 25px;font-size:1.2rem;background:#f39c12;color:white;border:none;border-radius:30px;cursor:pointer;font-weight:bold;">🍌 結算收成</button>
@@ -1334,27 +1383,53 @@ function initGameAgri() {
     const btnBiopest = document.getElementById('btn-biopest');
     const btnChemical = document.getElementById('btn-chemical');
     const soil = document.getElementById('soil-surface');
-    const crop = document.getElementById('crop');
+    const ecoAbove = document.getElementById('ecosystem-above');
+    const ecoBelow = document.getElementById('ecosystem-below');
     const msg = document.getElementById('agri-message');
     const calcBtn = document.getElementById('calc-harvest-btn');
     const vSpan = document.getElementById('agri-vitality');
     
     let isCalculated = false; let currentMod = 1.0; let selectedMethod = "";
 
-    function setFarmOption(btn, mod, name, soilColor, cropIcon, cropFilter, msgHtml, msgColor) {
+    function setFarmOption(btn, mod, name, soilColor, aboveHTML, belowHTML, msgHtml, msgColor) {
         if(isCalculated) return;
+        
         [btnNature, btnBiopest, btnChemical].forEach(b => { b.style.boxShadow = 'none'; b.style.borderColor = 'white'; });
         btn.style.boxShadow = '0 0 10px white'; btn.style.borderColor = '#f1c40f';
         currentMod = mod; selectedMethod = name;
-        soil.style.background = soilColor; crop.textContent = cropIcon; crop.style.filter = cropFilter;
+        
+        // 視覺與生態系切換
+        soil.style.background = soilColor; 
+        ecoAbove.style.opacity = '0';
+        ecoBelow.style.opacity = '0';
+        
+        setTimeout(() => {
+            ecoAbove.innerHTML = aboveHTML;
+            ecoBelow.innerHTML = belowHTML;
+            ecoAbove.style.opacity = '1';
+            ecoBelow.style.opacity = '1';
+        }, 300);
+
         vSpan.textContent = `${name} (乘數 ${mod}x)`; vSpan.style.color = msgColor;
         msg.innerHTML = msgHtml; msg.style.color = msgColor; msg.classList.remove('hidden');
         calcBtn.classList.remove('hidden');
     }
 
-    btnNature.addEventListener('click', () => setFarmOption(btnNature, 1.0, "自然栽培", "#3e2723", "🌳", "drop-shadow(0 0 10px #2ecc71)", "<strong>完美的生態平衡</strong><br>雜草與作物共存，根系創造生物孔隙。", "#2ecc71"));
-    btnBiopest.addEventListener('click', () => setFarmOption(btnBiopest, 0.8, "生物農藥", "#4e342e", "🌳", "drop-shadow(0 0 5px #f1c40f)", "<strong>友善的折衷</strong><br>消滅特定害蟲，保留多數益蟲。", "#f1c40f"));
-    btnChemical.addEventListener('click', () => setFarmOption(btnChemical, 0.1, "化學農藥", "#795548", "🥀", "grayscale(80%) sepia(50%)", "<strong>短視的後果</strong><br>無差別毒殺！土壤快速鹽化、板結變硬。", "#e74c3c"));
+    // 草生栽培生態系模板 (蜜蜂、蜻蜓/蝴蝶、瓢蟲、雜草 | 地下：蚯蚓、線蟲、細菌、大量孔隙、根系)
+    const grassAbove = `<span class="eco-float" style="font-size:1.5rem; margin-bottom:20px;">🐝</span><span class="eco-float-fast" style="font-size:1.5rem; margin-bottom:30px;">🦋</span><span style="font-size:3rem; margin-bottom:-10px;">🌳</span><span class="eco-hop" style="font-size:1.2rem;">🐞</span><span style="font-size:1.5rem; margin-bottom:-5px;">🌿</span>`;
+    const grassBelow = `<span>🪱</span><span class="eco-pore"></span><span>🦠</span><span>〰️</span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span><span class="eco-pore"></span><span style="transform:scaleY(-1);opacity:0.5;">🌿</span><span class="eco-pore"></span><span>🪱</span><span class="eco-pore"></span><span>🦠</span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span>`;
+
+    // 生物農藥生態系模板 (鳥、穿山甲/刺蝟、瓢蟲 | 地下：一般土壤，少許蟲與孔隙)
+    const bioAbove = `<span class="eco-float" style="font-size:1.5rem; margin-bottom:35px;">🐦</span><span style="font-size:3rem; margin-bottom:-10px;">🌳</span><span class="eco-hop" style="font-size:1.2rem;">🐞</span><span style="font-size:1.8rem; transform:scaleX(-1);">🦔</span>`;
+    const bioBelow = `<span style="transform:scaleY(-1);opacity:0.5;">🌱</span><span>🪱</span><span></span><span class="eco-pore"></span><span></span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span><span>〰️</span><span></span><span class="eco-pore"></span><span></span><span></span><span style="transform:scaleY(-1);opacity:0.5;">🌱</span>`;
+
+    // 化學農藥生態系模板 (枯萎，無生物，無孔隙)
+    const chemAbove = `<span style="font-size:3rem; margin-bottom:-10px; filter:grayscale(80%) sepia(50%);">🥀</span>`;
+    const chemBelow = `<span style="opacity:0.2;">➖</span><span></span><span style="opacity:0.2;">➖</span><span></span><span></span><span style="opacity:0.2;">➖</span><span></span><span></span><span></span><span></span><span style="opacity:0.2;">➖</span><span></span>`;
+
+    btnNature.addEventListener('click', () => setFarmOption(btnNature, 1.0, "草生栽培", "#3e2723", grassAbove, grassBelow, "<strong>完美的生態平衡</strong><br>雜草與作物共存，根系創造生物孔隙。", "#2ecc71"));
+    btnBiopest.addEventListener('click', () => setFarmOption(btnBiopest, 0.8, "生物農藥", "#4e342e", bioAbove, bioBelow, "<strong>友善的折衷</strong><br>消滅特定害蟲，保留多數地上益蟲與小動物。", "#f1c40f"));
+    btnChemical.addEventListener('click', () => setFarmOption(btnChemical, 0.1, "化學農藥", "#795548", chemAbove, chemBelow, "<strong>短視的後果</strong><br>無差別毒殺！土壤快速鹽化、板結無孔隙。", "#e74c3c"));
 
     calcBtn.addEventListener('click', () => {
         if(isCalculated) return; isCalculated = true;
@@ -1366,19 +1441,27 @@ function initGameAgri() {
         
         let count = 1;
         if(finalVitality >= 400) count = 5; else if(finalVitality >= 300) count = 4; else if(finalVitality >= 200) count = 3; else if(finalVitality >= 100) count = 2;
-        let bananas = "🍌".repeat(count);
+        
+        // 變更為彩蛋機率判定：每個水果有 1% 機率變成酪梨
+        let rewardFruits = "";
+        for(let i = 0; i < count; i++) {
+            if(Math.random() < 0.01) {
+                rewardFruits += "🥑";
+            } else {
+                rewardFruits += "🍌";
+            }
+        }
 
         document.getElementById('scorecard-text').innerHTML = `前五層累積分數: <strong>${total}</strong> / 500<br>農法選擇: <strong>${selectedMethod}</strong> (x${currentMod})<br><br><div style="font-size:1.5rem;text-align:center;">最終土壤活力: <strong style="color:#2ecc71;">${finalVitality}</strong></div>`;
-        document.getElementById('banana-reward').innerHTML = bananas;
+        document.getElementById('banana-reward').innerHTML = rewardFruits;
         document.getElementById('final-scorecard-overlay').classList.remove('hidden');
 
-        // 結算後若處於完整模式，延遲彈出最終總結簡報 (索引 29)
         if (window.isFullCourseMode) {
             setTimeout(() => {
                 pptCurrentPage = 29;
                 updatePPT();
                 pptModal.classList.remove('hidden');
-            }, 3500); // 結算畫面看 3.5 秒後跳出總結
+            }, 3500);
         }
     });
 
@@ -1387,12 +1470,11 @@ function initGameAgri() {
 
 function initAllSystems() {
     const startBtn = document.getElementById('start-btn');
-    const heroPPTBtn = document.getElementById('hero-ppt-btn'); // 取得首頁的簡報按鈕
+    const heroPPTBtn = document.getElementById('hero-ppt-btn'); 
     const hero = document.querySelector('.hero');
     const mainContent = document.getElementById('soil-layers');
     const nav = document.getElementById('layer-nav');
     
-    // 一般開始按鈕 (單純玩遊戲)
     if (startBtn) {
         startBtn.addEventListener('click', () => {
             window.isFullCourseMode = false;
@@ -1406,14 +1488,12 @@ function initAllSystems() {
         });
     }
 
-    // 新增：完整課程簡報按鈕機制
     if (heroPPTBtn) {
         heroPPTBtn.addEventListener('click', () => {
-            window.isFullCourseMode = true; // 開啟全域跳轉旗標
+            window.isFullCourseMode = true; 
             hero.classList.add('hidden'); 
             mainContent.classList.remove('hidden'); 
             nav.classList.remove('hidden');
-            // 背景底層先切換到第一關 R 層，當簡報關閉時剛好在這裡
             setTimeout(() => {
                 const layerR = document.getElementById('layer-r');
                 if(layerR) layerR.scrollIntoView({ behavior: 'smooth' });
@@ -1447,7 +1527,6 @@ function initAllSystems() {
     initGameR(); initGameC(); initGameB(); initGameA(); initGameO(); initGameAgri();
 }
 
-// 確保腳本在載入完成後必定執行，避免 DOMContentLoaded 提前觸發導致漏接
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAllSystems);
 } else {
