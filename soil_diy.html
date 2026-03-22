@@ -953,12 +953,12 @@ function initGameB() {
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
             <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;">紅土化程度: <span id="b-pct">0</span>%</div>
             <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="b-timer">15</span>秒</div>
-            <p style="font-size:0.9rem;color:#ccc;margin-bottom:5px;">💡 提示：點擊或拖曳下方「澱積區」以開始遊戲！</p>
-            <div id="b-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:linear-gradient(to bottom, transparent, rgba(178, 77, 46, 0.1));transition:background-color 0.5s;">
-                <div id="catcher" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:100px;height:30px;background:rgba(255,255,255,0.2);border:2px solid #fff;border-radius:15px;display:flex;justify-content:center;align-items:center;font-weight:bold;cursor:grab;user-select:none;touch-action:none;">澱積區</div>
+            <p style="font-size:1rem;color:#fff;margin-bottom:5px;font-weight:bold;text-align:center;background:rgba(230, 126, 34, 0.8);padding:5px 15px;border-radius:20px;">💡 提示：在畫布上任意處滑動或點擊，控制澱積區接住礦物！</p>
+            <div id="b-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:linear-gradient(to bottom, transparent, rgba(178, 77, 46, 0.1));transition:background-color 0.5s;cursor:pointer;">
+                <div id="catcher" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:120px;height:40px;background:rgba(255,255,255,0.4);border:3px solid #fff;border-radius:20px;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:1.1rem;color:#fff;text-shadow:1px 1px 2px #000;box-shadow:0 4px 10px rgba(0,0,0,0.3);user-select:none;touch-action:none;">澱積區</div>
             </div>
         </div>
-        <div id="b-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;">時間到！礦物沉澱轉換為分數。</div>
+        <div id="b-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>礦物沉澱轉換為分數。</div>
     `;
 
     const gameArea = document.getElementById('b-game-area');
@@ -990,6 +990,7 @@ function initGameB() {
         if(isCompleted) return; 
         isDragging = true; 
         startGameLogic(); 
+        moveDrag(e); // 讓點擊瞬間就能移動橫桿
     };
     const moveDrag = (e) => {
         if(!isDragging || isCompleted) return;
@@ -1009,9 +1010,13 @@ function initGameB() {
     };
     const endDrag = () => { isDragging = false; };
 
-    catcher.addEventListener('mousedown', startDrag); catcher.addEventListener('touchstart', startDrag, {passive: false});
-    document.addEventListener('mousemove', moveDrag); document.addEventListener('touchmove', moveDrag, {passive: false});
-    document.addEventListener('mouseup', endDrag); document.addEventListener('touchend', endDrag);
+    // 改綁定至整個 gameArea，解決手機難以點中橫桿的問題
+    gameArea.addEventListener('mousedown', startDrag); 
+    gameArea.addEventListener('touchstart', startDrag, {passive: false});
+    gameArea.addEventListener('mousemove', moveDrag); 
+    gameArea.addEventListener('touchmove', moveDrag, {passive: false});
+    document.addEventListener('mouseup', endDrag); 
+    document.addEventListener('touchend', endDrag);
 
     function spawnMineral() {
         if(isCompleted) return;
