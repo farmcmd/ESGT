@@ -362,7 +362,7 @@ body {
 }
 #close-ppt-btn:hover { background-color: #c0392b; }
 
-/* QR Code Modal Styles */
+/* QR Code & Fullscreen Modal Styles */
 #qr-toggle-btn {
     position: fixed;
     top: 20px;
@@ -388,11 +388,10 @@ body {
     color: #111;
 }
 
-/* Fullscreen Button Styles */
 #fullscreen-btn {
     position: fixed;
     top: 20px;
-    right: 80px; /* 放在 QR Code 按鈕左側 */
+    right: 80px; 
     width: 50px;
     height: 50px;
     background-color: rgba(0, 0, 0, 0.6);
@@ -608,6 +607,11 @@ body {
             <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; z-index: 10;">
                 <button id="start-btn">開始探索</button>
                 <button class="open-ppt-btn" data-ppt-start="0" id="hero-ppt-btn">📖 完整教學簡報</button>
+            </div>
+            
+            <!-- 增加簡報筆提示 -->
+            <div style="margin-top: 30px; color: #ccc; font-size: 0.95rem; z-index: 10;">
+                <span style="background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.5);">🎮 支援無線簡報筆 (PageUp / PageDown) 翻頁控制</span>
             </div>
         </header>
 
@@ -959,10 +963,53 @@ function updatePPT() {
 pptBtnNext.addEventListener('click', () => { if (pptCurrentPage < pptTotalPages - 1) { pptCurrentPage++; updatePPT(); }});
 pptBtnPrev.addEventListener('click', () => { if (pptCurrentPage > 0) { pptCurrentPage--; updatePPT(); }});
 
+/* === 簡報筆與鍵盤全域控制邏輯 === */
 document.addEventListener('keydown', (e) => {
+    const pptModal = document.getElementById('ppt-modal');
+    const hero = document.querySelector('.hero');
+    const mainContent = document.getElementById('soil-layers');
+    
+    // 定義簡報筆/鍵盤對應按鍵 (下一頁：右/下/PageDown/空白鍵/Enter)
+    const nextKeys = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
+    // 定義簡報筆/鍵盤對應按鍵 (上一頁：左/上/PageUp/Backspace)
+    const prevKeys = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+
+    const isNext = nextKeys.includes(e.key);
+    const isPrev = prevKeys.includes(e.key);
+
+    if (!isNext && !isPrev) return;
+
+    // 避免按下空白鍵或方向鍵時，觸發瀏覽器預設的跳動捲動
+    if ([' ', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(e.key)) {
+        e.preventDefault();
+    }
+
     if (!pptModal.classList.contains('hidden')) {
-        if (e.key === 'ArrowRight') { pptBtnNext.click(); }
-        else if (e.key === 'ArrowLeft') { pptBtnPrev.click(); }
+        // 1. 若目前在 PPT 簡報模式
+        if (isNext) document.getElementById('ppt-next').click();
+        else if (isPrev) document.getElementById('ppt-prev').click();
+    } else if (!hero.classList.contains('hidden')) {
+        // 2. 若目前在首頁，按下一頁直接開始探索
+        if (isNext) document.getElementById('start-btn').click();
+    } else if (!mainContent.classList.contains('hidden')) {
+        // 3. 若目前在主軸互動關卡，控制上下滾動
+        const layers = ['layer-1', 'layer-2', 'layer-3', 'layer-4', 'layer-5', 'layer-6'];
+        let currentIndex = 0;
+        layers.forEach((id, index) => {
+            const section = document.getElementById(id);
+            // 判斷目前主要停留在哪一個區塊
+            if (mainContent.scrollTop >= (section.offsetTop - section.clientHeight / 2)) {
+                currentIndex = index;
+            }
+        });
+
+        if (isNext && currentIndex < layers.length - 1) {
+            const targetEl = document.getElementById(layers[currentIndex + 1]);
+            mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+        } else if (isPrev && currentIndex > 0) {
+            const targetEl = document.getElementById(layers[currentIndex - 1]);
+            mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+        }
     }
 });
 
