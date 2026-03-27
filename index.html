@@ -2366,7 +2366,7 @@
                 }
             });
 
-            // 處理最終確認送出資料到 Firebase
+            // 處理最終確認送出資料到 Firebase (修復假性報名機制)
             document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
                 if (!currentSocialData) return;
 
@@ -2375,23 +2375,29 @@
                 e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>資料寫入中...';
 
                 try {
-                    if (!isOfflineMode && db && typeof addDoc === 'function') {
-                        await addDoc(collection(db, 'event_registrations'), {
-                            eventName: window.currentRegEvent,
-                            platform: currentSocialData.platform,
-                            socialId: currentSocialData.id,        // 保持 socialId 相容 Python 匯出
-                            socialName: currentSocialData.name,    // 真實姓名
-                            socialPicture: currentSocialData.picture, // 大頭貼
-                            userId: document.getElementById('player-code')?.textContent || 'anonymous',
-                            timestamp: serverTimestamp()
-                        });
+                    // 強化防呆：如果 db 不存在或 addDoc 沒載入，直接拋出錯誤，不再默默跳過！
+                    if (!db || typeof addDoc !== 'function') {
+                        throw new Error("資料庫連線模組尚未準備就緒");
                     }
+
+                    // 正式寫入真實資料庫
+                    await addDoc(collection(db, 'event_registrations'), {
+                        eventName: window.currentRegEvent,
+                        platform: currentSocialData.platform,
+                        socialId: currentSocialData.id,        // 保持 socialId 相容 Python 匯出
+                        socialName: currentSocialData.name,    // 真實姓名
+                        socialPicture: currentSocialData.picture, // 大頭貼
+                        userId: document.getElementById('player-code')?.textContent || 'anonymous',
+                        timestamp: serverTimestamp()
+                    });
+                    
                     window.showToast('✅ 報名成功！感謝您的參與。');
 
                     window.closeModal('event-registration-modal');
                     window.openModal('event-schedule-modal');
                 } catch (err) {
-                    window.showToast('❌ 報名失敗，請檢查網路連線。');
+                    console.error("寫入報名失敗:", err);
+                    window.showToast('❌ 報名失敗，請檢查網路連線或稍後再試。');
                 } finally {
                     e.currentTarget.disabled = false;
                     e.currentTarget.innerHTML = originalHtml;
