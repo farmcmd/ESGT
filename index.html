@@ -2366,13 +2366,14 @@
                 }
             });
 
-            // 處理最終確認送出資料到 Firebase (補回樂觀渲染與錯誤攔截)
+            // 處理最終確認送出資料到 Firebase (修復重複宣告造成的 SyntaxError 語法錯誤)
             document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
                 if (!currentSocialData) return;
 
                 const originalHtml = e.currentTarget.innerHTML;
                 e.currentTarget.disabled = true;
-                e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>資料寫入中...';
+                // 辨識標記 1：按鈕文字改變
+                e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>連線至雲端中...';
 
                 try {
                     // 強化防呆：如果 db 不存在或 addDoc 沒載入，直接拋出錯誤
@@ -2383,18 +2384,17 @@
                     const regData = {
                         eventName: window.currentRegEvent,
                         platform: currentSocialData.platform,
-                        socialId: currentSocialData.id,        // 保持 socialId 相容 Python 匯出
-                        socialName: currentSocialData.name,    // 真實姓名
-                        socialPicture: currentSocialData.picture, // 大頭貼
+                        socialId: currentSocialData.id,
+                        socialName: currentSocialData.name,
+                        socialPicture: currentSocialData.picture,
                         userId: document.getElementById('player-code')?.textContent || 'anonymous',
                         timestamp: serverTimestamp()
                     };
 
-                    // 【樂觀渲染引擎 (Optimistic UI)】：不等伺服器回傳，強制先將大頭貼畫在畫面上！
+                    // 【樂觀渲染引擎】暫時給予本地時間
                     if (!globalEventRegistrations[window.currentRegEvent]) {
                         globalEventRegistrations[window.currentRegEvent] = [];
                     }
-                    // 暫時給予本地時間，讓畫面瞬間出現
                     globalEventRegistrations[window.currentRegEvent].unshift({
                         ...regData,
                         timestamp: { seconds: Math.floor(Date.now() / 1000) }
@@ -2404,13 +2404,16 @@
                     // 正式寫入真實資料庫
                     await addDoc(collection(db, 'event_registrations'), regData);
                     
-                    window.showToast('✅ 報名成功！感謝您的參與。');
+                    window.showToast('✅ 報名成功！大頭貼已即時上榜。');
 
                     window.closeModal('event-registration-modal');
                     window.openModal('event-schedule-modal');
                 } catch (err) {
                     console.error("寫入報名失敗:", err);
-                    window.showToast('❌ 報名失敗，請檢查網路連線或稍後再試。');
+                    // 辨識標記 2：全新的錯誤提示與彈窗
+                    const errMsg = err.code || err.message || '未知錯誤';
+                    window.showToast(`🚨 雲端連線被拒: ${errMsg}`);
+                    alert(`【系統連線診斷報告】\n\n錯誤代碼：${errMsg}\n\n👉 看到此畫面代表您已成功更新至最新版程式碼！\n\n1. 請確認您是在 github.io 網址測試，而非右側預覽視窗（會被沙盒阻擋）。\n2. 請確認您的 firebaseConfig 參數是否正確填寫。`);
                 } finally {
                     e.currentTarget.disabled = false;
                     e.currentTarget.innerHTML = originalHtml;
