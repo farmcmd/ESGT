@@ -368,6 +368,34 @@ body {
 }
 #close-ppt-btn:hover { background-color: #c0392b; }
 
+/* 畫筆工具按鈕與畫布 */
+.ppt-tool-btn {
+    background-color: #34495e;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+.ppt-tool-btn:hover { background-color: #2c3e50; }
+.ppt-tool-btn.active { background-color: #e67e22; box-shadow: 0 0 10px rgba(230, 126, 34, 0.8); }
+
+#draw-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50; /* 在簡報內容之上 */
+    pointer-events: none; /* 預設關閉，不阻擋滑鼠點擊PPT內部按鈕 */
+    cursor: crosshair;
+}
+#draw-canvas.active {
+    pointer-events: auto; /* 開啟畫筆時攔截點擊事件 */
+}
+
 .ppt-main {
     flex-grow: 1;
     display: flex;
@@ -631,11 +659,16 @@ body {
     <div id="ppt-modal" class="hidden">
         <div class="ppt-header">
             <div class="ppt-title">梅好時光：食農教育教學簡報</div>
-            <button id="close-ppt-btn">✖ 關閉</button>
+            <div style="display:flex; gap:10px;">
+                <button id="ppt-pen-btn" class="ppt-tool-btn">🖍️ 畫筆 (關)</button>
+                <button id="ppt-clear-btn" class="ppt-tool-btn hidden" style="background-color: #95a5a6;">🗑️ 清除</button>
+                <button id="close-ppt-btn">✖ 關閉</button>
+            </div>
         </div>
         
         <div class="ppt-main">
             <div class="slide-container" id="ppt-slide-container">
+                <canvas id="draw-canvas"></canvas>
                 <div class="progress-bar" id="ppt-progress-bar" style="width: 3.33%;"></div>
             </div>
         </div>
@@ -796,6 +829,12 @@ function updatePPT() {
     pptProgressBar.style.width = `${((pptCurrentPage + 1) / pptTotalPages) * 100}%`;
     pptBtnPrev.disabled = pptCurrentPage === 0;
     pptBtnNext.disabled = pptCurrentPage === pptTotalPages - 1;
+    
+    // 換頁時自動清除畫筆軌跡
+    const cvs = document.getElementById('draw-canvas');
+    if (cvs && cvs.getContext) {
+        cvs.getContext('2d').clearRect(0, 0, cvs.width, cvs.height);
+    }
 }
 
 pptBtnNext.addEventListener('click', () => { if (pptCurrentPage < pptTotalPages - 1) { pptCurrentPage++; updatePPT(); }});
@@ -1590,6 +1629,86 @@ function initAllSystems() {
             fsBtn.innerHTML = document.fullscreenElement ? '✖' : '⛶';
         });
     }
+    
+    // 初始化畫筆功能
+    const canvas = document.getElementById('draw-canvas');
+    const ctx = canvas.getContext('2d');
+    const penBtn = document.getElementById('ppt-pen-btn');
+    const clearBtn = document.getElementById('ppt-clear-btn');
+    let isDrawingMode = false;
+    let isDrawing = false;
+    let lastX = 0; let lastY = 0;
+
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        ctx.strokeStyle = '#e74c3c'; // 設定畫筆顏色為紅色
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    penBtn.addEventListener('click', () => {
+        isDrawingMode = !isDrawingMode;
+        if (isDrawingMode) {
+            resizeCanvas(); // 啟用時校準畫布大小
+            canvas.classList.add('active');
+            penBtn.classList.add('active');
+            penBtn.innerHTML = '🖍️ 畫筆 (開)';
+            clearBtn.classList.remove('hidden');
+        } else {
+            canvas.classList.remove('active');
+            penBtn.classList.remove('active');
+            penBtn.innerHTML = '🖍️ 畫筆 (關)';
+            clearBtn.classList.add('hidden');
+        }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    function getCanvasPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    const startDraw = (e) => {
+        if (!isDrawingMode) return;
+        e.preventDefault(); // 防止平板觸控時滾動頁面
+        isDrawing = true;
+        const pos = getCanvasPos(e);
+        lastX = pos.x; lastY = pos.y;
+    };
+
+    const draw = (e) => {
+        if (!isDrawing || !isDrawingMode) return;
+        e.preventDefault();
+        const pos = getCanvasPos(e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        lastX = pos.x; lastY = pos.y;
+    };
+
+    const stopDraw = () => { isDrawing = false; };
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    window.addEventListener('touchend', stopDraw);
     
     initGame1(); initGame2(); initGame3(); initGame4(); initGame5(); initGame6();
 }
