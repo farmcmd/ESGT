@@ -315,6 +315,42 @@ body {
     color: var(--ppt-text-accent);
 }
 
+.ppt-tools {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.tool-btn {
+    background: transparent;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    font-size: 1.2rem;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.tool-btn:hover, .tool-btn.active {
+    background: var(--accent);
+    color: #111;
+}
+
+#ppt-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 15;
+    pointer-events: none;
+}
+#ppt-canvas.drawing-mode {
+    pointer-events: auto;
+    cursor: crosshair;
+}
+
 .ppt-footer {
     display: flex;
     justify-content: center;
@@ -582,8 +618,9 @@ body {
     .layer-header { flex-direction: column; margin-bottom: 5px; }
 
     #ppt-modal { height: 100dvh; } 
-    .ppt-header { padding: 12px 15px; }
-    .ppt-title { font-size: 1rem; width: 65%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ppt-header { padding: 12px 15px; flex-wrap: wrap; gap: 10px; }
+    .ppt-title { font-size: 1rem; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;}
+    .ppt-tools { width: 100%; justify-content: center; }
     .ppt-footer { padding: 10px; gap: 8px; justify-content: space-between; }
     .ppt-footer button { padding: 12px 10px; font-size: 1rem; flex-grow: 1; }
     .ppt-main { padding: 10px; display: block; height: calc(100% - 110px); } 
@@ -756,11 +793,18 @@ body {
     <div id="ppt-modal" class="hidden">
         <div class="ppt-header">
             <div class="ppt-title">台灣金線連：食農與生態教育簡報</div>
-            <button id="close-ppt-btn">✖ 關閉</button>
+            <div class="ppt-tools">
+                <!-- 畫筆功能 -->
+                <button class="tool-btn hidden" id="ppt-draw-clear" title="清除筆跡">🗑️</button>
+                <button class="tool-btn" id="ppt-draw-toggle" title="開啟畫筆標記">🖍️</button>
+                <!-- 關閉簡報 -->
+                <button id="close-ppt-btn">✖ 關閉</button>
+            </div>
         </div>
         
         <div class="ppt-main">
             <div class="slide-container" id="ppt-slide-container">
+                <canvas id="ppt-canvas"></canvas>
                 <div class="progress-bar" id="ppt-progress-bar" style="width: 3.33%;"></div>
             </div>
         </div>
@@ -984,6 +1028,8 @@ function updatePPT() {
     pptProgressBar.style.width = `${((pptCurrentPage + 1) / pptTotalPages) * 100}%`;
     pptBtnPrev.disabled = pptCurrentPage === 0;
     pptBtnNext.disabled = pptCurrentPage === pptTotalPages - 1;
+
+    if (window.clearCanvas) window.clearCanvas();
 }
 
 pptBtnNext.addEventListener('click', () => { if (pptCurrentPage < pptTotalPages - 1) { pptCurrentPage++; updatePPT(); }});
@@ -2034,6 +2080,88 @@ function initAllSystems() {
     }
     
     initGame1(); initGame2(); initGame3(); initGame4(); initGame5(); initGame6();
+    initPPTDraw();
+}
+
+function initPPTDraw() {
+    const drawToggle = document.getElementById('ppt-draw-toggle');
+    const drawClear = document.getElementById('ppt-draw-clear');
+    const canvas = document.getElementById('ppt-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let isDrawMode = false;
+    let isDrawing = false;
+    let lastX = 0; let lastY = 0;
+
+    function resizeCanvas() {
+        const container = document.getElementById('ppt-slide-container');
+        if(container) {
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+        }
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 100); // 確保顯示後取得正確寬高
+
+    window.clearCanvas = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    drawToggle.addEventListener('click', () => {
+        isDrawMode = !isDrawMode;
+        if (isDrawMode) {
+            drawToggle.classList.add('active');
+            drawClear.classList.remove('hidden');
+            canvas.classList.add('drawing-mode');
+            resizeCanvas(); 
+        } else {
+            drawToggle.classList.remove('active');
+            drawClear.classList.add('hidden');
+            canvas.classList.remove('drawing-mode');
+        }
+    });
+
+    drawClear.addEventListener('click', window.clearCanvas);
+
+    function draw(e) {
+        if (!isDrawing || !isDrawMode) return;
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        [lastX, lastY] = [x, y];
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (!isDrawMode) return;
+        isDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        lastX = e.clientX - rect.left; lastY = e.clientY - rect.top;
+    });
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mouseout', () => isDrawing = false);
+
+    canvas.addEventListener('touchstart', (e) => {
+        if (!isDrawMode) return;
+        e.preventDefault(); 
+        isDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        lastX = e.touches[0].clientX - rect.left; lastY = e.touches[0].clientY - rect.top;
+    }, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    canvas.addEventListener('touchend', () => isDrawing = false);
 }
 
 if (document.readyState === 'loading') {
@@ -2045,3 +2173,4 @@ if (document.readyState === 'loading') {
     </script>
 </body>
 </html>
+```
