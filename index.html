@@ -1245,8 +1245,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        // 終極修復：將 addDoc 補入 import 清單中，打通寫入雲端的神經！
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, serverTimestamp, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        // 終極升級：補入 getDocs, query, where，打通按需抓取的神經網路！
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, serverTimestamp, deleteDoc, arrayUnion, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // ==========================================
@@ -1346,8 +1346,10 @@
         
         let globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; 
         let summaryState = { entMode: false, entSelected: new Set(), govMode: false, govSelected: new Set() };
-        let globalEventRegistrations = {}; // 新增：全域報名名單儲存庫
-        window.expandedRegEvents = new Set(); // 新增：追蹤目前展開報名名單的活動
+        let globalEventRegistrations = {}; // 全域報名名單儲存庫 (快取)
+        window.expandedRegEvents = new Set(); // 追蹤目前展開報名名單的活動
+        window.loadingRegEvents = new Set();  // 新增：追蹤正在向雲端請求資料的活動
+        window.fetchedRegEvents = new Set();  // 新增：追蹤已經完整抓取過，不需重複扣款的活動
 
         // 新增：解耦後的獨立渲染引擎，負責組合活動卡片與報名者大頭貼
         window.renderEventsListUI = function() {
@@ -1453,22 +1455,57 @@
                         </div>`;
                     }).join('');
                     
-                    // 終極升級：延遲渲染 (Lazy Rendering) 與折疊 UI
+                    // 終極升級：按需抓取 (On-Demand Fetching) 與 狀態渲染
                     const isExpanded = window.expandedRegEvents.has(ev.name);
-                    const toggleBtnText = isExpanded ? '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單' : '<i class="fas fa-chevron-down mr-1.5"></i>查看報名清單';
-                    const toggleBtnClass = isExpanded ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50';
+                    const isLoading = window.loadingRegEvents.has(ev.name);
+                    const hasFetched = window.fetchedRegEvents.has(ev.name);
+                    
+                    let toggleBtnText = '';
+                    let toggleBtnClass = '';
+                    
+                    if (isLoading) {
+                        toggleBtnText = '<i class="fas fa-spinner fa-spin mr-1.5"></i>載入中...';
+                        toggleBtnClass = 'bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200 shadow-none';
+                    } else if (isExpanded) {
+                        toggleBtnText = '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單';
+                        toggleBtnClass = 'bg-blue-100 text-blue-700 hover:bg-blue-200';
+                    } else if (hasFetched) {
+                        toggleBtnText = '<i class="fas fa-chevron-down mr-1.5"></i>查看名單';
+                        toggleBtnClass = 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50';
+                    } else {
+                        toggleBtnText = '<i class="fas fa-cloud-download-alt mr-1.5 animate-bounce"></i>載入報名名單';
+                        toggleBtnClass = 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50';
+                    }
+
+                    // 計數區塊切換：若未抓取過，提示點擊；抓取後顯示人數
+                    let countHtml = '';
+                    if (hasFetched || (regs && regs.length > 0)) {
+                        countHtml = `<p class="text-[14px] font-black text-blue-900 flex items-center m-0 tracking-wide"><i class="fas fa-users text-blue-500 mr-2 text-lg"></i>目前報名：<span class="text-blue-600 ml-1 text-lg">${regs.length}</span> 人</p>`;
+                    } else {
+                        countHtml = `<p class="text-[13px] font-bold text-gray-500 flex items-center m-0 tracking-wide"><i class="fas fa-database text-gray-400 mr-1.5 text-base"></i>點擊按鈕從雲端抓取名單</p>`;
+                    }
+
+                    // 展開內容區塊：分為 載入中 / 有資料 / 無資料
+                    let avatarsSection = '';
+                    if (isExpanded) {
+                        if (isLoading) {
+                            avatarsSection = `<div class="flex justify-center items-center py-5 text-blue-500 text-sm font-bold border-t border-blue-100 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`;
+                        } else if (regs.length > 0) {
+                            avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-blue-100 mt-2">${avatarsHtml}</div>`;
+                        } else {
+                            avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-blue-100 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`;
+                        }
+                    }
 
                     regsHtml = `
                     <div class="mb-4 pt-4 border-t-2 border-dashed border-blue-100 bg-blue-50/40 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">
-                            <p class="text-[14px] font-black text-blue-900 flex items-center m-0 tracking-wide">
-                                <i class="fas fa-users text-blue-500 mr-2 text-lg"></i>目前報名：<span class="text-blue-600 ml-1 text-lg">${regs.length}</span> 人
-                            </p>
-                            <button onclick="window.toggleRegList('${ev.name}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">
+                            ${countHtml}
+                            <button onclick="window.toggleRegList('${ev.name}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}" ${isLoading ? 'disabled' : ''}>
                                 ${toggleBtnText}
                             </button>
                         </div>
-                        ${isExpanded ? `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-blue-100 mt-2">${avatarsHtml}</div>` : ''}
+                        ${avatarsSection}
                     </div>`;
                 } else {
                     // 移除冗餘推廣文字，保持版面簡潔，僅顯示權責範圍聲明，並微調底部間距 (pb-2)
@@ -1524,14 +1561,53 @@
             if(typeof updateProjectDropdown === 'function') updateProjectDropdown();
         };
         
-        // 新增：全域報名名單展開切換器
-        window.toggleRegList = function(eventName) {
+        // 終極升級：全域報名名單展開切換器 (結合非同步按需撈取 On-Demand Fetching)
+        window.toggleRegList = async function(eventName) {
+            // 情境 1：目前是展開的 ➔ 收合
             if (window.expandedRegEvents.has(eventName)) {
                 window.expandedRegEvents.delete(eventName);
-            } else {
+                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+            } 
+            // 情境 2：目前是收合的 ➔ 準備展開
+            else {
                 window.expandedRegEvents.add(eventName);
+                
+                // 防呆：如果這份名單還沒有從 Firebase 抓過，就發出請求
+                if (!window.fetchedRegEvents.has(eventName)) {
+                    window.loadingRegEvents.add(eventName); // 標示為載入中，觸發 UI Loading
+                    if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                    
+                    try {
+                        if (db && !isOfflineMode) {
+                            // 使用 where 條件，精準只撈取該活動的報名文件！(極大化省錢)
+                            const q = query(collection(db, 'event_registrations'), where('eventName', '==', eventName));
+                            const querySnapshot = await getDocs(q);
+                            
+                            const fetchedRegs = [];
+                            querySnapshot.forEach((doc) => {
+                                fetchedRegs.push(doc.data());
+                            });
+                            
+                            // 覆寫快取，並標記為已抓取
+                            globalEventRegistrations[eventName] = fetchedRegs;
+                            window.fetchedRegEvents.add(eventName);
+                            console.log(`[智慧節流] 成功從雲端抓取「${eventName}」名單，共 ${fetchedRegs.length} 筆，已快取！`);
+                        } else {
+                            if (!globalEventRegistrations[eventName]) globalEventRegistrations[eventName] = [];
+                        }
+                    } catch (e) {
+                        console.error("載入名單失敗:", e);
+                        window.showToast("載入名單失敗，請檢查網路連線或權限");
+                        window.expandedRegEvents.delete(eventName); // 失敗則退回未展開狀態
+                    } finally {
+                        window.loadingRegEvents.delete(eventName); // 移除載入狀態
+                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                    }
+                } else {
+                    // 情境 3：已經抓過了，直接無縫展開 (0 雲端消耗)
+                    if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                }
             }
-            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
         window.toastTimer = null;
@@ -2158,22 +2234,16 @@
                     renderCertifications();
                 });
 
-                // 新增：即時監聽報名資料庫，瞬間抓取最新大頭貼 (加入錯誤攔截與防呆提示)
+                // =========================================================================================
+                // ⚠️ 重大升級：我們已經徹底拔除了下方這個「全域監聽」！
+                // 系統現在採用 toggleRegList 內的 getDocs() 進行精準「按需抓取 (On-Demand Fetching)」。
+                // 節省了龐大的初始連線讀取成本，並避免了 DOM 記憶體崩潰。
+                // =========================================================================================
+                /*
                 onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
-                    console.log(`[系統連線] 成功讀取報名資料，共 ${snapshot.size} 筆`);
-                    globalEventRegistrations = {};
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if(data.eventName) {
-                            if(!globalEventRegistrations[data.eventName]) globalEventRegistrations[data.eventName] = [];
-                            globalEventRegistrations[data.eventName].push(data);
-                        }
-                    });
-                    if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                }, (error) => {
-                    console.error("❌ 讀取報名名單失敗 (Firebase 安全規則阻擋):", error);
-                    window.showToast("⚠️ 無法載入大頭貼，請檢查 Firebase 讀取權限！");
+                    ... (舊版全域同步邏輯已移除) ...
                 });
+                */
 
                 // 修復：將原本寫死的活動渲染移除，改交由頂部的 renderEventsListUI 統一處理，避免舊代碼覆蓋導致活動消失
                 onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
