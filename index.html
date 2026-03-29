@@ -69,6 +69,10 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .hidden { display: none !important; }
         
+        /* 新增：名單展開漸顯動畫 */
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
+        
         #header-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.6; }
         header { position: relative; overflow: hidden; z-index: 10; }
         .header-content { position: relative; z-index: 10; }
@@ -1343,6 +1347,7 @@
         let globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; 
         let summaryState = { entMode: false, entSelected: new Set(), govMode: false, govSelected: new Set() };
         let globalEventRegistrations = {}; // 新增：全域報名名單儲存庫
+        window.expandedRegEvents = new Set(); // 新增：追蹤目前展開報名名單的活動
 
         // 新增：解耦後的獨立渲染引擎，負責組合活動卡片與報名者大頭貼
         window.renderEventsListUI = function() {
@@ -1448,11 +1453,26 @@
                         </div>`;
                     }).join('');
                     
-                    // 獨立顯眼的榮譽榜區塊底板 (加入權責範圍聲明)
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-blue-100 bg-blue-50/40 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-1"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1.5"><p class="text-[13px] font-black text-blue-900 flex items-center m-0"><i class="fas fa-users text-blue-500 mr-2 text-lg"></i>最新報名名單 (${regs.length}人)</p><p class="text-[10px] text-blue-600/70 font-bold m-0"><i class="fas fa-shield-alt mr-1 opacity-70"></i>由本站辦理或委託辦理之活動才適用快速報名</p></div><div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-1 pr-2">${avatarsHtml}</div></div>`;
+                    // 終極升級：延遲渲染 (Lazy Rendering) 與折疊 UI
+                    const isExpanded = window.expandedRegEvents.has(ev.name);
+                    const toggleBtnText = isExpanded ? '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單' : '<i class="fas fa-chevron-down mr-1.5"></i>查看報名清單';
+                    const toggleBtnClass = isExpanded ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50';
+
+                    regsHtml = `
+                    <div class="mb-4 pt-4 border-t-2 border-dashed border-blue-100 bg-blue-50/40 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">
+                            <p class="text-[14px] font-black text-blue-900 flex items-center m-0 tracking-wide">
+                                <i class="fas fa-users text-blue-500 mr-2 text-lg"></i>目前報名：<span class="text-blue-600 ml-1 text-lg">${regs.length}</span> 人
+                            </p>
+                            <button onclick="window.toggleRegList('${ev.name}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">
+                                ${toggleBtnText}
+                            </button>
+                        </div>
+                        ${isExpanded ? `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-blue-100 mt-2">${avatarsHtml}</div>` : ''}
+                    </div>`;
                 } else {
                     // 移除冗餘推廣文字，保持版面簡潔，僅顯示權責範圍聲明，並微調底部間距 (pb-2)
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"><p class="text-[13px] font-black text-gray-500 flex items-center m-0"><i class="fas fa-users text-gray-400 mr-2 text-lg"></i>最新報名名單 (0人)</p><p class="text-[10px] text-gray-400 font-bold m-0"><i class="fas fa-shield-alt mr-1 opacity-70"></i>由本站辦理或委託辦理之活動才適用快速報名</p></div></div>`;
+                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"><p class="text-[13px] font-black text-gray-500 flex items-center m-0"><i class="fas fa-users text-gray-400 mr-2 text-lg"></i>報名人數：0 人</p><p class="text-[10px] text-gray-400 font-bold m-0"><i class="fas fa-shield-alt mr-1 opacity-70"></i>由本站辦理之活動才適用快速報名</p></div></div>`;
                 }
                 // ---------------------------------------------
 
@@ -1502,6 +1522,16 @@
         window.triggerGovSearch = function() {
             if(typeof renderGovDashboard === 'function') renderGovDashboard();
             if(typeof updateProjectDropdown === 'function') updateProjectDropdown();
+        };
+        
+        // 新增：全域報名名單展開切換器
+        window.toggleRegList = function(eventName) {
+            if (window.expandedRegEvents.has(eventName)) {
+                window.expandedRegEvents.delete(eventName);
+            } else {
+                window.expandedRegEvents.add(eventName);
+            }
+            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
         window.toastTimer = null;
@@ -2455,6 +2485,10 @@
                         ...regData,
                         timestamp: { seconds: Math.floor(Date.now() / 1000) }
                     });
+                    
+                    // 新增：報名成功後，自動展開該活動的報名名單，讓使用者看見自己上榜！
+                    window.expandedRegEvents.add(window.currentRegEvent);
+                    
                     if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
 
                     // 正式寫入真實資料庫
