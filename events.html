@@ -71,7 +71,9 @@
             <div class="inline-flex items-center justify-center bg-white/20 px-4 py-1.5 rounded-full mb-4 shadow-sm backdrop-blur-sm border border-white/30">
                 <i class="fas fa-leaf text-yellow-200 mr-2"></i><span class="text-sm font-bold tracking-widest">探探里山 ESGT</span>
             </div>
+            <!-- 主標題更新 -->
             <h1 class="text-3xl md:text-5xl font-black tracking-wide mb-2 drop-shadow-md">最新活動訊息與報名專區</h1>
+            <!-- 副標題更新 -->
             <p class="mt-3 text-sm md:text-base font-bold tracking-wider opacity-90 leading-relaxed max-w-2xl mx-auto">體驗永續旅遊，參與在地食農教育，報名在地社團第一手活動訊息與訓練課程</p>
         </div>
     </header>
@@ -107,7 +109,7 @@
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
-    <!-- 活動快速報名 Modal (LINE 單軌大頭貼授權版) -->
+    <!-- 活動快速報名 Modal -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -147,7 +149,7 @@
         </div>
     </div>
 
-    <!-- 社群快速分享 Modal (電腦版降級備用) -->
+    <!-- 社群快速分享 Modal -->
     <div id="share-event-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('share-event-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -190,7 +192,6 @@
         window.currentEventsList = [];
         let globalEventRegistrations = {};
         window.isRegSnapshotLoaded = false;
-        window.expandedRegEvents = new Set();
 
         // 通用工具函數
         window.toastTimer = null;
@@ -269,17 +270,7 @@
             window.closeModal('share-event-modal');
         });
 
-        // 極速展開名單邏輯
-        window.toggleRegList = function(eventName) {
-            if (window.expandedRegEvents.has(eventName)) {
-                window.expandedRegEvents.delete(eventName);
-            } else {
-                window.expandedRegEvents.add(eventName);
-            }
-            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-        };
-
-        // 獨立卡片渲染引擎
+        // 獨立卡片渲染引擎 (✨ 升級：移除展開邏輯，改為直接渲染名單)
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -312,7 +303,7 @@
                 let regsHtml = '';
                 const isRegOpen = ev.isRegistrationOpen !== false; 
                 
-                // ✨ 分享按鈕：加入 w-fit 確保在並排時維持原始比例
+                // 分享按鈕 HTML
                 const shareBtnHtml = `<button onclick="window.shareSpecificEvent('${safeEventName}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0 w-fit"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>`;
 
                 if(isRegOpen) { 
@@ -350,11 +341,6 @@
                         return `<div class="flex items-center shrink-0 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm gap-3 hover:border-yellow-300 transition-all duration-300 group"><img src="${r.socialPicture || 'https://via.placeholder.com/150'}" class="w-10 h-10 rounded-full border-2 ${borderColor} shadow-sm object-cover flex-shrink-0 ${avatarStyle}"><div class="flex flex-col items-start min-w-[120px]"><div class="flex items-center gap-2 mb-1"><span class="text-[13px] ${nameStyle} font-bold tracking-wide">${r.socialName || '匿名'}</span><span class="bg-yellow-100 text-yellow-800 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border border-yellow-200 whitespace-nowrap">${timeStr}</span></div><div class="flex items-center gap-1.5"><span class="text-[10px] text-gray-500 font-mono tracking-tighter bg-gray-50 border border-gray-200 px-1.5 py-px rounded w-fit shadow-sm">${displayId}</span>${customTag}</div></div></div>`;
                     }).join('');
                     
-                    const isExpanded = window.expandedRegEvents.has(ev.name);
-                    
-                    let toggleBtnText = isExpanded ? '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單' : '<i class="fas fa-chevron-down mr-1.5"></i>查看報名清單';
-                    let toggleBtnClass = isExpanded ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50';
-
                     let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
                     if (window.isRegSnapshotLoaded) { 
                         countDisplay = `<span class="text-yellow-600 mx-1 text-base font-black">${regs.length}</span>`; 
@@ -362,21 +348,18 @@
                     
                     const countHtml = `<p class="text-[11px] font-bold text-gray-700 flex items-center m-0 tracking-wide"><i class="fas fa-users text-yellow-500 mr-1.5 text-base"></i>已報名：${countDisplay} 人</p>`;
 
+                    // ✨ 修改：名單內容隨資料自動顯現，不再需要按鈕與 isExpanded 判斷
                     let avatarsSection = '';
-                    if (isExpanded) {
-                        if (!window.isRegSnapshotLoaded) { 
-                            avatarsSection = `<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`; 
-                        } else if (regs.length > 0) { 
-                            avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-200 mt-2">${avatarsHtml}</div>`; 
-                        } else { 
-                            avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-yellow-200 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`; 
-                        }
+                    if (!window.isRegSnapshotLoaded) { 
+                        avatarsSection = `<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`; 
+                    } else if (regs.length > 0) { 
+                        avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-200 mt-2">${avatarsHtml}</div>`; 
+                    } else { 
+                        avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-yellow-200 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`; 
                     }
 
-                    // ✨ 修改：恢復水平排列 (flex items-center flex-wrap gap-3)
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div><button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">${toggleBtnText}</button></div>${avatarsSection}</div>`;
+                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div></div>${avatarsSection}</div>`;
                 } else {
-                    // ✨ 修改：恢復水平排列 (flex items-center flex-wrap gap-3)
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3"><p class="text-[10px] font-black text-gray-500 flex items-center m-0"><i class="fas fa-users text-gray-400 mr-1.5 text-base"></i>已報名：0 人</p>${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-shield-alt mr-1 opacity-70"></i>由本站辦理之活動才適用快速報名</p></div></div>`;
                 }
 
@@ -397,7 +380,6 @@
                         }
                     }
                     
-                    // ✨ 更新：報名按鈕改為 LINE 官方綠色漸層 (#06C755)，文案改為「LINE+1 快速報名」
                     const quickRegBtnHtml = isRegOpen 
                         ? `<button onclick="window.openRegistrationModal('${ev.name.replace(/'/g, "\\'")}')" class="shrink-0 w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-white text-lg"></i>LINE+1 快速報名</button>` 
                         : `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
@@ -517,7 +499,7 @@
 
                 if (!globalEventRegistrations[window.currentRegEvent]) globalEventRegistrations[window.currentRegEvent] = [];
                 globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
-                window.expandedRegEvents.add(window.currentRegEvent);
+                
                 if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
 
                 await addDoc(collection(db, 'event_registrations'), regData);
