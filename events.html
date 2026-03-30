@@ -77,14 +77,10 @@
 
     <main class="container mx-auto p-4 md:p-8 relative z-20 -mt-6">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-100">
+            <!-- 頂部標題區：已將靜態按鈕移除，釋放空間 -->
             <div class="flex flex-wrap justify-between items-center mb-6 pb-6 border-b border-gray-100 gap-4">
                 <div>
                     <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2"><i class="fas fa-calendar-check text-yellow-500"></i> 近期開放活動</h2>
-                </div>
-                <div class="flex gap-2">
-                    <a href="https://farmcmd.github.io/ESGT/" class="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-sm font-bold rounded-xl transition-all shadow-sm flex items-center group">
-                        <i class="fas fa-home mr-2 text-gray-400 group-hover:text-gray-600 transition-colors"></i> 前往主系統
-                    </a>
                 </div>
             </div>
 
@@ -97,6 +93,14 @@
             </div>
         </div>
     </main>
+
+    <!-- ✨ 升級：浮動導航按鈕 (常駐右下角) -->
+    <a href="https://farmcmd.github.io/ESGT/" class="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[90] flex items-center gap-2 px-4 py-3 bg-white text-gray-700 rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.15)] border-2 border-gray-200 hover:border-yellow-400 hover:bg-yellow-50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+        <div class="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-colors">
+            <i class="fas fa-home text-gray-500 group-hover:text-white transition-colors"></i>
+        </div>
+        <span class="text-sm font-bold tracking-wide pr-2 group-hover:text-yellow-700">前往主系統</span>
+    </a>
 
     <!-- ======================================================== -->
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
@@ -181,10 +185,10 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         let db = null, auth = null;
         
-        // 狀態管理 (包含最新優化：加入 snapshotLoaded 標記以利瞬間顯示)
+        // 狀態管理 (包含 snapshotLoaded 標記以利瞬間顯示)
         window.currentEventsList = [];
         let globalEventRegistrations = {};
-        window.isRegSnapshotLoaded = false; // ✨ 追蹤報名庫是否已同步
+        window.isRegSnapshotLoaded = false;
         window.expandedRegEvents = new Set();
 
         // 通用工具函數
@@ -264,7 +268,7 @@
             window.closeModal('share-event-modal');
         });
 
-        // ✨ 極速展開名單邏輯 (消除冗餘讀取)
+        // 極速展開名單邏輯 (消除冗餘讀取)
         window.toggleRegList = function(eventName) {
             if (window.expandedRegEvents.has(eventName)) {
                 window.expandedRegEvents.delete(eventName);
@@ -347,7 +351,7 @@
                     let toggleBtnText = isExpanded ? '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單' : '<i class="fas fa-chevron-down mr-1.5"></i>查看報名清單';
                     let toggleBtnClass = isExpanded ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50';
 
-                    // ✨ 智慧顯示：只要資料庫就緒，瞬間印出真實人數
+                    // 智慧顯示：只要資料庫就緒，瞬間印出真實人數
                     let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
                     if (window.isRegSnapshotLoaded) { 
                         countDisplay = `<span class="text-yellow-600 mx-1 text-lg font-black">${regs.length}</span>`; 
@@ -369,7 +373,7 @@
                 }
 
                 if(isExpired) {
-                    return `<div data-event-name="${safeEventName}" class="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享</button><h4 class="text-xl font-bold text-gray-600 mb-3 pr-20 leading-snug">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> ${ev.date}</div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">備註:</span> <span class="leading-relaxed text-gray-500">${ev.remark}</span></p>` : ''}</div>${regsHtml}<a href="https://farmcmd.github.io/ESGT/" target="_blank" class="w-full py-3 bg-gray-100 text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-200 transition text-sm font-bold shadow-sm flex items-center justify-center mt-2"><i class="fas fa-home mr-1.5 text-lg"></i> 前往主系統查看成效</a></div>`;
+                    return `<div data-event-name="${safeEventName}" class="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享</button><h4 class="text-xl font-bold text-gray-600 mb-3 pr-20 leading-snug">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> ${ev.date}</div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">備註:</span> <span class="leading-relaxed text-gray-500">${ev.remark}</span></p>` : ''}</div>${regsHtml}</div>`;
                 } else {
                     let regMethodHtml = '';
                     if (isRegOpen) { 
@@ -541,7 +545,7 @@
                         });
 
                         onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
-                            window.isRegSnapshotLoaded = true; // ✨ 標記：報名資料庫已完成即時同步
+                            window.isRegSnapshotLoaded = true; // 標記：報名資料庫已完成即時同步
                             globalEventRegistrations = {};
                             snapshot.forEach(doc => {
                                 const data = doc.data();
