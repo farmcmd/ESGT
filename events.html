@@ -142,12 +142,40 @@
         </div>
     </div>
 
+    <!-- 社群快速分享 Modal (電腦版降級備用) -->
+    <div id="share-event-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('share-event-modal')"><i class="fas fa-times text-xl"></i></button>
+            <h3 class="text-xl font-bold text-gray-800 mb-1">分享此活動</h3>
+            <p class="text-xs text-gray-500 mb-6">選擇您想使用的分享方式</p>
+            <div class="grid grid-cols-4 gap-3 mb-2">
+                <button id="share-line-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-[#06C755]/10 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fab fa-line text-3xl text-[#06C755] mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">LINE</span>
+                </button>
+                <button id="share-fb-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-[#1877F2]/10 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fab fa-facebook text-3xl text-[#1877F2] mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">Facebook</span>
+                </button>
+                <button id="share-x-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-gray-200 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fab fa-x-twitter text-3xl text-gray-800 mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">X</span>
+                </button>
+                <button id="share-copy-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fas fa-link text-3xl text-blue-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">複製連結</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 系統核心腳本 -->
     <script type="module">
         window.hasHandledDeepLink = false;
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        // 確保 addDoc 寫入模組已完美導入
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // Firebase 設定
@@ -176,59 +204,63 @@
         window.openModal = function(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); };
         window.closeModal = function(modalId) { document.getElementById(modalId)?.classList.add('hidden'); };
 
-        // ✨ 升級：雙重智慧分享引擎 (Native Share + Modal Fallback)
+        // ✨ 雙重智慧分享引擎 (加入 LINE/FB 內建瀏覽器偵測與繞道機制)
         window.currentShareData = { url: '', title: '', text: '' };
 
-        window.shareSpecificEvent = async function(encodedEventName) {
-            const eventName = decodeURIComponent(encodedEventName); 
-            const url = new URL(window.location.href); 
-            url.hash = ''; 
-            url.searchParams.set('event', eventName);
-            const finalUrl = url.toString(); 
-            
-            // 預先準備好吸引人的分享文案
-            const shareTitle = `探探里山活動：${eventName}`;
-            const shareText = `🔗 邀請您一起參加【${eventName}】！\n點擊專屬連結直接查看活動詳情與報名資訊👇`;
+        window.shareSpecificEvent = function(encodedEventName) {
+            try {
+                const eventName = decodeURIComponent(encodedEventName); 
+                const url = new URL(window.location.href); 
+                url.hash = ''; 
+                url.searchParams.set('event', eventName);
+                const finalUrl = url.toString(); 
+                
+                const shareTitle = `探探里山活動：${eventName}`;
+                const shareText = `🔗 邀請您一起參加【${eventName}】！\n點擊專屬連結直接查看活動詳情與報名資訊👇`;
 
-            window.currentShareData = { url: finalUrl, title: shareTitle, text: shareText };
+                window.currentShareData = { url: finalUrl, title: shareTitle, text: shareText };
 
-            // 1. 優先嘗試呼叫手機/系統原生的分享介面 (Web Share API)
-            if (navigator.share) {
-                try {
-                    await navigator.share({
+                // 資安與相容性偵測：判斷是否為 LINE 或 Facebook 的內建瀏覽器 (In-App Browser)
+                const ua = navigator.userAgent || navigator.vendor || window.opera;
+                const isInAppBrowser = (ua.indexOf('Line') > -1) || (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1);
+
+                // 1. 若非內建瀏覽器且支援原生 API，優先呼叫手機原生分享
+                if (navigator.share && !isInAppBrowser) {
+                    navigator.share({
                         title: shareTitle,
                         text: shareText,
                         url: finalUrl,
+                    }).then(() => {
+                        window.showToast('✅ 活動分享成功！');
+                    }).catch((err) => {
+                        console.warn('原生分享失敗或取消:', err);
+                        if (err.name !== 'AbortError') { window.openModal('share-event-modal'); }
                     });
-                    window.showToast('✅ 活動分享成功！');
-                    return; // 成功呼叫原生分享即結束
-                } catch (err) {
-                    console.log('使用者取消或原生分享失敗，降級使用自訂彈窗。', err);
+                } else {
+                    // 2. 降級彈出自訂社群視窗
+                    window.openModal('share-event-modal');
                 }
+            } catch(e) {
+                console.error("分享準備過程發生錯誤", e);
+                window.openModal('share-event-modal'); 
             }
-            
-            // 2. 若不支援原生 API 或失敗，優雅降級彈出我們自訂的社群視窗
-            window.openModal('share-event-modal');
         };
 
         // --- 綁定自訂社群分享視窗的按鈕事件 ---
         document.getElementById('share-line-btn')?.addEventListener('click', () => {
             const { url, text } = window.currentShareData;
-            // 串接 LINE 官方分享網址
             window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text + '\n' + url)}`, '_blank');
             window.closeModal('share-event-modal');
         });
 
         document.getElementById('share-fb-btn')?.addEventListener('click', () => {
             const { url } = window.currentShareData;
-            // 串接 Facebook 官方分享網址 (FB 僅支援吃網址，不支援預設文字)
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
             window.closeModal('share-event-modal');
         });
 
         document.getElementById('share-x-btn')?.addEventListener('click', () => {
-            const { url, title, text } = window.currentShareData;
-            // 串接 X (Twitter) 官方分享網址
+            const { url, text } = window.currentShareData;
             window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
             window.closeModal('share-event-modal');
         });
@@ -240,7 +272,6 @@
             try { document.execCommand('copy'); window.showToast('🔗 專屬連結已複製！'); } catch (err) { window.prompt("請手動複製網址：", url); } document.body.removeChild(textArea);
             window.closeModal('share-event-modal');
         });
-        // ----------------------------------------
 
         window.toggleRegList = async function(eventName) {
             if (window.expandedRegEvents.has(eventName)) {
@@ -390,7 +421,6 @@
             
             if(container) container.innerHTML = html;
 
-            // 深層定位導航啟動器
             if (!window.hasHandledDeepLink && processedEvents.length > 0) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const eventParam = urlParams.get('event');
@@ -451,14 +481,20 @@
             window.openModal('event-registration-modal');
         };
 
-        document.getElementById('line-login-btn')?.addEventListener('click', () => {
-            if (MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return window.showToast('⚠️ 系統尚未設定 LINE LIFF ID');
-            if (!liff.isLoggedIn()) {
-                localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
-                liff.login({ redirectUri: window.location.href });
-            } else {
-                window.showToast('🔄 授權成功，載入資料中...');
-                liff.getProfile().then(profile => {
+        // ✨ LINE 登入按鈕裝上非同步氣囊與沙盒阻擋偵測
+        document.getElementById('line-login-btn')?.addEventListener('click', async () => {
+            if (typeof MY_LINE_LIFF_ID === 'undefined' || MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') {
+                return window.showToast('⚠️ 系統尚未設定 LINE LIFF ID');
+            }
+            try {
+                await liff.ready; 
+
+                if (!liff.isLoggedIn()) {
+                    localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
+                    liff.login({ redirectUri: window.location.href });
+                } else {
+                    window.showToast('🔄 授權成功，載入資料中...');
+                    const profile = await liff.getProfile();
                     currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                     document.getElementById('social-user-avatar').src = currentSocialData.picture;
                     document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
@@ -466,7 +502,11 @@
                     document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
                     document.getElementById('social-auth-step').classList.add('hidden');
                     document.getElementById('social-preview-step').classList.remove('hidden');
-                });
+                }
+            } catch (err) {
+                console.error("LINE 登入呼叫失敗:", err);
+                window.showToast('🚨 無法啟動 LINE 授權！');
+                alert('【環境安全阻擋】\n\n無法啟動 LINE 登入。這通常是因為：\n1. 您正在右側的 AI 預覽視窗測試（沙盒會嚴格阻擋外部授權跳轉）。\n2. 您在電腦本機端雙擊開啟。\n\n👉 解決方案：請將此檔案上傳至 GitHub，並在正式網址測試即可恢復正常！');
             }
         });
 
@@ -477,7 +517,7 @@
             e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
 
             try {
-                if (!db) throw new Error("資料庫未連線");
+                if (!db || typeof addDoc !== 'function') throw new Error("資料庫連線模組未就緒");
 
                 const regData = {
                     eventName: window.currentRegEvent,
@@ -520,7 +560,6 @@
                 
                 onAuthStateChanged(auth, user => { 
                     if(user && db) {
-                        // 僅監聽與活動報名相關的資料表
                         onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
                             if(docSnap.exists() && docSnap.data().events) {
                                 window.currentEventsList = docSnap.data().events; 
