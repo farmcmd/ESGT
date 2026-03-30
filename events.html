@@ -130,7 +130,7 @@
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
-    <!-- 10.5 活動快速報名 Modal (終極升級：LINE 單軌大頭貼授權版) -->
+    <!-- 活動快速報名 Modal (LINE 單軌大頭貼授權版) -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -147,7 +147,7 @@
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
                     
-                    <!-- ✨ 新增：分隔線與 Messenger 備用報名通道 -->
+                    <!-- 分隔線與 Messenger 備用報名通道 -->
                     <div class="relative my-1">
                         <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
                         <div class="relative flex justify-center text-[11px]"><span class="bg-white px-2 text-gray-400 font-medium">或</span></div>
@@ -160,7 +160,12 @@
                         <p class="text-[11px] text-gray-500 font-medium text-center mt-1"><i class="fas fa-info-circle mr-1 text-gray-400"></i>說明: 無法使用LINE報名請點此留言</p>
                     </div>
                 </div>
-                <p class="text-[14px] text-gray-500 mt-5 leading-relaxed font-medium text-left"><i class="fas fa-lock mr-1 text-gray-400"></i>我們僅會取得您的公開大頭貼與姓名作為報名憑證。若您報名的是遊程類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
+                
+                <!-- ✨ 更新：條列式隱私與群組提醒聲明 -->
+                <div class="mt-5 text-[13.5px] text-gray-500 leading-relaxed font-medium text-left space-y-2">
+                    <p><i class="fas fa-user-shield mr-1 text-blue-400 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
+                    <p><i class="fas fa-exclamation-circle mr-1 text-orange-400 opacity-80"></i>2. 若您報名的是"遊程"類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
+                </div>
             </div>
 
             <div id="social-preview-step" class="mb-2 hidden">
@@ -307,6 +312,16 @@
             window.closeModal('share-event-modal');
         });
 
+        // 極速展開名單邏輯
+        window.toggleRegList = function(eventName) {
+            if (window.expandedRegEvents.has(eventName)) {
+                window.expandedRegEvents.delete(eventName);
+            } else {
+                window.expandedRegEvents.add(eventName);
+            }
+            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+        };
+
         // 獨立卡片渲染引擎
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
@@ -380,6 +395,11 @@
                         return `<div class="flex items-center shrink-0 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm gap-3 hover:border-yellow-300 transition-all duration-300 group"><img src="${r.socialPicture || 'https://via.placeholder.com/150'}" class="w-10 h-10 rounded-full border-2 ${borderColor} shadow-sm object-cover flex-shrink-0 ${avatarStyle}"><div class="flex flex-col items-start min-w-[120px]"><div class="flex items-center gap-2 mb-1"><span class="text-[13px] ${nameStyle} font-bold tracking-wide">${r.socialName || '匿名'}</span><span class="bg-yellow-100 text-yellow-800 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border border-yellow-200 whitespace-nowrap">${timeStr}</span></div><div class="flex items-center gap-1.5"><span class="text-[10px] text-gray-500 font-mono tracking-tighter bg-gray-50 border border-gray-200 px-1.5 py-px rounded w-fit shadow-sm">${displayId}</span>${customTag}</div></div></div>`;
                     }).join('');
                     
+                    const isExpanded = window.expandedRegEvents.has(ev.name);
+                    
+                    let toggleBtnText = isExpanded ? '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單' : '<i class="fas fa-chevron-down mr-1.5"></i>查看報名清單';
+                    let toggleBtnClass = isExpanded ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50';
+
                     let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
                     if (window.isRegSnapshotLoaded) { 
                         countDisplay = `<span class="text-yellow-600 mx-1 text-base font-black">${regs.length}</span>`; 
@@ -388,15 +408,17 @@
                     const countHtml = `<p class="text-[11px] font-bold text-gray-700 flex items-center m-0 tracking-wide"><i class="fas fa-users text-yellow-500 mr-1.5 text-base"></i>目前報名：${countDisplay} 人</p>`;
 
                     let avatarsSection = '';
-                    if (!window.isRegSnapshotLoaded) { 
-                        avatarsSection = `<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`; 
-                    } else if (regs.length > 0) { 
-                        avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-200 mt-2">${avatarsHtml}</div>`; 
-                    } else { 
-                        avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-yellow-200 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`; 
+                    if (isExpanded) {
+                        if (!window.isRegSnapshotLoaded) { 
+                            avatarsSection = `<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`; 
+                        } else if (regs.length > 0) { 
+                            avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-200 mt-2">${avatarsHtml}</div>`; 
+                        } else { 
+                            avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-yellow-200 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`; 
+                        }
                     }
 
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div></div>${avatarsSection}</div>`;
+                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div><button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">${toggleBtnText}</button></div>${avatarsSection}</div>`;
                 } else {
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3"><p class="text-[10px] font-black text-gray-500 flex items-center m-0"><i class="fas fa-users text-gray-400 mr-1.5 text-base"></i>目前報名：0 人</p>${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-shield-alt mr-1 opacity-70"></i>由本站辦理之活動才適用快速報名</p></div></div>`;
                 }
@@ -527,7 +549,7 @@
             }
         });
 
-        // ✨ 新增：Messenger 備用報名通道防呆與跳轉邏輯
+        // Messenger 備用報名通道防呆與跳轉邏輯
         document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
             const eventName = window.currentRegEvent || '未命名活動';
             const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)`;
@@ -576,7 +598,7 @@
 
                 if (!globalEventRegistrations[window.currentRegEvent]) globalEventRegistrations[window.currentRegEvent] = [];
                 globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
-                
+                window.expandedRegEvents.add(window.currentRegEvent);
                 if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
 
                 await addDoc(collection(db, 'event_registrations'), regData);
