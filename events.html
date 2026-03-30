@@ -130,7 +130,7 @@
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
-    <!-- 活動快速報名 Modal (LINE 單軌大頭貼授權版) -->
+    <!-- 活動快速報名 Modal (雙軌通道 + 條列式聲明完美版) -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -140,15 +140,28 @@
             <p id="reg-event-name" class="text-lg font-black text-blue-800 mb-5 bg-blue-50 p-3 rounded-xl border border-blue-200 shadow-sm leading-snug tracking-wide"></p>
             
             <div id="social-auth-step" class="mb-6">
-                <!-- ✨ 更新：修改步驟標題，更加直覺親切 -->
                 <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 使用LINE一鍵報名(免填寫)</p>
                 <div class="flex flex-col gap-2">
+                    <!-- LINE 首選報名通道 -->
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
                     
-                    <!-- ✨ 更新：將宣告文字移至按鈕下方，並改為條列式設計 -->
-                    <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-1 mb-2">
+                    <!-- ✨ 恢復：分隔線與 Messenger 備用報名通道 -->
+                    <div class="relative my-1">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                        <div class="relative flex justify-center text-[11px]"><span class="bg-white px-2 text-gray-400 font-medium">或</span></div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1 mb-2">
+                        <button id="messenger-fallback-btn" class="w-full py-3 bg-white border-2 border-[#0084FF] text-[#0084FF] rounded-xl font-bold shadow-sm hover:bg-[#0084FF] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px]">
+                            <i class="fab fa-facebook-messenger text-xl mr-2"></i> 留言給我們 (較晚回覆)
+                        </button>
+                        <p class="text-[11px] text-gray-500 font-medium text-center mt-1"><i class="fas fa-info-circle mr-1 text-gray-400"></i>說明: 無法使用LINE報名請點此留言</p>
+                    </div>
+                    
+                    <!-- 條列式隱私與群組提醒聲明 -->
+                    <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-1">
                         <p><i class="fas fa-user-shield text-blue-400 mr-1.5 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
                         <p><i class="fas fa-exclamation-circle text-orange-400 mr-1.5 opacity-80"></i>2. 若您報名的是"遊程"類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
                     </div>
@@ -238,7 +251,7 @@
         // 雙重智慧分享引擎
         window.currentShareData = { url: '', title: '', text: '' };
 
-        // 去依賴化更新：純淨的短 ID 路由生成器
+        // 穩定的極簡短址路由
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
@@ -530,6 +543,34 @@
             }
         });
 
+        // ✨ 恢復：Messenger 備用報名通道防呆與跳轉邏輯
+        document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
+            const eventName = window.currentRegEvent || '未命名活動';
+            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用LINE報名請留言給我們(較晚回覆)`;
+            
+            // 雙重保險防呆：先將格式複製到旅客的剪貼簿，避免 Messenger APP 攔截網址參數
+            const textArea = document.createElement("textarea"); 
+            textArea.value = msgTemplate; 
+            textArea.style.position = "fixed"; 
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea); 
+            textArea.focus(); 
+            textArea.select();
+            try { 
+                document.execCommand('copy'); 
+                window.showToast('📋 已複製報名格式！開啟後請直接貼上'); 
+            } catch (err) { 
+                console.warn("自動複製失敗", err);
+            } 
+            document.body.removeChild(textArea);
+
+            // 延遲 800ms 確保 Toast 提示能被旅客看到後，再進行網址跳轉
+            setTimeout(() => {
+                const messengerUrl = `https://m.me/Satoyamadining?text=${encodeURIComponent(msgTemplate)}`;
+                window.open(messengerUrl, '_blank');
+            }, 800);
+        });
+
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
             const originalHtml = e.currentTarget.innerHTML;
@@ -537,13 +578,25 @@
             e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
 
             try {
-                if (!db) throw new Error("資料庫未連線");
-                const regData = { eventName: window.currentRegEvent, platform: currentSocialData.platform, socialId: currentSocialData.id, socialName: currentSocialData.name, socialPicture: currentSocialData.picture, timestamp: serverTimestamp() };
+                if (!db || typeof addDoc !== 'function') throw new Error("資料庫未連線");
+
+                const regData = {
+                    eventName: window.currentRegEvent,
+                    platform: currentSocialData.platform,
+                    socialId: currentSocialData.id,
+                    socialName: currentSocialData.name,
+                    socialPicture: currentSocialData.picture,
+                    userId: 'anonymous_visitor',
+                    timestamp: serverTimestamp()
+                };
+
                 if (!globalEventRegistrations[window.currentRegEvent]) globalEventRegistrations[window.currentRegEvent] = [];
-                globalEventRegistrations[window.currentRegEvent].unshift(regData);
+                globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
+                window.expandedRegEvents.add(window.currentRegEvent);
+                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+
                 await addDoc(collection(db, 'event_registrations'), regData);
                 window.showToast('✅ 報名成功！'); window.closeModal('event-registration-modal');
-                window.renderEventsListUI();
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
             } finally {
