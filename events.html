@@ -130,22 +130,37 @@
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
-    <!-- 活動快速報名 Modal (LINE 單軌大頭貼授權版) -->
+    <!-- 活動快速報名 Modal (LINE + Messenger 雙軌版) -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
             <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-id-badge text-2xl text-blue-500"></i></div></div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">社群一鍵報名</h3>
-            <p id="reg-event-name" class="text-sm font-bold text-blue-700 mb-5 bg-blue-50/50 p-2 rounded-lg border border-blue-100"></p>
+            
+            <h3 class="text-xl font-bold text-gray-800 mb-2">您報名的活動名稱</h3>
+            <p id="reg-event-name" class="text-lg font-black text-blue-800 mb-5 bg-blue-50 p-3 rounded-xl border border-blue-200 shadow-sm leading-snug tracking-wide"></p>
             
             <div id="social-auth-step" class="mb-6">
                 <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 授權取得社群身分 (免填寫)</p>
                 <div class="flex flex-col gap-3">
+                    <!-- LINE 首選報名通道 -->
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
+                    
+                    <!-- ✨ 新增：分隔線與 Messenger 備用報名通道 -->
+                    <div class="relative my-1">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                        <div class="relative flex justify-center text-[11px]"><span class="bg-white px-2 text-gray-400 font-medium">或</span></div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1">
+                        <button id="messenger-fallback-btn" class="w-full py-3 bg-white border-2 border-[#0084FF] text-[#0084FF] rounded-xl font-bold shadow-sm hover:bg-[#0084FF] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px]">
+                            <i class="fab fa-facebook-messenger text-xl mr-2"></i> 留言給我們 (較晚回覆)
+                        </button>
+                        <p class="text-[11px] text-gray-500 font-medium text-center mt-1"><i class="fas fa-info-circle mr-1 text-gray-400"></i>說明: 無法使用LINE報名請點此留言</p>
+                    </div>
                 </div>
-                <p class="text-[15px] text-gray-500 mt-3 leading-relaxed font-medium"><i class="fas fa-lock mr-1 text-gray-400"></i>我們僅會取得您的公開大頭貼與姓名作為報名憑證。</p>
+                <p class="text-[15px] text-gray-500 mt-5 leading-relaxed font-medium"><i class="fas fa-lock mr-1 text-gray-400"></i>我們僅會取得您的公開大頭貼與姓名作為報名憑證。</p>
             </div>
 
             <div id="social-preview-step" class="mb-2 hidden">
@@ -231,15 +246,11 @@
         // 雙重智慧分享引擎
         window.currentShareData = { url: '', title: '', text: '' };
 
-        // 去依賴化更新：純淨的短 ID 路由生成器 (不再處理縮網址邏輯)
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
-                
-                // 取用當前乾淨的網址 (origin + pathname)，直接掛上 shortId
                 const url = new URL(window.location.origin + window.location.pathname);
                 url.searchParams.set('id', shortId); 
-                
                 const finalUrl = url.toString(); 
                 
                 const shareTitle = `探探里山活動：${eventName}`;
@@ -516,6 +527,34 @@
             }
         });
 
+        // ✨ 新增：Messenger 備用報名通道防呆與跳轉邏輯
+        document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
+            const eventName = window.currentRegEvent || '未命名活動';
+            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)`;
+            
+            // 雙重保險防呆：先將格式複製到旅客的剪貼簿，避免 Messenger APP 攔截網址參數
+            const textArea = document.createElement("textarea"); 
+            textArea.value = msgTemplate; 
+            textArea.style.position = "fixed"; 
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea); 
+            textArea.focus(); 
+            textArea.select();
+            try { 
+                document.execCommand('copy'); 
+                window.showToast('📋 已複製報名格式！開啟後請直接貼上'); 
+            } catch (err) { 
+                console.warn("自動複製失敗", err);
+            } 
+            document.body.removeChild(textArea);
+
+            // 延遲 800ms 確保 Toast 提示能被旅客看到後，再進行網址跳轉
+            setTimeout(() => {
+                const messengerUrl = `https://m.me/Satoyamadining?text=${encodeURIComponent(msgTemplate)}`;
+                window.open(messengerUrl, '_blank');
+            }, 800);
+        });
+
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
             const originalHtml = e.currentTarget.innerHTML;
@@ -523,13 +562,26 @@
             e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
 
             try {
-                if (!db) throw new Error("資料庫未連線");
-                const regData = { eventName: window.currentRegEvent, platform: currentSocialData.platform, socialId: currentSocialData.id, socialName: currentSocialData.name, socialPicture: currentSocialData.picture, timestamp: serverTimestamp() };
+                if (!db || typeof addDoc !== 'function') throw new Error("資料庫未連線");
+
+                const regData = {
+                    eventName: window.currentRegEvent,
+                    platform: currentSocialData.platform,
+                    socialId: currentSocialData.id,
+                    socialName: currentSocialData.name,
+                    socialPicture: currentSocialData.picture,
+                    userId: 'anonymous_visitor',
+                    timestamp: serverTimestamp()
+                };
+
                 if (!globalEventRegistrations[window.currentRegEvent]) globalEventRegistrations[window.currentRegEvent] = [];
-                globalEventRegistrations[window.currentRegEvent].unshift(regData);
+                globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
+                
+                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+
                 await addDoc(collection(db, 'event_registrations'), regData);
-                window.showToast('✅ 報名成功！'); window.closeModal('event-registration-modal');
-                window.renderEventsListUI();
+                window.showToast('✅ 報名成功！大頭貼已即時上榜。');
+                window.closeModal('event-registration-modal');
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
             } finally {
@@ -549,7 +601,6 @@
                 
                 signInAnonymously(auth).catch((err) => {
                     if (err.message && err.message.includes('auth/requests-from-referer')) {
-                        // ✨ 優化：移除干擾視覺的控制台報錯與 Toast，保留安靜的頂部藍色提示條
                         const currentDomain = window.location.hostname || "未知網域";
                         const dynamicDomainSpan = document.getElementById('dynamic-domain-name');
                         if (dynamicDomainSpan) dynamicDomainSpan.textContent = currentDomain;
