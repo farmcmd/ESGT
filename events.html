@@ -3,26 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- ✨ 更新：瀏覽器分頁標題同步更新 -->
     <title>探探里山 - 最新活動訊息與報名專區</title>
     
-    <!-- 效能優化 (Preconnect 加速通道) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 
-    <!-- 外部資源載入 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- LINE SDK 異步載入與提前初始化 -->
     <script>
         const MY_LINE_LIFF_ID = '2009624342-oTTGaOJl'; 
     </script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-    <!-- Tailwind 客製化設定 -->
     <script>
         tailwind.config = {
             theme: {
@@ -60,7 +55,6 @@
         }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* ✨ 智慧診斷 UI 樣式 */
         #env-diagnosis-bar {
             background: #eff6ff; color: #1e40af; border-bottom: 2px solid #bfdbfe;
             padding: 12px 24px; font-size: 13px; font-weight: 700; text-align: center;
@@ -72,7 +66,6 @@
 </head>
 <body class="font-sans antialiased">
 
-    <!-- ✨ 智慧環境診斷條 (動態顯示精準網域) -->
     <div id="env-diagnosis-bar" class="hidden">
         <i class="fas fa-satellite-dish text-blue-500 animate-pulse text-lg"></i>
         <div class="text-left">
@@ -82,7 +75,6 @@
         <button onclick="document.getElementById('env-diagnosis-bar').classList.add('hidden')" class="ml-auto opacity-50 hover:opacity-100 p-2"><i class="fas fa-times text-lg"></i></button>
     </div>
 
-    <!-- 浮動提示 Toast -->
     <div id="custom-toast"></div>
 
     <header class="bg-gradient-to-b from-yellow-500 to-yellow-600 text-white text-center shadow-lg relative py-12 flex flex-col justify-center items-center">
@@ -108,7 +100,6 @@
                 </div>
             </div>
 
-            <!-- 活動卡片容器 -->
             <div id="event-schedule-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[300px]">
                 <div class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
                     <i class="fas fa-circle-notch fa-spin text-3xl text-yellow-400 mb-3"></i>
@@ -118,7 +109,6 @@
         </div>
     </main>
 
-    <!-- 浮動導航按鈕 (常駐右上方約 1/5 處) -->
     <a href="https://farmcmd.github.io/ESGT/" class="fixed top-[18%] right-4 md:right-8 z-[90] flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-gray-700 rounded-full shadow-sm border border-white/50 hover:bg-yellow-50/90 hover:border-yellow-400 hover:shadow-md hover:scale-105 transition-all duration-300 group">
         <div class="bg-gray-100/80 rounded-full w-6 h-6 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-colors">
             <i class="fas fa-home text-gray-500 text-[10px] group-hover:text-white transition-colors"></i>
@@ -126,11 +116,7 @@
         <span class="text-xs font-bold tracking-wide pr-1.5 group-hover:text-yellow-700">返回主系統</span>
     </a>
 
-    <!-- ======================================================== -->
-    <!-- 全局彈出視窗 (Modals) 統一管理區 -->
-    <!-- ======================================================== -->
-
-    <!-- 活動快速報名 Modal (LINE 與 Messenger 調換版) -->
+    <!-- 活動快速報名 Modal -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -142,17 +128,14 @@
             <div id="social-auth-step" class="mb-6">
                 <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 使用LINE一鍵報名(免填寫)</p>
                 <div class="flex flex-col gap-2">
-                    <!-- LINE 首選報名通道 -->
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
                     
-                    <!-- 加入群組按鈕上移至 LINE 登入按鈕正下方 -->
                     <a href="https://line.me/R/ti/g/6Hcvx4VKCe" target="_blank" class="w-full py-3 mt-1 bg-white border-2 border-[#06C755]/80 text-[#06C755] rounded-xl font-bold shadow-sm hover:bg-[#06C755] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px] group">
                         <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
                     </a>
                     
-                    <!-- 條列式隱私與群組提醒聲明 -->
                     <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-2 mb-1">
                         <p><i class="fas fa-user-shield text-blue-400 mr-1.5 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
                         <p><i class="fas fa-exclamation-circle text-orange-400 mr-1.5 opacity-80"></i>2. 若您報名的是"遊程"類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
@@ -174,7 +157,6 @@
                 </button>
             </div>
 
-            <!-- Messenger 備用按鈕 -->
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="relative mb-4 mt-1">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
@@ -222,7 +204,7 @@
         window.hasHandledDeepLink = false;
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // Firebase 設定
@@ -251,7 +233,6 @@
         // 雙重智慧分享引擎
         window.currentShareData = { url: '', title: '', text: '' };
 
-        // 去依賴化更新：純淨的短 ID 路由生成器
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
@@ -313,7 +294,6 @@
             window.closeModal('share-event-modal');
         });
 
-        // 極速展開名單邏輯
         window.toggleRegList = function(eventName) {
             if (window.expandedRegEvents.has(eventName)) {
                 window.expandedRegEvents.delete(eventName);
@@ -323,7 +303,7 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // 獨立卡片渲染引擎 (✨ 完美解決 0 人誤導顯示，與植入儀表板引流按鈕)
+        // ✨ 獨立卡片渲染引擎 (UX 完美升級版)
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -414,26 +394,22 @@
 
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div></div>${avatarsSection}</div>`;
                 } else {
-                    // ✨ 修正：未開放 LINE 報名的外部活動，徹底拔除「目前報名：0人」的顯示，避免旅客誤解
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
-                }
-
-                if(isExpired) {
-                    let dashboardButtonsHtml = '';
-                    if (!isRegOpen) {
-                        // ✨ 修正：針對「已圓滿結束」且「未開放 LINE 報名」的活動
-                        // 1. 完全不顯示「目前報名：0人」或「此活動由主辦單位獨立受理...」
-                        // 2. 完美植入您提供的截圖中的雙軌歸戶按鈕設計
+                    // ✨ 修正 1：針對未開放 LINE 報名的外部活動，無論是否過期，皆徹底隱藏「目前報名：0人」的誤導資訊。
+                    if (isExpired) {
                         regsHtml = `
                         <div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200">
                             <div class="flex justify-start mb-4">
                                 ${shareBtnHtml}
                             </div>
                         </div>`;
+                    } else {
+                        regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
                     }
-                    
-                    // 針對所有過期的卡片，統一在底部加上儀表板按鈕
-                    dashboardButtonsHtml = `
+                }
+
+                if(isExpired) {
+                    // ✨ 修正 2：針對所有已經圓滿結束的卡片，在最下方完美植入截圖中的雙軌歸戶按鈕設計
+                    let dashboardButtonsHtml = `
                     <div class="mt-4 pt-5 border-t-2 border-gray-100">
                         <div class="bg-[#FFFAF0] p-5 rounded-xl border border-[#FDE047] shadow-sm text-center">
                             <p class="text-[13px] font-bold text-gray-800 mb-5 leading-relaxed flex items-start justify-center text-left sm:text-center max-w-lg mx-auto">
@@ -457,7 +433,7 @@
                         </div>
                     </div>`;
 
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
+                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-gray-500">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
                 } else {
                     let regMethodHtml = '';
                     if (isRegOpen) { 
