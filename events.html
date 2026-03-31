@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ✨ 更新：瀏覽器分頁標題同步更新 -->
     <title>探探里山 - 最新活動訊息與報名專區</title>
     
     <!-- 效能優化 (Preconnect 加速通道) -->
@@ -141,7 +142,6 @@
             <div id="social-auth-step" class="mb-6">
                 <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 使用LINE一鍵報名(免填寫)</p>
                 <div class="flex flex-col gap-2">
-                    <!-- LINE 首選報名通道 -->
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
@@ -150,7 +150,6 @@
                         <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
                     </a>
                     
-                    <!-- 條列式隱私與群組提醒聲明 -->
                     <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-2 mb-1">
                         <p><i class="fas fa-user-shield text-blue-400 mr-1.5 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
                         <p><i class="fas fa-exclamation-circle text-orange-400 mr-1.5 opacity-80"></i>2. 若您報名的是"遊程"類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
@@ -172,7 +171,6 @@
                 </button>
             </div>
 
-            <!-- Messenger 備用按鈕 -->
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="relative mb-4 mt-1">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
@@ -231,7 +229,24 @@
         window.currentEventsList = [];
         let globalEventRegistrations = {};
         window.isRegSnapshotLoaded = false;
-        window.expandedRegEvents = new Set(); // ✨ 修復：補回這個用來記錄「展開名單」狀態的 Set
+        
+        // ✨ 全局狀態補齊：記錄哪些活動的報名清單已被展開
+        window.expandedRegEvents = new Set(); 
+
+        // 引入主系統的隨機代碼生成邏輯，確保報名時能正確配發編號
+        let state = {};
+        function loadLocalData() {
+            try { 
+                const raw = localStorage.getItem('shuilMoriData_v3.0'); 
+                if(raw) { state = { ...state, ...JSON.parse(raw) }; } 
+            } catch(e) { }
+            // 自動生成一組 5 碼隨機身分，供報名時使用
+            if (!state.playerCode) {
+                state.playerCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                try { localStorage.setItem('shuilMoriData_v3.0', JSON.stringify(state)); } catch(e) {}
+            }
+        }
+        loadLocalData();
 
         // 通用工具函數
         window.toastTimer = null;
@@ -368,7 +383,15 @@
                     
                     const avatarsHtml = regs.map(r => {
                         const borderColor = r.platform === 'LINE' ? 'border-[#06C755]' : (r.platform === 'Facebook' ? 'border-[#1877F2]' : 'border-gray-300');
-                        const displayId = (r.userId && r.userId !== 'anonymous') ? r.userId : (r.socialId ? r.socialId.substring(0, 5) + '***' : '無代碼');
+                        
+                        // ✨ 修復：遮蔽機制升級！同時過濾掉 'anonymous' 與舊版錯誤留下的 'anonymous_visitor'
+                        let displayId = '無代碼';
+                        if (r.userId && r.userId !== 'anonymous' && r.userId !== 'anonymous_visitor') {
+                            displayId = r.userId;
+                        } else if (r.socialId) {
+                            displayId = r.socialId.substring(0, 5) + '***';
+                        }
+                        
                         let timeStr = '剛剛';
                         if (r.timestamp) {
                             try {
@@ -425,7 +448,6 @@
                 }
 
                 if(isExpired) {
-                    // 已結束活動，底部一律加上「查看活動成效儀表板」按鈕導向主站
                     let dashboardButtonsHtml = `
                     <div class="mt-4 pt-5 border-t border-gray-100">
                         <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-[15px] font-black tracking-wide rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center mx-auto hover:-translate-y-0.5">
@@ -433,7 +455,7 @@
                         </button>
                     </div>`;
 
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
+                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
                 } else {
                     let regMethodHtml = '';
                     if (isRegOpen) { 
@@ -670,11 +692,11 @@
                     socialId: currentSocialData.id,
                     socialName: currentSocialData.name,
                     socialPicture: currentSocialData.picture,
-                    userId: 'anonymous_visitor',
+                    // ✨ 修復：不再使用 'anonymous_visitor' 寫死，改為抓取系統產生的 playerCode，若無則用 anonymous
+                    userId: state.playerCode || 'anonymous',
                     timestamp: serverTimestamp()
                 };
 
-                // ✨ 重要：因為剛剛補回了 window.expandedRegEvents 宣告，現在 .add() 不會再報錯了！
                 if (!globalEventRegistrations[window.currentRegEvent]) globalEventRegistrations[window.currentRegEvent] = [];
                 globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
                 window.expandedRegEvents.add(window.currentRegEvent);
