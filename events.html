@@ -60,7 +60,7 @@
         }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* 智慧診斷 UI 樣式 */
+        /* ✨ 智慧診斷 UI 樣式 */
         #env-diagnosis-bar {
             background: #eff6ff; color: #1e40af; border-bottom: 2px solid #bfdbfe;
             padding: 12px 24px; font-size: 13px; font-weight: 700; text-align: center;
@@ -72,7 +72,7 @@
 </head>
 <body class="font-sans antialiased">
 
-    <!-- 智慧環境診斷條 -->
+    <!-- ✨ 智慧環境診斷條 (動態顯示精準網域) -->
     <div id="env-diagnosis-bar" class="hidden">
         <i class="fas fa-satellite-dish text-blue-500 animate-pulse text-lg"></i>
         <div class="text-left">
@@ -118,7 +118,7 @@
         </div>
     </main>
 
-    <!-- 浮動導航按鈕 -->
+    <!-- 浮動導航按鈕 (常駐右上方約 1/5 處) -->
     <a href="https://farmcmd.github.io/ESGT/" class="fixed top-[18%] right-4 md:right-8 z-[90] flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-gray-700 rounded-full shadow-sm border border-white/50 hover:bg-yellow-50/90 hover:border-yellow-400 hover:shadow-md hover:scale-105 transition-all duration-300 group">
         <div class="bg-gray-100/80 rounded-full w-6 h-6 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-colors">
             <i class="fas fa-home text-gray-500 text-[10px] group-hover:text-white transition-colors"></i>
@@ -130,7 +130,7 @@
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
-    <!-- 活動快速報名 Modal -->
+    <!-- 活動快速報名 Modal (LINE 與 Messenger 調換版) -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -142,14 +142,17 @@
             <div id="social-auth-step" class="mb-6">
                 <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 使用LINE一鍵報名(免填寫)</p>
                 <div class="flex flex-col gap-2">
+                    <!-- LINE 首選報名通道 -->
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
                     
+                    <!-- 加入群組按鈕上移至 LINE 登入按鈕正下方 -->
                     <a href="https://line.me/R/ti/g/6Hcvx4VKCe" target="_blank" class="w-full py-3 mt-1 bg-white border-2 border-[#06C755]/80 text-[#06C755] rounded-xl font-bold shadow-sm hover:bg-[#06C755] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px] group">
                         <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
                     </a>
                     
+                    <!-- 條列式隱私與群組提醒聲明 -->
                     <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-2 mb-1">
                         <p><i class="fas fa-user-shield text-blue-400 mr-1.5 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
                         <p><i class="fas fa-exclamation-circle text-orange-400 mr-1.5 opacity-80"></i>2. 若您報名的是"遊程"類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
@@ -171,6 +174,7 @@
                 </button>
             </div>
 
+            <!-- Messenger 備用按鈕 -->
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="relative mb-4 mt-1">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
@@ -247,6 +251,7 @@
         // 雙重智慧分享引擎
         window.currentShareData = { url: '', title: '', text: '' };
 
+        // 去依賴化更新：純淨的短 ID 路由生成器
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
@@ -318,7 +323,7 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // 獨立卡片渲染引擎
+        // 獨立卡片渲染引擎 (✨ 完美解決 0 人誤導顯示，與植入儀表板引流按鈕)
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -409,11 +414,12 @@
 
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div></div>${avatarsSection}</div>`;
                 } else {
-                    // 未開放 LINE 報名的外部活動 (未過期時)
+                    // ✨ 修正：未開放 LINE 報名的外部活動，徹底拔除「目前報名：0人」的顯示，避免旅客誤解
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
                 }
 
                 if(isExpired) {
+                    let dashboardButtonsHtml = '';
                     if (!isRegOpen) {
                         // ✨ 修正：針對「已圓滿結束」且「未開放 LINE 報名」的活動
                         // 1. 完全不顯示「目前報名：0人」或「此活動由主辦單位獨立受理...」
@@ -423,30 +429,35 @@
                             <div class="flex justify-start mb-4">
                                 ${shareBtnHtml}
                             </div>
-                            <div class="bg-[#FFFAF0] p-5 rounded-xl border border-[#FDE047] shadow-sm text-center">
-                                <p class="text-[13px] font-bold text-gray-800 mb-5 leading-relaxed flex items-start justify-center text-left sm:text-center max-w-lg mx-auto">
-                                    <i class="fas fa-layer-group text-yellow-500 mr-2 mt-0.5 text-lg shrink-0"></i>
-                                    <span>將旅遊獲得的永續數據，貢獻到所屬公司儀表板或參加的計畫活動儀表板內，歸戶完成，系統會自動為您下載<span class="text-[#4A6741] font-black ml-1">永續旅遊證書</span>。</span>
-                                </p>
-                                <div class="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
-                                    <div class="relative inline-block w-full sm:w-auto">
-                                        <span class="absolute -top-2.5 -right-2.5 bg-[#EF4444] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white z-10 text-center tracking-wider">NEW</span>
-                                        <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-[#D2B48C] hover:bg-yellow-700 text-white text-[14px] font-black tracking-wide rounded-full shadow-sm transition-all flex items-center justify-center hover:-translate-y-0.5">
-                                            <i class="fas fa-building mr-2"></i> 企業永續儀表板
-                                        </button>
-                                    </div>
-                                    <div class="relative inline-block w-full sm:w-auto">
-                                        <span class="absolute -top-2.5 -right-2.5 bg-[#EF4444] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white z-10 text-center tracking-wider">NEW</span>
-                                        <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-[#3B82F6] hover:bg-blue-600 text-white text-[14px] font-black tracking-wide rounded-full shadow-sm transition-all flex items-center justify-center hover:-translate-y-0.5">
-                                            <i class="fas fa-landmark mr-2"></i> 永續政府計畫儀表板
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>`;
                     }
                     
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">備註:</span> <span class="leading-relaxed text-gray-500">${ev.remark}</span></p>` : ''}</div>${regsHtml}</div>`;
+                    // 針對所有過期的卡片，統一在底部加上儀表板按鈕
+                    dashboardButtonsHtml = `
+                    <div class="mt-4 pt-5 border-t-2 border-gray-100">
+                        <div class="bg-[#FFFAF0] p-5 rounded-xl border border-[#FDE047] shadow-sm text-center">
+                            <p class="text-[13px] font-bold text-gray-800 mb-5 leading-relaxed flex items-start justify-center text-left sm:text-center max-w-lg mx-auto">
+                                <i class="fas fa-layer-group text-yellow-500 mr-2 mt-0.5 text-lg shrink-0"></i>
+                                <span>將旅遊獲得的永續數據，貢獻到所屬公司儀表板或參加的計畫活動儀表板內，歸戶完成，系統會自動為您下載<span class="text-[#4A6741] font-black mx-1">永續旅遊證書</span>。</span>
+                            </p>
+                            <div class="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
+                                <div class="relative inline-block w-full sm:w-auto">
+                                    <span class="absolute -top-2.5 -right-2.5 bg-[#EF4444] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white z-10 text-center tracking-wider">NEW</span>
+                                    <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-[#D2B48C] hover:bg-yellow-700 text-white text-[14px] font-black tracking-wide rounded-full shadow-sm transition-all flex items-center justify-center hover:-translate-y-0.5">
+                                        <i class="fas fa-building mr-2"></i> 企業永續儀表板
+                                    </button>
+                                </div>
+                                <div class="relative inline-block w-full sm:w-auto">
+                                    <span class="absolute -top-2.5 -right-2.5 bg-[#EF4444] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm border border-white z-10 text-center tracking-wider">NEW</span>
+                                    <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-[#3B82F6] hover:bg-blue-600 text-white text-[14px] font-black tracking-wide rounded-full shadow-sm transition-all flex items-center justify-center hover:-translate-y-0.5">
+                                        <i class="fas fa-landmark mr-2"></i> 永續政府計畫儀表板
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-gray-50 p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
                 } else {
                     let regMethodHtml = '';
                     if (isRegOpen) { 
@@ -466,7 +477,7 @@
                         ? `<button onclick="window.openRegistrationModal('${ev.name.replace(/'/g, "\\'")}')" class="shrink-0 w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-white text-lg"></i>LINE+1 快速報名</button>` 
                         : `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
 
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300"><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-red-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-orange-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end pt-5 border-t-2 border-gray-100 gap-4"><div class="flex flex-col items-start w-full lg:w-auto flex-grow gap-1"><div class="flex items-center"><i class="fas fa-info-circle text-yellow-500 mr-1.5 shrink-0 text-lg"></i><span class="font-black text-gray-700 shrink-0 text-[13px]">報名方式:</span></div>${regMethodHtml}</div><div class="flex flex-col sm:flex-row justify-between items-center w-full lg:w-auto lg:min-w-[350px] gap-3 shrink-0">${quickRegBtnHtml}<button onclick="${calendarUrl !== '#' ? `window.open('${calendarUrl}', '_blank')` : `window.showToast('活動日期格式異常，無法產生行事曆連結')`}" class="shrink-0 w-full sm:w-auto px-2 py-1 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center justify-center"><i class="far fa-calendar-plus mr-1.5 text-blue-500 text-sm"></i> 加入行事曆</button></div></div></div>`;
+                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300"><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-red-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-orange-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end pt-5 border-t-2 border-gray-100 gap-4"><div class="flex flex-col items-start w-full lg:w-auto flex-grow gap-1"><div class="flex items-center"><i class="fas fa-info-circle text-yellow-500 mr-1.5 shrink-0 text-lg"></i><span class="font-black text-gray-700 shrink-0 text-[13px]">報名方式:</span></div>${regMethodHtml}</div><div class="flex flex-col sm:flex-row justify-between items-center w-full lg:w-auto lg:min-w-[350px] gap-3 shrink-0">${quickRegBtnHtml}<button onclick="${calendarUrl !== '#' ? `window.open('${calendarUrl}', '_blank')` : `window.showToast('活動日期格式異常，無法產生行事曆連結')`}" class="shrink-0 w-full sm:w-auto px-2 py-1 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center justify-center"><i class="far fa-calendar-plus mr-1.5 text-blue-500 text-sm"></i> 加入行事曆</button></div></div></div>`;
                 }
             }).join('');
             
