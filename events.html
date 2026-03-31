@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- ✨ 更新：瀏覽器分頁標題同步更新 -->
     <title>探探里山 - 最新活動訊息與報名專區</title>
     
     <!-- 效能優化 (Preconnect 加速通道) -->
@@ -60,7 +59,7 @@
         }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* ✨ 智慧診斷 UI 樣式 */
+        /* 智慧診斷 UI 樣式 */
         #env-diagnosis-bar {
             background: #eff6ff; color: #1e40af; border-bottom: 2px solid #bfdbfe;
             padding: 12px 24px; font-size: 13px; font-weight: 700; text-align: center;
@@ -72,7 +71,7 @@
 </head>
 <body class="font-sans antialiased">
 
-    <!-- ✨ 智慧環境診斷條 (動態顯示精準網域) -->
+    <!-- 智慧環境診斷條 -->
     <div id="env-diagnosis-bar" class="hidden">
         <i class="fas fa-satellite-dish text-blue-500 animate-pulse text-lg"></i>
         <div class="text-left">
@@ -232,6 +231,7 @@
         window.currentEventsList = [];
         let globalEventRegistrations = {};
         window.isRegSnapshotLoaded = false;
+        window.expandedRegEvents = new Set(); // ✨ 修復：補回這個用來記錄「展開名單」狀態的 Set
 
         // 通用工具函數
         window.toastTimer = null;
@@ -250,7 +250,6 @@
         // 雙重智慧分享引擎
         window.currentShareData = { url: '', title: '', text: '' };
 
-        // 去依賴化更新：純淨的短 ID 路由生成器
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
@@ -322,7 +321,7 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // 獨立卡片渲染引擎 (✨ 完美解決 0 人誤導顯示，並加上極簡引流按鈕)
+        // 獨立卡片渲染引擎
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -413,24 +412,21 @@
 
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div></div>${avatarsSection}</div>`;
                 } else {
-                    // ✨ 未過期：且未開放 LINE 報名的外部活動，徹底拔除「目前報名：0人」的顯示
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
-                }
-
-                if(isExpired) {
-                    let dashboardButtonsHtml = '';
-                    if (!isRegOpen) {
-                        // ✨ 針對「已圓滿結束」且「未開放 LINE 報名」的活動，不顯示目前報名人數，僅保留分享按鈕
+                    if (isExpired) {
                         regsHtml = `
                         <div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200">
                             <div class="flex justify-start mb-2">
                                 ${shareBtnHtml}
                             </div>
                         </div>`;
+                    } else {
+                        regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
                     }
-                    
-                    // ✨ 在所有過期活動的卡片最下方，加入「查看活動成效儀表板」極簡引流按鈕
-                    dashboardButtonsHtml = `
+                }
+
+                if(isExpired) {
+                    // 已結束活動，底部一律加上「查看活動成效儀表板」按鈕導向主站
+                    let dashboardButtonsHtml = `
                     <div class="mt-4 pt-5 border-t border-gray-100">
                         <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-[15px] font-black tracking-wide rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center mx-auto hover:-translate-y-0.5">
                             <i class="fas fa-chart-bar mr-2"></i> 查看活動成效儀表板
@@ -678,6 +674,7 @@
                     timestamp: serverTimestamp()
                 };
 
+                // ✨ 重要：因為剛剛補回了 window.expandedRegEvents 宣告，現在 .add() 不會再報錯了！
                 if (!globalEventRegistrations[window.currentRegEvent]) globalEventRegistrations[window.currentRegEvent] = [];
                 globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
                 window.expandedRegEvents.add(window.currentRegEvent);
