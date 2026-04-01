@@ -2589,6 +2589,9 @@
                 const name = document.getElementById('host-proj-name').value.trim();
                 if (!name) return window.showToast('請填寫計畫名稱');
                 
+                // 👇 新增：在建立的當下，就抽出一組唯一的 5 碼並打包準備送往資料庫
+                const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+
                 const newProj = {
                     name: name, event: document.getElementById('host-proj-event').value.trim(), date: document.getElementById('host-proj-date').value,
                     desc: document.getElementById('host-proj-desc').value.trim(), supervisor: document.getElementById('host-proj-supervisor').value.trim(),
@@ -2596,7 +2599,7 @@
                     coOrganizer: document.getElementById('host-proj-coorganizer').value.trim(), budget: parseFloat(document.getElementById('host-proj-budget').value) || 0,
                     sroi: parseFloat(document.getElementById('host-proj-sroi').value) || 1.0, deadline: document.getElementById('host-proj-deadline').value || null,
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [],
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true, cardCode: newCardCode
                 };
 
                 if (db && !isOfflineMode) {
