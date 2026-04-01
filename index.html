@@ -1631,26 +1631,43 @@
                     }
                 };
 
+                // 👇 核心修復：將錯誤的企業參數 (orgName, ent_projects) 修正為政府參數 (name, gov_projects)
                 card.querySelector('.delete-btn').onclick = async (e) => {
-                    e.stopPropagation(); const pwd = prompt(`⚠️ 準備刪除「${proj.orgName}」。請輸入密碼：`); if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
-                    if (!confirm(`確定要永久刪除「${proj.orgName}」嗎？`)) return;
-                    if (db && !isOfflineMode && !proj.id.startsWith('mock_')) { try { await deleteDoc(doc(db, 'ent_projects', proj.id)); window.showToast('已刪除！'); } catch(err) { window.showToast('刪除失敗'); } } 
-                    else { globalEntData.projects = globalEntData.projects.filter(p => p.id !== proj.id); renderEntProjectsDashboard(); updateEntProjectDropdown(); window.showToast('已刪除！'); }
+                    e.stopPropagation(); 
+                    const pwd = prompt(`⚠️ 準備刪除計畫「${proj.name}」。請輸入密碼：`); 
+                    if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
+                    
+                    if (!confirm(`確定要永久刪除「${proj.name}」嗎？`)) return;
+                    
+                    if (db && !isOfflineMode && !proj.id.startsWith('mock_')) { 
+                        try { 
+                            await deleteDoc(doc(db, 'gov_projects', proj.id)); 
+                            window.showToast('已刪除！'); 
+                        } catch(err) { 
+                            window.showToast('刪除失敗'); 
+                        } 
+                    } else { 
+                        globalGovData.projects = globalGovData.projects.filter(p => p.id !== proj.id); 
+                        renderGovDashboard(); 
+                        updateProjectDropdown(); 
+                        window.showToast('已刪除！'); 
+                    }
                 };
 
+                // 👇 核心修復：一併修正下載按鈕的檔名與屬性
                 card.querySelector('.download-btn').onclick = (e) => {
                     e.stopPropagation();
-                    window.exportDashboardCard(wrapper, `探探里山_企業儀表板_${proj.orgName || '未命名'}.png`);
+                    window.exportDashboardCard(wrapper, `探探里山_計畫儀表板_${proj.name || '未命名'}.png`);
                 };
 
-                const summaryToggle = card.querySelector('.summary-ent-toggle');
+                const summaryToggle = card.querySelector('.summary-gov-toggle');
                 if (summaryToggle) {
                     summaryToggle.onclick = (e) => {
                         e.stopPropagation();
-                        if (summaryState.entSelected.has(proj.id)) summaryState.entSelected.delete(proj.id);
-                        else summaryState.entSelected.add(proj.id);
-                        document.getElementById('ent-summary-count').textContent = summaryState.entSelected.size;
-                        renderEntProjectsDashboard();
+                        if (summaryState.govSelected.has(proj.id)) summaryState.govSelected.delete(proj.id);
+                        else summaryState.govSelected.add(proj.id);
+                        document.getElementById('gov-summary-count').textContent = summaryState.govSelected.size;
+                        renderGovDashboard();
                     };
                 }
 
