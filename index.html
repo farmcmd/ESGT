@@ -2420,6 +2420,37 @@
                 } else { window.showToast('請先選擇要歸戶的企業'); }
             });
             
+            // 🚀 核心救援：補回建立新企業儀表板的功能邏輯
+            document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
+                const org = document.getElementById('ent-create-org').value.trim();
+                const event = document.getElementById('ent-create-event').value.trim();
+                if (!org || !event) return window.showToast('請填寫企業名稱與活動名稱');
+                
+                const newProj = {
+                    orgName: org, event: event, year: document.getElementById('ent-create-year').value.trim() || new Date().getFullYear().toString(),
+                    websiteUrl: document.getElementById('ent-create-website').value.trim(), remark: document.getElementById('ent-create-remark').value.trim(),
+                    deadline: document.getElementById('ent-create-deadline').value || null,
+                    linkedProject: {
+                        type: document.getElementById('ent-create-proj-type').value,
+                        amount: parseFloat(document.getElementById('ent-create-proj-amount').value) || 0,
+                        sroiWeight: parseFloat(document.getElementById('ent-create-proj-sroi').value) || 1.0
+                    },
+                    carbon: 0, green: 0, eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, feedbacks: [],
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true
+                };
+
+                if (db && !isOfflineMode) {
+                    try { await addDoc(collection(db, 'ent_projects'), newProj); window.showToast('✅ 企業儀表板建立成功！'); } 
+                    catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
+                } else {
+                    newProj.id = 'mock_ent_' + Date.now(); globalEntData.projects.push(newProj);
+                    renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList(); window.showToast('✅ (離線) 企業儀表板建立成功！');
+                }
+                
+                // 清空輸入框
+                document.getElementById('ent-create-org').value = ''; document.getElementById('ent-create-event').value = '';
+            });
+
             document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async () => {
                 if(!pendingEntEvalSubmission) return;
                 
@@ -2490,6 +2521,33 @@
                 } else { window.showToast('請先選擇要歸戶的計畫'); }
             });
             
+            // 🚀 核心救援：補回建立新政府計畫儀表板的功能邏輯
+            document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
+                const name = document.getElementById('host-proj-name').value.trim();
+                if (!name) return window.showToast('請填寫計畫名稱');
+                
+                const newProj = {
+                    name: name, event: document.getElementById('host-proj-event').value.trim(), date: document.getElementById('host-proj-date').value,
+                    desc: document.getElementById('host-proj-desc').value.trim(), supervisor: document.getElementById('host-proj-supervisor').value.trim(),
+                    organizer: document.getElementById('host-proj-organizer').value.trim(), executor: document.getElementById('host-proj-executor').value.trim(),
+                    coOrganizer: document.getElementById('host-proj-coorganizer').value.trim(), budget: parseFloat(document.getElementById('host-proj-budget').value) || 0,
+                    sroi: parseFloat(document.getElementById('host-proj-sroi').value) || 1.0, deadline: document.getElementById('host-proj-deadline').value || null,
+                    carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [],
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true
+                };
+
+                if (db && !isOfflineMode) {
+                    try { await addDoc(collection(db, 'gov_projects'), newProj); window.showToast('✅ 政府儀表板建立成功！'); } 
+                    catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
+                } else {
+                    newProj.id = 'mock_gov_' + Date.now(); globalGovData.projects.push(newProj);
+                    renderGovDashboard(); updateProjectDropdown(); renderAuthList(); window.showToast('✅ (離線) 政府儀表板建立成功！');
+                }
+                
+                // 清空輸入框
+                document.getElementById('host-proj-name').value = ''; document.getElementById('host-proj-event').value = '';
+            });
+
             document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async () => {
                 if(!pendingGovEvalSubmission) return;
                 
