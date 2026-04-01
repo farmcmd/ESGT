@@ -106,7 +106,7 @@
         </div>
     </main>
 
-    <!-- 浮動導航按鈕 -->
+    <!-- 浮動導航按鈕 (常駐右上方約 1/5 處) -->
     <a href="https://farmcmd.github.io/ESGT/" class="fixed top-[18%] right-4 md:right-8 z-[90] flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-gray-700 rounded-full shadow-sm border border-white/50 hover:bg-yellow-50/90 hover:border-yellow-400 hover:shadow-md hover:scale-105 transition-all duration-300 group">
         <div class="bg-gray-100/80 rounded-full w-6 h-6 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-colors">
             <i class="fas fa-home text-gray-500 text-[10px] group-hover:text-white transition-colors"></i>
@@ -207,7 +207,7 @@
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // Firebase 設定
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
@@ -219,8 +219,8 @@
         window.isRegSnapshotLoaded = false;
         window.expandedRegEvents = new Set(); 
 
-        // 確保具有隨機代碼供報名使用
-        let state = {};
+        // 確保具有隨機代碼供報名使用，並同步記錄使用者的 LINE ID
+        let state = { lineUserId: '' };
         function loadLocalData() {
             try { 
                 const raw = localStorage.getItem('shuilMoriData_v3.0'); 
@@ -230,6 +230,9 @@
                 state.playerCode = Math.random().toString(36).substring(2, 7).toUpperCase();
                 try { localStorage.setItem('shuilMoriData_v3.0', JSON.stringify(state)); } catch(e) {}
             }
+        }
+        function saveData() {
+            try { localStorage.setItem('shuilMoriData_v3.0', JSON.stringify(state)); } catch(e) {}
         }
         loadLocalData();
 
@@ -311,7 +314,6 @@
             window.closeModal('share-event-modal');
         });
 
-        // 極速展開名單邏輯
         window.toggleRegList = function(eventName) {
             if (window.expandedRegEvents.has(eventName)) {
                 window.expandedRegEvents.delete(eventName);
@@ -321,7 +323,7 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // 獨立卡片渲染引擎
+        // ✨ 獨立卡片渲染引擎 (去重複過濾升級版)
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -357,9 +359,35 @@
 
                 const safeCalendarUrl = calendarUrl !== '#' ? calendarUrl.replace(/'/g, "%27") : '#';
 
-                const regs = globalEventRegistrations[ev.name] || [];
+                let rawRegs = globalEventRegistrations[ev.name] || [];
+                
+                // ✨ 核心升級：自動過濾重複的報名資料 (防洗版與重複點擊)，保留最新一筆狀態
+                rawRegs.sort((a, b) => {
+                    const timeA = a.timestamp ? (typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : (a.timestamp.seconds * 1000)) : Date.now();
+                    const timeB = b.timestamp ? (typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : (b.timestamp.seconds * 1000)) : Date.now();
+                    return timeB - timeA; // 最新時間在前
+                });
+                
+                let uniqueRegsMap = new Map();
+                rawRegs.forEach(r => {
+                    const uniqueKey = r.socialId || r.userId;
+                    // 若 Map 尚未有此 key (代表是最新的一筆)，則加入。若完全無 key 則以亂數當 key 避免被吃掉
+                    if (uniqueKey && !uniqueRegsMap.has(uniqueKey)) {
+                        uniqueRegsMap.set(uniqueKey, r);
+                    } else if (!uniqueKey) {
+                        uniqueRegsMap.set(Math.random().toString(), r);
+                    }
+                });
+                
+                const regs = Array.from(uniqueRegsMap.values());
                 let regsHtml = '';
                 const isRegOpen = ev.isRegistrationOpen !== false; 
+                
+                // 檢查當前登入者是否已報名此活動 (過濾後精準檢查)
+                let isAlreadyReg = false;
+                if (state.lineUserId) {
+                    isAlreadyReg = regs.some(r => r.socialId === state.lineUserId);
+                }
                 
                 const shareBtnHtml = `<button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0 w-fit"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>`;
 
@@ -407,6 +435,7 @@
                     
                     let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
                     if (window.isRegSnapshotLoaded) { 
+                        // ✨ 人數顯示現在將反映 100% 精準的去重後人數
                         countDisplay = `<span class="text-yellow-600 mx-1 text-base font-black">${regs.length}</span>`; 
                     }
                     
@@ -459,9 +488,14 @@
                         }
                     }
                     
-                    const quickRegBtnHtml = isRegOpen 
-                        ? `<button onclick="window.openRegistrationModal('${safeEventName}')" class="shrink-0 w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-white text-lg"></i>LINE+1 快速報名</button>` 
-                        : `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
+                    let quickRegBtnHtml = '';
+                    if (isAlreadyReg) {
+                        quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-4 py-1.5 bg-green-50 text-green-600 rounded-xl text-[15px] font-black shadow-sm flex items-center justify-center border-b-4 border-green-200 cursor-not-allowed"><i class="fas fa-check-circle mr-1.5 text-green-500 text-lg"></i>已完成報名</button>`;
+                    } else if (isRegOpen) { 
+                        quickRegBtnHtml = `<button onclick="window.openRegistrationModal('${safeEventName}')" class="shrink-0 w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-white text-lg"></i>LINE+1 快速報名</button>`;
+                    } else {
+                        quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
+                    }
 
                     return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300"><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-red-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-orange-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end pt-5 border-t-2 border-gray-100 gap-4"><div class="flex flex-col items-start w-full lg:w-auto flex-grow gap-1"><div class="flex items-center"><i class="fas fa-info-circle text-yellow-500 mr-1.5 shrink-0 text-lg"></i><span class="font-black text-gray-700 shrink-0 text-[13px]">報名方式:</span></div>${regMethodHtml}</div><div class="flex flex-col sm:flex-row justify-between items-center w-full lg:w-auto lg:min-w-[350px] gap-3 shrink-0">${quickRegBtnHtml}<button onclick="${safeCalendarUrl !== '#' ? `window.open('${safeCalendarUrl}', '_blank')` : `window.showToast('活動日期格式異常，無法產生行事曆連結')`}" class="shrink-0 w-full sm:w-auto px-2 py-1 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center justify-center"><i class="far fa-calendar-plus mr-1.5 text-blue-500 text-sm"></i> 加入行事曆</button></div></div></div>`;
                 }
@@ -497,7 +531,7 @@
             }
         };
 
-        // LINE 授權與報名邏輯
+        // LINE 授權與報名邏輯 (手機版跨頁防失憶 + 重複報名防呆)
         let currentSocialData = null; 
 
         async function initLineLiff() {
@@ -506,6 +540,15 @@
                 await liff.init({ liffId: MY_LINE_LIFF_ID });
                 if (liff.isLoggedIn()) {
                     
+                    try {
+                        const profile = await liff.getProfile();
+                        if (profile && profile.userId) {
+                            state.lineUserId = profile.userId;
+                            saveData();
+                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                        }
+                    } catch(e) { console.warn("背景獲取 LINE Profile 失敗", e); }
+
                     const urlParams = new URLSearchParams(window.location.search);
                     const urlEvent = urlParams.get('line_reg');
                     let pendingEvent = urlEvent ? decodeURIComponent(urlEvent) : localStorage.getItem('pending_line_reg_event');
@@ -519,13 +562,6 @@
                         localStorage.removeItem('pending_line_reg_event');
 
                         window.currentRegEvent = pendingEvent;
-                        const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
-                        
-                        document.getElementById('social-auth-step').classList.add('hidden');
-                        document.getElementById('social-preview-step').classList.remove('hidden');
-                        
-                        window.openModal('event-registration-modal');
-                        window.showToast('🔄 LINE 授權成功，載入資料中...');
                         
                         let profile = { 
                             userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), 
@@ -539,8 +575,27 @@
                                 new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
                             ]); 
                         } catch (e) { 
-                            console.warn("無法取得 LINE 大頭貼，使用預設值確保流程不中斷", e); 
+                            console.warn("無法取得 LINE 大頭貼", e); 
                         }
+
+                        if (profile.userId && !profile.userId.startsWith('visitor_')) {
+                            state.lineUserId = profile.userId;
+                            saveData();
+                        }
+
+                        const regs = globalEventRegistrations[pendingEvent] || [];
+                        if (state.lineUserId && regs.some(r => r.socialId === state.lineUserId)) {
+                            window.showToast('⚠️ 您已經報名過此活動囉！');
+                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                            return; 
+                        }
+
+                        const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
+                        document.getElementById('social-auth-step').classList.add('hidden');
+                        document.getElementById('social-preview-step').classList.remove('hidden');
+                        
+                        window.openModal('event-registration-modal');
+                        window.showToast('🔄 LINE 授權成功，載入資料中...');
 
                         currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                         
@@ -569,9 +624,7 @@
 
             try {
                 if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
-                    window.showToast('🔄 偵測到已登入，載入資料中...');
+                    window.showToast('🔄 偵測到已登入，檢查報名狀態...');
 
                     let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
                     try { 
@@ -582,6 +635,22 @@
                     } catch(e) {
                         console.warn("大頭貼抓取失敗，使用預設值");
                     } 
+
+                    if (profile.userId && !profile.userId.startsWith('visitor_')) {
+                        state.lineUserId = profile.userId;
+                        saveData();
+                    }
+
+                    const regs = globalEventRegistrations[eventName] || [];
+                    if (state.lineUserId && regs.some(r => r.socialId === state.lineUserId)) {
+                        window.showToast('⚠️ 您已經報名過此活動囉！');
+                        window.closeModal('event-registration-modal');
+                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                        return; 
+                    }
+
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
 
                     currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                     
@@ -605,8 +674,6 @@
                     liff.login({ redirectUri: redirectUrl.toString() });
                 } else {
                     window.showToast('🔄 正在載入 LINE 資料中...');
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
                     
                     let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
                     try { 
@@ -617,6 +684,22 @@
                     } catch(e) { 
                         console.warn("無法取得 LINE Profile", e); 
                     }
+
+                    if (profile.userId && !profile.userId.startsWith('visitor_')) {
+                        state.lineUserId = profile.userId;
+                        saveData();
+                    }
+
+                    const regs = globalEventRegistrations[window.currentRegEvent] || [];
+                    if (state.lineUserId && regs.some(r => r.socialId === state.lineUserId)) {
+                        window.showToast('⚠️ 您已經報名過此活動囉！');
+                        window.closeModal('event-registration-modal');
+                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                        return; 
+                    }
+
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
 
                     currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                     document.getElementById('social-user-avatar').src = currentSocialData.picture;
@@ -658,6 +741,15 @@
 
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
+
+            const regs = globalEventRegistrations[window.currentRegEvent] || [];
+            if (regs.some(r => r.socialId === currentSocialData.id)) {
+                window.showToast('⚠️ 您已經報名過此活動囉！');
+                window.closeModal('event-registration-modal');
+                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                return;
+            }
+
             const originalHtml = e.currentTarget.innerHTML;
             e.currentTarget.disabled = true;
             e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
@@ -693,20 +785,16 @@
             btn.addEventListener('click', (e) => { const m = e.target.closest('.modal-overlay'); if (m) m.classList.add('hidden'); });
         });
 
-        // ✨ 核心修復：解放 Firebase 資料庫連線
         function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // 匿名登入 (背景執行，即使失敗也不影響資料庫讀取)
                 signInAnonymously(auth).catch((err) => {
                     console.warn("匿名登入狀態異常，但不影響公開資料庫讀取", err.message);
                 });
                 
-                // ✨ 將資料庫監聽直接綁定，不再等待 user 狀態！
-                // 因為資料庫安全規則已設定為 allow read, write: if true;
                 if (db) {
                     onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
                         if(docSnap.exists() && docSnap.data().events) {
