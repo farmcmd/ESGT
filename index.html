@@ -2828,37 +2828,47 @@
             const bounds = new google.maps.LatLngBounds(); bounds.extend(start); bounds.extend(end); window.map.fitBounds(bounds);
         }
 
-        // 👇 核心還原：最穩定的 Callback 驅動渲染引擎
+        // 👇 核心還原與終極防呆：確保地圖 100% 脫離轉圈死鎖
         window.renderMap = function() {
             // 雙重安全鎖：若 API 尚未就緒、無容器、或已繪製過地圖，則跳過
             if (!window.mapsApiReady || !document.getElementById('map') || window.map) return;
 
-            // 確保使用 DEMO_MAP_ID 解鎖圖釘 Emoji 功能
-            const mapOptions = { center: { lat: 23.813514, lng: 120.853722 }, zoom: 12, mapId: "DEMO_MAP_ID", disableDefaultUI: true, zoomControl: true };
-            window.map = new google.maps.Map(document.getElementById("map"), mapOptions);
-            window.directionsService = new google.maps.DirectionsService();
-            window.directionsRenderer = new google.maps.DirectionsRenderer({ map: window.map, suppressMarkers: true, polylineOptions: { strokeColor: '#8B9D77', strokeWeight: 5, strokeOpacity: 0.8 } });
+            try {
+                // 確保使用 DEMO_MAP_ID 解鎖圖釘 Emoji 功能
+                const mapOptions = { center: { lat: 23.813514, lng: 120.853722 }, zoom: 12, mapId: "DEMO_MAP_ID", disableDefaultUI: true, zoomControl: true };
+                window.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+                window.directionsService = new google.maps.DirectionsService();
+                window.directionsRenderer = new google.maps.DirectionsRenderer({ map: window.map, suppressMarkers: true, polylineOptions: { strokeColor: '#8B9D77', strokeWeight: 5, strokeOpacity: 0.8 } });
 
-            if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
-                pois.forEach(poi => {
-                    let pinBg = '#ffffff', pinBorder = '#4A6741', glyphColor = '#4A6741', markerScale = 1.0;
-                    if (poi.categoryId === 'map_only') { pinBg = '#4A6741'; pinBorder = '#2C3E28'; glyphColor = '#ffffff'; markerScale = 0.8; } 
-                    else if (poi.categoryId === 'map_only_blue') { pinBg = '#3B82F6'; pinBorder = '#1E3A8A'; glyphColor = '#ffffff'; markerScale = 0.8; }
-                    
-                    const pin = new google.maps.marker.PinElement({ background: pinBg, borderColor: pinBorder, glyphColor: glyphColor, glyph: new URL(`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E${poi.icon}%3C/text%3E%3C/svg%3E`), scale: markerScale });
-                    const marker = new google.maps.marker.AdvancedMarkerElement({ position: poi.coords, map: window.map, title: poi.name, content: pin.element });
-                    marker.addListener("click", () => { window.openPoi(poi); });
-                });
-            }
-            
-            const overlay = document.getElementById('map-overlay');
-            if (overlay) {
-                overlay.classList.add('opacity-0', 'pointer-events-none');
-                setTimeout(() => overlay.classList.add('hidden'), 500);
+                if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+                    pois.forEach(poi => {
+                        let pinBg = '#ffffff', pinBorder = '#4A6741', glyphColor = '#4A6741', markerScale = 1.0;
+                        if (poi.categoryId === 'map_only') { pinBg = '#4A6741'; pinBorder = '#2C3E28'; glyphColor = '#ffffff'; markerScale = 0.8; } 
+                        else if (poi.categoryId === 'map_only_blue') { pinBg = '#3B82F6'; pinBorder = '#1E3A8A'; glyphColor = '#ffffff'; markerScale = 0.8; }
+                        
+                        // 🚀 關鍵修復：使用最穩定的 DOM 節點來繪製圖釘，徹底排除 URL 解析報錯的風險
+                        const iconDiv = document.createElement('div');
+                        iconDiv.innerHTML = poi.icon;
+                        iconDiv.style.fontSize = '18px';
+                        
+                        const pin = new google.maps.marker.PinElement({ background: pinBg, borderColor: pinBorder, glyphColor: glyphColor, glyph: iconDiv, scale: markerScale });
+                        const marker = new google.maps.marker.AdvancedMarkerElement({ position: poi.coords, map: window.map, title: poi.name, content: pin.element });
+                        marker.addListener("click", () => { window.openPoi(poi); });
+                    });
+                }
+            } catch (error) {
+                console.error("地圖圖釘繪製遭遇異常，但不影響核心底圖載入:", error);
+            } finally {
+                // 🛡️ 終極防線：無論繪製成功或失敗，保證一定會把「地圖準備中」的轉圈動畫關閉
+                const overlay = document.getElementById('map-overlay');
+                if (overlay) {
+                    overlay.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => overlay.classList.add('hidden'), 500);
+                }
             }
         };
 
-        // 👇 核心還原：最純粹、依賴官方 Callback 的腳本掛載器
+        // 👇 核心還原：最純粹、具備斷線攔截的腳本掛載器
         function loadGoogleMaps() {
             window.mapsApiReady = false;
             
@@ -2875,6 +2885,16 @@
             const script = document.createElement('script');
             script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAjNv49BPa_X2SSwhtyHTuyfjMAbxEGU-8&libraries=marker&callback=renderMapWrapper`;
             script.async = true; script.defer = true;
+            
+            // 網路錯誤攔截：如果 Google 腳本本身載入失敗
+            script.onerror = function() {
+                const overlay = document.getElementById('map-overlay');
+                const loadingText = document.getElementById('map-loading-text');
+                const spinner = overlay?.querySelector('.animate-spin');
+                if(loadingText) loadingText.innerHTML = '<span class="text-red-500 font-bold"><i class="fas fa-wifi mr-1"></i>無法連線至地圖伺服器，請檢查網路狀態</span>';
+                if(spinner) spinner.classList.add('hidden');
+            };
+            
             document.head.appendChild(script);
         }
 
