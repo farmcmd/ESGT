@@ -154,17 +154,9 @@
                         <p id="social-user-id" class="text-xs text-gray-500 font-mono"></p>
                     </div>
                 </div>
-                
-                <!-- ✨ 新增：使用 flex 容器包覆，並補上「加入群組」按鈕，防止自動跳轉時漏失 -->
-                <div class="flex flex-col gap-2">
-                    <button id="final-submit-reg-btn" class="w-full py-3.5 bg-green-500 text-white rounded-xl font-bold shadow-md hover:bg-green-600 transition flex justify-center items-center">
-                        <i class="fas fa-paper-plane mr-2"></i> 確認報名並聯絡主辦方
-                    </button>
-                    
-                    <a href="https://line.me/R/ti/g/6Hcvx4VKCe" target="_blank" class="w-full py-3 bg-white border-2 border-[#06C755]/80 text-[#06C755] rounded-xl font-bold shadow-sm hover:bg-[#06C755] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px] group">
-                        <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
-                    </a>
-                </div>
+                <button id="final-submit-reg-btn" class="w-full py-3.5 bg-green-500 text-white rounded-xl font-bold shadow-md hover:bg-green-600 transition flex justify-center items-center">
+                    <i class="fas fa-paper-plane mr-2"></i> 確認報名並聯絡主辦方
+                </button>
             </div>
 
             <div class="mt-4 pt-4 border-t border-gray-100">
@@ -391,12 +383,6 @@
                 let regsHtml = '';
                 const isRegOpen = ev.isRegistrationOpen !== false; 
                 
-                // 檢查當前登入者是否已報名此活動 (過濾後精準檢查)
-                let isAlreadyReg = false;
-                if (state.lineUserId) {
-                    isAlreadyReg = regs.some(r => r.socialId === state.lineUserId);
-                }
-                
                 const shareBtnHtml = `<button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0 w-fit"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>`;
 
                 if(isRegOpen) { 
@@ -497,9 +483,7 @@
                     }
                     
                     let quickRegBtnHtml = '';
-                    if (isAlreadyReg) {
-                        quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-4 py-1.5 bg-green-50 text-green-600 rounded-xl text-[15px] font-black shadow-sm flex items-center justify-center border-b-4 border-green-200 cursor-not-allowed"><i class="fas fa-check-circle mr-1.5 text-green-500 text-lg"></i>已完成報名</button>`;
-                    } else if (isRegOpen) { 
+                    if (isRegOpen) { 
                         quickRegBtnHtml = `<button onclick="window.openRegistrationModal('${safeEventName}')" class="shrink-0 w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-white text-lg"></i>LINE+1 快速報名</button>`;
                     } else {
                         quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
@@ -591,13 +575,6 @@
                             saveData();
                         }
 
-                        const regs = globalEventRegistrations[pendingEvent] || [];
-                        if (state.lineUserId && regs.some(r => r.socialId === state.lineUserId)) {
-                            window.showToast('⚠️ 您已經報名過此活動囉！');
-                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                            return; 
-                        }
-
                         const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
                         document.getElementById('social-auth-step').classList.add('hidden');
                         document.getElementById('social-preview-step').classList.remove('hidden');
@@ -649,14 +626,6 @@
                         saveData();
                     }
 
-                    const regs = globalEventRegistrations[eventName] || [];
-                    if (state.lineUserId && regs.some(r => r.socialId === state.lineUserId)) {
-                        window.showToast('⚠️ 您已經報名過此活動囉！');
-                        window.closeModal('event-registration-modal');
-                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                        return; 
-                    }
-
                     document.getElementById('social-auth-step').classList.add('hidden');
                     document.getElementById('social-preview-step').classList.remove('hidden');
 
@@ -696,14 +665,6 @@
                     if (profile.userId && !profile.userId.startsWith('visitor_')) {
                         state.lineUserId = profile.userId;
                         saveData();
-                    }
-
-                    const regs = globalEventRegistrations[window.currentRegEvent] || [];
-                    if (state.lineUserId && regs.some(r => r.socialId === state.lineUserId)) {
-                        window.showToast('⚠️ 您已經報名過此活動囉！');
-                        window.closeModal('event-registration-modal');
-                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                        return; 
                     }
 
                     document.getElementById('social-auth-step').classList.add('hidden');
@@ -750,17 +711,17 @@
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
 
-            const regs = globalEventRegistrations[window.currentRegEvent] || [];
-            if (regs.some(r => r.socialId === currentSocialData.id)) {
-                window.showToast('⚠️ 您已經報名過此活動囉！');
-                window.closeModal('event-registration-modal');
-                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                return;
-            }
-
             const originalHtml = e.currentTarget.innerHTML;
             e.currentTarget.disabled = true;
             e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
+
+            const regs = globalEventRegistrations[window.currentRegEvent] || [];
+            if (regs.some(r => r.socialId === currentSocialData.id)) {
+                window.showToast('⚠️ 您已經報名過此活動囉！');
+                e.currentTarget.disabled = false;
+                e.currentTarget.innerHTML = originalHtml;
+                return;
+            }
 
             try {
                 if (!db || typeof addDoc !== 'function') throw new Error("資料庫未連線");
