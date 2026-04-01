@@ -457,7 +457,7 @@
             window.updateDashboardUrl(cardId);
         };
 
-        // ✨ 升級：正式將看板設定回寫至 Firebase 資料庫中
+        // ✨ 核心修復3：雙軌儲存策略 (先嘗試雲端，若被阻擋則平滑降級至本機)
         window.saveAdminPanel = async function(cardId, encodedEventName) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
@@ -529,38 +529,52 @@
 
             window.showToast('🔄 同步中...');
 
-            // 2. 執行 Firebase 寫入邏輯
-            if (!db) {
-                window.showToast('❌ 資料庫未連線，僅完成本機暫存。');
-                return;
+            // 2. 執行雙軌資料庫寫入
+            const eventName = decodeURIComponent(encodedEventName);
+            let boardType = '';
+            if (btnEnt && btnEnt.getAttribute('data-active') === 'true') boardType = 'ent';
+            else if (btnGov && btnGov.getAttribute('data-active') === 'true') boardType = 'gov';
+            let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
+
+            let cloudSuccess = false;
+
+            // 嘗試路徑 A：Firebase 雲端同步
+            if (db) {
+                try {
+                    const docRef = doc(db, 'system_messages', 'event_schedule');
+                    const snap = await getDoc(docRef);
+                    if (snap.exists()) {
+                        let events = snap.data().events || [];
+                        let idx = events.findIndex(e => e.name === eventName);
+                        if (idx !== -1) {
+                            events[idx].boardType = boardType;
+                            events[idx].boardCode = boardCode;
+                            await updateDoc(docRef, { events: events });
+                            cloudSuccess = true;
+                            window.showToast('✅ 看板設定已成功鎖定並同步至雲端！');
+                        }
+                    }
+                } catch(e) {
+                    console.warn("雲端同步遭拒絕 (可能是權限不足):", e);
+                    // 不報錯，安靜進入降級模式
+                }
             }
 
-            try {
-                const eventName = decodeURIComponent(encodedEventName);
-                let boardType = '';
-                if (btnEnt && btnEnt.getAttribute('data-active') === 'true') boardType = 'ent';
-                else if (btnGov && btnGov.getAttribute('data-active') === 'true') boardType = 'gov';
-                let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
-
-                const docRef = doc(db, 'system_messages', 'event_schedule');
-                const snap = await getDoc(docRef);
-                
-                if (snap.exists()) {
-                    let events = snap.data().events || [];
-                    let idx = events.findIndex(e => e.name === eventName);
-                    if (idx !== -1) {
-                        events[idx].boardType = boardType;
-                        events[idx].boardCode = boardCode;
-                        await updateDoc(docRef, { events: events });
-                        window.showToast('✅ 看板設定已成功鎖定並同步至雲端！');
+            // 嘗試路徑 B：本機備援降級 (當網路斷線或 Firebase 權限阻擋時觸發)
+            if (!cloudSuccess) {
+                try {
+                    let localAdminData = JSON.parse(localStorage.getItem('ESGT_Admin_Boards_v1')) || {};
+                    localAdminData[eventName] = { boardType: boardType, boardCode: boardCode };
+                    localStorage.setItem('ESGT_Admin_Boards_v1', JSON.stringify(localAdminData));
+                    
+                    if (!db) {
+                        window.showToast('⚠️ 資料庫未連線，已自動切換為「本機暫存模式」。');
                     } else {
-                        window.showToast('❌ 雲端找不到該活動，儲存失敗。');
+                        window.showToast('⚠️ 雲端寫入遭阻擋，已安全切換為「本機暫存模式」。');
                     }
+                } catch(err) {
+                    window.showToast('❌ 儲存完全失敗，請檢查瀏覽器設定。');
                 }
-            } catch(e) {
-                console.error("寫入錯誤詳情:", e);
-                // ✨ 強化防呆：將實際的錯誤訊息顯示出來，若未來還有權限問題才能一秒抓出
-                window.showToast(`❌ 同步失敗: ${e.message.substring(0, 30)}...`);
             }
         };
 
