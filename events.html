@@ -118,6 +118,18 @@
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
+    <!-- 密碼輸入 Modal -->
+    <div id="custom-prompt-modal" class="modal-overlay hidden z-[200]">
+        <div class="modal-content max-w-sm p-6 bg-white text-center">
+            <h3 id="custom-prompt-title" class="text-xl font-bold text-gray-800 mb-2">提示</h3>
+            <input type="text" id="custom-prompt-input" class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:border-mori-sage" autocomplete="off">
+            <div class="flex gap-2 justify-center">
+                <button id="custom-prompt-cancel" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200">取消</button>
+                <button id="custom-prompt-confirm" class="px-4 py-2 bg-mori-forest text-white rounded-lg font-bold hover:bg-mori-dark">確認</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 活動快速報名 Modal -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
@@ -155,7 +167,6 @@
                     </div>
                 </div>
                 
-                <!-- ✨ 新增：使用 flex 容器包覆，並補上「加入群組」按鈕，防止自動跳轉時漏失 -->
                 <div class="flex flex-col gap-2">
                     <button id="final-submit-reg-btn" class="w-full py-3.5 bg-green-500 text-white rounded-xl font-bold shadow-md hover:bg-green-600 transition flex justify-center items-center">
                         <i class="fas fa-paper-plane mr-2"></i> 確認報名並聯絡主辦方
@@ -167,6 +178,7 @@
                 </div>
             </div>
 
+            <!-- Messenger 備用按鈕 -->
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="relative mb-4 mt-1">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
@@ -258,6 +270,261 @@
         window.openModal = function(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); };
         window.closeModal = function(modalId) { document.getElementById(modalId)?.classList.add('hidden'); };
 
+        window.customPrompt = function(message, defaultValue, callback) {
+            const modal = document.getElementById('custom-prompt-modal'); const titleEl = document.getElementById('custom-prompt-title'); const inputEl = document.getElementById('custom-prompt-input');
+            const confirmBtn = document.getElementById('custom-prompt-confirm'); const cancelBtn = document.getElementById('custom-prompt-cancel');
+            if(!modal) return callback(defaultValue);
+            titleEl.textContent = message; inputEl.value = defaultValue;
+            confirmBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(inputEl.value); };
+            cancelBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(null); };
+            window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
+        };
+
+        // ✨ 升級：動態讀取看板設定，確保去除空白並精準拼接 5 碼，加上即時亮燈微交互
+        window.updateDashboardUrl = function(cardId) {
+            const btnEnt = document.getElementById(`btn-ent-${cardId}`);
+            const btnGov = document.getElementById(`btn-gov-${cardId}`);
+            const inputNum = document.getElementById(`input-num-${cardId}`);
+            const urlDisplay = document.getElementById(`display-url-${cardId}`);
+            const labelNum = document.getElementById(`label-num-${cardId}`);
+            
+            if (!urlDisplay) return;
+
+            // 強制轉大寫並去除前後空白
+            let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
+            let finalUrl = '';
+
+            // 判斷活躍狀態，動態加上精準的網址後綴
+            if (btnEnt && btnEnt.getAttribute('data-active') === 'true') {
+                finalUrl = `https://farmcmd.github.io/ESGT/#ESG-board${boardCode ? '-' + boardCode : ''}`;
+            } else if (btnGov && btnGov.getAttribute('data-active') === 'true') {
+                finalUrl = `https://farmcmd.github.io/ESGT/#OKR-board${boardCode ? '-' + boardCode : ''}`;
+            }
+            
+            // 雙重賦值，強制 UI 刷新
+            urlDisplay.value = finalUrl;
+            urlDisplay.setAttribute('value', finalUrl);
+
+            // ✨ 即時亮燈微交互：當有輸入時，標籤與輸入框發出橘色霓虹光
+            if (inputNum && !inputNum.disabled) {
+                if (boardCode.length > 0) {
+                    inputNum.classList.add('shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
+                    inputNum.classList.remove('shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'border-yellow-400', 'bg-yellow-50', 'text-yellow-900');
+                    if (labelNum) {
+                        labelNum.innerHTML = '<i class="fas fa-bolt text-orange-500 mr-1 animate-pulse"></i>編號:';
+                        labelNum.classList.add('text-orange-600');
+                    }
+                } else {
+                    inputNum.classList.remove('shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
+                    inputNum.classList.add('shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'border-yellow-400', 'bg-yellow-50', 'text-yellow-900');
+                    if (labelNum) {
+                        labelNum.innerHTML = '編號:';
+                        labelNum.classList.add('text-orange-600'); 
+                    }
+                }
+            }
+        };
+
+        // ✨ 新增：點擊 Enter 按鈕時開啟網址
+        window.openDashboard = function(cardId) {
+            const urlDisplay = document.getElementById(`display-url-${cardId}`);
+            if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) {
+                window.open(urlDisplay.value, '_blank');
+            } else {
+                window.showToast('⚠️ 請先點擊選擇企業或政府儀表板！');
+            }
+        };
+
+        // ✨ 升級：管理員看板解鎖函數 (解鎖時會判斷是否已有值來決定亮燈)
+        window.unlockAdminPanel = function(cardId) {
+            window.customPrompt('🧙‍♂️ 請輸入系統管理員密碼以解鎖魔法看板：', '', (pwd) => {
+                if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
+                    const btnEnt = document.getElementById(`btn-ent-${cardId}`);
+                    const btnGov = document.getElementById(`btn-gov-${cardId}`);
+                    const inputNum = document.getElementById(`input-num-${cardId}`);
+                    const lockBtn = document.getElementById(`admin-lock-btn-${cardId}`);
+                    const saveBtn = document.getElementById(`btn-save-${cardId}`);
+                    const containerBox = document.getElementById(`admin-box-${cardId}`);
+                    const labelNum = document.getElementById(`label-num-${cardId}`);
+
+                    // 解鎖並準備點亮選項
+                    [btnEnt, btnGov].forEach(btn => {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.classList.remove('cursor-not-allowed', 'opacity-90', 'bg-gray-100', 'text-gray-400');
+                            btn.classList.add('cursor-pointer', 'hover:-translate-y-0.5');
+                            if (btn.getAttribute('data-active') !== 'true') {
+                                btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`;
+                            }
+                        }
+                    });
+                    
+                    // ✨ 解鎖輸入框，並根據目前是否有值決定是否發出橘色光芒
+                    if (inputNum) { 
+                        inputNum.disabled = false; 
+                        inputNum.placeholder = "5碼";
+                        inputNum.classList.remove('cursor-not-allowed', 'bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner', 'bg-orange-50/50', 'text-orange-700', 'border-orange-300', 'shadow-sm'); 
+                        
+                        if (inputNum.value.trim().length > 0) {
+                            inputNum.classList.add('shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
+                            if(labelNum) { 
+                                labelNum.innerHTML = '<i class="fas fa-bolt text-orange-500 mr-1 animate-pulse"></i>編號:'; 
+                                labelNum.classList.add('text-orange-600'); 
+                                labelNum.classList.remove('text-gray-400', 'text-orange-700/80'); 
+                            }
+                        } else {
+                            inputNum.classList.add('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'text-yellow-900'); 
+                            if(labelNum) { 
+                                labelNum.innerHTML = '編號:'; 
+                                labelNum.classList.add('text-orange-600'); 
+                                labelNum.classList.remove('text-gray-400', 'text-orange-700/80'); 
+                            }
+                        }
+                    }
+
+                    // 顯示打勾儲存按鈕
+                    if (saveBtn) saveBtn.classList.remove('hidden');
+                    
+                    // 鎖頭變成開啟狀態
+                    if (lockBtn) {
+                        lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500 text-lg animate-pulse"></i>';
+                        lockBtn.className = 'w-9 h-9 flex items-center justify-center bg-green-50 border border-green-300 rounded-full shadow-sm shrink-0 z-10';
+                        lockBtn.disabled = true; 
+                    }
+                    
+                    // 區塊發光效果
+                    if (containerBox) {
+                        containerBox.classList.remove('bg-gray-50/80', 'border-gray-200');
+                        containerBox.classList.add('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_20px_rgba(250,204,21,0.25)]');
+                    }
+
+                    window.showToast('✨ 魔法解除！點擊看板按鈕將其點亮，修改後請打勾儲存。');
+                } else if (pwd !== null) {
+                    window.showToast('❌ 逼逼！麻瓜退散，密碼錯誤！');
+                }
+            });
+        };
+
+        // ✨ 核心修復：互斥點擊與狀態寫入
+        window.toggleBoard = function(cardId, type) {
+            const btn = document.getElementById(`btn-${type}-${cardId}`);
+            if (!btn || btn.disabled) return;
+
+            const isActive = btn.getAttribute('data-active') === 'true';
+            const newState = isActive ? 'false' : 'true';
+            btn.setAttribute('data-active', newState);
+
+            if (type === 'ent') {
+                const btnGov = document.getElementById(`btn-gov-${cardId}`);
+                if (btnGov && !isActive) { 
+                    btnGov.setAttribute('data-active', 'false'); 
+                    btnGov.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`; 
+                    btnGov.innerHTML = `<span>永續政府儀表板</span>`; 
+                }
+            } else if (type === 'gov') {
+                const btnEnt = document.getElementById(`btn-ent-${cardId}`);
+                if (btnEnt && !isActive) { 
+                    btnEnt.setAttribute('data-active', 'false'); 
+                    btnEnt.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`; 
+                    btnEnt.innerHTML = `<span>企業永續儀表板</span>`; 
+                }
+            }
+
+            if (type === 'ent') {
+                if (!isActive) {
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]`;
+                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse"></i>`;
+                } else {
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`;
+                    btn.innerHTML = `<span>企業永續儀表板</span>`;
+                }
+            } else if (type === 'gov') {
+                if (!isActive) {
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)]`;
+                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse"></i>`;
+                } else {
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`;
+                    btn.innerHTML = `<span>永續政府儀表板</span>`;
+                }
+            }
+
+            window.updateDashboardUrl(cardId);
+        };
+
+        // ✨ 升級：打勾儲存時，若輸入框有值，會保持淺橘色的已設定完成提示
+        window.saveAdminPanel = function(cardId) {
+            const btnEnt = document.getElementById(`btn-ent-${cardId}`);
+            const btnGov = document.getElementById(`btn-gov-${cardId}`);
+            const inputNum = document.getElementById(`input-num-${cardId}`);
+            const lockBtn = document.getElementById(`admin-lock-btn-${cardId}`);
+            const saveBtn = document.getElementById(`btn-save-${cardId}`);
+            const containerBox = document.getElementById(`admin-box-${cardId}`);
+            const labelNum = document.getElementById(`label-num-${cardId}`);
+
+            if (btnEnt) {
+                btnEnt.disabled = true;
+                btnEnt.classList.remove('cursor-pointer', 'hover:-translate-y-0.5');
+                btnEnt.classList.add('cursor-not-allowed');
+                if (btnEnt.getAttribute('data-active') === 'true') {
+                    btnEnt.classList.add('opacity-90');
+                    btnEnt.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600"></i>`;
+                } else {
+                    btnEnt.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200`;
+                }
+            }
+
+            if (btnGov) {
+                btnGov.disabled = true;
+                btnGov.classList.remove('cursor-pointer', 'hover:-translate-y-0.5');
+                btnGov.classList.add('cursor-not-allowed');
+                if (btnGov.getAttribute('data-active') === 'true') {
+                    btnGov.classList.add('opacity-90');
+                    btnGov.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600"></i>`;
+                } else {
+                    btnGov.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200`;
+                }
+            }
+
+            if (inputNum) {
+                inputNum.disabled = true;
+                inputNum.classList.remove('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'text-yellow-900', 'shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
+                
+                if (inputNum.value.trim().length > 0) {
+                    // 若有值，維持淺橘色的「已完成」視覺，不會變回死灰
+                    inputNum.classList.add('cursor-not-allowed', 'bg-orange-50/50', 'text-orange-700', 'border-orange-300', 'shadow-sm');
+                    inputNum.classList.remove('bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner');
+                    if(labelNum) { 
+                        labelNum.innerHTML = '<i class="fas fa-check text-orange-600 mr-1"></i>編號:';
+                        labelNum.classList.remove('text-orange-600', 'animate-pulse'); 
+                        labelNum.classList.add('text-orange-700/80'); 
+                    }
+                } else {
+                    // 若沒值，退回預設死灰色
+                    inputNum.classList.add('cursor-not-allowed', 'bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner');
+                    if(labelNum) { 
+                        labelNum.innerHTML = '編號:';
+                        labelNum.classList.remove('text-orange-600', 'text-orange-700/80'); 
+                        labelNum.classList.add('text-gray-400'); 
+                    }
+                }
+            }
+
+            if (saveBtn) saveBtn.classList.add('hidden');
+
+            if (lockBtn) {
+                lockBtn.innerHTML = '<span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-base">💡</span>';
+                lockBtn.className = 'w-9 h-9 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group';
+                lockBtn.disabled = false;
+            }
+
+            if (containerBox) {
+                containerBox.classList.remove('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_15px_rgba(250,204,21,0.25)]');
+                containerBox.classList.add('bg-gray-50/80', 'border-gray-200');
+            }
+
+            window.showToast('🔒 叮！魔法看板已鎖定儲存。');
+        };
+
         // 雙重智慧分享引擎
         window.currentShareData = { url: '', title: '', text: '' };
 
@@ -331,7 +598,7 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // ✨ 獨立卡片渲染引擎 (去重複過濾升級版)
+        // 獨立卡片渲染引擎 (保留防洗版邏輯 + 動態網址列 + 嚴格字串相容)
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -369,17 +636,15 @@
 
                 let rawRegs = globalEventRegistrations[ev.name] || [];
                 
-                // ✨ 核心升級：自動過濾重複的報名資料 (防洗版與重複點擊)，保留最新一筆狀態
                 rawRegs.sort((a, b) => {
                     const timeA = a.timestamp ? (typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : (a.timestamp.seconds * 1000)) : Date.now();
                     const timeB = b.timestamp ? (typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : (b.timestamp.seconds * 1000)) : Date.now();
-                    return timeB - timeA; // 最新時間在前
+                    return timeB - timeA; 
                 });
                 
                 let uniqueRegsMap = new Map();
                 rawRegs.forEach(r => {
                     const uniqueKey = r.socialId || r.userId;
-                    // 若 Map 尚未有此 key (代表是最新的一筆)，則加入。若完全無 key 則以亂數當 key 避免被吃掉
                     if (uniqueKey && !uniqueRegsMap.has(uniqueKey)) {
                         uniqueRegsMap.set(uniqueKey, r);
                     } else if (!uniqueKey) {
@@ -437,7 +702,6 @@
                     
                     let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
                     if (window.isRegSnapshotLoaded) { 
-                        // ✨ 人數顯示現在將反映 100% 精準的去重後人數
                         countDisplay = `<span class="text-yellow-600 mx-1 text-base font-black">${regs.length}</span>`; 
                     }
                     
@@ -467,11 +731,51 @@
                 }
 
                 if(isExpired) {
+                    // ✨ 升級：動態網址列與強制屬性鎖定 (HTML 部分也改用 data-active="false" 確保安全)
                     let dashboardButtonsHtml = `
-                    <div class="mt-4 pt-5 border-t border-gray-100">
-                        <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-[15px] font-black tracking-wide rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center mx-auto hover:-translate-y-0.5">
-                            <i class="fas fa-chart-bar mr-2"></i> 查看活動成效儀表板
-                        </button>
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <div id="admin-box-${shortId}" class="flex flex-col lg:flex-row items-center justify-between gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-200 shadow-sm transition-all duration-500">
+                            
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto justify-center sm:justify-start">
+                                
+                                <button onclick="window.unlockAdminPanel('${shortId}')" id="admin-lock-btn-${shortId}" class="w-9 h-9 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group" title="點擊輸入密碼解鎖">
+                                    <span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-base">💡</span>
+                                </button>
+                                
+                                <span class="text-[12px] font-bold text-gray-500 bg-gray-200/50 px-2 py-1 rounded border border-gray-200 shrink-0 shadow-sm"><i class="fas fa-map-pin mr-1"></i>看板位置</span>
+                                
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button id="btn-ent-${shortId}" data-active="false" disabled onclick="window.toggleBoard('${shortId}', 'ent')" class="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200">
+                                        <span>企業永續儀表板</span>
+                                    </button>
+                                    <button id="btn-gov-${shortId}" data-active="false" disabled onclick="window.toggleBoard('${shortId}', 'gov')" class="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200">
+                                        <span>永續政府儀表板</span>
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 sm:ml-2 sm:border-l sm:border-gray-300 sm:pl-3">
+                                    <span id="label-num-${shortId}" class="text-[13px] font-bold text-gray-400 transition-colors">編號:</span>
+                                    <input type="text" id="input-num-${shortId}" oninput="window.updateDashboardUrl('${shortId}')" disabled placeholder="🔒" class="w-16 px-2 py-1 text-[13px] font-mono font-bold text-gray-400 border border-gray-200 rounded bg-gray-100 focus:outline-none text-center shadow-inner cursor-not-allowed transition-all">
+                                    
+                                    <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}')" class="hidden w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-md shadow-md flex items-center justify-center transition-all animate-bounce" title="完成設定">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center w-full lg:w-auto bg-white border border-gray-300 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex-grow lg:flex-grow-0 lg:min-w-[340px] max-w-full">
+                                <div class="px-3 py-2.5 text-gray-400 bg-gray-50 border-r border-gray-200 flex items-center justify-center shrink-0">
+                                    <i class="fas fa-link text-xs"></i>
+                                </div>
+                                <!-- ✨ 更新：將 placeholder 修改為「本活動未建立成效看板」 -->
+                                <input type="text" id="display-url-${shortId}" readonly class="w-full px-3 py-2.5 text-[12px] text-blue-600 font-mono bg-transparent focus:outline-none cursor-default truncate" placeholder="本活動未建立成效看板" value="" title="系統將自動生成專屬對接網址">
+                                <button onclick="window.openDashboard('${shortId}')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white transition-all flex items-center justify-center shrink-0 group border-l border-slate-700" title="前往成效儀表板 (ENTER)">
+                                    <span class="text-[11px] font-bold mr-1.5 opacity-90 group-hover:opacity-100 whitespace-nowrap">查看成效</span>
+                                    <i class="fas fa-reply fa-flip-horizontal group-hover:translate-x-0.5 transition-transform text-sm"></i>
+                                </button>
+                            </div>
+
+                        </div>
                     </div>`;
 
                     return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
@@ -531,7 +835,7 @@
             }
         };
 
-        // LINE 授權與報名邏輯 (手機版跨頁防失憶 + 重複報名防呆)
+        // LINE 授權與報名邏輯
         let currentSocialData = null; 
 
         async function initLineLiff() {
@@ -659,6 +963,8 @@
                     liff.login({ redirectUri: redirectUrl.toString() });
                 } else {
                     window.showToast('🔄 正在載入 LINE 資料中...');
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
                     
                     let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
                     try { 
@@ -674,9 +980,6 @@
                         state.lineUserId = profile.userId;
                         saveData();
                     }
-
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
 
                     currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                     document.getElementById('social-user-avatar').src = currentSocialData.picture;
@@ -719,17 +1022,15 @@
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
 
-            const originalHtml = e.currentTarget.innerHTML;
-            e.currentTarget.disabled = true;
-            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
-
             const regs = globalEventRegistrations[window.currentRegEvent] || [];
             if (regs.some(r => r.socialId === currentSocialData.id)) {
                 window.showToast('⚠️ 您已經報名過此活動囉！');
-                e.currentTarget.disabled = false;
-                e.currentTarget.innerHTML = originalHtml;
                 return;
             }
+
+            const originalHtml = e.currentTarget.innerHTML;
+            e.currentTarget.disabled = true;
+            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
 
             try {
                 if (!db || typeof addDoc !== 'function') throw new Error("資料庫未連線");
