@@ -2826,72 +2826,53 @@
             const bounds = new google.maps.LatLngBounds(); bounds.extend(start); bounds.extend(end); window.map.fitBounds(bounds);
         }
 
-        // 👇 修正：導入極致容錯架構的地圖渲染引擎
+        // 👇 核心還原：最穩定的 Callback 驅動渲染引擎
         window.renderMap = function() {
-            const overlay = document.getElementById('map-overlay');
-            const loadingText = document.getElementById('map-loading-text');
-            const spinner = overlay?.querySelector('.animate-spin');
+            // 雙重安全鎖：若 API 尚未就緒、無容器、或已繪製過地圖，則跳過
+            if (!window.mapsApiReady || !document.getElementById('map') || window.map) return;
 
-            if (!document.getElementById('map') || window.map) return;
-            
-            // 檢查 API 金鑰是否載入失敗或遭阻擋
-            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-                if (loadingText) loadingText.innerHTML = '<span class="text-red-500 font-black"><i class="fas fa-key mr-1"></i>請在原始碼中填寫有效的 Google Maps API 金鑰</span>';
-                if (spinner) spinner.classList.add('hidden');
-                return;
+            // 確保使用 DEMO_MAP_ID 解鎖圖釘 Emoji 功能
+            const mapOptions = { center: { lat: 23.813514, lng: 120.853722 }, zoom: 12, mapId: "DEMO_MAP_ID", disableDefaultUI: true, zoomControl: true };
+            window.map = new google.maps.Map(document.getElementById("map"), mapOptions);
+            window.directionsService = new google.maps.DirectionsService();
+            window.directionsRenderer = new google.maps.DirectionsRenderer({ map: window.map, suppressMarkers: true, polylineOptions: { strokeColor: '#8B9D77', strokeWeight: 5, strokeOpacity: 0.8 } });
+
+            if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+                pois.forEach(poi => {
+                    let pinBg = '#ffffff', pinBorder = '#4A6741', glyphColor = '#4A6741', markerScale = 1.0;
+                    if (poi.categoryId === 'map_only') { pinBg = '#4A6741'; pinBorder = '#2C3E28'; glyphColor = '#ffffff'; markerScale = 0.8; } 
+                    else if (poi.categoryId === 'map_only_blue') { pinBg = '#3B82F6'; pinBorder = '#1E3A8A'; glyphColor = '#ffffff'; markerScale = 0.8; }
+                    
+                    const pin = new google.maps.marker.PinElement({ background: pinBg, borderColor: pinBorder, glyphColor: glyphColor, glyph: new URL(`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E${poi.icon}%3C/text%3E%3C/svg%3E`), scale: markerScale });
+                    const marker = new google.maps.marker.AdvancedMarkerElement({ position: poi.coords, map: window.map, title: poi.name, content: pin.element });
+                    marker.addListener("click", () => { window.openPoi(poi); });
+                });
             }
-
-            try {
-                const mapOptions = { center: { lat: 23.813514, lng: 120.853722 }, zoom: 12, mapId: "ESG_MAP_ID", disableDefaultUI: true, zoomControl: true };
-                window.map = new google.maps.Map(document.getElementById("map"), mapOptions);
-                window.directionsService = new google.maps.DirectionsService();
-                window.directionsRenderer = new google.maps.DirectionsRenderer({ map: window.map, suppressMarkers: true, polylineOptions: { strokeColor: '#8B9D77', strokeWeight: 5, strokeOpacity: 0.8 } });
-
-                if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
-                    pois.forEach(poi => {
-                        let pinBg = '#ffffff', pinBorder = '#4A6741', glyphColor = '#4A6741', markerScale = 1.0;
-                        if (poi.categoryId === 'map_only') { pinBg = '#4A6741'; pinBorder = '#2C3E28'; glyphColor = '#ffffff'; markerScale = 0.8; } 
-                        else if (poi.categoryId === 'map_only_blue') { pinBg = '#3B82F6'; pinBorder = '#1E3A8A'; glyphColor = '#ffffff'; markerScale = 0.8; }
-                        
-                        const pin = new google.maps.marker.PinElement({ background: pinBg, borderColor: pinBorder, glyphColor: glyphColor, glyph: new URL(`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E${poi.icon}%3C/text%3E%3C/svg%3E`), scale: markerScale });
-                        const marker = new google.maps.marker.AdvancedMarkerElement({ position: poi.coords, map: window.map, title: poi.name, content: pin.element });
-                        marker.addListener("click", () => { window.openPoi(poi); });
-                    });
-                }
-                
-                if (overlay) {
-                    overlay.classList.add('opacity-0', 'pointer-events-none');
-                    setTimeout(() => overlay.classList.add('hidden'), 500);
-                }
-            } catch (e) {
-                console.error("地圖渲染失敗:", e);
-                if (loadingText) loadingText.innerHTML = '<span class="text-red-500 font-black"><i class="fas fa-exclamation-triangle mr-1"></i>地圖初始化失敗，請檢查 API 金鑰與主控台</span>';
-                if (spinner) spinner.classList.add('hidden');
+            
+            const overlay = document.getElementById('map-overlay');
+            if (overlay) {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => overlay.classList.add('hidden'), 500);
             }
         };
 
-        // 👇 修正：導入真實的 Google Maps API 金鑰
+        // 👇 核心還原：最純粹、依賴官方 Callback 的腳本掛載器
         function loadGoogleMaps() {
-            const script = document.createElement('script');
-            // 🛡️ 已替換為您指定的 API 金鑰。強烈建議在 Google Cloud 後台設定「網域白名單 (HTTP Referrers)」防護。
-            script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAjNv49BPa_X2SSwhtyHTuyfjMAbxEGU-8&libraries=marker&callback=renderMapWrapper`;
-            script.async = true; script.defer = true;
-            
-            // 逾時安全鎖：3 秒後若未載入完成，強制解鎖畫面並顯示錯誤
-            window.mapsLoadTimeout = setTimeout(() => {
-                if (!window.mapsApiReady) window.renderMap();
-            }, 3000);
-
             window.mapsApiReady = false;
+            
+            // 此 Callback 只有在 Google 引擎真的載入完畢後才會被觸發
             window.renderMapWrapper = function() { 
-                clearTimeout(window.mapsLoadTimeout);
                 window.mapsApiReady = true; 
-                // 若任務頁面已處於開啟狀態，立即補染地圖
+                // 若使用者已經提早進入了任務頁面，則立即補染地圖
                 const missionPage = document.getElementById('mission-page');
                 if (missionPage && !missionPage.classList.contains('hidden')) {
                     window.renderMap();
                 }
             };
+
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAjNv49BPa_X2SSwhtyHTuyfjMAbxEGU-8&libraries=marker&callback=renderMapWrapper`;
+            script.async = true; script.defer = true;
             document.head.appendChild(script);
         }
 
