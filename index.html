@@ -2248,6 +2248,51 @@
                 }
             });
 
+            // 👇 核心修復：移除重複宣告的語法錯誤，保留乾淨的「快速手動輸入里程」邏輯
+            const quickManualInput = document.getElementById('quick-manual-km');
+            const quickManualResult = document.getElementById('quick-manual-result');
+            const quickManualSubmit = document.getElementById('quick-manual-submit-btn');
+
+            if (quickManualInput && quickManualResult && quickManualSubmit) {
+                quickManualInput.addEventListener('input', (e) => {
+                    const km = parseFloat(e.target.value);
+                    
+                    // 🚀 拔除對 state.currentTransport 的依賴，只要輸入大於 0 的數字即可運作
+                    if (isNaN(km) || km <= 0) {
+                        quickManualResult.textContent = '減碳 0 g';
+                        quickManualSubmit.disabled = true;
+                        quickManualSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+                        return;
+                    }
+                    
+                    // 🚀 動態計算減碳量 (獨立的高運量補償公式：1公里 = 100g)
+                    const reduction = Math.round(km * 100);
+                    quickManualResult.innerHTML = `減碳 <span class="text-emerald-600 font-black text-lg">${reduction}</span> g`;
+                    
+                    // 解鎖登錄按鈕
+                    quickManualSubmit.disabled = false;
+                    quickManualSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    // 將計算結果寫入暫存，供後續防弊驗證模組使用
+                    pendingTrip = { distKm: km, reduction: reduction, isValid: true };
+                });
+
+                quickManualSubmit.addEventListener('click', () => {
+                    if (pendingTrip.isValid) {
+                        // 導向獎勵驗證視窗，確保與其他按鈕有一致的防弊機制
+                        const codeInput = document.getElementById('reward-verify-code');
+                        if (codeInput) codeInput.value = '';
+                        window.openModal('reward-verification-modal'); 
+                        
+                        // 重置輸入框狀態
+                        quickManualInput.value = '';
+                        quickManualResult.textContent = '減碳 0 g';
+                        quickManualSubmit.disabled = true;
+                        quickManualSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+            }
+
             // 🎯 補回：綠色消費標章選擇與即時動態計算
             document.querySelectorAll('.label-card').forEach(card => {
                 card.addEventListener('click', (e) => {
