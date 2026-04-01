@@ -723,10 +723,15 @@
 
     <!-- 2. 永續政府專區 Modal -->
     <div id="gov-modal" class="modal-overlay hidden">
-        <div class="modal-content max-w-6xl p-6 bg-gray-50 shadow-2xl rounded-2xl border-t-4 border-blue-600">
+        <div class="modal-content max-w-6xl p-6 bg-gray-50 shadow-2xl rounded-2xl border-t-4 border-blue-600 relative">
+            <!-- 專屬字碼標籤 (OKR-board) -->
+            <div class="absolute top-4 left-4 md:left-6 bg-blue-600 text-white text-[11px] font-black px-3 py-1.5 rounded-lg shadow-sm tracking-widest z-20 flex items-center border border-blue-800/20"><i class="fas fa-hashtag mr-1 opacity-70"></i>OKR-board</div>
+
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-2xl"></i></button>
-            <div class="text-center mb-6 mt-2">
+            <div class="text-center mb-6 mt-8 md:mt-2 flex flex-col items-center">
                 <h3 class="text-3xl font-bold text-blue-900 mb-2"><i class="fas fa-landmark mr-3 text-blue-600"></i>永續政府儀表板</h3>
+                <!-- 👇 新增：系統配發 5 碼編號展示區 -->
+                <p class="text-[13px] font-bold text-gray-500 tracking-wide mt-1">儀表板工作階段碼：<span id="gov-session-code" class="font-mono text-blue-600 text-[15px] bg-blue-100/50 px-2 py-0.5 rounded border border-blue-200 tracking-widest shadow-sm ml-1">-----</span></p>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div class="lg:col-span-3 flex flex-col gap-6">
@@ -1706,6 +1711,8 @@
                     ${summaryOverlay}
                     ${badgeHtml}
                     <div class="card-action-btns absolute top-4 right-4 flex gap-2 z-20">
+                        <!-- 👇 新增：企業專案專屬分享按鈕 -->
+                        <button class="share-card-btn text-yellow-600 bg-yellow-50 hover:bg-yellow-100 hover:text-yellow-700 border border-yellow-200 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="複製專屬連結"><i class="fas fa-share-alt"></i></button>
                         <button class="delete-btn text-red-400 bg-red-50 hover:bg-red-100 hover:text-red-600 border border-red-100 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="刪除"><i class="fas fa-trash-alt"></i></button>
                         <button class="download-btn text-mori-forest bg-mori-light hover:bg-mori-sage hover:text-white border border-mori-sage rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm" title="下載圖檔"><i class="fas fa-download"></i></button>
                     </div>
@@ -1733,6 +1740,19 @@
                     ${sroiHtml}${feedbackHtml}
                     <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: https://farmcmd.github.io/ESGT/</span><i class="fas fa-qrcode text-gray-300 text-xl flex-shrink-0 mb-0.5"></i></div>
                 `;
+
+                // 👇 新增：綁定分享按鈕複製邏輯 (ESG-board + 5碼)
+                card.querySelector('.share-card-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    const sessionCode = document.getElementById('ent-session-code')?.textContent || '00000';
+                    const url = `https://farmcmd.github.io/ESGT/#ESG-board-${sessionCode}`;
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(url).then(() => window.showToast('🔗 專屬企業連結已複製！')).catch(() => window.prompt('請複製此連結:', url));
+                    } else {
+                        const textArea = document.createElement("textarea"); textArea.value = url; textArea.style.position = "fixed"; textArea.style.left = "-9999px"; document.body.appendChild(textArea); textArea.select();
+                        try { document.execCommand('copy'); window.showToast('🔗 專屬企業連結已複製！'); } catch(err) { window.prompt('請複製此連結:', url); } document.body.removeChild(textArea);
+                    }
+                };
 
                 card.querySelector('.delete-btn').onclick = async (e) => {
                     e.stopPropagation(); const pwd = prompt(`⚠️ 準備刪除「${proj.orgName}」。請輸入密碼：`); if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
@@ -2703,6 +2723,22 @@
             initFirebase();
             loadGoogleMaps();
             
+            // 👇 新增：深度連結 (Deep Linking) 路由偵測引擎
+            // 只要網址中包含 esg-board (例如: https://.../ESGT/#ESG-board)，即自動開啟視窗
+            const currentUrl = window.location.href.toLowerCase();
+            if (currentUrl.includes('esg-board')) {
+                setTimeout(() => {
+                    window.openModal('enterprise-modal');
+                    window.showToast('🔗 已透過專屬連結為您開啟企業儀表板');
+                }, 600); // 延遲 0.6 秒以配合進站動畫，營造流暢感
+            } else if (currentUrl.includes('okr-board')) {
+                // 👇 新增：針對政府計畫儀表板的專屬路由偵測
+                setTimeout(() => {
+                    window.openModal('gov-modal');
+                    window.showToast('🔗 已透過專屬連結為您開啟政府計畫儀表板');
+                }, 600);
+            }
+
             window.addEventListener('online', () => { if(isOfflineMode) { isOfflineMode = false; initFirebase(); window.showToast('網路已恢復，系統連線中...'); } });
             window.addEventListener('offline', () => { isOfflineMode = true; window.showToast('網路已斷開，切換至離線模式'); loadMockData(); });
         });
