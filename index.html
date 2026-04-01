@@ -2401,6 +2401,7 @@
             });
         }
 
+        // 👇 核心修復：企業端問卷動態評分與留言儲存引擎
         function bindEnterpriseFlow() {
             document.getElementById('log-ent-proj-btn')?.addEventListener('click', () => {
                 const select = document.getElementById('ent-proj-select');
@@ -2410,37 +2411,67 @@
                     document.getElementById('ent-eval-target-name').textContent = proj ? proj.orgName : '';
                     document.getElementById('ent-eval-target-carbon').textContent = Math.round(state.totalCarbon);
                     document.getElementById('ent-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
+                    
+                    // 開啟視窗前：清空表單舊狀態與留言
+                    document.querySelectorAll('.ent-eval-q .number-rating i').forEach(i => { i.classList.remove('text-yellow-400'); i.classList.add('text-gray-300'); });
+                    document.getElementById('ent-eval-feedback').value = '';
+                    
                     window.closeModal('enterprise-modal'); window.openModal('ent-eval-modal');
                 } else { window.showToast('請先選擇要歸戶的企業'); }
             });
             
             document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async () => {
                 if(!pendingEntEvalSubmission) return;
-                const scores = { e: 5, s: 5, g: 5, total: 15 };
+                
+                // 動態抓取星星分數
+                let totalScore = 0, scoreE = 0, scoreS = 0, scoreG = 0, answered = 0;
+                document.querySelectorAll('.ent-eval-q').forEach((qDiv, idx) => {
+                    const stars = Array.from(qDiv.querySelectorAll('.number-rating i.text-yellow-400'));
+                    if (stars.length > 0) {
+                        const val = stars.length;
+                        totalScore += val; answered++;
+                        if(idx < 4) scoreE += val; else if(idx < 8) scoreS += val; else scoreG += val;
+                    }
+                });
+
+                if (answered < 12) return window.showToast('請完成所有 12 題評鑑指標，協助企業精準盤查。');
+
+                // 動態抓取意見回饋
+                const feedbackText = document.getElementById('ent-eval-feedback').value.trim();
+                const currentFeedback = feedbackText ? { text: feedbackText, time: new Date().toISOString() } : null;
+
                 const totalGreen = state.greenProcure + state.sroiProcure;
                 
                 if (db && !isOfflineMode && !pendingEntEvalSubmission.startsWith('mock_')) {
                     try {
-                        await setDoc(doc(db, 'ent_projects', pendingEntEvalSubmission), {
+                        const updates = {
                             carbon: increment(state.totalCarbon), green: increment(totalGreen), eval_count: increment(1),
-                            total_score: increment(scores.total), score_e: increment(scores.e), score_s: increment(scores.s), score_g: increment(scores.g)
-                        }, { merge: true });
+                            total_score: increment(totalScore), score_e: increment(scoreE), score_s: increment(scoreS), score_g: increment(scoreG),
+                            updatedAt: serverTimestamp()
+                        };
+                        if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
+                        await setDoc(doc(db, 'ent_projects', pendingEntEvalSubmission), updates, { merge: true });
                     } catch(e) { window.showToast('雲端歸戶失敗，請重試'); return; }
                 } else {
                     const proj = globalEntData.projects.find(p => p.id === pendingEntEvalSubmission);
                     if(proj) {
                         proj.carbon = (proj.carbon || 0) + state.totalCarbon; proj.green = (proj.green || 0) + totalGreen;
-                        proj.eval_count = (proj.eval_count || 0) + 1; proj.total_score = (proj.total_score || 0) + scores.total;
+                        proj.eval_count = (proj.eval_count || 0) + 1; proj.total_score = (proj.total_score || 0) + totalScore;
+                        proj.score_e = (proj.score_e || 0) + scoreE; proj.score_s = (proj.score_s || 0) + scoreS; proj.score_g = (proj.score_g || 0) + scoreG;
+                        if(currentFeedback) { if(!proj.feedbacks) proj.feedbacks = []; proj.feedbacks.push(currentFeedback); }
                     }
                 }
                 
                 const tName = document.getElementById('ent-eval-target-name').textContent;
                 state.checkoutHistory.unshift({ target: tName, carbon: Math.round(state.totalCarbon), green: Math.round(totalGreen), time: getFormattedTime() });
                 window.addLog(`歸戶結算: 貢獻至 ${tName}`);
-                resetPlayerStats(); window.closeModal('ent-eval-modal'); window.showToast('✅ 企業歸戶成功！數據已結算。'); renderEntProjectsDashboard();
+                resetPlayerStats(); window.closeModal('ent-eval-modal'); window.showToast('✅ 企業歸戶成功！系統正在為您生成專屬證書...'); 
+                renderEntProjectsDashboard();
+                document.getElementById('download-cert-btn')?.click(); // 觸發下載證書
             });
         }
 
+        // 👇 核心修復：政府計畫端問卷動態評分與留言儲存引擎
         function bindGovernmentFlow() {
             document.getElementById('log-user-proj-btn')?.addEventListener('click', () => {
                 const select = document.getElementById('user-proj-select');
@@ -2450,33 +2481,59 @@
                     document.getElementById('gov-eval-target-name').textContent = proj ? proj.name : '';
                     document.getElementById('gov-eval-target-carbon').textContent = Math.round(state.totalCarbon);
                     document.getElementById('gov-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
+                    
+                    // 開啟視窗前：清空表單舊狀態與留言
+                    document.querySelectorAll('.gov-eval-q .number-rating i').forEach(i => { i.classList.remove('text-yellow-400'); i.classList.add('text-gray-300'); });
+                    document.getElementById('gov-eval-feedback').value = '';
+                    
                     window.closeModal('gov-modal'); window.openModal('gov-eval-modal');
                 } else { window.showToast('請先選擇要歸戶的計畫'); }
             });
             
             document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async () => {
                 if(!pendingGovEvalSubmission) return;
-                const scores = { total: 11 };
+                
+                // 動態抓取星星分數
+                let totalScore = 0, answered = 0;
+                document.querySelectorAll('.gov-eval-q').forEach((qDiv) => {
+                    const stars = Array.from(qDiv.querySelectorAll('.number-rating i.text-yellow-400'));
+                    if (stars.length > 0) {
+                        totalScore += stars.length; answered++;
+                    }
+                });
+
+                if (answered < 11) return window.showToast('請完成所有 11 題滿意度指標，協助提升未來計畫品質。');
+
+                // 動態抓取意見回饋
+                const feedbackText = document.getElementById('gov-eval-feedback').value.trim();
+                const currentFeedback = feedbackText ? { text: feedbackText, time: new Date().toISOString() } : null;
+
                 const totalGreen = state.greenProcure + state.sroiProcure;
                 
                 if (db && !isOfflineMode && !pendingGovEvalSubmission.startsWith('mock_')) {
                     try {
-                        await setDoc(doc(db, 'gov_projects', pendingGovEvalSubmission), {
-                            carbon: increment(state.totalCarbon), green: increment(totalGreen), eval_count: increment(1), total_score: increment(scores.total)
-                        }, { merge: true });
+                        const updates = {
+                            carbon: increment(state.totalCarbon), green: increment(totalGreen), eval_count: increment(1),
+                            total_score: increment(totalScore), updatedAt: serverTimestamp()
+                        };
+                        if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
+                        await setDoc(doc(db, 'gov_projects', pendingGovEvalSubmission), updates, { merge: true });
                     } catch(e) { window.showToast('雲端歸戶失敗，請重試'); return; }
                 } else {
                     const proj = globalGovData.projects.find(p => p.id === pendingGovEvalSubmission);
                     if(proj) {
                         proj.carbon = (proj.carbon || 0) + state.totalCarbon; proj.green = (proj.green || 0) + totalGreen;
-                        proj.eval_count = (proj.eval_count || 0) + 1; proj.total_score = (proj.total_score || 0) + scores.total;
+                        proj.eval_count = (proj.eval_count || 0) + 1; proj.total_score = (proj.total_score || 0) + totalScore;
+                        if(currentFeedback) { if(!proj.feedbacks) proj.feedbacks = []; proj.feedbacks.push(currentFeedback); }
                     }
                 }
                 
                 const tName = document.getElementById('gov-eval-target-name').textContent;
                 state.checkoutHistory.unshift({ target: tName, carbon: Math.round(state.totalCarbon), green: Math.round(totalGreen), time: getFormattedTime() });
                 window.addLog(`歸戶結算: 貢獻至 ${tName}`);
-                resetPlayerStats(); window.closeModal('gov-eval-modal'); window.showToast('✅ 政府計畫歸戶成功！數據已結算。'); renderGovDashboard();
+                resetPlayerStats(); window.closeModal('gov-eval-modal'); window.showToast('✅ 政府計畫歸戶成功！系統正在為您生成專屬證書...'); 
+                renderGovDashboard();
+                document.getElementById('download-cert-btn')?.click(); // 觸發下載證書
             });
         }
 
