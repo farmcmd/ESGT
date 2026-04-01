@@ -335,7 +335,7 @@
             }
         };
 
-        // ✨ 升級：管理員看板解鎖函數 (解鎖時會判斷是否已有值來決定亮燈)
+        // ✨ 升級：管理員看板解鎖函數 (支援已存檔狀態的精準復原)
         window.unlockAdminPanel = function(cardId) {
             window.customPrompt('🧙‍♂️ 請輸入系統管理員密碼以解鎖魔法看板：', '', (pwd) => {
                 if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
@@ -347,19 +347,29 @@
                     const containerBox = document.getElementById(`admin-box-${cardId}`);
                     const labelNum = document.getElementById(`label-num-${cardId}`);
 
-                    // 解鎖並準備點亮選項
+                    // 解鎖並復原發光狀態
                     [btnEnt, btnGov].forEach(btn => {
                         if (btn) {
                             btn.disabled = false;
                             btn.classList.remove('cursor-not-allowed', 'opacity-90', 'bg-gray-100', 'text-gray-400');
                             btn.classList.add('cursor-pointer', 'hover:-translate-y-0.5');
-                            if (btn.getAttribute('data-active') !== 'true') {
-                                btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`;
+                            if (btn.getAttribute('data-active') === 'true') {
+                                if (btn.id.includes('btn-ent')) {
+                                    btn.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-black px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)] shrink-0`;
+                                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse"></i>`;
+                                } else {
+                                    btn.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-black px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0`;
+                                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse"></i>`;
+                                }
+                            } else {
+                                btn.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
+                                if (btn.id.includes('btn-ent')) btn.innerHTML = `<span>企業永續儀表板</span>`;
+                                else btn.innerHTML = `<span>永續政府儀表板</span>`;
                             }
                         }
                     });
                     
-                    // ✨ 解鎖輸入框，並根據目前是否有值決定是否發出橘色光芒
+                    // 解鎖輸入框
                     if (inputNum) { 
                         inputNum.disabled = false; 
                         inputNum.placeholder = "5碼";
@@ -382,17 +392,14 @@
                         }
                     }
 
-                    // 顯示打勾儲存按鈕
                     if (saveBtn) saveBtn.classList.remove('hidden');
                     
-                    // 鎖頭變成開啟狀態
                     if (lockBtn) {
                         lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500 text-lg animate-pulse"></i>';
                         lockBtn.className = 'w-9 h-9 flex items-center justify-center bg-green-50 border border-green-300 rounded-full shadow-sm shrink-0 z-10';
                         lockBtn.disabled = true; 
                     }
                     
-                    // 區塊發光效果
                     if (containerBox) {
                         containerBox.classList.remove('bg-gray-50/80', 'border-gray-200');
                         containerBox.classList.add('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_20px_rgba(250,204,21,0.25)]');
@@ -405,7 +412,6 @@
             });
         };
 
-        // ✨ 核心修復：互斥點擊與狀態寫入
         window.toggleBoard = function(cardId, type) {
             const btn = document.getElementById(`btn-${type}-${cardId}`);
             if (!btn || btn.disabled) return;
@@ -418,32 +424,32 @@
                 const btnGov = document.getElementById(`btn-gov-${cardId}`);
                 if (btnGov && !isActive) { 
                     btnGov.setAttribute('data-active', 'false'); 
-                    btnGov.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`; 
+                    btnGov.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
                     btnGov.innerHTML = `<span>永續政府儀表板</span>`; 
                 }
             } else if (type === 'gov') {
                 const btnEnt = document.getElementById(`btn-ent-${cardId}`);
                 if (btnEnt && !isActive) { 
                     btnEnt.setAttribute('data-active', 'false'); 
-                    btnEnt.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`; 
+                    btnEnt.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
                     btnEnt.innerHTML = `<span>企業永續儀表板</span>`; 
                 }
             }
 
             if (type === 'ent') {
                 if (!isActive) {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)]`;
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)] shrink-0`;
                     btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse"></i>`;
                 } else {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`;
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
                     btn.innerHTML = `<span>企業永續儀表板</span>`;
                 }
             } else if (type === 'gov') {
                 if (!isActive) {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)]`;
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0`;
                     btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse"></i>`;
                 } else {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm`;
+                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
                     btn.innerHTML = `<span>永續政府儀表板</span>`;
                 }
             }
@@ -451,8 +457,8 @@
             window.updateDashboardUrl(cardId);
         };
 
-        // ✨ 升級：打勾儲存時，若輸入框有值，會保持淺橘色的已設定完成提示
-        window.saveAdminPanel = function(cardId) {
+        // ✨ 升級：正式將看板設定回寫至 Firebase 資料庫中
+        window.saveAdminPanel = async function(cardId, encodedEventName) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
             const inputNum = document.getElementById(`input-num-${cardId}`);
@@ -461,6 +467,7 @@
             const containerBox = document.getElementById(`admin-box-${cardId}`);
             const labelNum = document.getElementById(`label-num-${cardId}`);
 
+            // 1. 執行前端視覺鎖定
             if (btnEnt) {
                 btnEnt.disabled = true;
                 btnEnt.classList.remove('cursor-pointer', 'hover:-translate-y-0.5');
@@ -469,7 +476,7 @@
                     btnEnt.classList.add('opacity-90');
                     btnEnt.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600"></i>`;
                 } else {
-                    btnEnt.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200`;
+                    btnEnt.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
                 }
             }
 
@@ -481,7 +488,7 @@
                     btnGov.classList.add('opacity-90');
                     btnGov.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600"></i>`;
                 } else {
-                    btnGov.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200`;
+                    btnGov.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
                 }
             }
 
@@ -490,7 +497,6 @@
                 inputNum.classList.remove('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'text-yellow-900', 'shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
                 
                 if (inputNum.value.trim().length > 0) {
-                    // 若有值，維持淺橘色的「已完成」視覺，不會變回死灰
                     inputNum.classList.add('cursor-not-allowed', 'bg-orange-50/50', 'text-orange-700', 'border-orange-300', 'shadow-sm');
                     inputNum.classList.remove('bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner');
                     if(labelNum) { 
@@ -499,7 +505,6 @@
                         labelNum.classList.add('text-orange-700/80'); 
                     }
                 } else {
-                    // 若沒值，退回預設死灰色
                     inputNum.classList.add('cursor-not-allowed', 'bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner');
                     if(labelNum) { 
                         labelNum.innerHTML = '編號:';
@@ -512,8 +517,8 @@
             if (saveBtn) saveBtn.classList.add('hidden');
 
             if (lockBtn) {
-                lockBtn.innerHTML = '<span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-base">💡</span>';
-                lockBtn.className = 'w-9 h-9 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group';
+                lockBtn.innerHTML = '<span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-sm sm:text-base">💡</span>';
+                lockBtn.className = 'w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group';
                 lockBtn.disabled = false;
             }
 
@@ -522,7 +527,40 @@
                 containerBox.classList.add('bg-gray-50/80', 'border-gray-200');
             }
 
-            window.showToast('🔒 叮！魔法看板已鎖定儲存。');
+            window.showToast('🔄 同步中...');
+
+            // 2. 執行 Firebase 寫入邏輯
+            if (!db) {
+                window.showToast('❌ 資料庫未連線，僅完成本機暫存。');
+                return;
+            }
+
+            try {
+                const eventName = decodeURIComponent(encodedEventName);
+                let boardType = '';
+                if (btnEnt && btnEnt.getAttribute('data-active') === 'true') boardType = 'ent';
+                else if (btnGov && btnGov.getAttribute('data-active') === 'true') boardType = 'gov';
+                let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
+
+                const docRef = doc(db, 'system_messages', 'event_schedule');
+                const snap = await getDoc(docRef);
+                
+                if (snap.exists()) {
+                    let events = snap.data().events || [];
+                    let idx = events.findIndex(e => e.name === eventName);
+                    if (idx !== -1) {
+                        events[idx].boardType = boardType;
+                        events[idx].boardCode = boardCode;
+                        await updateDoc(docRef, { events: events });
+                        window.showToast('✅ 看板設定已成功鎖定並同步至雲端！');
+                    } else {
+                        window.showToast('❌ 雲端找不到該活動，儲存失敗。');
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+                window.showToast('❌ 雲端同步失敗，請檢查網路連線。');
+            }
         };
 
         // 雙重智慧分享引擎
@@ -598,7 +636,7 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // 獨立卡片渲染引擎 (保留防洗版邏輯 + 動態網址列 + 嚴格字串相容)
+        // ✨ 升級：卡片渲染引擎，加入預設讀取資料庫存檔的看板參數
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -731,12 +769,37 @@
                 }
 
                 if(isExpired) {
-                    // ✨ 升級：完美對齊的自適應兩排佈局 (上方控制、下方網址列) + 手機版按鈕縮小
+                    // ✨ 核心修復：讀取資料庫預存的看板狀態，並進行初始畫面渲染
+                    let savedBoardType = ev.boardType || '';
+                    let savedBoardCode = ev.boardCode || '';
+                    let entBtnActive = savedBoardType === 'ent';
+                    let govBtnActive = savedBoardType === 'gov';
+
+                    let entBtnClass = entBtnActive 
+                        ? "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
+                        : "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
+                    let entBtnInner = entBtnActive ? `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600"></i>` : `<span>企業永續儀表板</span>`;
+
+                    let govBtnClass = govBtnActive 
+                        ? "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
+                        : "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
+                    let govBtnInner = govBtnActive ? `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600"></i>` : `<span>永續政府儀表板</span>`;
+
+                    let inputClass = savedBoardCode 
+                        ? "w-14 sm:w-16 px-1.5 py-1 text-[12px] sm:text-[13px] font-mono font-bold border rounded focus:outline-none text-center transition-all uppercase cursor-not-allowed bg-orange-50/50 text-orange-700 border-orange-300 shadow-sm"
+                        : "w-14 sm:w-16 px-1.5 py-1 text-[12px] sm:text-[13px] font-mono font-bold border border-gray-200 rounded bg-gray-100 focus:outline-none text-center shadow-inner cursor-not-allowed transition-all uppercase text-gray-400";
+                    let labelHtml = savedBoardCode ? `<i class="fas fa-check text-orange-600 mr-1"></i>編號:` : `編號:`;
+                    let labelClass = savedBoardCode ? "text-[12px] sm:text-[13px] font-bold transition-colors whitespace-nowrap text-orange-700/80" : "text-[12px] sm:text-[13px] font-bold transition-colors whitespace-nowrap text-gray-400";
+
+                    let initUrl = '';
+                    if (entBtnActive) initUrl = `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}`;
+                    else if (govBtnActive) initUrl = `https://farmcmd.github.io/ESGT/#OKR-board${savedBoardCode ? '-' + savedBoardCode : ''}`;
+
                     let dashboardButtonsHtml = `
                     <div class="mt-4 pt-4 border-t border-gray-100">
                         <div id="admin-box-${shortId}" class="flex flex-col gap-3 bg-gray-50/80 p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm transition-all duration-500">
                             
-                            <!-- 第一排：控制按鈕區塊 (自動換行以適應極窄手機) -->
+                            <!-- 第一排：控制按鈕區塊 -->
                             <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full">
                                 
                                 <!-- 魔法解鎖按鈕 -->
@@ -747,34 +810,35 @@
                                 <span class="text-[11px] sm:text-[12px] font-bold text-gray-500 bg-gray-200/50 px-2 py-1.5 rounded border border-gray-200 shrink-0 shadow-sm flex items-center"><i class="fas fa-map-pin mr-1.5"></i>看板位置</span>
                                 
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <button id="btn-ent-${shortId}" data-active="false" disabled onclick="window.toggleBoard('${shortId}', 'ent')" class="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0">
-                                        <span>企業永續儀表板</span>
+                                    <button id="btn-ent-${shortId}" data-active="${entBtnActive}" disabled onclick="window.toggleBoard('${shortId}', 'ent')" class="${entBtnClass}">
+                                        ${entBtnInner}
                                     </button>
-                                    <button id="btn-gov-${shortId}" data-active="false" disabled onclick="window.toggleBoard('${shortId}', 'gov')" class="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0">
-                                        <span>永續政府儀表板</span>
+                                    <button id="btn-gov-${shortId}" data-active="${govBtnActive}" disabled onclick="window.toggleBoard('${shortId}', 'gov')" class="${govBtnClass}">
+                                        ${govBtnInner}
                                     </button>
                                 </div>
 
-                                <!-- 分隔線 (桌機版顯示) -->
+                                <!-- 分隔線 -->
                                 <div class="hidden md:block w-px h-5 bg-gray-300 mx-1"></div>
 
                                 <!-- 編號與儲存按鈕 -->
                                 <div class="flex items-center gap-1.5 ml-auto sm:ml-0 shrink-0">
-                                    <span id="label-num-${shortId}" class="text-[12px] sm:text-[13px] font-bold text-gray-400 transition-colors whitespace-nowrap">編號:</span>
-                                    <input type="text" id="input-num-${shortId}" maxlength="5" oninput="this.value = this.value.toUpperCase(); window.updateDashboardUrl('${shortId}')" disabled placeholder="🔒" class="w-14 sm:w-16 px-1.5 py-1 text-[12px] sm:text-[13px] font-mono font-bold text-gray-400 border border-gray-200 rounded bg-gray-100 focus:outline-none text-center shadow-inner cursor-not-allowed transition-all uppercase">
+                                    <span id="label-num-${shortId}" class="${labelClass}">${labelHtml}</span>
+                                    <input type="text" id="input-num-${shortId}" maxlength="5" value="${savedBoardCode}" oninput="this.value = this.value.toUpperCase(); window.updateDashboardUrl('${shortId}')" disabled placeholder="🔒" class="${inputClass}">
                                     
-                                    <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}')" class="hidden w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-md shadow-md flex items-center justify-center transition-all animate-bounce shrink-0" title="完成設定">
+                                    <!-- ✨ 注意：我們將 safeEventName 傳給儲存函數以利辨識資料庫節點 -->
+                                    <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-md shadow-md flex items-center justify-center transition-all animate-bounce shrink-0" title="完成設定並同步雲端">
                                         <i class="fas fa-check text-xs"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- 第二排：動態網址輸入列與 ENTER 符號按鈕 (強制獨立一排並佔滿寬度) -->
+                            <!-- 第二排：動態網址輸入列 -->
                             <div class="flex items-stretch w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                                 <div class="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-400 bg-gray-50 border-r border-gray-200 flex items-center justify-center shrink-0">
                                     <i class="fas fa-link text-[10px] sm:text-xs"></i>
                                 </div>
-                                <input type="text" id="display-url-${shortId}" readonly class="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-[12px] text-blue-600 font-mono bg-transparent focus:outline-none cursor-default truncate" placeholder="本活動未建立成效看板" value="" title="系統將自動生成專屬對接網址">
+                                <input type="text" id="display-url-${shortId}" readonly class="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-[12px] text-blue-600 font-mono bg-transparent focus:outline-none cursor-default truncate" placeholder="本活動未建立成效看板" value="${initUrl}" title="系統將自動生成專屬對接網址">
                                 <button onclick="window.openDashboard('${shortId}')" class="px-3 sm:px-5 py-2 sm:py-2.5 bg-slate-800 hover:bg-slate-900 text-white transition-all flex items-center justify-center shrink-0 group border-l border-slate-700" title="前往成效儀表板 (ENTER)">
                                     <span class="text-[10px] sm:text-[11px] font-bold mr-1 sm:mr-1.5 opacity-90 group-hover:opacity-100 whitespace-nowrap">查看成效</span>
                                     <i class="fas fa-reply fa-flip-horizontal group-hover:translate-x-0.5 transition-transform text-[10px] sm:text-sm"></i>
