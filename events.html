@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>探探里山 - 最新活動訊息與報名專區</title>
     
+    <!-- ✨ 新增：社群分享預覽 (Open Graph) 專屬設定，強制覆蓋 LINE 舊有錯誤預覽 -->
+    <meta name="description" content="體驗永續旅遊，參與在地食農教育，報名在地社團第一手活動訊息與訓練課程。">
+    <meta property="og:title" content="探探里山 - 最新活動訊息與報名專區">
+    <meta property="og:description" content="體驗永續旅遊，參與在地食農教育，報名在地社團第一手活動訊息與訓練課程。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://farmcmd.github.io/ESGT/events_standalone.html">
+    <meta property="og:site_name" content="探探里山">
+
     <!-- 效能優化 (Preconnect 加速通道) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,7 +118,7 @@
     <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
-    <!-- 活動快速報名 Modal -->
+    <!-- 活動快速報名 Modal (LINE 與 Messenger 調換版) -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -122,6 +130,7 @@
             <div id="social-auth-step" class="mb-6">
                 <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 使用LINE一鍵報名(免填寫)</p>
                 <div class="flex flex-col gap-2">
+                    <!-- LINE 首選報名通道 -->
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
@@ -130,6 +139,7 @@
                         <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
                     </a>
                     
+                    <!-- 條列式隱私與群組提醒聲明 -->
                     <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-2 mb-1">
                         <p><i class="fas fa-user-shield text-blue-400 mr-1.5 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
                         <p><i class="fas fa-exclamation-circle text-orange-400 mr-1.5 opacity-80"></i>2. 若您報名的是"遊程"類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
@@ -151,6 +161,7 @@
                 </button>
             </div>
 
+            <!-- Messenger 備用按鈕 -->
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <div class="relative mb-4 mt-1">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
@@ -198,7 +209,7 @@
         window.hasHandledDeepLink = false;
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // Firebase 設定
@@ -313,7 +324,7 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // ✨ 獨立卡片渲染引擎 (字串跳脫安全升級版)
+        // ✨ 獨立卡片渲染引擎 (字串跳脫安全升級版 + UI 精準優化版)
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -327,8 +338,8 @@
             const html = processedEvents.map((ev, index) => {
                 let isExpired = ev.isExpired, calendarUrl = '#';
                 
-                // 基礎跳脫處理，避免引號引發 JavaScript Syntax Error
-                const safeEventName = encodeURIComponent(ev.name).replace(/'/g, "\\'");
+                // 基礎跳脫處理，避免引號引發 JavaScript Syntax Error (使用 %27 防止 HTML onclick 解析錯誤)
+                const safeEventName = encodeURIComponent(ev.name).replace(/'/g, "%27");
                 
                 const dateStr = (ev.date || '00000000').replace(/[\/\-]/g, '');
                 const shortId = `${dateStr}-${index + 1}`;
@@ -349,8 +360,8 @@
                     } catch(e) { console.warn('日期解析異常', e); }
                 }
 
-                // ✨ 安全加固：確保 calendarUrl 內即使有單引號也會被跳脫，徹底消除 Unexpected token ')' 的風險
-                const safeCalendarUrl = calendarUrl !== '#' ? calendarUrl.replace(/'/g, "\\'") : '#';
+                // ✨ 安全加固：確保 calendarUrl 內即使有單引號也會被安全跳脫
+                const safeCalendarUrl = calendarUrl !== '#' ? calendarUrl.replace(/'/g, "%27") : '#';
 
                 const regs = globalEventRegistrations[ev.name] || [];
                 let regsHtml = '';
@@ -418,6 +429,7 @@
 
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div></div>${avatarsSection}</div>`;
                 } else {
+                    // 未開放 LINE 報名的外部活動，徹底拔除「目前報名：0人」的顯示
                     if (isExpired) {
                         regsHtml = `
                         <div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200">
@@ -431,6 +443,7 @@
                 }
 
                 if(isExpired) {
+                    // 已結束活動，底部統一加上「查看活動成效儀表板」極簡按鈕導向主站
                     let dashboardButtonsHtml = `
                     <div class="mt-4 pt-5 border-t border-gray-100">
                         <button onclick="window.open('https://farmcmd.github.io/ESGT/', '_blank')" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white text-[15px] font-black tracking-wide rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center mx-auto hover:-translate-y-0.5">
@@ -477,7 +490,7 @@
                         if (eventIdParam) {
                             targetCard = document.querySelector(`#event-schedule-container [data-event-id="${eventIdParam}"]`);
                         } else if (eventNameParam) {
-                            const safeSearchParam = encodeURIComponent(eventNameParam).replace(/'/g, "\\'");
+                            const safeSearchParam = encodeURIComponent(eventNameParam).replace(/'/g, "%27");
                             targetCard = document.querySelector(`#event-schedule-container [data-event-name="${safeSearchParam}"]`);
                         }
 
