@@ -1892,50 +1892,48 @@
         function initGlobalCounters() {
             if (!db) return;
             try {
-                const checkBackendReady = () => {
-                    if (govLoaded && entLoaded && !absoluteLoaded) {
-                        absoluteLoaded = 'pending';
-                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
-                            const todayStr = getTodayKey();
-                            if (docSnap.exists()) { 
-                                globalAbsolute = docSnap.data(); 
-                                
-                                // 🚀 核心修復：攔截「被瀏覽人次搶先建立的不完整文件」，自動補回基底數據
-                                if (globalAbsolute.carbon === undefined) {
-                                    globalAbsolute.carbon = 22647;
-                                    globalAbsolute.green = 186500;
-                                    if ((globalAbsolute.visitor_count || 0) < 1250) globalAbsolute.visitor_count = 1250;
-                                    globalAbsolute[`daily_${todayStr}_carbon`] = 350;
-                                    await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute, { merge: true });
-                                }
-                            } 
-                            else { 
-                                globalAbsolute = { carbon: 22647, green: 186500, visitor_count: 1250 }; 
-                                globalAbsolute[`daily_${todayStr}_carbon`] = 350; 
-                                await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); 
-                            }
-                            
-                            absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
-                        });
+                // 🚀 核心修復：解除依賴！讓首頁總承數據「獨立且優先」連線，不須等待其他專案載入
+                onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
+                    const todayStr = getTodayKey();
+                    if (docSnap.exists()) { 
+                        globalAbsolute = docSnap.data(); 
+                        
+                        // 攔截「被瀏覽人次搶先建立的不完整文件」，自動補回基底數據
+                        if (globalAbsolute.carbon === undefined) {
+                            globalAbsolute.carbon = 22647;
+                            globalAbsolute.green = 186500;
+                            if ((globalAbsolute.visitor_count || 0) < 1250) globalAbsolute.visitor_count = 1250;
+                            globalAbsolute[`daily_${todayStr}_carbon`] = 350;
+                            await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute, { merge: true });
+                        }
+                    } 
+                    else { 
+                        globalAbsolute = { carbon: 22647, green: 186500, visitor_count: 1250 }; 
+                        globalAbsolute[`daily_${todayStr}_carbon`] = 350; 
+                        await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); 
                     }
-                };
+                    
+                    absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
+                });
 
+                // 政府計畫獨立載入
                 onSnapshot(collection(db, 'gov_projects'), (snapshot) => {
                     globalGovData.projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     const currentIds = globalGovData.projects.map(p => p.id); window.currentGovList = currentIds;
                     const seenGov = JSON.parse(localStorage.getItem('mori_seen_gov') || '[]'); const unreadCount = currentIds.filter(id => !seenGov.includes(id)).length;
                     const badge = document.getElementById('badge-gov');
                     if (badge) { if (unreadCount > 0) { badge.textContent = 'NEW'; badge.classList.remove('hidden'); badge.classList.add('animate-bounce'); } else { badge.classList.add('hidden'); badge.classList.remove('animate-bounce'); } }
-                    govLoaded = true; checkBackendReady(); renderGovDashboard(); updateProjectDropdown(); renderAuthList();
+                    govLoaded = true; renderGovDashboard(); updateProjectDropdown(); renderAuthList();
                 });
 
+                // 企業計畫獨立載入
                 onSnapshot(collection(db, 'ent_projects'), (snapshot) => {
                     globalEntData.projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     const currentIds = globalEntData.projects.map(p => p.id); window.currentEntList = currentIds;
                     const seenEnt = JSON.parse(localStorage.getItem('mori_seen_ent') || '[]'); const unreadCount = currentIds.filter(id => !seenEnt.includes(id)).length;
                     const badge = document.getElementById('badge-enterprise');
                     if (badge) { if (unreadCount > 0) { badge.textContent = 'NEW'; badge.classList.remove('hidden'); badge.classList.add('animate-bounce'); } else { badge.classList.add('hidden'); badge.classList.remove('animate-bounce'); } }
-                    entLoaded = true; checkBackendReady(); renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList();
+                    entLoaded = true; renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList();
                 });
 
                 onSnapshot(doc(db, 'system_messages', 'broadcast'), (docSnap) => {
