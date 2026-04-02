@@ -226,7 +226,7 @@
         window.hasHandledDeepLink = false;
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // Firebase 設定
@@ -280,7 +280,7 @@
             window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
         };
 
-        // ✨ 升級：動態讀取看板設定，確保去除空白並精準拼接 5 碼，加上即時亮燈微交互
+        // 管理員看板解鎖與動態網址機制
         window.updateDashboardUrl = function(cardId) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
@@ -290,22 +290,18 @@
             
             if (!urlDisplay) return;
 
-            // 強制轉大寫並去除前後空白
             let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
             let finalUrl = '';
 
-            // 判斷活躍狀態，動態加上精準的網址後綴
             if (btnEnt && btnEnt.getAttribute('data-active') === 'true') {
                 finalUrl = `https://farmcmd.github.io/ESGT/#ESG-board${boardCode ? '-' + boardCode : ''}`;
             } else if (btnGov && btnGov.getAttribute('data-active') === 'true') {
                 finalUrl = `https://farmcmd.github.io/ESGT/#OKR-board${boardCode ? '-' + boardCode : ''}`;
             }
             
-            // 雙重賦值，強制 UI 刷新
             urlDisplay.value = finalUrl;
             urlDisplay.setAttribute('value', finalUrl);
 
-            // ✨ 即時亮燈微交互：當有輸入時，標籤與輸入框發出橘色霓虹光
             if (inputNum && !inputNum.disabled) {
                 if (boardCode.length > 0) {
                     inputNum.classList.add('shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
@@ -325,17 +321,15 @@
             }
         };
 
-        // ✨ 新增：點擊 Enter 按鈕時開啟網址
         window.openDashboard = function(cardId) {
             const urlDisplay = document.getElementById(`display-url-${cardId}`);
             if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) {
                 window.open(urlDisplay.value, '_blank');
             } else {
-                window.showToast('⚠️ 請先點擊選擇企業或政府儀表板！');
+                window.showToast('⚠️ 請先點選企業或政府儀表板！');
             }
         };
 
-        // ✨ 升級：管理員看板解鎖函數 (支援已存檔狀態的精準復原)
         window.unlockAdminPanel = function(cardId) {
             window.customPrompt('🧙‍♂️ 請輸入系統管理員密碼以解鎖魔法看板：', '', (pwd) => {
                 if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
@@ -347,7 +341,6 @@
                     const containerBox = document.getElementById(`admin-box-${cardId}`);
                     const labelNum = document.getElementById(`label-num-${cardId}`);
 
-                    // 解鎖並復原發光狀態
                     [btnEnt, btnGov].forEach(btn => {
                         if (btn) {
                             btn.disabled = false;
@@ -369,7 +362,6 @@
                         }
                     });
                     
-                    // 解鎖輸入框
                     if (inputNum) { 
                         inputNum.disabled = false; 
                         inputNum.placeholder = "5碼";
@@ -457,7 +449,6 @@
             window.updateDashboardUrl(cardId);
         };
 
-        // ✨ 核心修復3：雙軌儲存策略 (先嘗試雲端，若被阻擋則平滑降級至本機)
         window.saveAdminPanel = async function(cardId, encodedEventName) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
@@ -467,7 +458,6 @@
             const containerBox = document.getElementById(`admin-box-${cardId}`);
             const labelNum = document.getElementById(`label-num-${cardId}`);
 
-            // 1. 執行前端視覺鎖定
             if (btnEnt) {
                 btnEnt.disabled = true;
                 btnEnt.classList.remove('cursor-pointer', 'hover:-translate-y-0.5');
@@ -529,7 +519,7 @@
 
             window.showToast('🔄 同步中...');
 
-            // 2. 執行雙軌資料庫寫入
+            // 雙軌資料庫寫入
             const eventName = decodeURIComponent(encodedEventName);
             let boardType = '';
             if (btnEnt && btnEnt.getAttribute('data-active') === 'true') boardType = 'ent';
@@ -538,7 +528,6 @@
 
             let cloudSuccess = false;
 
-            // 嘗試路徑 A：Firebase 雲端同步
             if (db) {
                 try {
                     const docRef = doc(db, 'system_messages', 'event_schedule');
@@ -556,11 +545,9 @@
                     }
                 } catch(e) {
                     console.warn("雲端同步遭拒絕 (可能是權限不足):", e);
-                    // 不報錯，安靜進入降級模式
                 }
             }
 
-            // 嘗試路徑 B：本機備援降級 (當網路斷線或 Firebase 權限阻擋時觸發)
             if (!cloudSuccess) {
                 try {
                     let localAdminData = JSON.parse(localStorage.getItem('ESGT_Admin_Boards_v1')) || {};
@@ -578,80 +565,48 @@
             }
         };
 
-        // 雙重智慧分享引擎
+        // 分享功能
         window.currentShareData = { url: '', title: '', text: '' };
-
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
                 const url = new URL(window.location.origin + window.location.pathname);
                 url.searchParams.set('id', shortId); 
                 const finalUrl = url.toString(); 
-                
                 const shareTitle = `探探里山活動：${eventName}`;
                 const shareText = `🔗 邀請您一起參加【${eventName}】！\n點擊專屬連結直接查看活動詳情與報名資訊👇`;
-
                 window.currentShareData = { url: finalUrl, title: shareTitle, text: shareText };
 
                 const ua = navigator.userAgent || navigator.vendor || window.opera;
                 const isInAppBrowser = (ua.indexOf('Line') > -1) || (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1);
 
                 if (navigator.share && !isInAppBrowser) {
-                    navigator.share({
-                        title: shareTitle,
-                        text: shareText,
-                        url: finalUrl,
-                    }).then(() => {
-                        window.showToast('✅ 活動分享成功！');
-                    }).catch((err) => {
-                        console.warn('原生分享失敗或取消:', err);
-                        if (err.name !== 'AbortError') { window.openModal('share-event-modal'); }
-                    });
+                    navigator.share({ title: shareTitle, text: shareText, url: finalUrl })
+                        .then(() => window.showToast('✅ 活動分享成功！'))
+                        .catch((err) => { if (err.name !== 'AbortError') window.openModal('share-event-modal'); });
                 } else {
                     window.openModal('share-event-modal');
                 }
-            } catch(e) {
-                console.error("分享準備過程發生錯誤", e);
-                window.openModal('share-event-modal'); 
-            }
+            } catch(e) { window.openModal('share-event-modal'); }
         };
 
-        document.getElementById('share-line-btn')?.addEventListener('click', () => {
-            const { url, text } = window.currentShareData;
-            window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text + '\n' + url)}`, '_blank');
-            window.closeModal('share-event-modal');
-        });
-
-        document.getElementById('share-fb-btn')?.addEventListener('click', () => {
-            const { url } = window.currentShareData;
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-            window.closeModal('share-event-modal');
-        });
-
-        document.getElementById('share-x-btn')?.addEventListener('click', () => {
-            const { url, title, text } = window.currentShareData;
-            window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
-            window.closeModal('share-event-modal');
-        });
-
+        document.getElementById('share-line-btn')?.addEventListener('click', () => { window.open(`https://line.me/R/msg/text/?${encodeURIComponent(window.currentShareData.text + '\n' + window.currentShareData.url)}`, '_blank'); window.closeModal('share-event-modal'); });
+        document.getElementById('share-fb-btn')?.addEventListener('click', () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.currentShareData.url)}`, '_blank'); window.closeModal('share-event-modal'); });
+        document.getElementById('share-x-btn')?.addEventListener('click', () => { window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.currentShareData.url)}&text=${encodeURIComponent(window.currentShareData.text)}`, '_blank'); window.closeModal('share-event-modal'); });
         document.getElementById('share-copy-btn')?.addEventListener('click', () => {
-            const { url } = window.currentShareData;
-            const textArea = document.createElement("textarea"); textArea.value = url; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+            const textArea = document.createElement("textarea"); textArea.value = window.currentShareData.url; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
             document.body.appendChild(textArea); textArea.focus(); textArea.select();
-            try { document.execCommand('copy'); window.showToast('🔗 專屬連結已複製！'); } catch (err) { window.prompt("請手動複製網址：", url); } document.body.removeChild(textArea);
+            try { document.execCommand('copy'); window.showToast('🔗 專屬連結已複製！'); } catch (err) { window.prompt("請手動複製網址：", window.currentShareData.url); } document.body.removeChild(textArea);
             window.closeModal('share-event-modal');
         });
 
         window.toggleRegList = function(eventName) {
-            if (window.expandedRegEvents.has(eventName)) {
-                window.expandedRegEvents.delete(eventName);
-            } else {
-                window.expandedRegEvents.add(eventName);
-            }
+            if (window.expandedRegEvents.has(eventName)) window.expandedRegEvents.delete(eventName);
+            else window.expandedRegEvents.add(eventName);
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
-        // ✨ 升級：卡片渲染引擎，加入預設讀取資料庫存檔的看板參數
+        // 獨立卡片渲染引擎 (保留完整排版、雙軌儲存與動態網址)
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -754,10 +709,7 @@
                     }).join('');
                     
                     let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
-                    if (window.isRegSnapshotLoaded) { 
-                        countDisplay = `<span class="text-yellow-600 mx-1 text-base font-black">${regs.length}</span>`; 
-                    }
-                    
+                    if (window.isRegSnapshotLoaded) { countDisplay = `<span class="text-yellow-600 mx-1 text-base font-black">${regs.length}</span>`; }
                     const countHtml = `<p class="text-[11px] font-bold text-gray-700 flex items-center m-0 tracking-wide"><i class="fas fa-users text-yellow-500 mr-1.5 text-base"></i>目前報名：${countDisplay} 人</p>`;
 
                     let avatarsSection = '';
@@ -772,21 +724,24 @@
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3"><div class="flex items-center flex-wrap gap-3">${countHtml}${shareBtnHtml}</div></div>${avatarsSection}</div>`;
                 } else {
                     if (isExpired) {
-                        regsHtml = `
-                        <div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200">
-                            <div class="flex justify-start mb-2">
-                                ${shareBtnHtml}
-                            </div>
-                        </div>`;
+                        regsHtml = `<div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200"><div class="flex justify-start mb-2">${shareBtnHtml}</div></div>`;
                     } else {
                         regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
                     }
                 }
 
                 if(isExpired) {
-                    // ✨ 核心修復：讀取資料庫預存的看板狀態，並進行初始畫面渲染
                     let savedBoardType = ev.boardType || '';
                     let savedBoardCode = ev.boardCode || '';
+                    
+                    try {
+                        let localAdminData = JSON.parse(localStorage.getItem('ESGT_Admin_Boards_v1')) || {};
+                        if (localAdminData[ev.name]) {
+                            savedBoardType = localAdminData[ev.name].boardType || savedBoardType;
+                            savedBoardCode = localAdminData[ev.name].boardCode || savedBoardCode;
+                        }
+                    } catch(e) {}
+
                     let entBtnActive = savedBoardType === 'ent';
                     let govBtnActive = savedBoardType === 'gov';
 
@@ -814,16 +769,11 @@
                     <div class="mt-4 pt-4 border-t border-gray-100">
                         <div id="admin-box-${shortId}" class="flex flex-col gap-3 bg-gray-50/80 p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm transition-all duration-500">
                             
-                            <!-- 第一排：控制按鈕區塊 -->
                             <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full">
-                                
-                                <!-- 魔法解鎖按鈕 -->
                                 <button onclick="window.unlockAdminPanel('${shortId}')" id="admin-lock-btn-${shortId}" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group" title="點擊輸入密碼解鎖">
                                     <span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-sm sm:text-base">💡</span>
                                 </button>
-                                
                                 <span class="text-[11px] sm:text-[12px] font-bold text-gray-500 bg-gray-200/50 px-2 py-1.5 rounded border border-gray-200 shrink-0 shadow-sm flex items-center"><i class="fas fa-map-pin mr-1.5"></i>看板位置</span>
-                                
                                 <div class="flex flex-wrap items-center gap-2">
                                     <button id="btn-ent-${shortId}" data-active="${entBtnActive}" disabled onclick="window.toggleBoard('${shortId}', 'ent')" class="${entBtnClass}">
                                         ${entBtnInner}
@@ -832,23 +782,16 @@
                                         ${govBtnInner}
                                     </button>
                                 </div>
-
-                                <!-- 分隔線 -->
                                 <div class="hidden md:block w-px h-5 bg-gray-300 mx-1"></div>
-
-                                <!-- 編號與儲存按鈕 -->
                                 <div class="flex items-center gap-1.5 ml-auto sm:ml-0 shrink-0">
                                     <span id="label-num-${shortId}" class="${labelClass}">${labelHtml}</span>
                                     <input type="text" id="input-num-${shortId}" maxlength="5" value="${savedBoardCode}" oninput="this.value = this.value.toUpperCase(); window.updateDashboardUrl('${shortId}')" disabled placeholder="🔒" class="${inputClass}">
-                                    
-                                    <!-- ✨ 注意：我們將 safeEventName 傳給儲存函數以利辨識資料庫節點 -->
                                     <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-md shadow-md flex items-center justify-center transition-all animate-bounce shrink-0" title="完成設定並同步雲端">
                                         <i class="fas fa-check text-xs"></i>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- 第二排：動態網址輸入列 -->
                             <div class="flex items-stretch w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                                 <div class="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-400 bg-gray-50 border-r border-gray-200 flex items-center justify-center shrink-0">
                                     <i class="fas fa-link text-[10px] sm:text-xs"></i>
@@ -901,13 +844,8 @@
                     window.hasHandledDeepLink = true;
                     setTimeout(() => {
                         let targetCard = null;
-                        
-                        if (eventIdParam) {
-                            targetCard = document.querySelector(`#event-schedule-container [data-event-id="${eventIdParam}"]`);
-                        } else if (eventNameParam) {
-                            const safeSearchParam = encodeURIComponent(eventNameParam).replace(/'/g, "%27");
-                            targetCard = document.querySelector(`#event-schedule-container [data-event-name="${safeSearchParam}"]`);
-                        }
+                        if (eventIdParam) targetCard = document.querySelector(`#event-schedule-container [data-event-id="${eventIdParam}"]`);
+                        else if (eventNameParam) targetCard = document.querySelector(`#event-schedule-container [data-event-name="${encodeURIComponent(eventNameParam).replace(/'/g, "%27")}"]`);
 
                         if (targetCard) {
                             targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -920,202 +858,67 @@
             }
         };
 
-        // LINE 授權與報名邏輯
-        let currentSocialData = null; 
-
-        async function initLineLiff() {
-            if (MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return;
-            try {
-                await liff.init({ liffId: MY_LINE_LIFF_ID });
-                if (liff.isLoggedIn()) {
-                    
-                    try {
-                        const profile = await liff.getProfile();
-                        if (profile && profile.userId) {
-                            state.lineUserId = profile.userId;
-                            saveData();
-                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                        }
-                    } catch(e) { console.warn("背景獲取 LINE Profile 失敗", e); }
-
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlEvent = urlParams.get('line_reg');
-                    let pendingEvent = urlEvent ? decodeURIComponent(urlEvent) : localStorage.getItem('pending_line_reg_event');
-                    
-                    if (pendingEvent) {
-                        if (urlEvent) {
-                            urlParams.delete('line_reg');
-                            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                            window.history.replaceState({}, document.title, newUrl);
-                        }
-                        localStorage.removeItem('pending_line_reg_event');
-
-                        window.currentRegEvent = pendingEvent;
-                        
-                        let profile = { 
-                            userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), 
-                            displayName: 'LINE 授權旅客', 
-                            pictureUrl: 'https://via.placeholder.com/150' 
-                        };
-                        
-                        try { 
-                            profile = await Promise.race([
-                                liff.getProfile(),
-                                new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
-                            ]); 
-                        } catch (e) { 
-                            console.warn("無法取得 LINE 大頭貼", e); 
-                        }
-
-                        if (profile.userId && !profile.userId.startsWith('visitor_')) {
-                            state.lineUserId = profile.userId;
-                            saveData();
-                        }
-
-                        const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
-                        document.getElementById('social-auth-step').classList.add('hidden');
-                        document.getElementById('social-preview-step').classList.remove('hidden');
-                        
-                        window.openModal('event-registration-modal');
-                        window.showToast('🔄 LINE 授權成功，載入資料中...');
-
-                        currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                        
-                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                        document.getElementById('social-user-name').textContent = currentSocialData.name;
-                        document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                    }
-                }
-            } catch (err) { 
-                console.error('LIFF 初始化失敗', err); 
-                localStorage.removeItem('pending_line_reg_event'); 
-            }
-        }
-
-        window.openRegistrationModal = async function(encodedEventName) {
-            const eventName = decodeURIComponent(encodedEventName);
-            window.currentRegEvent = eventName;
-            const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = eventName;
-            
-            document.getElementById('social-auth-step').classList.remove('hidden');
-            document.getElementById('social-preview-step').classList.add('hidden');
-            currentSocialData = null;
-            
-            window.openModal('event-registration-modal');
-
-            try {
-                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    window.showToast('🔄 偵測到已登入，檢查報名狀態...');
-
-                    let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
-                    try { 
-                        profile = await Promise.race([
-                            liff.getProfile(),
-                            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
-                        ]); 
-                    } catch(e) {
-                        console.warn("大頭貼抓取失敗，使用預設值");
-                    } 
-
-                    if (profile.userId && !profile.userId.startsWith('visitor_')) {
-                        state.lineUserId = profile.userId;
-                        saveData();
-                    }
-
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
-
-                    currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                    
-                    document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                    document.getElementById('social-user-name').textContent = currentSocialData.name;
-                    document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                }
-            } catch (err) {
-                console.warn("自動登入偵測失敗，留在步驟一", err);
-            }
-        };
-
+        // LINE 與 Facebook 登入綁定邏輯
         document.getElementById('line-login-btn')?.addEventListener('click', async () => {
+            if (typeof MY_LINE_LIFF_ID === 'undefined' || MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return window.showToast('⚠️ 系統尚未設定 LINE LIFF ID');
             try {
                 await liff.ready; 
                 if (!liff.isLoggedIn()) {
                     localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
-                    const redirectUrl = new URL(window.location.href);
-                    redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
-                    liff.login({ redirectUri: redirectUrl.toString() });
+                    liff.login({ redirectUri: window.location.href });
                 } else {
                     window.showToast('🔄 正在載入 LINE 資料中...');
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
-                    
-                    let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
-                    try { 
-                        profile = await Promise.race([
-                            liff.getProfile(),
-                            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
-                        ]); 
-                    } catch(e) { 
-                        console.warn("無法取得 LINE Profile", e); 
-                    }
-
-                    if (profile.userId && !profile.userId.startsWith('visitor_')) {
-                        state.lineUserId = profile.userId;
-                        saveData();
-                    }
-
+                    const profile = await liff.getProfile();
                     currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                     document.getElementById('social-user-avatar').src = currentSocialData.picture;
                     document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
                     document.getElementById('social-user-name').textContent = currentSocialData.name;
                     document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
                 }
-            } catch (err) {
-                window.showToast('🚨 授權啟動失敗，請檢查網路。');
-                console.error("LINE 授權發生錯誤:", err);
-            }
+            } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
         });
 
-        // Messenger 備用報名通道
+        document.getElementById('fb-login-btn')?.addEventListener('click', () => {
+            if (typeof FB === 'undefined') return window.showToast('⚠️ Facebook 模組尚未載入，請關閉擋廣告外掛或稍後再試！');
+            FB.login(function(response) {
+                if (response.authResponse) {
+                    window.showToast('🔄 授權成功，正在抓取大頭貼...');
+                    FB.api('/me', {fields: 'name,picture.width(150).height(150)'}, function(userResponse) {
+                        currentSocialData = { platform: 'Facebook', id: userResponse.id, name: userResponse.name, picture: userResponse.picture.data.url };
+                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
+                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#1877F2] shadow-sm object-cover";
+                        document.getElementById('social-user-name').textContent = currentSocialData.name;
+                        document.getElementById('social-user-id').textContent = 'FB ID: ' + currentSocialData.id;
+                        document.getElementById('social-auth-step').classList.add('hidden');
+                        document.getElementById('social-preview-step').classList.remove('hidden');
+                    });
+                } else { window.showToast('❌ 您取消了授權或登入失敗。'); }
+            }, {scope: 'public_profile'}); 
+        });
+
         document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
             const eventName = window.currentRegEvent || '未命名活動';
-            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用LINE報名請留言給我們(較晚回覆)`;
-            
-            const textArea = document.createElement("textarea"); 
-            textArea.value = msgTemplate; 
-            textArea.style.position = "fixed"; 
-            textArea.style.left = "-9999px";
-            document.body.appendChild(textArea); 
-            textArea.focus(); 
-            textArea.select();
-            try { 
-                document.execCommand('copy'); 
-                window.showToast('📋 已複製報名格式！開啟後請直接貼上'); 
-            } catch (err) { 
-                console.warn("自動複製失敗", err);
-            } 
+            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用社群報名請留言給我們(較晚回覆)`;
+            const textArea = document.createElement("textarea"); textArea.value = msgTemplate; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+            document.body.appendChild(textArea); textArea.focus(); textArea.select();
+            try { document.execCommand('copy'); window.showToast('📋 已複製報名格式！開啟後請直接貼上'); } catch (err) {} 
             document.body.removeChild(textArea);
-
-            setTimeout(() => {
-                const messengerUrl = `https://m.me/Satoyamadining?text=${encodeURIComponent(msgTemplate)}`;
-                window.open(messengerUrl, '_blank');
-            }, 800);
+            setTimeout(() => { window.open(`https://m.me/Satoyamadining?text=${encodeURIComponent(msgTemplate)}`, '_blank'); }, 800);
         });
 
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
+            const originalHtml = e.currentTarget.innerHTML;
+            e.currentTarget.disabled = true; e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
 
             const regs = globalEventRegistrations[window.currentRegEvent] || [];
             if (regs.some(r => r.socialId === currentSocialData.id)) {
                 window.showToast('⚠️ 您已經報名過此活動囉！');
+                e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml;
                 return;
             }
-
-            const originalHtml = e.currentTarget.innerHTML;
-            e.currentTarget.disabled = true;
-            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
 
             try {
                 if (!db || typeof addDoc !== 'function') throw new Error("資料庫未連線");
@@ -1136,7 +939,15 @@
                 if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
 
                 await addDoc(collection(db, 'event_registrations'), regData);
-                window.showToast('✅ 報名成功！'); window.closeModal('event-registration-modal');
+                window.showToast('✅ 報名成功！大頭貼已即時上榜。');
+                
+                setTimeout(() => {
+                    let targetUrl = window.currentRegMethodUrl;
+                    if (targetUrl && targetUrl.startsWith('www')) targetUrl = 'https://' + targetUrl;
+                    if (targetUrl && targetUrl.startsWith('http')) window.open(targetUrl, '_blank');
+                }, 800);
+
+                window.closeModal('event-registration-modal');
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
             } finally {
@@ -1154,51 +965,68 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                signInAnonymously(auth).catch((err) => {
-                    console.warn("匿名登入狀態異常，但不影響公開資料庫讀取", err.message);
-                });
+                signInAnonymously(auth).catch(() => console.warn('匿名登入失敗'));
                 
-                if (db) {
-                    onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
-                        if(docSnap.exists() && docSnap.data().events) {
-                            window.currentEventsList = docSnap.data().events; 
-                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                        } else {
-                            window.currentEventsList = [];
-                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                        }
-                    }, (error) => {
-                        console.error("讀取活動列表失敗:", error);
-                        const container = document.getElementById('event-schedule-container');
-                        if (container) container.innerHTML = '<div class="col-span-full py-12 text-center text-red-400 border-2 border-dashed border-red-200 rounded-xl"><i class="fas fa-wifi text-4xl mb-3 opacity-50"></i><p class="font-bold tracking-widest">資料庫連線失敗，請檢查網路或 Firebase 權限設定。</p></div>';
-                    });
-
-                    onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
-                        window.isRegSnapshotLoaded = true;
-                        globalEventRegistrations = {};
-                        snapshot.forEach(doc => {
-                            const data = doc.data();
-                            if(data.eventName) {
-                                if(!globalEventRegistrations[data.eventName]) globalEventRegistrations[data.eventName] = [];
-                                globalEventRegistrations[data.eventName].push(data);
+                onAuthStateChanged(auth, user => { 
+                    if(user && db) {
+                        onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
+                            if(docSnap.exists() && docSnap.data().events) {
+                                window.currentEventsList = docSnap.data().events; 
+                                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
                             }
                         });
-                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                    }, (error) => {
-                        console.error("讀取報名名單失敗:", error);
-                    });
-                }
-            } catch (e) { 
-                console.error("Firebase init error:", e); 
-                const container = document.getElementById('event-schedule-container');
-                if (container) container.innerHTML = '<div class="col-span-full py-12 text-center text-red-400 border-2 border-dashed border-red-200 rounded-xl"><i class="fas fa-exclamation-triangle text-4xl mb-3 opacity-50"></i><p class="font-bold tracking-widest">系統初始化發生錯誤。</p></div>';
-            }
+
+                        onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
+                            window.isRegSnapshotLoaded = true;
+                            globalEventRegistrations = {};
+                            snapshot.forEach(doc => {
+                                const data = doc.data();
+                                if(data.eventName) {
+                                    if(!globalEventRegistrations[data.eventName]) globalEventRegistrations[data.eventName] = [];
+                                    globalEventRegistrations[data.eventName].push(data);
+                                }
+                            });
+                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                        }, (error) => {
+                            console.error("❌ 讀取報名名單失敗:", error);
+                        });
+                    }
+                });
+            } catch (e) { console.error("Firebase init error:", e); }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initLineLiff();
+        async function initializeSystem() {
             initFirebase();
-        });
+            try {
+                if (typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
+                    await liff.init({ liffId: MY_LINE_LIFF_ID });
+                    if (liff.isLoggedIn()) {
+                        const pendingEvent = localStorage.getItem('pending_line_reg_event');
+                        if (pendingEvent) {
+                            window.showToast('🔄 LINE 授權成功，載入資料中...');
+                            const profile = await liff.getProfile();
+                            currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
+                            
+                            window.currentRegEvent = pendingEvent;
+                            const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
+                            
+                            document.getElementById('social-user-avatar').src = currentSocialData.picture;
+                            document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
+                            document.getElementById('social-user-name').textContent = currentSocialData.name;
+                            document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
+                            
+                            document.getElementById('social-auth-step').classList.add('hidden');
+                            document.getElementById('social-preview-step').classList.remove('hidden');
+                            
+                            window.openModal('event-registration-modal');
+                            localStorage.removeItem('pending_line_reg_event');
+                        }
+                    }
+                }
+            } catch (err) { console.warn('LIFF 靜默初始化失敗', err); }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeSystem);
     </script>
 </body>
 </html>
