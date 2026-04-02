@@ -325,9 +325,10 @@
                         <button id="download-cert-btn" class="px-5 py-2 bg-gradient-to-r from-mori-sage to-mori-forest text-white rounded-full shadow hover:shadow-lg transition text-sm font-bold flex items-center justify-center">
                             <i class="fas fa-award mr-2"></i> 下載永續旅遊證書
                         </button>
-                        <a href="https://farmcmd.github.io/dataflow/" target="_blank" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-full shadow transition duration-300 inline-flex items-center justify-center">
-                            <i class="fas fa-book-open mr-2"></i> 數據流動小科普
-                        </a>
+                        <!-- 🎯 核心修復：拔除外部連結，改為安全的內部按鈕，並換上競賽獎勵文案與禮物圖示 -->
+                        <button onclick="window.showToast('🎁 目前尚無進行中的活動，敬請期待！')" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-full shadow transition duration-300 inline-flex items-center justify-center group">
+                            <i class="fas fa-gift mr-2 text-yellow-200 group-hover:animate-bounce"></i> 不定期競賽/獎勵活動
+                        </button>
                     </div>
                 </div>
             </div>
@@ -716,7 +717,16 @@
                     </div>
                 </div>
                 <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-200 text-center"><i class="fas fa-info-circle text-gray-400 text-3xl mb-2"></i><p class="text-xs text-gray-500 font-bold">集中化企業儀表板，即時掌握員工參與度。</p></div>
+                    <!-- 🎯 升級：將灰色文字面板升級為帶有「小科普按鈕」的翡翠綠風格資訊卡片 -->
+                    <div class="bg-emerald-50/50 p-5 rounded-xl shadow-sm border border-emerald-100 text-center flex flex-col items-center justify-center gap-4">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-info-circle text-emerald-400 text-3xl mb-2"></i>
+                            <p class="text-xs text-emerald-800 font-bold leading-relaxed tracking-wide">集中化企業儀表板<br>即時掌握員工參與度</p>
+                        </div>
+                        <a href="https://farmcmd.github.io/dataflow/" target="_blank" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition duration-300 flex items-center justify-center group tracking-wide">
+                            <i class="fas fa-book-open mr-2 group-hover:scale-110 transition-transform"></i> 數據流動小科普
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1396,8 +1406,9 @@
             updateDisplays(); renderCheckoutHistory(); renderLogs();
         }
 
+        // 👇 核心修復：在結算歸零時，唯獨保留 state.totalScore 不清零
         function resetPlayerStats() {
-            state.totalMileage = 0; state.totalCarbon = 0; state.totalScore = 0; state.greenProcure = 0; state.sroiProcure = 0; state.projectProcure = 0;
+            state.totalMileage = 0; state.totalCarbon = 0; state.greenProcure = 0; state.sroiProcure = 0; state.projectProcure = 0;
             updateDisplays(); saveData();
         }
 
