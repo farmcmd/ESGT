@@ -1132,6 +1132,19 @@
         </div>
     </div>
 
+    <!-- 18. 自訂 Prompt Modal (補回總承報表命名介面) -->
+    <div id="custom-prompt-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            <h3 id="custom-prompt-title" class="text-lg font-bold text-gray-800 mb-4 tracking-wide"></h3>
+            <input type="text" id="custom-prompt-input" class="w-full p-3 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-yellow-500 focus:outline-none mb-5 shadow-inner text-gray-700">
+            <div class="flex gap-3">
+                <button id="custom-prompt-cancel" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition shadow-sm border border-gray-200">取消</button>
+                <button id="custom-prompt-confirm" class="flex-1 py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-lg font-bold hover:shadow-lg transition shadow-md">確認產出</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 隱藏的專屬匯出長圖區塊 -->
     <div id="export-receipt-container" class="p-8 w-[600px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0"></div>
     <div id="certificate-dom-container" class="p-8 w-[800px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans"></div>
@@ -1574,9 +1587,9 @@
                     }
                 }
 
-                // 🎯 核心寫入：為每張政府卡片生成獨立 5 碼
-                if (!proj._cardCode) proj._cardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-                const traceUrl = `https://farmcmd.github.io/ESGT/#OKR-board-${proj._cardCode}`;
+                // 🎯 核心升級：如同新旅者註冊，給予政府儀表板永久專屬代碼
+                const displayCode = proj.cardCode || (proj.id.startsWith('mock_') ? 'GOV99' : proj.id.slice(-5).toUpperCase());
+                const traceUrl = `https://farmcmd.github.io/ESGT/#OKR-board-${displayCode}`;
 
                 const card = document.createElement('div');
                 card.className = `${opacityClass} p-5 rounded-2xl shadow-sm border border-gray-100 relative flex flex-col h-full hover:shadow-md transition-all`;
@@ -1617,8 +1630,8 @@
                         </div>
                     </div>
                     ${sroiHtml}${feedbackHtml}
-                    <!-- 🎯 卡片底部寫入獨立 5 碼徽章 -->
-                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: ${traceUrl} <span class="inline-block ml-1 align-text-bottom text-[9px] font-mono font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 tracking-wider">#${proj._cardCode}</span></span><i class="fas fa-qrcode text-gray-300 text-xl flex-shrink-0 mb-0.5"></i></div>
+                    <!-- 🎯 卡片底部寫入永久固定的獨立 5 碼徽章 -->
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: <br class="sm:hidden"> ${traceUrl} <span class="inline-block ml-2 align-middle text-[18px] font-mono font-black text-blue-500 bg-blue-50 px-3 py-1 rounded-lg border-2 border-blue-100 tracking-wider shadow-sm">#${displayCode}</span></span><i class="fas fa-qrcode text-gray-300 text-2xl flex-shrink-0 mb-1"></i></div>
                 `;
 
                 // 🎯 綁定分享按鈕複製邏輯
@@ -1735,9 +1748,9 @@
                         ? `<button class="auth-card-btn absolute top-0 left-0 bg-slate-600 hover:bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-tl-2xl rounded-br-lg shadow-sm z-20 transition-colors" data-id="${proj.id}" data-type="ent" title="點擊輸入密碼授權"><i class="fas fa-lock mr-1"></i>等待授權 (點擊)</button>` 
                         : '');
 
-                // 🎯 核心寫入：為每張企業卡片生成獨立 5 碼
-                if (!proj._cardCode) proj._cardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-                const traceUrl = `https://farmcmd.github.io/ESGT/#ESG-board-${proj._cardCode}`;
+                // 🎯 核心升級：如同新旅者註冊，給予企業儀表板永久專屬代碼
+                const displayCode = proj.cardCode || (proj.id.startsWith('mock_') ? 'USI88' : proj.id.slice(-5).toUpperCase());
+                const traceUrl = `https://farmcmd.github.io/ESGT/#ESG-board-${displayCode}`;
 
                 const card = document.createElement('div');
                 card.className = `${opacityClass} p-5 rounded-2xl shadow-sm border border-gray-100 relative flex flex-col h-full hover:shadow-md transition-all`;
@@ -1771,8 +1784,8 @@
                         </div>
                     </div>
                     ${sroiHtml}${feedbackHtml}
-                    <!-- 🎯 卡片底部寫入獨立 5 碼徽章 -->
-                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: ${traceUrl} <span class="inline-block ml-1 align-text-bottom text-[9px] font-mono font-bold text-mori-forest bg-mori-light/50 px-1.5 py-0.5 rounded border border-mori-sage/30 tracking-wider">#${proj._cardCode}</span></span><i class="fas fa-qrcode text-gray-300 text-xl flex-shrink-0 mb-0.5"></i></div>
+                    <!-- 🎯 卡片底部寫入永久固定的獨立 5 碼徽章 -->
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: <br class="sm:hidden"> ${traceUrl} <span class="inline-block ml-2 align-middle text-[18px] font-mono font-black text-mori-forest bg-mori-light/50 px-3 py-1 rounded-lg border-2 border-mori-sage/30 tracking-wider shadow-sm">#${displayCode}</span></span><i class="fas fa-qrcode text-gray-300 text-2xl flex-shrink-0 mb-1"></i></div>
                 `;
 
                 // 🎯 綁定分享按鈕複製邏輯
@@ -2509,8 +2522,8 @@
                 const org = document.getElementById('ent-create-org').value.trim();
                 const event = document.getElementById('ent-create-event').value.trim();
                 if (!org || !event) return window.showToast('請填寫企業名稱與活動名稱');
-                
-                // 👇 新增：在建立的當下，生成唯一的 5 碼並打包送往資料庫，確保永久不變
+
+                // 👇 新增：在建立專案的當下，為其配發一組固定的 5 碼代碼，並打包寫入資料庫
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
                 const newProj = {
@@ -2612,8 +2625,8 @@
             document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
                 const name = document.getElementById('host-proj-name').value.trim();
                 if (!name) return window.showToast('請填寫計畫名稱');
-                
-                // 👇 新增：在建立的當下，生成唯一的 5 碼並打包送往資料庫，確保永久固定
+
+                // 👇 新增：在建立計畫的當下，為其配發一組固定的 5 碼代碼，並打包寫入資料庫
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
                 const newProj = {
