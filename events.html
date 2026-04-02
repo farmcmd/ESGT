@@ -280,7 +280,9 @@
             window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
         };
 
+        // ==========================================
         // 管理員看板解鎖與動態網址機制
+        // ==========================================
         window.updateDashboardUrl = function(cardId) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
@@ -326,7 +328,7 @@
             if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) {
                 window.open(urlDisplay.value, '_blank');
             } else {
-                window.showToast('⚠️ 請先點選企業或政府儀表板！');
+                window.showToast('⚠️ 請先點擊選擇企業或政府儀表板！');
             }
         };
 
@@ -341,6 +343,7 @@
                     const containerBox = document.getElementById(`admin-box-${cardId}`);
                     const labelNum = document.getElementById(`label-num-${cardId}`);
 
+                    // 解鎖並復原發光狀態 (30% Shrink)
                     [btnEnt, btnGov].forEach(btn => {
                         if (btn) {
                             btn.disabled = false;
@@ -348,34 +351,35 @@
                             btn.classList.add('cursor-pointer', 'hover:-translate-y-0.5');
                             if (btn.getAttribute('data-active') === 'true') {
                                 if (btn.id.includes('btn-ent')) {
-                                    btn.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-black px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)] shrink-0`;
-                                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse"></i>`;
+                                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)] shrink-0`;
+                                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse text-[10px]"></i>`;
                                 } else {
-                                    btn.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-black px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0`;
-                                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse"></i>`;
+                                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.6)] shrink-0`;
+                                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse text-[10px]"></i>`;
                                 }
                             } else {
-                                btn.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
+                                btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
                                 if (btn.id.includes('btn-ent')) btn.innerHTML = `<span>企業永續儀表板</span>`;
                                 else btn.innerHTML = `<span>永續政府儀表板</span>`;
                             }
                         }
                     });
                     
+                    // 解鎖輸入框 (30% Shrink)
                     if (inputNum) { 
                         inputNum.disabled = false; 
                         inputNum.placeholder = "5碼";
                         inputNum.classList.remove('cursor-not-allowed', 'bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner', 'bg-orange-50/50', 'text-orange-700', 'border-orange-300', 'shadow-sm'); 
                         
                         if (inputNum.value.trim().length > 0) {
-                            inputNum.classList.add('shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
+                            inputNum.classList.add('shadow-[0_0_10px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
                             if(labelNum) { 
                                 labelNum.innerHTML = '<i class="fas fa-bolt text-orange-500 mr-1 animate-pulse"></i>編號:'; 
                                 labelNum.classList.add('text-orange-600'); 
                                 labelNum.classList.remove('text-gray-400', 'text-orange-700/80'); 
                             }
                         } else {
-                            inputNum.classList.add('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'text-yellow-900'); 
+                            inputNum.classList.add('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_8px_rgba(234,179,8,0.3)]', 'text-yellow-900'); 
                             if(labelNum) { 
                                 labelNum.innerHTML = '編號:'; 
                                 labelNum.classList.add('text-orange-600'); 
@@ -386,9 +390,10 @@
 
                     if (saveBtn) saveBtn.classList.remove('hidden');
                     
+                    // 鎖頭變成開啟狀態 (30% Shrink)
                     if (lockBtn) {
-                        lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500 text-lg animate-pulse"></i>';
-                        lockBtn.className = 'w-9 h-9 flex items-center justify-center bg-green-50 border border-green-300 rounded-full shadow-sm shrink-0 z-10';
+                        lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500 text-xs animate-pulse"></i>';
+                        lockBtn.className = 'w-7 h-7 flex items-center justify-center bg-green-50 border border-green-300 rounded-full shadow-sm shrink-0 z-10';
                         lockBtn.disabled = true; 
                     }
                     
@@ -416,32 +421,32 @@
                 const btnGov = document.getElementById(`btn-gov-${cardId}`);
                 if (btnGov && !isActive) { 
                     btnGov.setAttribute('data-active', 'false'); 
-                    btnGov.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
+                    btnGov.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
                     btnGov.innerHTML = `<span>永續政府儀表板</span>`; 
                 }
             } else if (type === 'gov') {
                 const btnEnt = document.getElementById(`btn-ent-${cardId}`);
                 if (btnEnt && !isActive) { 
                     btnEnt.setAttribute('data-active', 'false'); 
-                    btnEnt.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
+                    btnEnt.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
                     btnEnt.innerHTML = `<span>企業永續儀表板</span>`; 
                 }
             }
 
             if (type === 'ent') {
                 if (!isActive) {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.6)] shrink-0`;
-                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse"></i>`;
+                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)] shrink-0`;
+                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse text-[10px]"></i>`;
                 } else {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
+                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
                     btn.innerHTML = `<span>企業永續儀表板</span>`;
                 }
             } else if (type === 'gov') {
                 if (!isActive) {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-black px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0`;
-                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse"></i>`;
+                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.6)] shrink-0`;
+                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse text-[10px]"></i>`;
                 } else {
-                    btn.className = `flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
+                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
                     btn.innerHTML = `<span>永續政府儀表板</span>`;
                 }
             }
@@ -464,9 +469,9 @@
                 btnEnt.classList.add('cursor-not-allowed');
                 if (btnEnt.getAttribute('data-active') === 'true') {
                     btnEnt.classList.add('opacity-90');
-                    btnEnt.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600"></i>`;
+                    btnEnt.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600 text-[10px]"></i>`;
                 } else {
-                    btnEnt.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
+                    btnEnt.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
                 }
             }
 
@@ -476,21 +481,21 @@
                 btnGov.classList.add('cursor-not-allowed');
                 if (btnGov.getAttribute('data-active') === 'true') {
                     btnGov.classList.add('opacity-90');
-                    btnGov.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600"></i>`;
+                    btnGov.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600 text-[10px]"></i>`;
                 } else {
-                    btnGov.className = `flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
+                    btnGov.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
                 }
             }
 
             if (inputNum) {
                 inputNum.disabled = true;
-                inputNum.classList.remove('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'text-yellow-900', 'shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
+                inputNum.classList.remove('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_8px_rgba(234,179,8,0.3)]', 'text-yellow-900', 'shadow-[0_0_10px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
                 
                 if (inputNum.value.trim().length > 0) {
                     inputNum.classList.add('cursor-not-allowed', 'bg-orange-50/50', 'text-orange-700', 'border-orange-300', 'shadow-sm');
                     inputNum.classList.remove('bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner');
                     if(labelNum) { 
-                        labelNum.innerHTML = '<i class="fas fa-check text-orange-600 mr-1"></i>編號:';
+                        labelNum.innerHTML = '<i class="fas fa-check text-orange-600 mr-1 text-[9px]"></i>編號:';
                         labelNum.classList.remove('text-orange-600', 'animate-pulse'); 
                         labelNum.classList.add('text-orange-700/80'); 
                     }
@@ -507,13 +512,13 @@
             if (saveBtn) saveBtn.classList.add('hidden');
 
             if (lockBtn) {
-                lockBtn.innerHTML = '<span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-sm sm:text-base">💡</span>';
-                lockBtn.className = 'w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group';
+                lockBtn.innerHTML = '<span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-[10px] sm:text-xs">💡</span>';
+                lockBtn.className = 'w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group';
                 lockBtn.disabled = false;
             }
 
             if (containerBox) {
-                containerBox.classList.remove('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_15px_rgba(250,204,21,0.25)]');
+                containerBox.classList.remove('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_20px_rgba(250,204,21,0.25)]');
                 containerBox.classList.add('bg-gray-50/80', 'border-gray-200');
             }
 
@@ -527,7 +532,6 @@
             let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
 
             let cloudSuccess = false;
-
             if (db) {
                 try {
                     const docRef = doc(db, 'system_messages', 'event_schedule');
@@ -540,12 +544,10 @@
                             events[idx].boardCode = boardCode;
                             await updateDoc(docRef, { events: events });
                             cloudSuccess = true;
-                            window.showToast('✅ 看板設定已成功鎖定並同步至雲端！');
+                            window.showToast('✅ 看板設定已成功鎖定並同步至雲端，所有人皆可看見！');
                         }
                     }
-                } catch(e) {
-                    console.warn("雲端同步遭拒絕 (可能是權限不足):", e);
-                }
+                } catch(e) { console.warn("雲端同步受阻:", e); }
             }
 
             if (!cloudSuccess) {
@@ -553,19 +555,14 @@
                     let localAdminData = JSON.parse(localStorage.getItem('ESGT_Admin_Boards_v1')) || {};
                     localAdminData[eventName] = { boardType: boardType, boardCode: boardCode };
                     localStorage.setItem('ESGT_Admin_Boards_v1', JSON.stringify(localAdminData));
-                    
-                    if (!db) {
-                        window.showToast('⚠️ 資料庫未連線，已自動切換為「本機暫存模式」。');
-                    } else {
-                        window.showToast('⚠️ 雲端寫入遭阻擋，已安全切換為「本機暫存模式」。');
-                    }
-                } catch(err) {
-                    window.showToast('❌ 儲存完全失敗，請檢查瀏覽器設定。');
-                }
+                    window.showToast('⚠️ 雲端寫入遭阻擋，已安全切換為「本機暫存模式」。');
+                } catch(err) { window.showToast('❌ 儲存失敗'); }
             }
         };
 
+        // ==========================================
         // 分享功能
+        // ==========================================
         window.currentShareData = { url: '', title: '', text: '' };
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
@@ -606,7 +603,9 @@
             if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
+        // ==========================================
         // 獨立卡片渲染引擎 (保留完整排版、雙軌儲存與動態網址)
+        // ==========================================
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList || window.currentEventsList.length === 0) {
@@ -746,35 +745,35 @@
                     let govBtnActive = savedBoardType === 'gov';
 
                     let entBtnClass = entBtnActive 
-                        ? "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
-                        : "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
-                    let entBtnInner = entBtnActive ? `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600"></i>` : `<span>企業永續儀表板</span>`;
+                        ? "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
+                        : "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
+                    let entBtnInner = entBtnActive ? `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600 text-[10px]"></i>` : `<span>企業永續儀表板</span>`;
 
                     let govBtnClass = govBtnActive 
-                        ? "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
-                        : "flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1.5 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
-                    let govBtnInner = govBtnActive ? `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600"></i>` : `<span>永續政府儀表板</span>`;
+                        ? "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
+                        : "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
+                    let govBtnInner = govBtnActive ? `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600 text-[10px]"></i>` : `<span>永續政府儀表板</span>`;
 
                     let inputClass = savedBoardCode 
-                        ? "w-14 sm:w-16 px-1.5 py-1 text-[12px] sm:text-[13px] font-mono font-bold border rounded focus:outline-none text-center transition-all uppercase cursor-not-allowed bg-orange-50/50 text-orange-700 border-orange-300 shadow-sm"
-                        : "w-14 sm:w-16 px-1.5 py-1 text-[12px] sm:text-[13px] font-mono font-bold border border-gray-200 rounded bg-gray-100 focus:outline-none text-center shadow-inner cursor-not-allowed transition-all uppercase text-gray-400";
-                    let labelHtml = savedBoardCode ? `<i class="fas fa-check text-orange-600 mr-1"></i>編號:` : `編號:`;
-                    let labelClass = savedBoardCode ? "text-[12px] sm:text-[13px] font-bold transition-colors whitespace-nowrap text-orange-700/80" : "text-[12px] sm:text-[13px] font-bold transition-colors whitespace-nowrap text-gray-400";
+                        ? "w-11 sm:w-14 px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold border rounded focus:outline-none text-center transition-all uppercase cursor-not-allowed bg-orange-50/50 text-orange-700 border-orange-300 shadow-sm"
+                        : "w-11 sm:w-14 px-1 py-0.5 text-[10px] sm:text-[11px] font-mono font-bold border border-gray-200 rounded bg-gray-100 focus:outline-none text-center shadow-inner cursor-not-allowed transition-all uppercase text-gray-400";
+                    let labelHtml = savedBoardCode ? `<i class="fas fa-check text-orange-600 mr-1 text-[9px]"></i>編號:` : `編號:`;
+                    let labelClass = savedBoardCode ? "text-[10px] sm:text-[11px] font-bold transition-colors whitespace-nowrap text-orange-700/80" : "text-[10px] sm:text-[11px] font-bold transition-colors whitespace-nowrap text-gray-400";
 
                     let initUrl = '';
                     if (entBtnActive) initUrl = `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}`;
                     else if (govBtnActive) initUrl = `https://farmcmd.github.io/ESGT/#OKR-board${savedBoardCode ? '-' + savedBoardCode : ''}`;
 
                     let dashboardButtonsHtml = `
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <div id="admin-box-${shortId}" class="flex flex-col gap-3 bg-gray-50/80 p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm transition-all duration-500">
+                    <div class="mt-4 pt-3 border-t border-gray-100">
+                        <div id="admin-box-${shortId}" class="flex flex-col gap-2.5 bg-gray-50/80 p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-sm transition-all duration-500">
                             
-                            <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full">
-                                <button onclick="window.unlockAdminPanel('${shortId}')" id="admin-lock-btn-${shortId}" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group" title="點擊輸入密碼解鎖">
-                                    <span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-sm sm:text-base">💡</span>
+                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full">
+                                <button onclick="window.unlockAdminPanel('${shortId}')" id="admin-lock-btn-${shortId}" class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group" title="點擊輸入密碼解鎖">
+                                    <span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-[10px] sm:text-xs">💡</span>
                                 </button>
-                                <span class="text-[11px] sm:text-[12px] font-bold text-gray-500 bg-gray-200/50 px-2 py-1.5 rounded border border-gray-200 shrink-0 shadow-sm flex items-center"><i class="fas fa-map-pin mr-1.5"></i>看板位置</span>
-                                <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-[9px] sm:text-[10px] font-bold text-gray-500 bg-gray-200/50 px-1.5 py-1 rounded border border-gray-200 shrink-0 shadow-sm flex items-center"><i class="fas fa-map-pin mr-1"></i>看板位置</span>
+                                <div class="flex flex-wrap items-center gap-1.5">
                                     <button id="btn-ent-${shortId}" data-active="${entBtnActive}" disabled onclick="window.toggleBoard('${shortId}', 'ent')" class="${entBtnClass}">
                                         ${entBtnInner}
                                     </button>
@@ -782,24 +781,24 @@
                                         ${govBtnInner}
                                     </button>
                                 </div>
-                                <div class="hidden md:block w-px h-5 bg-gray-300 mx-1"></div>
-                                <div class="flex items-center gap-1.5 ml-auto sm:ml-0 shrink-0">
+                                <div class="hidden md:block w-px h-3 bg-gray-300 mx-1"></div>
+                                <div class="flex items-center gap-1 ml-auto sm:ml-0 shrink-0">
                                     <span id="label-num-${shortId}" class="${labelClass}">${labelHtml}</span>
                                     <input type="text" id="input-num-${shortId}" maxlength="5" value="${savedBoardCode}" oninput="this.value = this.value.toUpperCase(); window.updateDashboardUrl('${shortId}')" disabled placeholder="🔒" class="${inputClass}">
-                                    <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-md shadow-md flex items-center justify-center transition-all animate-bounce shrink-0" title="完成設定並同步雲端">
-                                        <i class="fas fa-check text-xs"></i>
+                                    <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-5 h-5 bg-green-500 hover:bg-green-600 text-white rounded-sm shadow-md flex items-center justify-center transition-all animate-bounce shrink-0" title="完成設定並同步雲端">
+                                        <i class="fas fa-check text-[9px]"></i>
                                     </button>
                                 </div>
                             </div>
 
                             <div class="flex items-stretch w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                <div class="px-2.5 sm:px-3 py-2 sm:py-2.5 text-gray-400 bg-gray-50 border-r border-gray-200 flex items-center justify-center shrink-0">
-                                    <i class="fas fa-link text-[10px] sm:text-xs"></i>
+                                <div class="px-2 sm:px-3 py-1.5 sm:py-2 text-gray-400 bg-gray-50 border-r border-gray-200 flex items-center justify-center shrink-0">
+                                    <i class="fas fa-link text-[10px] sm:text-[11px]"></i>
                                 </div>
-                                <input type="text" id="display-url-${shortId}" readonly class="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-[12px] text-blue-600 font-mono bg-transparent focus:outline-none cursor-default truncate" placeholder="本活動未建立成效看板" value="${initUrl}" title="系統將自動生成專屬對接網址">
-                                <button onclick="window.openDashboard('${shortId}')" class="px-3 sm:px-5 py-2 sm:py-2.5 bg-slate-800 hover:bg-slate-900 text-white transition-all flex items-center justify-center shrink-0 group border-l border-slate-700" title="前往成效儀表板 (ENTER)">
-                                    <span class="text-[10px] sm:text-[11px] font-bold mr-1 sm:mr-1.5 opacity-90 group-hover:opacity-100 whitespace-nowrap">查看成效</span>
-                                    <i class="fas fa-reply fa-flip-horizontal group-hover:translate-x-0.5 transition-transform text-[10px] sm:text-sm"></i>
+                                <input type="text" id="display-url-${shortId}" readonly class="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-[11px] text-blue-600 font-mono bg-transparent focus:outline-none cursor-default truncate" placeholder="本活動未建立成效看板" value="${initUrl}" title="系統將自動生成專屬對接網址">
+                                <button onclick="window.openDashboard('${shortId}')" class="px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-900 text-white transition-all flex items-center justify-center shrink-0 group border-l border-slate-700" title="前往成效儀表板 (ENTER)">
+                                    <span class="text-[9px] sm:text-[10px] font-bold mr-1 opacity-90 group-hover:opacity-100 whitespace-nowrap">查看成效</span>
+                                    <i class="fas fa-reply fa-flip-horizontal group-hover:translate-x-0.5 transition-transform text-[9px] sm:text-[11px]"></i>
                                 </button>
                             </div>
 
@@ -858,26 +857,163 @@
             }
         };
 
-        // LINE 與 Facebook 登入綁定邏輯
+        // ==========================================
+        // 4. LINE 授權與社群報名邏輯 (恢復)
+        // ==========================================
+        let currentSocialData = null; 
+
+        async function initLineLiff() {
+            if (typeof MY_LINE_LIFF_ID === 'undefined' || MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return;
+            try {
+                await liff.init({ liffId: MY_LINE_LIFF_ID });
+                if (liff.isLoggedIn()) {
+                    try {
+                        const profile = await liff.getProfile();
+                        if (profile && profile.userId) {
+                            state.lineUserId = profile.userId;
+                            saveData();
+                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                        }
+                    } catch(e) { console.warn("背景獲取 LINE Profile 失敗", e); }
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const urlEvent = urlParams.get('line_reg');
+                    let pendingEvent = urlEvent ? decodeURIComponent(urlEvent) : localStorage.getItem('pending_line_reg_event');
+                    
+                    if (pendingEvent) {
+                        if (urlEvent) {
+                            urlParams.delete('line_reg');
+                            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                            window.history.replaceState({}, document.title, newUrl);
+                        }
+                        localStorage.removeItem('pending_line_reg_event');
+
+                        window.currentRegEvent = pendingEvent;
+                        
+                        let profile = { 
+                            userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), 
+                            displayName: 'LINE 授權旅客', 
+                            pictureUrl: 'https://via.placeholder.com/150' 
+                        };
+                        
+                        try { 
+                            profile = await Promise.race([
+                                liff.getProfile(),
+                                new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
+                            ]); 
+                        } catch (e) { 
+                            console.warn("無法取得 LINE 大頭貼", e); 
+                        }
+
+                        if (profile.userId && !profile.userId.startsWith('visitor_')) {
+                            state.lineUserId = profile.userId;
+                            saveData();
+                        }
+
+                        const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
+                        document.getElementById('social-auth-step').classList.add('hidden');
+                        document.getElementById('social-preview-step').classList.remove('hidden');
+                        
+                        window.openModal('event-registration-modal');
+                        window.showToast('🔄 LINE 授權成功，載入資料中...');
+
+                        currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
+                        
+                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
+                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
+                        document.getElementById('social-user-name').textContent = currentSocialData.name;
+                        document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
+                    }
+                }
+            } catch (err) { 
+                console.error('LIFF 初始化失敗', err); 
+                localStorage.removeItem('pending_line_reg_event'); 
+            }
+        }
+
+        window.openRegistrationModal = async function(encodedEventName) {
+            const eventName = decodeURIComponent(encodedEventName);
+            window.currentRegEvent = eventName;
+            const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = eventName;
+            
+            document.getElementById('social-auth-step').classList.remove('hidden');
+            document.getElementById('social-preview-step').classList.add('hidden');
+            currentSocialData = null;
+            
+            window.openModal('event-registration-modal');
+
+            try {
+                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                    window.showToast('🔄 偵測到已登入，檢查報名狀態...');
+
+                    let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
+                    try { 
+                        profile = await Promise.race([
+                            liff.getProfile(),
+                            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
+                        ]); 
+                    } catch(e) {
+                        console.warn("大頭貼抓取失敗，使用預設值");
+                    } 
+
+                    if (profile.userId && !profile.userId.startsWith('visitor_')) {
+                        state.lineUserId = profile.userId;
+                        saveData();
+                    }
+
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
+
+                    currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
+                    
+                    document.getElementById('social-user-avatar').src = currentSocialData.picture;
+                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
+                    document.getElementById('social-user-name').textContent = currentSocialData.name;
+                    document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
+                }
+            } catch (err) {
+                console.warn("自動登入偵測失敗，留在步驟一", err);
+            }
+        };
+
         document.getElementById('line-login-btn')?.addEventListener('click', async () => {
-            if (typeof MY_LINE_LIFF_ID === 'undefined' || MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return window.showToast('⚠️ 系統尚未設定 LINE LIFF ID');
             try {
                 await liff.ready; 
                 if (!liff.isLoggedIn()) {
                     localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
-                    liff.login({ redirectUri: window.location.href });
+                    const redirectUrl = new URL(window.location.href);
+                    redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
+                    liff.login({ redirectUri: redirectUrl.toString() });
                 } else {
                     window.showToast('🔄 正在載入 LINE 資料中...');
-                    const profile = await liff.getProfile();
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
+                    
+                    let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
+                    try { 
+                        profile = await Promise.race([
+                            liff.getProfile(),
+                            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
+                        ]); 
+                    } catch(e) { 
+                        console.warn("無法取得 LINE Profile", e); 
+                    }
+
+                    if (profile.userId && !profile.userId.startsWith('visitor_')) {
+                        state.lineUserId = profile.userId;
+                        saveData();
+                    }
+
                     currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                     document.getElementById('social-user-avatar').src = currentSocialData.picture;
                     document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
                     document.getElementById('social-user-name').textContent = currentSocialData.name;
                     document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
                 }
-            } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
+            } catch (err) {
+                window.showToast('🚨 授權啟動失敗，請檢查網路。');
+                console.error("LINE 授權發生錯誤:", err);
+            }
         });
 
         document.getElementById('fb-login-btn')?.addEventListener('click', () => {
@@ -900,23 +1036,36 @@
 
         document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
             const eventName = window.currentRegEvent || '未命名活動';
-            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用社群報名請留言給我們(較晚回覆)`;
-            const textArea = document.createElement("textarea"); textArea.value = msgTemplate; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
-            document.body.appendChild(textArea); textArea.focus(); textArea.select();
+            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用LINE報名請留言給我們(較晚回覆)`;
+            
+            const textArea = document.createElement("textarea"); 
+            textArea.value = msgTemplate; 
+            textArea.style.position = "fixed"; 
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea); 
+            textArea.focus(); 
+            textArea.select();
             try { document.execCommand('copy'); window.showToast('📋 已複製報名格式！開啟後請直接貼上'); } catch (err) {} 
             document.body.removeChild(textArea);
-            setTimeout(() => { window.open(`https://m.me/Satoyamadining?text=${encodeURIComponent(msgTemplate)}`, '_blank'); }, 800);
+
+            setTimeout(() => {
+                const messengerUrl = `https://m.me/Satoyamadining?text=${encodeURIComponent(msgTemplate)}`;
+                window.open(messengerUrl, '_blank');
+            }, 800);
         });
 
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
+
             const originalHtml = e.currentTarget.innerHTML;
-            e.currentTarget.disabled = true; e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
+            e.currentTarget.disabled = true;
+            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
 
             const regs = globalEventRegistrations[window.currentRegEvent] || [];
             if (regs.some(r => r.socialId === currentSocialData.id)) {
                 window.showToast('⚠️ 您已經報名過此活動囉！');
-                e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml;
+                e.currentTarget.disabled = false;
+                e.currentTarget.innerHTML = originalHtml;
                 return;
             }
 
@@ -939,15 +1088,7 @@
                 if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
 
                 await addDoc(collection(db, 'event_registrations'), regData);
-                window.showToast('✅ 報名成功！大頭貼已即時上榜。');
-                
-                setTimeout(() => {
-                    let targetUrl = window.currentRegMethodUrl;
-                    if (targetUrl && targetUrl.startsWith('www')) targetUrl = 'https://' + targetUrl;
-                    if (targetUrl && targetUrl.startsWith('http')) window.open(targetUrl, '_blank');
-                }, 800);
-
-                window.closeModal('event-registration-modal');
+                window.showToast('✅ 報名成功！'); window.closeModal('event-registration-modal');
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
             } finally {
@@ -959,6 +1100,9 @@
             btn.addEventListener('click', (e) => { const m = e.target.closest('.modal-overlay'); if (m) m.classList.add('hidden'); });
         });
 
+        // ==========================================
+        // 5. Firebase 系統初始化
+        // ==========================================
         function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig);
@@ -995,38 +1139,10 @@
             } catch (e) { console.error("Firebase init error:", e); }
         }
 
-        async function initializeSystem() {
+        document.addEventListener('DOMContentLoaded', () => {
+            initLineLiff();
             initFirebase();
-            try {
-                if (typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
-                    await liff.init({ liffId: MY_LINE_LIFF_ID });
-                    if (liff.isLoggedIn()) {
-                        const pendingEvent = localStorage.getItem('pending_line_reg_event');
-                        if (pendingEvent) {
-                            window.showToast('🔄 LINE 授權成功，載入資料中...');
-                            const profile = await liff.getProfile();
-                            currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                            
-                            window.currentRegEvent = pendingEvent;
-                            const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
-                            
-                            document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                            document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                            document.getElementById('social-user-name').textContent = currentSocialData.name;
-                            document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                            
-                            document.getElementById('social-auth-step').classList.add('hidden');
-                            document.getElementById('social-preview-step').classList.remove('hidden');
-                            
-                            window.openModal('event-registration-modal');
-                            localStorage.removeItem('pending_line_reg_event');
-                        }
-                    }
-                }
-            } catch (err) { console.warn('LIFF 靜默初始化失敗', err); }
-        }
-
-        document.addEventListener('DOMContentLoaded', initializeSystem);
+        });
     </script>
 </body>
 </html>
