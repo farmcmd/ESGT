@@ -1878,14 +1878,11 @@
                 renderEntProjectsDashboard(); updateEntProjectDropdown();
             }
             if (globalGovData.projects.length === 0) {
-                // 👇 核心修復：正名計畫名稱為「里山陶生-水里創生計畫」
-                globalGovData.projects = [{ id: 'mock_gov_1', name: '里山陶生-水里創生計畫', event: '地方青農推廣', date: '2026-03-05', deadline: '2025-12-31T23:59', budget: 50000, sroi: 1.95, supervisor: '農業部', organizer: '南投縣政府', executor: '水里鄉商圈創生共好協會', carbon: 3200, green: 15000, eval_count: 10, total_score: 480, isAuthorized: true }];
+                globalGovData.projects = [{ id: 'mock_gov_1', name: '里山創生示範計畫', event: '地方青農推廣', date: '2026-03-05', deadline: '2025-12-31T23:59', budget: 50000, sroi: 1.95, supervisor: '農業部', organizer: '南投縣政府', executor: '水里鄉商圈創生共好協會', carbon: 3200, green: 15000, eval_count: 10, total_score: 480, isAuthorized: true }];
                 renderGovDashboard(); updateProjectDropdown();
             }
             globalCerts = { operators: [], lecturers: [] };
-            const todayStr = getTodayKey(); globalAbsolute = { carbon: 53000, green: 186500, visitor_count: 1250 }; 
-            // 👇 核心修復：離線/預設基底的今日減碳量改為卡片上的 3200g
-            globalAbsolute[`daily_${todayStr}_carbon`] = 3200; 
+            const todayStr = getTodayKey(); globalAbsolute = { carbon: 22647, green: 186500, visitor_count: 1250 }; globalAbsolute[`daily_${todayStr}_carbon`] = 350; 
             updateGlobalSummary(); renderAuthList(); renderCertifications();
         }
 
@@ -1895,32 +1892,35 @@
         function initGlobalCounters() {
             if (!db) return;
             try {
-                // 🚀 核心修復：解除依賴！讓首頁總承數據「獨立且優先」連線，不須等待其他專案載入
-                onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
-                    const todayStr = getTodayKey();
-                    if (docSnap.exists()) { 
-                        globalAbsolute = docSnap.data(); 
-                        
-                        // 攔截「被瀏覽人次搶先建立的不完整文件」，自動補回基底數據
-                        if (globalAbsolute.carbon === undefined) {
-                            globalAbsolute.carbon = 53000; // 配合您昨日的校正
-                            globalAbsolute.green = 186500;
-                            if ((globalAbsolute.visitor_count || 0) < 1250) globalAbsolute.visitor_count = 1250;
-                            // 👇 核心修復：若資料庫遺失，自動補回今日的 3200g
-                            globalAbsolute[`daily_${todayStr}_carbon`] = 3200;
-                            await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute, { merge: true });
-                        }
-                    } 
-                    else { 
-                        globalAbsolute = { carbon: 53000, green: 186500, visitor_count: 1250 }; 
-                        globalAbsolute[`daily_${todayStr}_carbon`] = 3200; 
-                        await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); 
+                const checkBackendReady = () => {
+                    if (govLoaded && entLoaded && !absoluteLoaded) {
+                        absoluteLoaded = 'pending';
+                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
+                            if (docSnap.exists()) { globalAbsolute = docSnap.data(); } 
+                            else { const todayStr = getTodayKey(); globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; globalAbsolute[`daily_${todayStr}_carbon`] = 0; await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); }
+                            absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
+                        });
                     }
-                    
-                    absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
+                };
+
+                onSnapshot(collection(db, 'gov_projects'), (snapshot) => {
+                    globalGovData.projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const currentIds = globalGovData.projects.map(p => p.id); window.currentGovList = currentIds;
+                    const seenGov = JSON.parse(localStorage.getItem('mori_seen_gov') || '[]'); const unreadCount = currentIds.filter(id => !seenGov.includes(id)).length;
+                    const badge = document.getElementById('badge-gov');
+                    if (badge) { if (unreadCount > 0) { badge.textContent = 'NEW'; badge.classList.remove('hidden'); badge.classList.add('animate-bounce'); } else { badge.classList.add('hidden'); badge.classList.remove('animate-bounce'); } }
+                    govLoaded = true; checkBackendReady(); renderGovDashboard(); updateProjectDropdown(); renderAuthList();
                 });
 
-                // 政府計畫獨立載入
+                onSnapshot(collection(db, 'ent_projects'), (snapshot) => {
+                    globalEntData.projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const currentIds = globalEntData.projects.map(p => p.id); window.currentEntList = currentIds;
+                    const seenEnt = JSON.parse(localStorage.getItem('mori_seen_ent') || '[]'); const unreadCount = currentIds.filter(id => !seenEnt.includes(id)).length;
+                    const badge = document.getElementById('badge-enterprise');
+                    if (badge) { if (unreadCount > 0) { badge.textContent = 'NEW'; badge.classList.remove('hidden'); badge.classList.add('animate-bounce'); } else { badge.classList.add('hidden'); badge.classList.remove('animate-bounce'); } }
+                    entLoaded = true; checkBackendReady(); renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList();
+                });
+
                 onSnapshot(doc(db, 'system_messages', 'broadcast'), (docSnap) => {
                     const bar = document.getElementById('system-broadcast-bar'), textEl = document.getElementById('system-broadcast-text');
                     if(docSnap.exists() && docSnap.data().message) { textEl.textContent = docSnap.data().message; bar.classList.remove('hidden'); } else { bar.classList.add('hidden'); }
