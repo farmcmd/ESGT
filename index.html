@@ -2171,17 +2171,38 @@
             function checkHsrInputs() {
                 const s1 = document.getElementById('hsr-start').value; const s2 = document.getElementById('hsr-end').value; const btn = document.getElementById('hsr-confirm-btn');
                 if (s1 && s2 && s1 !== s2) {
-                    btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('hsr-result').innerHTML = `<span class="text-green-600 font-bold"><i class="fas fa-check-circle mr-1"></i>路線設定完成</span>`;
+                    // 👇 核心修復 1：導入球面距離計算 (Haversine Formula) 即時算出里程與減碳量
+                    const st1 = hsrStations.find(s => s.name === s1);
+                    const st2 = hsrStations.find(s => s.name === s2);
+                    const R = 6371; // 地球半徑 (km)
+                    const dLat = (st2.lat - st1.lat) * Math.PI / 180; 
+                    const dLng = (st2.lng - st1.lng) * Math.PI / 180;
+                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(st1.lat * Math.PI / 180) * Math.cos(st2.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+                    const distKm = R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+                    const reduction = Math.round(distKm * (transportData['thsr'].reduction / 10)); // 高鐵減碳轉換率
+                    
+                    // 暫存這趟高鐵旅程數據，等待票號驗證後配發
+                    window.pendingHsrTrip = { distKm, reduction };
+
+                    btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); 
+                    document.getElementById('hsr-result').innerHTML = `<span class="text-green-600 font-bold tracking-wide"><i class="fas fa-check-circle mr-1"></i>路線完成 | 距離: <span class="text-mori-forest">${distKm.toFixed(1)}km</span>，減碳: <span class="text-mori-forest">${reduction}g</span></span>`;
                 } else {
                     btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); document.getElementById('hsr-result').textContent = '請選擇不同的起訖站進行計算';
+                    window.pendingHsrTrip = null;
                 }
             }
 
             document.getElementById('hsr-ticket-verify-btn')?.addEventListener('click', () => {
                 const tkt = document.getElementById('hsr-ticket-verify-input').value;
                 if(tkt.length > 3) {
+                    // 👇 核心修復 2：驗證成功後，將暫存的高鐵里程與減碳量正式寫入成績庫
+                    if (window.pendingHsrTrip) {
+                        processTripCompletion(window.pendingHsrTrip.distKm, window.pendingHsrTrip.reduction);
+                        window.pendingHsrTrip = null; // 清除暫存防止重複點擊配發
+                    }
+
                     state.currentTransport = 'thsr'; document.getElementById('current-transport-display-mission').innerHTML = `<i class="fas fa-info-circle mr-1.5 opacity-80"></i>交通方式: 搭乘高鐵`; 
-                    window.closeModal('hsr-ticket-modal'); document.getElementById('homepage').classList.add('hidden'); document.getElementById('mission-page').classList.remove('hidden'); window.showToast('高鐵驗證成功！');
+                    window.closeModal('hsr-ticket-modal'); document.getElementById('homepage').classList.add('hidden'); document.getElementById('mission-page').classList.remove('hidden'); window.showToast('高鐵驗證成功！減碳里程已登錄。');
                     if (window.mapsApiReady) renderMap();
                 } else { window.showToast('請輸入正確的票號'); }
             });
