@@ -709,13 +709,46 @@
             } catch(e) { window.openModal('share-event-modal'); }
         };
 
-        window.toggleRegList = function(eventName) {
-            if (window.hiddenRegEvents.has(eventName)) { window.hiddenRegEvents.delete(eventName); } 
-            else { window.hiddenRegEvents.add(eventName); }
-            window.renderEventsListUI();
+        // ✨ 升級：新增管理員設定 LINE 臨時群組連結的專屬功能
+        window.setLineGroupLink = function(cardId, encodedEventName, encodedCurrentLink) {
+            const eventName = decodeURIComponent(encodedEventName);
+            const currentLink = decodeURIComponent(encodedCurrentLink);
+            
+            window.customPrompt('🧙‍♂️ 請輸入管理員密碼解鎖：', '', (pwd) => {
+                if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
+                    // 使用 setTimeout 確保第一個密碼彈窗關閉後，再彈出第二個輸入網址的彈窗，避免 CSS 動畫衝突
+                    setTimeout(() => {
+                        window.customPrompt(`請貼上「${eventName}」的 LINE 臨時群組連結：\n(若要取消連結請留空)`, currentLink, async (newLink) => {
+                            if (newLink !== null) {
+                                if (db) {
+                                    try {
+                                        window.showToast('🔄 正在同步群組連結至雲端...');
+                                        const docRef = doc(db, 'system_messages', 'event_schedule');
+                                        const snap = await getDoc(docRef);
+                                        if (snap.exists()) {
+                                            let events = snap.data().events || [];
+                                            let idx = events.findIndex(e => e.name === eventName);
+                                            if (idx !== -1) {
+                                                // 更新資料庫中的 lineGroupLink 欄位
+                                                events[idx].lineGroupLink = newLink.trim();
+                                                await updateDoc(docRef, { events: events });
+                                                window.showToast(newLink.trim() ? '✅ 群組連結已設定成功！' : '🧹 群組連結已清除！');
+                                            }
+                                        }
+                                    } catch (e) {
+                                        window.showToast('❌ 同步失敗: ' + e.message);
+                                    }
+                                }
+                            }
+                        });
+                    }, 350);
+                } else if (pwd !== null) {
+                    window.showToast('❌ 密碼錯誤！');
+                }
+            });
         };
 
-        // ✨ 修復：重構語法樹，確保單一且乾淨的 if(isExpired) 判斷，消除重複區塊
+        // ✨ 拔除隱藏名單的舊邏輯
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList.length) return;
@@ -753,7 +786,6 @@
                 const dateStr = (ev.date || '00000000').replace(/[\/\-\.]/g, '');
                 const shortId = `${dateStr}-${index + 1}`;
                 const regs = window.globalEventRegistrations[ev.name] || [];
-                const isExpanded = !window.hiddenRegEvents.has(ev.name);
                 
                 let calendarUrl = '#';
                 if(ev.date && !isExpired) {
@@ -788,7 +820,6 @@
                 });
                 const uniqueRegs = Array.from(uniqueRegsMap.values());
                 
-                // --- 華麗大頭貼渲染區塊 ---
                 let avatarsHtml = '';
                 if (uniqueRegs.length > 0) {
                     avatarsHtml = uniqueRegs.map(r => {
@@ -825,16 +856,14 @@
                     avatarsHtml = '<div class="w-full py-4 text-center text-gray-400 font-bold text-xs"><i class="fas fa-user-slash mr-2"></i>目前尚未有人報名</div>';
                 }
 
-                let toggleBtnText = isExpanded ? '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單' : '<i class="fas fa-chevron-down mr-1.5"></i>查看名單'; 
-                let toggleBtnClass = isExpanded ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-white text-yellow-600 border border-yellow-300 hover:bg-yellow-50'; 
                 let countDisplay = window.isRegSnapshotLoaded ? `<span class="text-yellow-600 mx-1 text-lg font-black">${uniqueRegs.length}</span>` : '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
                 const countHtml = `<p class="text-[14px] font-bold text-gray-700 flex items-center m-0 tracking-wide"><i class="fas fa-users text-yellow-500 mr-2 text-lg"></i>目前報名：${countDisplay} 人</p>`;
 
-                let avatarsSection = isExpanded ? `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-100 mt-2">${window.isRegSnapshotLoaded ? avatarsHtml : '<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>'}</div>` : '';
-                const regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-100 bg-gray-50/80 -mx-6 px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">${countHtml}<button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">${toggleBtnText}</button></div>${avatarsSection}</div>`;
-
+                // ✨ 修復：報名清單改為常駐顯示
+                let avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-100 mt-2">${window.isRegSnapshotLoaded ? avatarsHtml : '<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>'}</div>`;
+                
                 // ==========================
-                // 卡片本體渲染 (單一乾淨的 if...else)
+                // 卡片本體渲染
                 // ==========================
                 if (isExpired) {
                     let savedBoardType = ev.boardType || '';
@@ -890,6 +919,28 @@
                         }
                     }
                     const isRegOpen = (ev.isRegistrationOpen !== false) && !isDeadlinePassed;
+                    
+                    // ✨ 升級：動態渲染 LINE 臨時群組按鈕與管理員解鎖按鈕
+                    let groupLinkUrl = ev.lineGroupLink || '';
+                    let adminLockBtn = `<button onclick="window.setLineGroupLink('${shortId}', '${safeEventName}', '${encodeURIComponent(groupLinkUrl)}')" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400 hover:text-gray-600 flex items-center justify-center transition shadow-sm border border-gray-200 shrink-0" title="管理員設定臨時群組連結"><i class="fas fa-lock text-xs"></i></button>`;
+                    
+                    let joinBtn = '';
+                    if (isDeadlinePassed) {
+                        joinBtn = `<button disabled class="px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed w-full sm:w-auto"><i class="fas fa-ban mr-1.5"></i>群組已失效</button>`;
+                    } else if (groupLinkUrl) {
+                        joinBtn = `<a href="${groupLinkUrl}" target="_blank" class="px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center bg-[#06C755]/10 text-[#06C755] border border-[#06C755]/30 hover:bg-[#06C755] hover:text-white transition-colors w-full sm:w-auto"><i class="fab fa-line mr-1.5 text-base"></i>加入臨時群組</a>`;
+                    } else {
+                        joinBtn = `<button disabled class="px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center bg-gray-50 text-gray-400 border border-gray-200 cursor-not-allowed w-full sm:w-auto"><i class="fas fa-comment-slash mr-1.5"></i>尚未建立群組</button>`;
+                    }
+                    let groupActionHtml = `<div class="flex items-center gap-2 w-full sm:w-auto justify-end">${joinBtn}${adminLockBtn}</div>`;
+
+                    const regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-100 bg-gray-50/80 -mx-6 px-6 shadow-inner pb-2 transition-all duration-300">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">
+                            ${countHtml}
+                            ${groupActionHtml}
+                        </div>
+                        ${avatarsSection}
+                    </div>`;
                     
                     let regMethodHtml = '';
                     if (isRegOpen) {
