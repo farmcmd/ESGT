@@ -3,29 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>探探里山 - 最新活動與報名專區</title>
+    <title>探探里山 - 最新活動訊息與報名專區</title>
     
+    <!-- 社群分享預覽 (Open Graph) 專屬設定 -->
+    <meta name="description" content="體驗永續旅遊，參與在地食農教育，報名在地社團第一手活動訊息與訓練課程。">
+    <meta property="og:title" content="探探里山 - 最新活動訊息與報名專區">
+    <meta property="og:description" content="體驗永續旅遊，參與在地食農教育，報名在地社團第一手活動訊息與訓練課程。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://farmcmd.github.io/ESGT/events_standalone.html">
+    <meta property="og:site_name" content="探探里山">
+
+    <!-- 效能優化 (Preconnect 加速通道) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 
+    <!-- 外部資源載入 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- LINE & Facebook SDK 載入 -->
+    <!-- LINE SDK 異步載入與提前初始化 -->
     <script>
         const MY_LINE_LIFF_ID = '2009624342-oTTGaOJl'; 
-        window.fbAsyncInit = function() {
-            FB.init({ appId: '803120779511252', cookie: true, xfbml: true, version: 'v19.0' });
-        };
     </script>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/zh_TW/sdk.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <!-- Tailwind 客製化設定 -->
     <script>
-        tailwind.config = { theme: { extend: { colors: { mori: { base: '#F7F4EF', light: '#E8EFE6', sage: '#8B9D77', forest: '#4A6741', wood: '#D2B48C', dark: '#2C3E28' } }, fontFamily: { sans: ['Noto Sans TC', 'sans-serif'] } } } }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { mori: { base: '#F7F4EF', light: '#E8EFE6', sage: '#8B9D77', forest: '#4A6741', wood: '#D2B48C', dark: '#2C3E28' } },
+                    fontFamily: { sans: ['Noto Sans TC', 'sans-serif'] }
+                }
+            }
+        }
     </script>
 
     <style>
@@ -45,12 +58,19 @@
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
         
-        #custom-toast { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%) translateY(20px); background-color: rgba(31, 41, 55, 0.95); color: white; padding: 0.8rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 2147483647; font-weight: bold; font-size: 0.9rem; opacity: 0; pointer-events: none; text-align: center; white-space: nowrap; backdrop-filter: blur(4px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        #custom-toast {
+            position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%) translateY(20px);
+            background-color: rgba(31, 41, 55, 0.95); color: white; padding: 0.8rem 1.5rem; border-radius: 9999px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 2147483647; font-weight: bold; font-size: 0.9rem;
+            opacity: 0; pointer-events: none; text-align: center; white-space: nowrap; backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body class="font-sans antialiased">
 
+    <!-- 浮動提示 Toast -->
     <div id="custom-toast"></div>
 
     <header class="bg-gradient-to-b from-yellow-500 to-yellow-600 text-white text-center shadow-lg relative py-12 flex flex-col justify-center items-center">
@@ -58,22 +78,25 @@
             <div class="inline-flex items-center justify-center bg-white/20 px-4 py-1.5 rounded-full mb-4 shadow-sm backdrop-blur-sm border border-white/30">
                 <i class="fas fa-leaf text-yellow-200 mr-2"></i><span class="text-sm font-bold tracking-widest">探探里山 ESGT</span>
             </div>
-            <h1 class="text-3xl md:text-5xl font-black tracking-wide mb-2 drop-shadow-md">最新活動與報名專區</h1>
-            <p class="mt-3 text-sm font-bold tracking-wider opacity-90">體驗永續旅遊，參與在地食農教育</p>
+            <h1 class="text-3xl md:text-5xl font-black tracking-wide mb-2 drop-shadow-md">最新活動訊息與報名專區</h1>
+            <p class="mt-3 text-sm md:text-base font-bold tracking-wider opacity-90 leading-relaxed max-w-2xl mx-auto">體驗永續旅遊，參與在地食農教育，報名在地社團第一手活動訊息與訓練課程</p>
         </div>
     </header>
 
     <main class="container mx-auto p-4 md:p-8 relative z-20 -mt-6">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-100">
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-6 border-b border-gray-100 gap-4">
-                <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2"><i class="fas fa-calendar-check text-yellow-500"></i> 近期開放活動</h2>
-                
-                <button onclick="window.returnToMain()" class="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-sm font-bold rounded-xl transition-all shadow-sm flex items-center group w-full sm:w-auto justify-center">
-                    <i class="fas fa-times-circle mr-2 text-gray-400 group-hover:text-red-500 transition-colors"></i> 關閉 / 返回主系統
-                </button>
+            <div class="flex flex-wrap justify-between items-center mb-6 pb-6 border-b border-gray-100 gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2"><i class="fas fa-calendar-check text-yellow-500"></i> 近期開放活動</h2>
+                </div>
+                <div class="flex gap-2">
+                    <a href="https://farmcmd.github.io/ESGT/" class="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-sm font-bold rounded-xl transition-all shadow-sm flex items-center group">
+                        <i class="fas fa-home mr-2 text-gray-400 group-hover:text-gray-600 transition-colors"></i> 前往主系統
+                    </a>
+                </div>
             </div>
 
-            <!-- 活動卡片渲染容器 -->
+            <!-- 活動卡片容器 -->
             <div id="event-schedule-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[300px]">
                 <div class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
                     <i class="fas fa-circle-notch fa-spin text-3xl text-yellow-400 mb-3"></i>
@@ -83,17 +106,19 @@
         </div>
     </main>
 
-    <button onclick="window.returnToMain()" class="fixed top-[18%] right-4 md:right-8 z-[90] flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-gray-700 rounded-full shadow-sm border border-white/50 hover:bg-red-50/90 hover:border-red-400 hover:shadow-md hover:scale-105 transition-all duration-300 group">
-        <div class="bg-gray-100/80 rounded-full w-6 h-6 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-            <i class="fas fa-times text-gray-500 text-[10px] group-hover:text-white transition-colors"></i>
+    <!-- 浮動導航按鈕 (常駐右上方約 1/5 處) -->
+    <a href="https://farmcmd.github.io/ESGT/" class="fixed top-[18%] right-4 md:right-8 z-[90] flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-gray-700 rounded-full shadow-sm border border-white/50 hover:bg-yellow-50/90 hover:border-yellow-400 hover:shadow-md hover:scale-105 transition-all duration-300 group">
+        <div class="bg-gray-100/80 rounded-full w-6 h-6 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-colors">
+            <i class="fas fa-home text-gray-500 text-[10px] group-hover:text-white transition-colors"></i>
         </div>
-        <span class="text-xs font-bold tracking-wide pr-1.5 group-hover:text-red-700">關閉視窗</span>
-    </button>
+        <span class="text-xs font-bold tracking-wide pr-1.5 group-hover:text-yellow-700">返回主系統</span>
+    </a>
 
     <!-- ======================================================== -->
-    <!-- 全局彈出視窗 (Modals) -->
+    <!-- 全局彈出視窗 (Modals) 統一管理區 -->
     <!-- ======================================================== -->
 
+    <!-- 密碼輸入 Modal -->
     <div id="custom-prompt-modal" class="modal-overlay hidden z-[200]">
         <div class="modal-content max-w-sm p-6 bg-white text-center">
             <h3 id="custom-prompt-title" class="text-xl font-bold text-gray-800 mb-2">提示</h3>
@@ -105,25 +130,31 @@
         </div>
     </div>
 
+    <!-- 活動快速報名 Modal -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
             <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-id-badge text-2xl text-blue-500"></i></div></div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">社群一鍵報名</h3>
-            <p id="reg-event-name" class="text-sm font-bold text-blue-700 mb-5 bg-blue-50/50 p-2 rounded-lg border border-blue-100"></p>
+            
+            <h3 class="text-xl font-bold text-gray-800 mb-2">您報名的活動名稱</h3>
+            <p id="reg-event-name" class="text-lg font-black text-blue-800 mb-5 bg-blue-50 p-3 rounded-xl border border-blue-200 shadow-sm leading-snug tracking-wide"></p>
             
             <div id="social-auth-step" class="mb-6">
-                <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 選擇報名方式</p>
-                <div class="flex flex-col gap-3">
+                <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 使用LINE一鍵報名(免填寫)</p>
+                <div class="flex flex-col gap-2">
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
-                        <i class="fab fa-line text-2xl mr-2"></i> 以 LINE 登入一鍵報名
+                        <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
-                    <!-- 保留 Messenger 作為極簡備援 -->
-                    <button id="messenger-fallback-btn" class="w-full py-3.5 bg-[#0084FF] text-white rounded-xl font-bold shadow-md hover:bg-[#0073E6] transition flex justify-center items-center">
-                        <i class="fab fa-facebook-messenger text-xl mr-2"></i> 留言給我們 (無LINE者適用)
-                    </button>
+                    
+                    <a href="https://line.me/R/ti/g/6Hcvx4VKCe" target="_blank" class="w-full py-3 mt-1 bg-white border-2 border-[#06C755]/80 text-[#06C755] rounded-xl font-bold shadow-sm hover:bg-[#06C755] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px] group">
+                        <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
+                    </a>
+                    
+                    <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-2 mb-1">
+                        <p><i class="fas fa-user-shield text-blue-400 mr-1.5 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
+                        <p><i class="fas fa-exclamation-circle text-orange-400 mr-1.5 opacity-80"></i>2. 若您報名的是"遊程"類別，請<span class="text-red-500 font-bold">"務必加入"</span>LINE臨時群組以便取得最新行程狀態。</p>
+                    </div>
                 </div>
-                <p class="text-[10px] text-gray-400 mt-3 leading-relaxed"><i class="fas fa-lock mr-1 text-gray-300"></i>使用 LINE 登入將僅取得您的公開大頭貼與姓名作為報名憑證；若無法使用，請點選留言，系統將自動為您帶入報名格式。</p>
             </div>
 
             <div id="social-preview-step" class="mb-2 hidden">
@@ -135,14 +166,35 @@
                         <p id="social-user-id" class="text-xs text-gray-500 font-mono"></p>
                     </div>
                 </div>
-                <button id="final-submit-reg-btn" class="w-full py-3.5 bg-green-500 text-white rounded-xl font-bold shadow-md hover:bg-green-600 transition flex justify-center items-center">
-                    <i class="fas fa-paper-plane mr-2"></i> 確認報名並聯絡主辦方
-                </button>
+                
+                <div class="flex flex-col gap-2">
+                    <button id="final-submit-reg-btn" class="w-full py-3.5 bg-green-500 text-white rounded-xl font-bold shadow-md hover:bg-green-600 transition flex justify-center items-center">
+                        <i class="fas fa-paper-plane mr-2"></i> 確認報名並聯絡主辦方
+                    </button>
+                    
+                    <a href="https://line.me/R/ti/g/6Hcvx4VKCe" target="_blank" class="w-full py-3 bg-white border-2 border-[#06C755]/80 text-[#06C755] rounded-xl font-bold shadow-sm hover:bg-[#06C755] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px] group">
+                        <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
+                    </a>
+                </div>
+            </div>
+
+            <!-- Messenger 備用按鈕 -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <div class="relative mb-4 mt-1">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                    <div class="relative flex justify-center text-[11px]"><span class="bg-white px-3 text-gray-400 font-medium">其他報名方式</span></div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <button id="messenger-fallback-btn" class="w-full py-3 bg-white border-2 border-[#0084FF] text-[#0084FF] rounded-xl font-bold shadow-sm hover:bg-[#0084FF] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px]">
+                        <i class="fab fa-facebook-messenger text-xl mr-2"></i> 留言給我們 (較晚回覆)
+                    </button>
+                    <p class="text-[11px] text-gray-500 font-medium text-center mt-1.5"><i class="fas fa-info-circle mr-1 text-gray-400"></i>說明: 無法使用LINE報名請點此留言</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 社群分享 Modal -->
+    <!-- 社群快速分享 Modal -->
     <div id="share-event-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('share-event-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -169,17 +221,12 @@
         </div>
     </div>
 
-    <!-- ======================================================== -->
     <!-- 系統核心腳本 -->
-    <!-- ======================================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-        // ==========================================
-        // 1. 全局函數與狀態綁定
-        // ==========================================
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         let db = null, auth = null;
         
@@ -220,342 +267,84 @@
             window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
         };
 
-        window.safeTopNavigate = function(url) {
-            try { window.top.location.href = url; return; } catch(e) {}
-            try { window.parent.location.href = url; return; } catch(e) {}
-            const a = document.createElement('a');
-            a.href = url;
-            a.target = '_top'; 
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => { if(a.parentNode) document.body.removeChild(a); }, 500);
-        };
-
-        window.returnToMain = function() {
-            if (window.self !== window.top) {
-                try {
-                    const parentModals = window.parent.document.querySelectorAll('.modal-overlay:not(.hidden) .close-button');
-                    if (parentModals.length > 0) { parentModals[0].click(); } 
-                    else { window.safeTopNavigate('https://farmcmd.github.io/ESGT/'); }
-                } catch(e) { window.safeTopNavigate('https://farmcmd.github.io/ESGT/'); }
-            } else {
-                window.location.href = 'https://farmcmd.github.io/ESGT/';
-            }
-        };
-
-        window.currentShareData = { url: '', title: '', text: '' };
-
-        window.shareSpecificEvent = function(shortId, encodedEventName) {
-            try {
-                const eventName = decodeURIComponent(encodedEventName); 
-                const baseOrigin = 'https://farmcmd.github.io/ESGT/'; 
-                const url = new URL(baseOrigin); 
-                url.searchParams.set('id', shortId);
-                
-                const finalUrl = url.toString(); 
-                const shareTitle = `探探里山活動：${eventName}`;
-                const shareText = `🔗 邀請您一起參加【${eventName}】！\n點擊專屬連結直接查看活動詳情與報名資訊👇`;
-                
-                window.currentShareData = { url: finalUrl, title: shareTitle, text: shareText };
-
-                const ua = navigator.userAgent || navigator.vendor || window.opera;
-                const isInAppBrowser = (ua.indexOf('Line') > -1) || (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1);
-
-                if (navigator.share && !isInAppBrowser) {
-                    navigator.share({ title: shareTitle, text: shareText, url: finalUrl })
-                        .then(() => window.showToast('✅ 活動分享成功！'))
-                        .catch((err) => { 
-                            if (err.name !== 'AbortError') window.openModal('share-event-modal'); 
-                        });
-                } else {
-                    window.openModal('share-event-modal');
-                }
-            } catch(e) { 
-                window.openModal('share-event-modal'); 
-            }
-        };
-
-        document.getElementById('share-line-btn')?.addEventListener('click', () => { 
-            window.open(`https://line.me/R/msg/text/?${encodeURIComponent(window.currentShareData.text + '\n' + window.currentShareData.url)}`, '_blank'); 
-            window.closeModal('share-event-modal'); 
-        });
-        document.getElementById('share-fb-btn')?.addEventListener('click', () => { 
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.currentShareData.url)}`, '_blank'); 
-            window.closeModal('share-event-modal'); 
-        });
-        document.getElementById('share-x-btn')?.addEventListener('click', () => { 
-            window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.currentShareData.url)}&text=${encodeURIComponent(window.currentShareData.text)}`, '_blank'); 
-            window.closeModal('share-event-modal'); 
-        });
-        document.getElementById('share-copy-btn')?.addEventListener('click', () => {
-            const textArea = document.createElement("textarea"); textArea.value = window.currentShareData.url; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
-            document.body.appendChild(textArea); textArea.focus(); textArea.select();
-            try { document.execCommand('copy'); window.showToast('🔗 專屬連結已複製！'); } catch (err) { window.prompt("請手動複製網址：", window.currentShareData.url); } document.body.removeChild(textArea);
-            window.closeModal('share-event-modal');
-        });
-
-        window.toggleRegList = function(eventName) {
-            if (window.hiddenRegEvents.has(eventName)) {
-                window.hiddenRegEvents.delete(eventName); 
-            } else {
-                window.hiddenRegEvents.add(eventName); 
-            }
-            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-        };
-
-        // ==========================================
-        // 2. 管理員看板解鎖與動態網址機制
-        // ==========================================
         window.updateDashboardUrl = function(cardId) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
             const inputNum = document.getElementById(`input-num-${cardId}`);
             const urlDisplay = document.getElementById(`display-url-${cardId}`);
-            const labelNum = document.getElementById(`label-num-${cardId}`);
-            
             if (!urlDisplay) return;
-
             let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
             let finalUrl = '';
-
-            if (btnEnt && btnEnt.getAttribute('data-active') === 'true') {
-                finalUrl = `https://farmcmd.github.io/ESGT/#ESG-board${boardCode ? '-' + boardCode : ''}`;
-            } else if (btnGov && btnGov.getAttribute('data-active') === 'true') {
-                finalUrl = `https://farmcmd.github.io/ESGT/#OKR-board${boardCode ? '-' + boardCode : ''}`;
-            }
-            
+            if (btnEnt && btnEnt.getAttribute('data-active') === 'true') { finalUrl = `https://farmcmd.github.io/ESGT/#ESG-board${boardCode ? '-' + boardCode : ''}`; } 
+            else if (btnGov && btnGov.getAttribute('data-active') === 'true') { finalUrl = `https://farmcmd.github.io/ESGT/#OKR-board${boardCode ? '-' + boardCode : ''}`; }
             urlDisplay.value = finalUrl;
-            urlDisplay.setAttribute('value', finalUrl);
-
-            if (inputNum && !inputNum.disabled) {
-                if (boardCode.length > 0) {
-                    inputNum.classList.add('shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
-                    inputNum.classList.remove('shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'border-yellow-400', 'bg-yellow-50', 'text-yellow-900');
-                    if (labelNum) {
-                        labelNum.innerHTML = '<i class="fas fa-bolt text-orange-500 mr-1 animate-pulse"></i>編號:';
-                        labelNum.classList.add('text-orange-600', 'font-black');
-                    }
-                } else {
-                    inputNum.classList.remove('shadow-[0_0_12px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
-                    inputNum.classList.add('shadow-[0_0_10px_rgba(234,179,8,0.3)]', 'border-yellow-400', 'bg-yellow-50', 'text-yellow-900');
-                    if (labelNum) {
-                        labelNum.innerHTML = '編號:';
-                        labelNum.classList.add('text-orange-600', 'font-black'); 
-                    }
-                }
-            }
         };
 
         window.openDashboard = function(cardId) {
             const urlDisplay = document.getElementById(`display-url-${cardId}`);
-            if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) {
-                if (window.self !== window.top) {
-                    window.safeTopNavigate(urlDisplay.value);
-                    try { window.parent.document.querySelectorAll('.modal-overlay:not(.hidden) .close-button')[0]?.click(); } catch(e){}
-                } else {
-                    window.open(urlDisplay.value, '_blank');
-                }
+            if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) { window.open(urlDisplay.value, '_blank'); } 
+            else { window.showToast('⚠️ 請先點擊選擇企業或政府儀表板！'); }
+        };
+
+        // ✨ 核心升級：子網頁的發射器 (一鍵帶入儀表板)
+        window.autoFillDashboard = function(type, code) {
+            if (window.self !== window.top) {
+                // 如果在 Iframe 裡面，把代碼當作球丟給外面的主網頁去接
+                window.parent.postMessage({ 
+                    action: 'FILL_DASHBOARD_CODE', 
+                    boardType: type, 
+                    boardCode: code 
+                }, '*');
             } else {
-                window.showToast('⚠️ 請先點擊選擇企業或政府儀表板！');
+                // 如果是直接用瀏覽器開這個獨立網頁，就用網址跳轉的方式帶回去主系統
+                window.location.href = `https://farmcmd.github.io/ESGT/?dashboard=${type}&code=${code}`;
             }
         };
 
         window.unlockAdminPanel = function(cardId) {
-            window.customPrompt('🧙‍♂️ 請輸入系統管理員密碼以解鎖魔法看板：', '', (pwd) => {
+            window.customPrompt('🧙‍♂️ 請輸入管理員密碼：', '', (pwd) => {
                 if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
                     const btnEnt = document.getElementById(`btn-ent-${cardId}`);
                     const btnGov = document.getElementById(`btn-gov-${cardId}`);
                     const inputNum = document.getElementById(`input-num-${cardId}`);
                     const lockBtn = document.getElementById(`admin-lock-btn-${cardId}`);
                     const saveBtn = document.getElementById(`btn-save-${cardId}`);
-                    const containerBox = document.getElementById(`admin-box-${cardId}`);
-                    const labelNum = document.getElementById(`label-num-${cardId}`);
-
-                    [btnEnt, btnGov].forEach(btn => {
-                        if (btn) {
-                            btn.disabled = false;
-                            btn.classList.remove('cursor-not-allowed', 'opacity-90', 'bg-gray-100', 'text-gray-400');
-                            btn.classList.add('cursor-pointer', 'hover:-translate-y-0.5');
-                            if (btn.getAttribute('data-active') === 'true') {
-                                if (btn.id.includes('btn-ent')) {
-                                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)] shrink-0`;
-                                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse text-[10px]"></i>`;
-                                } else {
-                                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.6)] shrink-0`;
-                                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse text-[10px]"></i>`;
-                                }
-                            } else {
-                                btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
-                                if (btn.id.includes('btn-ent')) btn.innerHTML = `<span>企業永續儀表板</span>`;
-                                else btn.innerHTML = `<span>永續政府儀表板</span>`;
-                            }
-                        }
-                    });
-                    
-                    if (inputNum) { 
-                        inputNum.disabled = false; 
-                        inputNum.placeholder = "5碼";
-                        inputNum.classList.remove('cursor-not-allowed', 'bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner', 'bg-orange-50/50', 'text-orange-700', 'border-orange-300', 'shadow-sm'); 
-                        
-                        if (inputNum.value.trim().length > 0) {
-                            inputNum.classList.add('shadow-[0_0_10px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
-                            if(labelNum) { 
-                                labelNum.innerHTML = '<i class="fas fa-bolt text-orange-500 mr-1 animate-pulse"></i>編號:'; 
-                                labelNum.classList.add('text-orange-600', 'font-black'); 
-                                labelNum.classList.remove('text-gray-400', 'text-orange-700/80'); 
-                            }
-                        } else {
-                            inputNum.classList.add('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_8px_rgba(234,179,8,0.3)]', 'text-yellow-900'); 
-                            if(labelNum) { 
-                                labelNum.innerHTML = '編號:'; 
-                                labelNum.classList.add('text-orange-600', 'font-black'); 
-                                labelNum.classList.remove('text-gray-400', 'text-orange-700/80'); 
-                            }
-                        }
-                    }
-
-                    if (saveBtn) saveBtn.classList.add('hidden');
-                    
-                    if (lockBtn) {
-                        lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500 text-xs animate-pulse"></i>';
-                        lockBtn.className = 'w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-green-50 border border-green-300 rounded-full shadow-sm shrink-0 z-10';
-                        lockBtn.disabled = true; 
-                    }
-                    
-                    if (containerBox) {
-                        containerBox.classList.remove('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_20px_rgba(250,204,21,0.25)]');
-                        containerBox.classList.add('bg-gray-50/80', 'border-gray-200');
-                    }
-
-                    window.showToast('✨ 魔法解除！點擊看板按鈕將其點亮，修改後請打勾儲存。');
-                } else if (pwd !== null) {
-                    window.showToast('❌ 逼逼！麻瓜退散，密碼錯誤！');
-                }
+                    [btnEnt, btnGov].forEach(btn => { if (btn) { btn.disabled = false; btn.classList.remove('bg-gray-100', 'text-gray-400'); btn.classList.add('cursor-pointer'); } });
+                    if (inputNum) { inputNum.disabled = false; inputNum.classList.remove('bg-gray-100'); }
+                    if (saveBtn) saveBtn.classList.remove('hidden');
+                    if (lockBtn) { lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500"></i>'; lockBtn.disabled = true; }
+                    window.showToast('✨ 魔法解除！修改後請點擊打勾儲存。');
+                } else if (pwd !== null) { window.showToast('❌ 密碼錯誤！'); }
             });
         };
 
         window.toggleBoard = function(cardId, type) {
             const btn = document.getElementById(`btn-${type}-${cardId}`);
             if (!btn || btn.disabled) return;
-
             const isActive = btn.getAttribute('data-active') === 'true';
-            const newState = isActive ? 'false' : 'true';
-            btn.setAttribute('data-active', newState);
-
-            if (type === 'ent') {
-                const btnGov = document.getElementById(`btn-gov-${cardId}`);
-                if (btnGov && !isActive) { 
-                    btnGov.setAttribute('data-active', 'false'); 
-                    btnGov.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
-                    btnGov.innerHTML = `<span>永續政府儀表板</span>`; 
-                }
-            } else if (type === 'gov') {
+            btn.setAttribute('data-active', isActive ? 'false' : 'true');
+            if (type === 'ent') { 
+                const btnGov = document.getElementById(`btn-gov-${cardId}`); 
+                if (btnGov && !isActive) { btnGov.setAttribute('data-active', 'false'); btnGov.className = "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-white text-gray-600 border border-gray-300 shrink-0"; }
+            } else {
                 const btnEnt = document.getElementById(`btn-ent-${cardId}`);
-                if (btnEnt && !isActive) { 
-                    btnEnt.setAttribute('data-active', 'false'); 
-                    btnEnt.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`; 
-                    btnEnt.innerHTML = `<span>企業永續儀表板</span>`; 
-                }
+                if (btnEnt && !isActive) { btnEnt.setAttribute('data-active', 'false'); btnEnt.className = "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-white text-gray-600 border border-gray-300 shrink-0"; }
             }
-
-            if (type === 'ent') {
-                if (!isActive) {
-                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-yellow-100 text-yellow-700 border border-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)] shrink-0`;
-                    btn.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-bolt text-yellow-500 animate-pulse text-[10px]"></i>`;
-                } else {
-                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
-                    btn.innerHTML = `<span>企業永續儀表板</span>`;
-                }
-            } else if (type === 'gov') {
-                if (!isActive) {
-                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-blue-100 text-blue-700 border border-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.6)] shrink-0`;
-                    btn.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-bolt text-blue-500 animate-pulse text-[10px]"></i>`;
-                } else {
-                    btn.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer hover:-translate-y-0.5 bg-white text-gray-600 border border-gray-300 hover:shadow-sm shrink-0`;
-                    btn.innerHTML = `<span>永續政府儀表板</span>`;
-                }
+            if (!isActive) {
+                btn.className = type === 'ent' ? "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-yellow-100 text-yellow-700 border border-yellow-400 shrink-0" : "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-blue-100 text-blue-700 border border-blue-400 shrink-0";
+            } else {
+                btn.className = "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-white text-gray-600 border border-gray-300 shrink-0";
             }
-
             window.updateDashboardUrl(cardId);
         };
 
         window.saveAdminPanel = async function(cardId, encodedEventName) {
+            const eventName = decodeURIComponent(encodedEventName);
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
             const inputNum = document.getElementById(`input-num-${cardId}`);
-            const lockBtn = document.getElementById(`admin-lock-btn-${cardId}`);
-            const saveBtn = document.getElementById(`btn-save-${cardId}`);
-            const containerBox = document.getElementById(`admin-box-${cardId}`);
-            const labelNum = document.getElementById(`label-num-${cardId}`);
-
-            if (btnEnt) {
-                btnEnt.disabled = true;
-                btnEnt.classList.remove('cursor-pointer', 'hover:-translate-y-0.5');
-                btnEnt.classList.add('cursor-not-allowed');
-                if (btnEnt.getAttribute('data-active') === 'true') {
-                    btnEnt.classList.add('opacity-90');
-                    btnEnt.innerHTML = `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600 text-[10px]"></i>`;
-                } else {
-                    btnEnt.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
-                }
-            }
-
-            if (btnGov) {
-                btnGov.disabled = true;
-                btnGov.classList.remove('cursor-pointer', 'hover:-translate-y-0.5');
-                btnGov.classList.add('cursor-not-allowed');
-                if (btnGov.getAttribute('data-active') === 'true') {
-                    btnGov.classList.add('opacity-90');
-                    btnGov.innerHTML = `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600 text-[10px]"></i>`;
-                } else {
-                    btnGov.className = `flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0`;
-                }
-            }
-
-            if (inputNum) {
-                inputNum.disabled = true;
-                inputNum.classList.remove('bg-yellow-50', 'border-yellow-400', 'shadow-[0_0_8px_rgba(234,179,8,0.3)]', 'text-yellow-900', 'shadow-[0_0_10px_rgba(249,115,22,0.8)]', 'border-orange-500', 'bg-orange-50', 'text-orange-800');
-                
-                if (inputNum.value.trim().length > 0) {
-                    inputNum.classList.add('cursor-not-allowed', 'bg-orange-50/50', 'text-orange-700', 'border-orange-300', 'shadow-sm');
-                    inputNum.classList.remove('bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner');
-                    if(labelNum) { 
-                        labelNum.innerHTML = '<i class="fas fa-check text-orange-600 mr-1 text-[9px]"></i>編號:';
-                        labelNum.classList.remove('text-orange-600', 'animate-pulse'); 
-                        labelNum.classList.add('text-orange-700/80', 'font-black'); 
-                    }
-                } else {
-                    inputNum.classList.add('cursor-not-allowed', 'bg-gray-100', 'text-gray-400', 'border-gray-200', 'shadow-inner');
-                    if(labelNum) { 
-                        labelNum.innerHTML = '編號:';
-                        labelNum.classList.remove('text-orange-600', 'text-orange-700/80'); 
-                        labelNum.classList.add('text-gray-400', 'font-black'); 
-                    }
-                }
-            }
-
-            if (saveBtn) saveBtn.classList.add('hidden');
-
-            if (lockBtn) {
-                lockBtn.innerHTML = '<span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-[10px] sm:text-xs">💡</span>';
-                lockBtn.className = 'w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group';
-                lockBtn.disabled = false;
-            }
-
-            if (containerBox) {
-                containerBox.classList.remove('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_20px_rgba(250,204,21,0.25)]');
-                containerBox.classList.add('bg-gray-50/80', 'border-gray-200');
-            }
-
-            window.showToast('🔄 同步中...');
-
-            const eventName = decodeURIComponent(encodedEventName);
-            let boardType = '';
-            if (btnEnt && btnEnt.getAttribute('data-active') === 'true') boardType = 'ent';
-            else if (btnGov && btnGov.getAttribute('data-active') === 'true') boardType = 'gov';
+            let boardType = (btnEnt && btnEnt.getAttribute('data-active') === 'true') ? 'ent' : ((btnGov && btnGov.getAttribute('data-active') === 'true') ? 'gov' : '');
             let boardCode = inputNum ? inputNum.value.trim().toUpperCase() : '';
-
-            let cloudSuccess = false;
             if (db) {
                 try {
                     const docRef = doc(db, 'system_messages', 'event_schedule');
@@ -563,319 +352,166 @@
                     if (snap.exists()) {
                         let events = snap.data().events || [];
                         let idx = events.findIndex(e => e.name === eventName);
-                        if (idx !== -1) {
-                            events[idx].boardType = boardType;
-                            events[idx].boardCode = boardCode;
-                            await updateDoc(docRef, { events: events });
-                            cloudSuccess = true;
-                            window.showToast('✅ 看板設定已成功鎖定並同步至雲端，所有人皆可看見！');
-                        }
+                        if (idx !== -1) { events[idx].boardType = boardType; events[idx].boardCode = boardCode; await updateDoc(docRef, { events: events }); window.showToast('✅ 看板設定已同步雲端！'); }
                     }
-                } catch(e) { console.warn("雲端同步受阻:", e); }
-            }
-
-            if (!cloudSuccess) {
-                try {
-                    let localAdminData = JSON.parse(localStorage.getItem('ESGT_Admin_Boards_v1')) || {};
-                    localAdminData[eventName] = { boardType: boardType, boardCode: boardCode };
-                    localStorage.setItem('ESGT_Admin_Boards_v1', JSON.stringify(localAdminData));
-                    window.showToast('⚠️ 雲端寫入遭阻擋，已安全切換為「本機暫存模式」。');
-                } catch(err) { window.showToast('❌ 儲存失敗'); }
+                } catch(e) { window.showToast('❌ 同步失敗'); }
             }
         };
 
-        // ==========================================
-        // 3. 獨立卡片渲染引擎
-        // ==========================================
+        window.shareSpecificEvent = function(shortId, encodedEventName) {
+            const eventName = decodeURIComponent(encodedEventName); 
+            const url = new URL(window.location.origin + window.location.pathname);
+            url.searchParams.set('id', shortId); 
+            const finalUrl = url.toString(); 
+            const shareText = `🔗 邀請您參加【${eventName}】！\n查看詳情：${finalUrl}`;
+            window.currentShareData = { url: finalUrl, text: shareText };
+            if (navigator.share) { navigator.share({ title: '探探里山', text: shareText, url: finalUrl }).catch(() => window.openModal('share-event-modal')); } 
+            else { window.openModal('share-event-modal'); }
+        };
+
+        window.toggleRegList = function(eventName) {
+            if (window.hiddenRegEvents.has(eventName)) { window.hiddenRegEvents.delete(eventName); } 
+            else { window.hiddenRegEvents.add(eventName); }
+            window.renderEventsListUI();
+        };
+
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
-            if (!window.currentEventsList || window.currentEventsList.length === 0) {
-                if(container) container.innerHTML = '<div class="col-span-full py-12 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl"><i class="fas fa-calendar-times text-4xl mb-3 opacity-50"></i><p class="font-bold tracking-widest">目前尚無近期活動，敬請留意。</p></div>'; 
-                return;
-            }
-            
+            if (!window.currentEventsList.length) return;
             const today = new Date(); today.setHours(0,0,0,0);
-            const processedEvents = [...window.currentEventsList].map(ev => { let isExpired = false; if(ev.date) { const evDate = new Date(ev.date.replace(/-/g, '/')); if(!isNaN(evDate) && evDate < today) isExpired = true; } return { ...ev, isExpired }; }).sort((a, b) => { if (a.isExpired === b.isExpired) return 0; return a.isExpired ? 1 : -1; });
+            const processedEvents = [...window.currentEventsList].map(ev => { let isExpired = false; if(ev.date) { const evDate = new Date(ev.date.replace(/-/g, '/')); if(!isNaN(evDate) && evDate < today) isExpired = true; } return { ...ev, isExpired }; }).sort((a,b) => (a.isExpired === b.isExpired ? 0 : (a.isExpired ? 1 : -1)));
 
-            const html = processedEvents.map((ev, index) => {
-                let isExpired = ev.isExpired, calendarUrl = '#';
-                
+            container.innerHTML = processedEvents.map((ev, index) => {
+                const isExpired = ev.isExpired;
                 const safeEventName = encodeURIComponent(ev.name).replace(/'/g, "%27");
                 const dateStr = (ev.date || '00000000').replace(/[\/\-]/g, '');
-                const shortId = `${dateStr}-${index + 1}`; 
-
-                if(ev.date && !isExpired) {
-                    try {
-                        const evDate = new Date(ev.date.replace(/-/g, '/'));
-                        if(!isNaN(evDate)) {
-                            const y1 = evDate.getFullYear(), m1 = String(evDate.getMonth()+1).padStart(2,'0'), d1 = String(evDate.getDate()).padStart(2,'0');
-                            const nextDate = new Date(evDate); nextDate.setDate(nextDate.getDate() + 1);
-                            const y2 = nextDate.getFullYear(), m2 = String(nextDate.getMonth()+1).padStart(2,'0'), d2 = String(nextDate.getDate()).padStart(2,'0');
-                            const dates = `${y1}${m1}${d1}/${y2}${m2}${d2}`;
-                            const title = encodeURIComponent(`探探里山活動: ${ev.name}`);
-                            const details = encodeURIComponent(`執行單位: ${ev.executor || '里山團隊'}\n報名方式: ${ev.regMethod || '請洽主辦單位'}\n\n👉 更多詳情請至 探探里山-永續旅遊 查看。`);
-                            const location = encodeURIComponent(ev.location || '水里里山基地');
-                            calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
-                        }
-                    } catch(e) {}
-                }
-
-                const safeCalendarUrl = calendarUrl !== '#' ? calendarUrl.replace(/'/g, "%27") : '#';
-                let rawRegs = window.globalEventRegistrations[ev.name] || [];
+                const shortId = `${dateStr}-${index + 1}`;
+                const regs = window.globalEventRegistrations[ev.name] || [];
+                const isExpanded = !window.hiddenRegEvents.has(ev.name);
                 
-                rawRegs.sort((a, b) => {
-                    const timeA = a.timestamp ? (typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : (a.timestamp.seconds * 1000)) : Date.now();
-                    const timeB = b.timestamp ? (typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : (b.timestamp.seconds * 1000)) : Date.now();
-                    return timeB - timeA; 
-                });
-                
-                let uniqueRegsMap = new Map();
-                rawRegs.forEach(r => {
-                    const uniqueKey = r.socialId || r.userId;
-                    if (uniqueKey && !uniqueRegsMap.has(uniqueKey)) { uniqueRegsMap.set(uniqueKey, r); } 
-                    else if (!uniqueKey) { uniqueRegsMap.set(Math.random().toString(), r); }
-                });
-                
-                const regs = Array.from(uniqueRegsMap.values());
-                let regsHtml = '';
-                const isRegOpen = ev.isRegistrationOpen !== false; 
-                
-                const shareBtnHtml = `<button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0 w-fit"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>`;
-
-                if(isRegOpen) { 
-                    regs.sort((a, b) => {
-                        const timeA = a.timestamp ? (typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : (a.timestamp.seconds * 1000)) : Date.now();
-                        const timeB = b.timestamp ? (typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : (b.timestamp.seconds * 1000)) : Date.now();
-                        return timeB - timeA;
-                    });
-                    
-                    const avatarsHtml = regs.map(r => {
-                        const borderColor = r.platform === 'LINE' ? 'border-[#06C755]' : (r.platform === 'Facebook' ? 'border-[#1877F2]' : 'border-gray-300');
-                        let displayId = '無代碼';
-                        if (r.userId && r.userId !== 'anonymous' && r.userId !== 'anonymous_visitor') { displayId = r.userId; } 
-                        else if (r.socialId) { displayId = r.socialId.substring(0, 5) + '***'; }
-                        
-                        let timeStr = '剛剛';
-                        if (r.timestamp) {
-                            try {
-                                const ms = typeof r.timestamp.toMillis === 'function' ? r.timestamp.toMillis() : (r.timestamp.seconds * 1000);
-                                const dateObj = new Date(ms);
-                                if (!isNaN(dateObj)) {
-                                    const m = String(dateObj.getMonth() + 1).padStart(2, '0'), d = String(dateObj.getDate()).padStart(2, '0'), h = String(dateObj.getHours()).padStart(2, '0'), min = String(dateObj.getMinutes()).padStart(2, '0');
-                                    timeStr = `${m}/${d} ${h}:${min}`;
-                                }
-                            } catch(e) {}
-                        }
-                        
-                        let customTag = '', nameStyle = 'text-gray-800', avatarStyle = '';
-                        if (r.status && r.status.trim() !== '') {
-                            const st = r.status.trim();
-                            let bgC = 'bg-blue-50', textC = 'text-blue-600', borderC = 'border-blue-100', dotC = 'bg-blue-500';
-                            if (st.includes('取消') || st.includes('放棄')) { bgC = 'bg-red-50'; textC = 'text-red-600'; borderC = 'border-red-100'; dotC = 'bg-red-500'; nameStyle = 'text-gray-500'; avatarStyle = 'opacity-80'; } 
-                            else if (st.includes('繳費') || st.includes('確認') || st.includes('完成') || st.includes('成功')) { bgC = 'bg-green-50'; textC = 'text-green-700'; borderC = 'border-green-200'; dotC = 'bg-green-500'; } 
-                            else if (st.includes('候補') || st.includes('等待')) { bgC = 'bg-amber-50'; textC = 'text-amber-700'; borderC = 'border-amber-200'; dotC = 'bg-amber-500'; }
-                            customTag = `<span class="flex items-center text-[10px] ${bgC} ${textC} font-bold px-1.5 py-0.5 rounded border ${borderC} shadow-sm whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full ${dotC} mr-1 animate-pulse"></span>${st}</span>`;
-                        }
-
-                        return `<div class="flex items-center shrink-0 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm gap-3 hover:border-yellow-300 transition-all duration-300 group"><img src="${r.socialPicture || 'https://via.placeholder.com/150'}" class="w-10 h-10 rounded-full border-2 ${borderColor} shadow-sm object-cover flex-shrink-0 ${avatarStyle}"><div class="flex flex-col items-start min-w-[120px]"><div class="flex items-center gap-2 mb-1"><span class="text-[13px] ${nameStyle} font-bold tracking-wide">${r.socialName || '匿名'}</span><span class="bg-yellow-100 text-yellow-800 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border border-yellow-200 whitespace-nowrap">${timeStr}</span></div><div class="flex items-center gap-1.5"><span class="text-[10px] text-gray-500 font-mono tracking-tighter bg-gray-50 border border-gray-200 px-1.5 py-px rounded w-fit shadow-sm">${displayId}</span>${customTag}</div></div></div>`;
-                    }).join('');
-                    
-                    const isExpanded = !window.hiddenRegEvents.has(ev.name);
-                    
-                    let toggleBtnText = '', toggleBtnClass = '';
-                    if (isExpanded) { 
-                        toggleBtnText = '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單'; 
-                        toggleBtnClass = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'; 
-                    } else { 
-                        toggleBtnText = '<i class="fas fa-chevron-down mr-1.5"></i>查看名單'; 
-                        toggleBtnClass = 'bg-white text-yellow-600 border border-yellow-300 hover:bg-yellow-50'; 
-                    }
-
-                    let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
-                    if (window.isRegSnapshotLoaded) { 
-                        countDisplay = `<span class="text-yellow-600 mx-1 text-lg font-black">${regs.length}</span>`; 
-                    }
-                    const countHtml = `<p class="text-[14px] font-bold text-gray-700 flex items-center m-0 tracking-wide"><i class="fas fa-users text-yellow-500 mr-2 text-lg"></i>目前報名：${countDisplay} 人</p>`;
-
-                    let avatarsSection = '';
-                    if (isExpanded) {
-                        if (!window.isRegSnapshotLoaded) { 
-                            avatarsSection = `<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`; 
-                        } else if (regs.length > 0) { 
-                            avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-200 mt-2">${avatarsHtml}</div>`; 
-                        } else { 
-                            avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-yellow-200 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`; 
-                        }
-                    }
-
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">${countHtml}<button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">${toggleBtnText}</button></div>${avatarsSection}</div>`;
-                } else {
-                    if (isExpired) {
-                        regsHtml = `<div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200"><div class="flex justify-start mb-2">${shareBtnHtml}</div></div>`;
-                    } else {
-                        regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
-                    }
-                }
-
-                if(isExpired) {
+                // ==========================
+                // 處理已過期卡片的渲染
+                // ==========================
+                if (isExpired) {
                     let savedBoardType = ev.boardType || '';
                     let savedBoardCode = ev.boardCode || '';
-                    
-                    try {
-                        let localAdminData = JSON.parse(localStorage.getItem('ESGT_Admin_Boards_v1')) || {};
-                        if (localAdminData[ev.name]) {
-                            savedBoardType = localAdminData[ev.name].boardType || savedBoardType;
-                            savedBoardCode = localAdminData[ev.name].boardCode || savedBoardCode;
-                        }
-                    } catch(e) {}
+                    let initUrl = savedBoardType === 'ent' ? `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}` : (savedBoardType === 'gov' ? `https://farmcmd.github.io/ESGT/#OKR-board${savedBoardCode ? '-' + savedBoardCode : ''}` : '');
 
-                    let entBtnActive = savedBoardType === 'ent';
-                    let govBtnActive = savedBoardType === 'gov';
+                    // ✨ 為一般旅客渲染「一鍵帶入」按鈕 (只要管理員有設定代碼就顯示)
+                    let quickBindHtml = '';
+                    if (savedBoardType && savedBoardCode) {
+                        const isEnt = savedBoardType === 'ent';
+                        const btnColorClass = isEnt ? 'from-yellow-400 to-yellow-500 hover:shadow-yellow-500/30' : 'from-blue-500 to-blue-600 hover:shadow-blue-500/30';
+                        const iconClass = isEnt ? 'fa-building' : 'fa-landmark';
+                        const boardName = isEnt ? '企業永續儀表板' : '永續政府儀表板';
+                        
+                        quickBindHtml = `
+                        <div class="mt-4 pt-4 border-t-2 border-dashed border-gray-100">
+                            <button onclick="window.autoFillDashboard('${savedBoardType}', '${savedBoardCode}')" class="w-full py-3 bg-gradient-to-r ${btnColorClass} text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center group transform hover:-translate-y-0.5 animate-pulse">
+                                <i class="fas ${iconClass} text-xl mr-2 group-hover:scale-110 transition-transform"></i> 
+                                一鍵帶入歸戶：${boardName}
+                                <span class="ml-2 bg-white/20 px-2 py-0.5 rounded text-xs font-mono tracking-widest">#${savedBoardCode}</span>
+                            </button>
+                        </div>
+                        `;
+                    }
 
-                    let entBtnClass = entBtnActive 
-                        ? "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
-                        : "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
-                    let entBtnInner = entBtnActive ? `<span>企業永續儀表板</span><i class="fas fa-check-circle text-yellow-600 text-[10px]"></i>` : `<span>企業永續儀表板</span>`;
+                    return `<div data-event-id="${shortId}" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm relative opacity-95 mb-4 transition-all hover:shadow-md">
+                        <div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex flex-col items-end shadow-sm">
+                            <span class="flex items-center"><i class="fas fa-flag-checkered mr-1.5"></i>活動已結束</span>
+                            <span class="text-[8px] mt-0.5 opacity-80">建議將本頁面加到手機桌面隨時查詢新活動</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-600 mb-3 pr-20">${ev.name}</h4>
+                        <div class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded text-xs font-bold border border-gray-200 mb-4">
+                            <i class="fas fa-clock mr-1.5"></i> ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-60">#${shortId}</span>
+                        </div>
+                        <div class="text-[13px] text-gray-500 mb-4 border-l-4 border-gray-200 pl-3">
+                            <p><strong>活動地點:</strong> ${ev.location || '水里里山基地'}</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
+                            <p class="text-xs font-bold text-gray-500">目前報名：${regs.length} 人</p>
+                            <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-500 border border-gray-200 hover:border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
+                        </div>
+                        
+                        ${quickBindHtml}
 
-                    let govBtnClass = govBtnActive 
-                        ? "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0 opacity-90" 
-                        : "flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-1 rounded transition-all cursor-not-allowed bg-gray-100 text-gray-400 border border-gray-200 shrink-0";
-                    let govBtnInner = govBtnActive ? `<span>永續政府儀表板</span><i class="fas fa-check-circle text-blue-600 text-[10px]"></i>` : `<span>永續政府儀表板</span>`;
-
-                    let inputClass = savedBoardCode 
-                        ? "w-12 sm:w-16 px-1.5 py-0.5 text-[11px] sm:text-[12px] font-mono font-black border rounded focus:outline-none text-center transition-all uppercase cursor-not-allowed bg-orange-50/50 text-orange-700 border-orange-300 shadow-sm tracking-wide"
-                        : "w-12 sm:w-16 px-1.5 py-0.5 text-[11px] sm:text-[12px] font-mono font-black border border-gray-200 rounded bg-gray-100 focus:outline-none text-center shadow-inner cursor-not-allowed transition-all uppercase text-gray-400 tracking-wide";
-                    let labelHtml = savedBoardCode ? `<i class="fas fa-check text-orange-600 mr-1 text-[9px]"></i>編號:` : `編號:`;
-                    let labelClass = savedBoardCode ? "text-[10px] sm:text-[11px] font-black transition-colors whitespace-nowrap text-orange-700/80" : "text-[10px] sm:text-[11px] font-black transition-colors whitespace-nowrap text-gray-400";
-
-                    let initUrl = '';
-                    if (entBtnActive) initUrl = `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}`;
-                    else if (govBtnActive) initUrl = `https://farmcmd.github.io/ESGT/#OKR-board${savedBoardCode ? '-' + savedBoardCode : ''}`;
-
-                    let dashboardButtonsHtml = `
-                    <div class="mt-4 pt-3 border-t border-gray-100">
-                        <div id="admin-box-${shortId}" class="flex flex-col gap-2.5 bg-gray-50/80 p-2.5 sm:p-3 rounded-xl border border-gray-200 shadow-sm transition-all duration-500">
-                            
-                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full">
-                                <button onclick="window.unlockAdminPanel('${shortId}')" id="admin-lock-btn-${shortId}" class="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center bg-gray-100 border border-gray-300 hover:bg-yellow-50 hover:border-yellow-300 hover:shadow-md rounded-full transition-all shadow-sm shrink-0 z-10 group" title="點擊輸入密碼解鎖">
-                                    <span class="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all text-[10px] sm:text-xs">💡</span>
-                                </button>
-                                
-                                <div class="flex flex-wrap items-center gap-1.5">
-                                    <button id="btn-ent-${shortId}" data-active="${entBtnActive}" disabled onclick="window.toggleBoard('${shortId}', 'ent')" class="${entBtnClass}">
-                                        ${entBtnInner}
-                                    </button>
-                                    <button id="btn-gov-${shortId}" data-active="${govBtnActive}" disabled onclick="window.toggleBoard('${shortId}', 'gov')" class="${govBtnClass}">
-                                        ${govBtnInner}
-                                    </button>
-                                </div>
-                                <div class="hidden md:block w-px h-3 bg-gray-300 mx-1"></div>
-                                <div class="flex items-center gap-1 ml-auto sm:ml-0 shrink-0">
-                                    <span id="label-num-${shortId}" class="${labelClass}">${labelHtml}</span>
-                                    <input type="text" id="input-num-${shortId}" maxlength="5" value="${savedBoardCode}" oninput="this.value = this.value.toUpperCase(); window.updateDashboardUrl('${shortId}')" disabled placeholder="🔒" class="${inputClass}">
-                                    <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-5 h-5 bg-green-500 hover:bg-green-600 text-white rounded-sm shadow-md flex items-center justify-center transition-all animate-bounce shrink-0" title="完成設定並同步雲端">
-                                        <i class="fas fa-check text-[9px]"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="flex items-stretch w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                <div class="px-2 sm:px-3 py-1.5 sm:py-2 text-gray-400 bg-gray-50 border-r border-gray-200 flex items-center justify-center shrink-0">
-                                    <i class="fas fa-link text-[10px] sm:text-[11px]"></i>
-                                </div>
-                                <input type="text" id="display-url-${shortId}" readonly class="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-[11px] text-blue-600 font-mono bg-transparent focus:outline-none cursor-default truncate" placeholder="本活動未建立成效看板" value="${initUrl}" title="系統將自動生成專屬對接網址">
-                                <button onclick="window.openDashboard('${shortId}')" class="px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-800 hover:bg-slate-900 text-white transition-all flex items-center justify-center shrink-0 group border-l border-slate-700" title="前往成效儀表板 (ENTER)">
-                                    <span class="text-[9px] sm:text-[10px] font-black mr-1 opacity-90 group-hover:opacity-100 whitespace-nowrap">查看成效</span>
-                                    <i class="fas fa-reply fa-flip-horizontal group-hover:translate-x-0.5 transition-transform text-[9px] sm:text-[11px]"></i>
-                                </button>
-                            </div>
-
+                        <!-- 管理員成效區 (過期卡片專屬) -->
+                        <div class="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-200 flex flex-col gap-2">
+                             <div class="flex items-center gap-2">
+                                <button onclick="window.unlockAdminPanel('${shortId}')" id="admin-lock-btn-${shortId}" class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded-full shadow-sm text-xs" title="解鎖編輯看板"><i class="fas fa-lightbulb grayscale opacity-50"></i></button>
+                                <button id="btn-ent-${shortId}" data-active="${savedBoardType==='ent'}" disabled onclick="window.toggleBoard('${shortId}','ent')" class="flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all ${savedBoardType==='ent'?'bg-yellow-100 text-yellow-700 border-yellow-400':'bg-white text-gray-400 border-gray-200'}">企業永續</button>
+                                <button id="btn-gov-${shortId}" data-active="${savedBoardType==='gov'}" disabled onclick="window.toggleBoard('${shortId}','gov')" class="flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all ${savedBoardType==='gov'?'bg-blue-100 text-blue-700 border-blue-400':'bg-white text-gray-400 border-gray-200'}">永續政府</button>
+                                <input type="text" id="input-num-${shortId}" maxlength="5" value="${savedBoardCode}" disabled class="w-16 px-1.5 py-0.5 text-xs font-mono border rounded text-center bg-gray-100">
+                                <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-6 h-6 bg-green-500 text-white rounded shadow-md flex items-center justify-center"><i class="fas fa-check text-xs"></i></button>
+                             </div>
+                             <div class="flex bg-white border border-gray-300 rounded-lg overflow-hidden mt-1">
+                                <input type="text" id="display-url-${shortId}" readonly class="w-full px-3 py-1.5 text-[10px] text-blue-600 font-mono truncate bg-transparent focus:outline-none" value="${initUrl}" placeholder="尚未建立儀表板">
+                                <button onclick="window.openDashboard('${shortId}')" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-900 transition-colors text-white text-[10px] font-black flex items-center whitespace-nowrap"><i class="fas fa-chart-line mr-1"></i> 管理員查看</button>
+                             </div>
                         </div>
                     </div>`;
-
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
                 } else {
-                    let regMethodHtml = '';
-                    if (isRegOpen) { 
-                        regMethodHtml = `<div class="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-lg border border-yellow-200 font-bold shadow-sm text-[11px] flex items-center w-full sm:w-fit"><i class="fas fa-broadcast-tower mr-1.5 animate-pulse text-yellow-500 text-xs"></i>報名中...請使用 LINE+1快速報名(依報名先後或主辦單位通知錄取)</div>`; 
-                    } else {
-                        if(ev.regMethod && (ev.regMethod.startsWith('http') || ev.regMethod.startsWith('www'))) { 
-                            let url = ev.regMethod.startsWith('www') ? 'https://' + ev.regMethod : ev.regMethod;
-                            regMethodHtml = `<a href="${url}" target="_blank" class="bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 break-all font-bold hover:bg-gray-100 transition underline text-center sm:text-left shadow-sm text-[11px] flex items-center w-full sm:w-fit"><i class="fas fa-external-link-alt mr-1.5 text-xs"></i>點擊前往外部報名網頁</a>`; 
-                        } else if (ev.regMethod) { 
-                            regMethodHtml = `<div class="bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 break-words whitespace-normal font-bold shadow-sm text-[11px] flex items-center w-full sm:w-fit"><i class="fas fa-info-circle mr-1.5 text-xs"></i>${ev.regMethod}</div>`; 
-                        } else { 
-                            regMethodHtml = `<div class="bg-gray-50 text-gray-400 px-3 py-1.5 rounded-lg border border-gray-200 font-bold shadow-sm text-[11px] flex items-center w-full sm:w-fit"><i class="fas fa-ban mr-1.5 text-xs"></i>已停止站內報名，詳情請洽主辦單位</div>`; 
-                        }
-                    }
-                    
-                    let quickRegBtnHtml = '';
-                    if (isRegOpen) { 
-                        quickRegBtnHtml = `<button onclick="window.openRegistrationModal('${safeEventName}')" class="shrink-0 w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-white text-lg"></i>LINE+1 快速報名</button>`;
-                    } else {
-                        quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
-                    }
+                    const isRegOpen = ev.isRegistrationOpen !== false;
+                    const avatarsHtml = regs.map(r => `<div class="shrink-0 bg-white p-2 rounded-lg border border-gray-200 shadow-sm flex items-center gap-2"><img src="${r.socialPicture || 'https://via.placeholder.com/150'}" class="w-8 h-8 rounded-full object-cover border-2 ${r.platform==='LINE'?'border-[#06C755]':'border-blue-500'} shadow-sm"><span class="text-xs font-bold text-gray-700">${r.socialName || '匿名'}</span></div>`).join('');
 
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300"><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end pt-5 border-t-2 border-gray-100 gap-4"><div class="flex flex-col items-start w-full lg:w-auto flex-grow gap-1"><div class="flex items-center"><i class="fas fa-info-circle text-yellow-500 mr-1.5 shrink-0 text-lg"></i><span class="font-black text-gray-700 shrink-0 text-[13px]">報名方式:</span></div>${regMethodHtml}</div><div class="flex flex-col sm:flex-row justify-between items-center w-full lg:w-auto lg:min-w-[350px] gap-3 shrink-0">${quickRegBtnHtml}<button onclick="${safeCalendarUrl !== '#' ? `window.open('${safeCalendarUrl}', '_blank')` : `window.showToast('活動日期格式異常，無法產生行事曆連結')`}" class="shrink-0 w-full sm:w-auto px-2 py-1 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center justify-center"><i class="far fa-calendar-plus mr-1.5 text-blue-500 text-sm"></i> 加入行事曆</button></div></div></div>`;
+                    return `<div data-event-id="${shortId}" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300">
+                        <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
+                        <h4 class="text-2xl font-black text-gray-800 mb-3 tracking-wide pr-28">${ev.name}</h4>
+                        <div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm">
+                            <i class="fas fa-clock mr-2"></i> ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-40">#${shortId}</span>
+                        </div>
+                        <div class="space-y-2 text-[14px] text-gray-600 mb-6 border-l-4 border-yellow-400 pl-4">
+                            <p><i class="fas fa-sitemap mr-2 opacity-60"></i> <strong>執行單位:</strong> ${ev.executor || '里山團隊'}</p>
+                            <p><i class="fas fa-map-marker-alt mr-2 text-red-400"></i> <strong>活動地點:</strong> ${ev.location || '水里里山基地'}</p>
+                            <p><i class="fas fa-hourglass-half mr-2 text-orange-400"></i> <strong>截止日期:</strong> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>
+                        </div>
+                        <div class="mb-4 pt-4 border-t-2 border-dashed border-gray-100 bg-gray-50/80 -mx-6 px-6 shadow-inner pb-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-[14px] font-bold text-gray-700 flex items-center"><i class="fas fa-users text-yellow-500 mr-2 text-lg"></i>目前報名：<span class="text-yellow-600 mx-1 text-lg font-black">${regs.length}</span> 人</p>
+                                <button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center ${isExpanded?'bg-yellow-100 text-yellow-800':'bg-white text-yellow-600 border border-yellow-200'}">${isExpanded?'隱藏名單':'查看名單'}</button>
+                            </div>
+                            ${isExpanded ? `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-100 mt-2">${regs.length ? avatarsHtml : '<div class="w-full py-4 text-center text-gray-400 font-bold text-xs"><i class="fas fa-user-slash mr-2"></i>目前尚未有人報名</div>'}</div>` : ''}
+                        </div>
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t-2 border-gray-100">
+                             <div class="bg-yellow-50 text-yellow-700 px-4 py-2 rounded-xl border border-yellow-100 font-bold text-xs flex-grow flex items-center"><i class="fas fa-info-circle mr-2"></i> 報名方式：${isRegOpen ? 'LINE+1快速報名' : (ev.regMethod || '詳情請洽主辦單位')}</div>
+                             ${isRegOpen ? `<button onclick="window.openRegistrationModal('${safeEventName}')" class="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-xl"></i>LINE+1 快速報名</button>` : `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm">已停止報名</button>`}
+                        </div>
+                    </div>`;
                 }
             }).join('');
-            
-            if(container) container.innerHTML = html;
 
-            // 深度連結路由器觸發捲動
-            if (!window.hasHandledDeepLink && processedEvents.length > 0) {
+            if (!window.hasHandledDeepLink) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const eventIdParam = urlParams.get('id');
-                const eventNameParam = urlParams.get('event');
-                
-                if (eventIdParam || eventNameParam) {
+                if (eventIdParam) {
                     window.hasHandledDeepLink = true;
                     setTimeout(() => {
-                        let targetCard = null;
-                        if (eventIdParam) targetCard = document.querySelector(`#event-schedule-container [data-event-id="${eventIdParam}"]`);
-                        else if (eventNameParam) targetCard = document.querySelector(`#event-schedule-container [data-event-name="${encodeURIComponent(eventNameParam).replace(/'/g, "%27")}"]`);
-
-                        if (targetCard) {
-                            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            targetCard.classList.add('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-10');
-                            window.showToast('🎯 已為您精準定位到該活動！');
-                            setTimeout(() => { targetCard.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-10'); }, 4000);
-                        }
+                        const targetCard = document.querySelector(`#event-schedule-container [data-event-id="${eventIdParam}"]`);
+                        if (targetCard) { targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); targetCard.classList.add('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-10'); setTimeout(() => targetCard.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-10'), 4000); }
                     }, 800);
                 }
             }
         };
 
-        // ==========================================
-        // 4. 社群登入與報名邏輯 (✨ 核心修復：拔除所有跳轉父視窗指令，強迫留在小視窗內完成)
-        // ==========================================
-        let currentSocialData = null; 
-
-        document.getElementById('line-login-btn')?.addEventListener('click', async () => {
-            if (typeof MY_LINE_LIFF_ID === 'undefined' || MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return window.showToast('⚠️ 系統尚未設定 LINE LIFF ID');
-            
-            localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
-
+        function initFirebase() {
             try {
-                await liff.ready; 
-                if (!liff.isLoggedIn()) {
-                    // ✨ 核心修復：強制把 redirectUri 設定為小視窗自己 (events.html)
-                    const redirectUrl = new URL(window.location.href);
-                    redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
-                    liff.login({ redirectUri: redirectUrl.toString() });
-                } else {
-                    window.showToast('🔄 正在載入 LINE 資料中...');
-                    const profile = await liff.getProfile();
-                    currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                    document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                    document.getElementById('social-user-name').textContent = currentSocialData.name;
-                    document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                if (db) {
+                    onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => { window.currentEventsList = docSnap.exists() ? (docSnap.data().events || []) : []; window.renderEventsListUI(); });
+                    onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
+                        window.isRegSnapshotLoaded = true;
+                        window.globalEventRegistrations = {};
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            if(data.eventName) { if(!window.globalEventRegistrations[data.eventName]) window.globalEventRegistrations[data.eventName] = []; window.globalEventRegistrations[data.eventName].push(data); }
+                        });
+                        window.renderEventsListUI();
+                    });
                 }
-            } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
-        });
+                try { auth = getAuth(app); signInAnonymously(auth).catch(() => console.warn('Auth受限，資料仍可公開讀取')); } catch(e) {}
+            } catch (e) { console.error("Firebase init error:", e); }
+        }
 
         document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
             const eventName = window.currentRegEvent || '未命名活動';
@@ -891,180 +527,72 @@
             if (!currentSocialData) return;
             const originalHtml = e.currentTarget.innerHTML;
             e.currentTarget.disabled = true; e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
-
             const regs = window.globalEventRegistrations[window.currentRegEvent] || [];
-            if (regs.some(r => r.socialId === currentSocialData.id)) {
-                window.showToast('⚠️ 您已經報名過此活動囉！');
-                e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml;
-                return;
-            }
-
+            if (regs.some(r => r.socialId === currentSocialData.id)) { window.showToast('⚠️ 您已經報名過囉！'); e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml; return; }
             try {
-                if (!db || typeof addDoc !== 'function') throw new Error("資料庫未連線");
-
-                const regData = {
-                    eventName: window.currentRegEvent,
-                    platform: currentSocialData.platform,
-                    socialId: currentSocialData.id,
-                    socialName: currentSocialData.name,
-                    socialPicture: currentSocialData.picture,
-                    userId: state.playerCode || 'anonymous',
-                    timestamp: serverTimestamp()
-                };
-
-                if (!window.globalEventRegistrations[window.currentRegEvent]) window.globalEventRegistrations[window.currentRegEvent] = [];
-                window.globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
-                
-                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-
+                const regData = { eventName: window.currentRegEvent, platform: currentSocialData.platform, socialId: currentSocialData.id, socialName: currentSocialData.name, socialPicture: currentSocialData.picture, userId: state.playerCode || 'anonymous', timestamp: serverTimestamp() };
                 await addDoc(collection(db, 'event_registrations'), regData);
                 window.showToast('✅ 報名成功！大頭貼已即時上榜。');
-                
-                // ✨ 核心修復：拔除強制跳轉主網頁的邏輯。完成後只關閉報名小視窗，讓使用者舒服地留在原地！
                 window.closeModal('event-registration-modal');
-
-            } catch (err) {
-                window.showToast(`🚨 報名失敗: ${err.message}`);
-            } finally {
-                e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml;
-            }
+            } catch (err) { window.showToast(`🚨 報名失敗: ${err.message}`); } finally { e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml; }
         });
 
+        let currentSocialData = null; 
         window.openRegistrationModal = async function(encodedEventName) {
             const eventName = decodeURIComponent(encodedEventName);
             window.currentRegEvent = eventName;
             const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = eventName;
-            
             document.getElementById('social-auth-step').classList.remove('hidden');
             document.getElementById('social-preview-step').classList.add('hidden');
             currentSocialData = null;
-            
             window.openModal('event-registration-modal');
-
-            try {
-                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    window.showToast('🔄 偵測到已登入，檢查報名狀態...');
-                    let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
-                    try { profile = await Promise.race([ liff.getProfile(), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000)) ]); } catch(e) {} 
-
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
-
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                try {
+                    const profile = await liff.getProfile();
                     currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                     document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
                     document.getElementById('social-user-name').textContent = currentSocialData.name;
                     document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                }
-            } catch (err) {}
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
+                } catch(err) {}
+            }
         };
 
-        document.querySelectorAll('.modal-overlay .close-button').forEach(btn => {
-            btn.addEventListener('click', (e) => { const m = e.target.closest('.modal-overlay'); if (m) m.classList.add('hidden'); });
+        document.getElementById('line-login-btn')?.addEventListener('click', async () => {
+            localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
+            try {
+                await liff.ready; 
+                if (!liff.isLoggedIn()) {
+                    const redirectUrl = new URL(window.location.href);
+                    redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
+                    liff.login({ redirectUri: redirectUrl.toString() });
+                }
+            } catch (err) { window.showToast('🚨 授權啟動失敗'); }
         });
 
-        // ==========================================
-        // 5. Firebase 系統初始化
-        // ==========================================
-        function initFirebase() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                if (db) {
-                    onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
-                        if(docSnap.exists() && docSnap.data().events) { window.currentEventsList = docSnap.data().events; } 
-                        else { window.currentEventsList = []; }
-                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                    }, (error) => {
-                        const container = document.getElementById('event-schedule-container');
-                        if (container) container.innerHTML = '<div class="col-span-full py-12 text-center text-red-400 border-2 border-dashed border-red-200 rounded-xl"><i class="fas fa-wifi text-4xl mb-3 opacity-50"></i><p class="font-bold tracking-widest">資料庫連線失敗，請檢查網路或 Firebase 權限設定。</p></div>';
-                    });
-
-                    onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
-                        window.isRegSnapshotLoaded = true;
-                        window.globalEventRegistrations = {};
-                        snapshot.forEach(doc => {
-                            const data = doc.data();
-                            if(data.eventName) {
-                                if(!window.globalEventRegistrations[data.eventName]) window.globalEventRegistrations[data.eventName] = [];
-                                window.globalEventRegistrations[data.eventName].push(data);
-                            }
-                        });
-                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                    });
-                }
-                
-                signInAnonymously(auth).catch(() => console.warn('匿名登入失敗 (不影響公開讀取)'));
-            } catch (e) { console.error("Firebase init error:", e); }
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
-            
-            // ✨ 核心修復：子網頁現在完全自己負責啟動 LINE 引擎與拆包裹，不再騷擾父視窗
-            if (typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
+            if (typeof MY_LINE_LIFF_ID !== 'undefined') {
                 try {
                     await liff.init({ liffId: MY_LINE_LIFF_ID });
                     if (liff.isLoggedIn()) {
                         let urlParams = new URLSearchParams(window.location.search);
                         let urlEvent = urlParams.get('line_reg');
-
-                        // 若自身網址沒直接帶參數，檢查是否有被打包的 liff.state
                         if (!urlEvent && urlParams.has('liff.state')) {
-                            try {
-                                const liffState = urlParams.get('liff.state');
-                                const stateStr = liffState.startsWith('?') ? liffState.substring(1) : liffState;
-                                const stateParams = new URLSearchParams(stateStr);
-                                urlEvent = stateParams.get('line_reg');
-                            } catch(e) {}
+                            const stateParams = new URLSearchParams(urlParams.get('liff.state').startsWith('?') ? urlParams.get('liff.state').substring(1) : urlParams.get('liff.state'));
+                            urlEvent = stateParams.get('line_reg');
                         }
-                        
-                        // 安全解碼處理：防禦 LINE 的雙重 URL 編碼 (%25E5...)
-                        let decodedEvent = urlEvent;
-                        try {
-                            if (urlEvent && urlEvent.includes('%')) {
-                                decodedEvent = decodeURIComponent(urlEvent);
-                            }
-                        } catch(e) {
-                            decodedEvent = urlEvent;
-                        }
-                        
-                        let pendingEvent = decodedEvent ? decodedEvent : localStorage.getItem('pending_line_reg_event');
-
+                        let pendingEvent = urlEvent ? decodeURIComponent(urlEvent) : localStorage.getItem('pending_line_reg_event');
                         if (pendingEvent) {
-                            window.showToast('🔄 LINE 授權成功，載入資料中...');
-                            
-                            // 閱後即焚：自動將子網頁的冗長認證包裹擦除，保持乾淨，不影響父視窗
-                            try {
-                                const cUrl = new URL(window.location);
-                                cUrl.searchParams.delete('line_reg');
-                                cUrl.searchParams.delete('liff.state');
-                                cUrl.searchParams.delete('liff.referrer');
-                                window.history.replaceState({}, '', cUrl);
-                            } catch(e) {}
-
+                            try { const cUrl = new URL(window.location); cUrl.searchParams.delete('line_reg'); cUrl.searchParams.delete('liff.state'); window.history.replaceState({}, '', cUrl); } catch(e) {}
                             const profile = await liff.getProfile();
                             currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                            
                             window.currentRegEvent = pendingEvent;
-                            const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
-                            
-                            document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                            document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                            document.getElementById('social-user-name').textContent = currentSocialData.name;
-                            document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                            
-                            document.getElementById('social-auth-step').classList.add('hidden');
-                            document.getElementById('social-preview-step').classList.remove('hidden');
-                            
-                            window.openModal('event-registration-modal');
+                            window.openRegistrationModal(encodeURIComponent(pendingEvent));
                             localStorage.removeItem('pending_line_reg_event');
                         }
                     }
-                } catch(e) {
-                    console.warn("LIFF 初始化或參數抓取受阻:", e);
-                }
+                } catch(e) {}
             }
             initFirebase();
         });
