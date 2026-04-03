@@ -13,14 +13,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- LINE & Facebook SDK 載入 -->
+    <!-- LINE SDK 載入 -->
     <script>
         const MY_LINE_LIFF_ID = '2009624342-oTTGaOJl'; 
-        window.fbAsyncInit = function() {
-            FB.init({ appId: '803120779511252', cookie: true, xfbml: true, version: 'v19.0' });
-        };
     </script>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/zh_TW/sdk.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <!-- Tailwind 客製化設定 -->
@@ -118,8 +114,9 @@
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
                         <i class="fab fa-line text-2xl mr-2"></i> 以 LINE 登入並帶入資料
                     </button>
-                    <button id="fb-login-btn" class="w-full py-3.5 bg-[#1877F2] text-white rounded-xl font-bold shadow-md hover:bg-[#166FE5] transition flex justify-center items-center">
-                        <i class="fab fa-facebook text-xl mr-2"></i> 以 Facebook 登入
+                    <!-- 保留 Messenger 作為極簡備援 -->
+                    <button id="messenger-fallback-btn" class="w-full py-3.5 bg-[#0084FF] text-white rounded-xl font-bold shadow-md hover:bg-[#0073E6] transition flex justify-center items-center">
+                        <i class="fab fa-facebook-messenger text-xl mr-2"></i> 留言給我們 (無LINE者適用)
                     </button>
                 </div>
                 <p class="text-[10px] text-gray-400 mt-3 leading-relaxed"><i class="fas fa-lock mr-1 text-gray-300"></i>我們僅會取得您的公開大頭貼與姓名作為報名憑證。</p>
@@ -422,8 +419,8 @@
                     }
                     
                     if (containerBox) {
-                        containerBox.classList.remove('bg-gray-50/80', 'border-gray-200');
-                        containerBox.classList.add('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_20px_rgba(250,204,21,0.25)]');
+                        containerBox.classList.remove('bg-gradient-to-r', 'from-yellow-50', 'to-blue-50', 'border-yellow-300', 'shadow-[0_0_20px_rgba(250,204,21,0.25)]');
+                        containerBox.classList.add('bg-gray-50/80', 'border-gray-200');
                     }
 
                     window.showToast('✨ 魔法解除！點擊看板按鈕將其點亮，修改後請打勾儲存。');
@@ -792,7 +789,7 @@
                         </div>
                     </div>`;
 
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享</button><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
+                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
                 } else {
                     let regMethodHtml = '';
                     if (isRegOpen) { 
@@ -821,7 +818,6 @@
             
             if(container) container.innerHTML = html;
 
-            // 深度連結路由器觸發捲動
             if (!window.hasHandledDeepLink && processedEvents.length > 0) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const eventIdParam = urlParams.get('id');
@@ -846,7 +842,7 @@
         };
 
         // ==========================================
-        // 4. 社群登入與報名邏輯 (✨ 核心修復：強制啟動引擎並攔截包裹)
+        // 4. 社群登入與報名邏輯
         // ==========================================
         let currentSocialData = null; 
 
@@ -855,50 +851,29 @@
             
             localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
 
-            if (window.self !== window.top) {
-                const liffUrl = `https://liff.line.me/${MY_LINE_LIFF_ID}?line_reg=${encodeURIComponent(window.currentRegEvent)}`;
-                window.safeTopNavigate(liffUrl);
-            } else {
-                try {
-                    await liff.ready; 
-                    if (!liff.isLoggedIn()) {
-                        liff.login({ redirectUri: window.location.href });
-                    } else {
-                        window.showToast('🔄 正在載入 LINE 資料中...');
-                        const profile = await liff.getProfile();
-                        currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                        document.getElementById('social-user-name').textContent = currentSocialData.name;
-                        document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                        document.getElementById('social-auth-step').classList.add('hidden');
-                        document.getElementById('social-preview-step').classList.remove('hidden');
-                    }
-                } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
-            }
-        });
-
-        document.getElementById('fb-login-btn')?.addEventListener('click', () => {
-            if (typeof FB === 'undefined') return window.showToast('⚠️ Facebook 模組尚未載入，請關閉擋廣告外掛或稍後再試！');
-            FB.login(function(response) {
-                if (response.authResponse) {
-                    window.showToast('🔄 授權成功，正在抓取大頭貼...');
-                    FB.api('/me', {fields: 'name,picture.width(150).height(150)'}, function(userResponse) {
-                        currentSocialData = { platform: 'Facebook', id: userResponse.id, name: userResponse.name, picture: userResponse.picture.data.url };
-                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#1877F2] shadow-sm object-cover";
-                        document.getElementById('social-user-name').textContent = currentSocialData.name;
-                        document.getElementById('social-user-id').textContent = 'FB ID: ' + currentSocialData.id;
-                        document.getElementById('social-auth-step').classList.add('hidden');
-                        document.getElementById('social-preview-step').classList.remove('hidden');
-                    });
-                } else { window.showToast('❌ 您取消了授權或登入失敗。'); }
-            }, {scope: 'public_profile'}); 
+            try {
+                await liff.ready; 
+                if (!liff.isLoggedIn()) {
+                    const redirectUrl = new URL(window.location.href);
+                    redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
+                    liff.login({ redirectUri: redirectUrl.toString() });
+                } else {
+                    window.showToast('🔄 正在載入 LINE 資料中...');
+                    const profile = await liff.getProfile();
+                    currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
+                    document.getElementById('social-user-avatar').src = currentSocialData.picture;
+                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
+                    document.getElementById('social-user-name').textContent = currentSocialData.name;
+                    document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
+                    document.getElementById('social-auth-step').classList.add('hidden');
+                    document.getElementById('social-preview-step').classList.remove('hidden');
+                }
+            } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
         });
 
         document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
             const eventName = window.currentRegEvent || '未命名活動';
-            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用社群報名請留言給我們(較晚回覆)`;
+            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用LINE報名請留言給我們(較晚回覆)`;
             const textArea = document.createElement("textarea"); textArea.value = msgTemplate; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
             document.body.appendChild(textArea); textArea.focus(); textArea.select();
             try { document.execCommand('copy'); window.showToast('📋 已複製報名格式！開啟後請直接貼上'); } catch (err) {} 
@@ -939,12 +914,6 @@
                 await addDoc(collection(db, 'event_registrations'), regData);
                 window.showToast('✅ 報名成功！大頭貼已即時上榜。');
                 window.closeModal('event-registration-modal');
-                
-                if (window.self !== window.top) {
-                    setTimeout(() => {
-                        window.safeTopNavigate(`https://farmcmd.github.io/ESGT/?event=${encodeURIComponent(window.currentRegEvent)}`);
-                    }, 800);
-                }
 
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
@@ -1025,7 +994,6 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             
-            // ✨ 核心修復：打破 iframe 限制，無條件初始化 LIFF，主動攔截父層 URL 包裹完成登入閉環
             if (typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
                 try {
                     await liff.init({ liffId: MY_LINE_LIFF_ID });
@@ -1033,40 +1001,35 @@
                         let urlParams = new URLSearchParams(window.location.search);
                         let urlEvent = urlParams.get('line_reg');
 
-                        // 若自身網址沒參數，且在 iframe 內，主動抓取父層主網頁的參數
-                        if (!urlEvent && window.self !== window.top) {
+                        if (!urlEvent && urlParams.has('liff.state')) {
                             try {
-                                const parentParams = new URLSearchParams(window.parent.location.search);
-                                urlEvent = parentParams.get('line_reg');
-                                
-                                // 防禦機制：若主系統沒把 liff.state 拆包裹，我們自己拆！
-                                if (!urlEvent && parentParams.has('liff.state')) {
-                                    const liffState = parentParams.get('liff.state');
-                                    const stateStr = liffState.startsWith('?') ? liffState.substring(1) : liffState;
-                                    const stateParams = new URLSearchParams(stateStr);
-                                    urlEvent = stateParams.get('line_reg');
-                                }
+                                const liffState = urlParams.get('liff.state');
+                                const stateStr = liffState.startsWith('?') ? liffState.substring(1) : liffState;
+                                const stateParams = new URLSearchParams(stateStr);
+                                urlEvent = stateParams.get('line_reg');
                             } catch(e) {}
                         }
                         
-                        let pendingEvent = urlEvent ? decodeURIComponent(urlEvent) : localStorage.getItem('pending_line_reg_event');
+                        let decodedEvent = urlEvent;
+                        try {
+                            if (urlEvent && urlEvent.includes('%')) {
+                                decodedEvent = decodeURIComponent(urlEvent);
+                            }
+                        } catch(e) {
+                            decodedEvent = urlEvent;
+                        }
+                        
+                        let pendingEvent = decodedEvent ? decodedEvent : localStorage.getItem('pending_line_reg_event');
 
                         if (pendingEvent) {
                             window.showToast('🔄 LINE 授權成功，載入資料中...');
                             
-                            // 清理網址：自動將主網頁與子網頁的冗長認證包裹擦除，保持乾淨
                             try {
-                                if (urlEvent && window.self !== window.top) {
-                                    const pUrl = new URL(window.parent.location);
-                                    pUrl.searchParams.delete('line_reg');
-                                    pUrl.searchParams.delete('liff.state');
-                                    pUrl.searchParams.delete('liff.referrer');
-                                    window.parent.history.replaceState({}, '', pUrl);
-                                } else if (urlEvent) {
-                                    const cUrl = new URL(window.location);
-                                    cUrl.searchParams.delete('line_reg');
-                                    window.history.replaceState({}, '', cUrl);
-                                }
+                                const cUrl = new URL(window.location);
+                                cUrl.searchParams.delete('line_reg');
+                                cUrl.searchParams.delete('liff.state');
+                                cUrl.searchParams.delete('liff.referrer');
+                                window.history.replaceState({}, '', cUrl);
                             } catch(e) {}
 
                             const profile = await liff.getProfile();
