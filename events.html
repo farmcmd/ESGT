@@ -13,14 +13,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- LINE & Facebook SDK 載入 -->
+    <!-- LINE SDK 載入 -->
     <script>
         const MY_LINE_LIFF_ID = '2009624342-oTTGaOJl'; 
-        window.fbAsyncInit = function() {
-            FB.init({ appId: '803120779511252', cookie: true, xfbml: true, version: 'v19.0' });
-        };
     </script>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/zh_TW/sdk.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <!-- Tailwind 客製化設定 -->
@@ -105,24 +101,25 @@
         </div>
     </div>
 
+    <!-- 活動快速報名 Modal -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
             <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-id-badge text-2xl text-blue-500"></i></div></div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">社群一鍵報名</h3>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">社群快速報名</h3>
             <p id="reg-event-name" class="text-sm font-bold text-blue-700 mb-5 bg-blue-50/50 p-2 rounded-lg border border-blue-100"></p>
             
             <div id="social-auth-step" class="mb-6">
-                <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 授權取得社群身分 (免填寫)</p>
+                <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 選擇報名方式</p>
                 <div class="flex flex-col gap-3">
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
-                        <i class="fab fa-line text-2xl mr-2"></i> 以 LINE 登入並帶入資料
+                        <i class="fab fa-line text-2xl mr-2"></i> 以 LINE 登入一鍵報名
                     </button>
-                    <button id="fb-login-btn" class="w-full py-3.5 bg-[#1877F2] text-white rounded-xl font-bold shadow-md hover:bg-[#166FE5] transition flex justify-center items-center">
-                        <i class="fab fa-facebook text-xl mr-2"></i> 以 Facebook 登入
+                    <button id="messenger-fallback-btn" class="w-full py-3.5 bg-[#0084FF] text-white rounded-xl font-bold shadow-md hover:bg-[#0073E6] transition flex justify-center items-center">
+                        <i class="fab fa-facebook-messenger text-xl mr-2"></i> 留言給我們 (無LINE者適用)
                     </button>
                 </div>
-                <p class="text-[10px] text-gray-400 mt-3 leading-relaxed"><i class="fas fa-lock mr-1 text-gray-300"></i>我們僅會取得您的公開大頭貼與姓名作為報名憑證。</p>
+                <p class="text-[10px] text-gray-400 mt-3 leading-relaxed"><i class="fas fa-lock mr-1 text-gray-300"></i>使用 LINE 登入將僅取得您的公開大頭貼與姓名作為報名憑證；若無法使用，請點選留言，系統將自動為您帶入報名格式。</p>
             </div>
 
             <div id="social-preview-step" class="mb-2 hidden">
@@ -219,14 +216,20 @@
             window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
         };
 
-        // ✨ 核心黑科技：安全穿透函數 (Bypass Iframe SecurityError)
+        // ✨ 核心修復：三層式安全穿透引擎 (Bypass Iframe SecurityError)
         window.safeTopNavigate = function(url) {
+            // 第 1 層：嘗試直接呼叫 Top 跳轉
+            try { window.top.location.href = url; return; } catch(e) {}
+            // 第 2 層：嘗試呼叫 Parent 跳轉
+            try { window.parent.location.href = url; return; } catch(e) {}
+            // 第 3 層：終極絕招，原生 a 標籤點擊穿透
             const a = document.createElement('a');
             a.href = url;
-            a.target = '_top'; // 強制指示瀏覽器這是一次原生的頂層跳轉
+            a.target = '_top'; 
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
+            // 給予瀏覽器充足反應時間後再移除
+            setTimeout(() => { if(a.parentNode) document.body.removeChild(a); }, 500);
         };
 
         window.returnToMain = function() {
@@ -348,7 +351,6 @@
             const urlDisplay = document.getElementById(`display-url-${cardId}`);
             if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) {
                 if (window.self !== window.top) {
-                    // ✨ 核心修復：使用安全跳轉引擎
                     window.safeTopNavigate(urlDisplay.value);
                     try { window.parent.document.querySelectorAll('.modal-overlay:not(.hidden) .close-button')[0]?.click(); } catch(e){}
                 } else {
@@ -821,7 +823,6 @@
             
             if(container) container.innerHTML = html;
 
-            // 深度連結路由器觸發捲動
             if (!window.hasHandledDeepLink && processedEvents.length > 0) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const eventIdParam = urlParams.get('id');
@@ -846,7 +847,7 @@
         };
 
         // ==========================================
-        // 4. 社群登入與報名邏輯 (✨ 核心修復：突破 Iframe 沙盒並自動跳轉)
+        // 4. 社群登入與報名邏輯 (✨ 核心修復：安全突破 iframe 結界)
         // ==========================================
         let currentSocialData = null; 
 
@@ -856,15 +857,16 @@
             localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
 
             if (window.self !== window.top) {
-                // ✨ 核心修復：安全突破瀏覽器限制，強制外層跳轉至 LINE 授權
+                // iframe 環境下，利用安全跳轉引擎呼叫頂層跳轉
                 const liffUrl = `https://liff.line.me/${MY_LINE_LIFF_ID}?line_reg=${encodeURIComponent(window.currentRegEvent)}`;
                 window.safeTopNavigate(liffUrl);
             } else {
-                // 單獨使用 events.html 網頁時的邏輯
                 try {
                     await liff.ready; 
                     if (!liff.isLoggedIn()) {
-                        liff.login({ redirectUri: window.location.href });
+                        const redirectUrl = new URL(window.location.href);
+                        redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
+                        liff.login({ redirectUri: redirectUrl.toString() });
                     } else {
                         window.showToast('🔄 正在載入 LINE 資料中...');
                         const profile = await liff.getProfile();
@@ -880,27 +882,9 @@
             }
         });
 
-        document.getElementById('fb-login-btn')?.addEventListener('click', () => {
-            if (typeof FB === 'undefined') return window.showToast('⚠️ Facebook 模組尚未載入，請關閉擋廣告外掛或稍後再試！');
-            FB.login(function(response) {
-                if (response.authResponse) {
-                    window.showToast('🔄 授權成功，正在抓取大頭貼...');
-                    FB.api('/me', {fields: 'name,picture.width(150).height(150)'}, function(userResponse) {
-                        currentSocialData = { platform: 'Facebook', id: userResponse.id, name: userResponse.name, picture: userResponse.picture.data.url };
-                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#1877F2] shadow-sm object-cover";
-                        document.getElementById('social-user-name').textContent = currentSocialData.name;
-                        document.getElementById('social-user-id').textContent = 'FB ID: ' + currentSocialData.id;
-                        document.getElementById('social-auth-step').classList.add('hidden');
-                        document.getElementById('social-preview-step').classList.remove('hidden');
-                    });
-                } else { window.showToast('❌ 您取消了授權或登入失敗。'); }
-            }, {scope: 'public_profile'}); 
-        });
-
         document.getElementById('messenger-fallback-btn')?.addEventListener('click', () => {
             const eventName = window.currentRegEvent || '未命名活動';
-            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用社群報名請留言給我們(較晚回覆)`;
+            const msgTemplate = `活動名稱: ${eventName}\n姓名: \n連絡電話: \nE-mail: \n(註:報名後請隨時留意您的信件確認報名狀態)\n說明:無法使用LINE報名請留言給我們(較晚回覆)`;
             const textArea = document.createElement("textarea"); textArea.value = msgTemplate; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
             document.body.appendChild(textArea); textArea.focus(); textArea.select();
             try { document.execCommand('copy'); window.showToast('📋 已複製報名格式！開啟後請直接貼上'); } catch (err) {} 
@@ -942,7 +926,6 @@
                 window.showToast('✅ 報名成功！大頭貼已即時上榜。');
                 window.closeModal('event-registration-modal');
                 
-                // ✨ 核心修復：報名完成後，使用安全跳轉引擎回到主網頁定位
                 if (window.self !== window.top) {
                     setTimeout(() => {
                         window.safeTopNavigate(`https://farmcmd.github.io/ESGT/?event=${encodeURIComponent(window.currentRegEvent)}`);
@@ -990,7 +973,7 @@
         });
 
         // ==========================================
-        // 5. Firebase 系統初始化
+        // 5. Firebase 系統初始化與授權接管
         // ==========================================
         function initFirebase() {
             try {
@@ -1027,14 +1010,40 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // 單獨網頁時才啟動 LINE 引擎，避免與主系統衝突
-            if (window.self === window.top && typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
+            // ✨ 核心修復：打破 iframe 限制，無條件初始化 LIFF，主動攔截父層 URL 參數完成登入閉環
+            if (typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
                 try {
                     await liff.init({ liffId: MY_LINE_LIFF_ID });
                     if (liff.isLoggedIn()) {
-                        const pendingEvent = localStorage.getItem('pending_line_reg_event');
+                        let urlParams = new URLSearchParams(window.location.search);
+                        let urlEvent = urlParams.get('line_reg');
+
+                        // 若自身網址沒參數，且在 iframe 內，主動抓取父層主網頁的參數
+                        if (!urlEvent && window.self !== window.top) {
+                            try {
+                                const parentParams = new URLSearchParams(window.parent.location.search);
+                                urlEvent = parentParams.get('line_reg');
+                            } catch(e) {}
+                        }
+                        
+                        let pendingEvent = urlEvent ? decodeURIComponent(urlEvent) : localStorage.getItem('pending_line_reg_event');
+
                         if (pendingEvent) {
                             window.showToast('🔄 LINE 授權成功，載入資料中...');
+                            
+                            // 讀取成功後，自動將主網頁與子網頁的冗長認證碼擦除，保持乾淨
+                            try {
+                                if (urlEvent && window.self !== window.top) {
+                                    const pUrl = new URL(window.parent.location);
+                                    pUrl.searchParams.delete('line_reg');
+                                    window.parent.history.replaceState({}, '', pUrl);
+                                } else if (urlEvent) {
+                                    const cUrl = new URL(window.location);
+                                    cUrl.searchParams.delete('line_reg');
+                                    window.history.replaceState({}, '', cUrl);
+                                }
+                            } catch(e) {}
+
                             const profile = await liff.getProfile();
                             currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
                             
@@ -1053,7 +1062,9 @@
                             localStorage.removeItem('pending_line_reg_event');
                         }
                     }
-                } catch(e) {}
+                } catch(e) {
+                    console.warn("LIFF 初始化或參數抓取受阻:", e);
+                }
             }
             initFirebase();
         });
