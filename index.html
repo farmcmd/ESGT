@@ -3067,49 +3067,73 @@
                 }, 600); // 延遲以配合進站畫面動畫，營造流暢感
             }
 
-            // ✨ 跨視窗通訊接收端：監聽來自子網頁 (events_standalone.html) 的指令
+            // ✨ 新增：讓主系統的看板卡片點擊後，能自動回傳代碼給活動視窗
+            window.selectBoardForEvent = function(boardCode) {
+                // 若沒有在等待綁定，這只是一般點擊，直接跳過不處理
+                if (!window.pendingEventCardId) return;
+
+                // 關閉目前的儀表板
+                window.closeModal('enterprise-modal');
+                window.closeModal('gov-modal');
+
+                // 1. 重新打開活動彈出視窗
+                window.openModal('events-modal');
+
+                // 2. 延遲 500 毫秒等待 iframe 載入完畢，然後把代碼送進去
+                setTimeout(() => {
+                    const iframe = document.getElementById('events-iframe');
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage({
+                            action: 'PROVIDE_BOARD_CODE',
+                            cardId: window.pendingEventCardId,
+                            code: boardCode
+                        }, '*');
+                    }
+                    // 清除等待狀態
+                    window.pendingEventCardId = null;
+                }, 500);
+            };
+
+            // ✨ 跨視窗通訊接收端：監聽來自子網頁的指令
             window.addEventListener('message', (event) => {
-                // 🛡️ 基礎資安防護：確保指令來源為官方網域，杜絕跨站偽造請求 (CSRF/XSS)
+                // 🛡️ 基礎資安防護：確保指令來源為官方網域
                 if (event.origin !== window.location.origin && !event.origin.includes('farmcmd.github.io')) return;
 
-                // 指令 1：關閉活動彈窗 (保留相容性)
+                // 指令 1：關閉活動彈窗
                 if (event.data && event.data.action === 'CLOSE_EVENTS_MODAL') {
                     if (typeof window.closeEventsModal === 'function') window.closeEventsModal();
                     else window.closeModal('events-modal');
                 }
                 
-                // ✨ 指令 2：一鍵帶入儀表板代碼 (智慧反查與下拉選單自動選擇)
+                // 指令 2：一鍵帶入儀表板代碼 (舊有保留，供子網頁一鍵歸戶使用)
                 if (event.data && event.data.action === 'FILL_DASHBOARD_CODE') {
                     const isEnt = event.data.boardType === 'ent';
                     const targetModalId = isEnt ? 'enterprise-modal' : 'gov-modal';
                     const searchCode = (event.data.boardCode || '').toUpperCase();
-                    
-                    // 1. 打開對應的儀表板
                     window.openModal(targetModalId);
-                    
-                    // 2. 延遲 400 毫秒等待 DOM 與資料渲染完成
                     setTimeout(() => {
                         let targetProjId = null;
                         const selectEl = document.getElementById(isEnt ? 'ent-proj-select' : 'user-proj-select');
-                        
-                        // 代碼反查引擎：比對 cardCode 或 Firebase ID 尾碼
-                        if (isEnt) {
-                            const p = globalEntData.projects.find(x => x.cardCode === searchCode || x.id.toUpperCase().endsWith(searchCode));
-                            if (p) targetProjId = p.id;
-                        } else {
-                            const p = globalGovData.projects.find(x => x.cardCode === searchCode || x.id.toUpperCase().endsWith(searchCode));
-                            if (p) targetProjId = p.id;
-                        }
-
-                        // 自動賦值給下拉選單並觸發更新
-                        if (selectEl && targetProjId) {
-                            selectEl.value = targetProjId;
-                            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-                            window.showToast(`✅ 已自動為您選定專案代碼：#${searchCode}`);
-                        } else {
-                            window.showToast(`⚠️ 找不到代碼為 #${searchCode} 的專案，請手動選擇`);
-                        }
+                        if (isEnt) { const p = globalEntData.projects.find(x => x.cardCode === searchCode || x.id.toUpperCase().endsWith(searchCode)); if (p) targetProjId = p.id; } 
+                        else { const p = globalGovData.projects.find(x => x.cardCode === searchCode || x.id.toUpperCase().endsWith(searchCode)); if (p) targetProjId = p.id; }
+                        if (selectEl && targetProjId) { selectEl.value = targetProjId; selectEl.dispatchEvent(new Event('change', { bubbles: true })); window.showToast(`✅ 已自動為您選定專案代碼：#${searchCode}`); }
                     }, 400); 
+                }
+
+                // ✨ 指令 3：收到選擇看板請求，自動打開儀表板供使用者點選
+                if (event.data && event.data.action === 'REQUEST_BOARD_SELECTION') {
+                    // 記錄正在等待代碼的活動卡片 ID
+                    window.pendingEventCardId = event.data.cardId;
+                    
+                    // 暫時關閉活動彈出視窗
+                    if (typeof window.closeEventsModal === 'function') window.closeEventsModal();
+                    else window.closeModal('events-modal');
+                    
+                    // 自動打開對應的看板儀表板視窗
+                    const targetModalId = event.data.boardType === 'ent' ? 'enterprise-modal' : 'gov-modal';
+                    window.openModal(targetModalId);
+                    
+                    window.showToast('👆 請在畫面上「點擊」您要綁定的看板卡片');
                 }
             });
 
