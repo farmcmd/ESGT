@@ -695,6 +695,45 @@
             }
         };
 
+        // ✨ 核心修復：接回遺失的管理員 LINE 臨時群組設定引擎
+        window.setLineGroupLink = function(cardId, encodedEventName, encodedCurrentLink) {
+            const eventName = decodeURIComponent(encodedEventName);
+            const currentLink = decodeURIComponent(encodedCurrentLink);
+            
+            window.customPrompt('🧙‍♂️ 請輸入管理員密碼解鎖：', '', (pwd) => {
+                if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
+                    // 使用 setTimeout 確保第一個密碼彈窗關閉後，再彈出第二個輸入網址的彈窗，避免 CSS 動畫衝突
+                    setTimeout(() => {
+                        window.customPrompt(`請貼上「${eventName}」的 LINE 臨時群組連結：\n(若要取消連結請留空)`, currentLink, async (newLink) => {
+                            if (newLink !== null) {
+                                if (db) {
+                                    try {
+                                        window.showToast('🔄 正在同步群組連結至雲端...');
+                                        const docRef = doc(db, 'system_messages', 'event_schedule');
+                                        const snap = await getDoc(docRef);
+                                        if (snap.exists()) {
+                                            let events = snap.data().events || [];
+                                            let idx = events.findIndex(e => e.name === eventName);
+                                            if (idx !== -1) {
+                                                // 更新資料庫中的 lineGroupLink 欄位
+                                                events[idx].lineGroupLink = newLink.trim();
+                                                await updateDoc(docRef, { events: events });
+                                                window.showToast(newLink.trim() ? '✅ 群組連結已設定成功！' : '🧹 群組連結已清除！');
+                                            }
+                                        }
+                                    } catch (e) {
+                                        window.showToast('❌ 同步失敗: ' + e.message);
+                                    }
+                                }
+                            }
+                        });
+                    }, 350);
+                } else if (pwd !== null) {
+                    window.showToast('❌ 密碼錯誤！');
+                }
+            });
+        };
+
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
