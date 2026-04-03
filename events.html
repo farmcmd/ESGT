@@ -257,6 +257,26 @@
         </div>
     </div>
 
+    <!-- ✨ 新增：QR Code 專屬分享 Modal -->
+    <div id="qrcode-modal" class="modal-overlay hidden z-[300]">
+        <div class="modal-content max-w-xs p-6 bg-white border-t-4 border-blue-500 relative text-center shadow-2xl">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('qrcode-modal')"><i class="fas fa-times text-xl"></i></button>
+            <div class="mb-3 flex justify-center">
+                <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shadow-inner">
+                    <i class="fas fa-qrcode text-xl text-blue-500"></i>
+                </div>
+            </div>
+            <h3 class="text-lg font-black text-gray-800 mb-2">掃描 QR Code</h3>
+            <p id="qr-event-name" class="text-[13px] font-bold text-blue-600 mb-5 bg-blue-50 py-1.5 px-3 rounded-lg truncate border border-blue-100"></p>
+            
+            <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm flex justify-center items-center mb-4 mx-auto w-fit">
+                <img id="qr-code-img" src="" alt="QR Code" class="w-44 h-44 object-contain">
+            </div>
+            
+            <p class="text-xs text-gray-500 font-medium">讓朋友使用手機相機掃描此條碼<br>即可直接開啟專屬報名頁面</p>
+        </div>
+    </div>
+
     <!-- 系統核心腳本 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
@@ -699,7 +719,6 @@
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
-                // ✨ 修正：確保分享網址精準對齊 GitHub 上真實存在的檔案 events.html
                 const baseOrigin = 'https://farmcmd.github.io/ESGT/events.html'; 
                 const url = new URL(baseOrigin); 
                 url.searchParams.set('id', shortId); 
@@ -715,6 +734,27 @@
             } catch(e) { 
                 window.openModal('share-event-modal'); 
             }
+        };
+
+        // ✨ 新增：動態生成專屬 QR Code
+        window.showQRCode = function(shortId, encodedEventName) {
+            const eventName = decodeURIComponent(encodedEventName);
+            const baseOrigin = 'https://farmcmd.github.io/ESGT/events.html'; 
+            const url = new URL(baseOrigin); 
+            url.searchParams.set('id', shortId); 
+            const finalUrl = url.toString(); 
+
+            // 設定活動標題
+            const qrNameEl = document.getElementById('qr-event-name');
+            if (qrNameEl) qrNameEl.textContent = eventName;
+            
+            // 呼叫開源 API 產生 QR Code 圖檔
+            const qrImgEl = document.getElementById('qr-code-img');
+            if (qrImgEl) {
+                qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(finalUrl)}&margin=10`;
+            }
+            
+            window.openModal('qrcode-modal');
         };
 
         window.toggleRegList = function(eventName) {
@@ -881,9 +921,13 @@
                         
                         ${infoBlockHtml}
                         
-                        <div class="mt-4 pt-3 border-t border-dashed border-gray-200 flex items-center justify-between gap-2">
+                        <div class="mt-4 pt-3 border-t border-dashed border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <p class="text-[10px] md:text-[11px] text-gray-400 font-medium leading-tight"><i class="fas fa-mobile-screen mr-1.5 opacity-70"></i>建議將本頁面加到手機桌面，隨時查詢新活動</p>
-                            <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-500 border border-gray-200 hover:border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
+                            <!-- ✨ 過期卡片底部：加入 QR Code 掃描按鈕 -->
+                            <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                <button onclick="window.showQRCode('${shortId}', '${safeEventName}')" class="px-2.5 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center" title="顯示專屬 QR Code"><i class="fas fa-qrcode text-sm"></i></button>
+                                <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1.5 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-500 border border-gray-200 hover:border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
+                            </div>
                         </div>
                         
                         <!-- 管理員成效區 (過期卡片專屬) -->
@@ -956,11 +1000,19 @@
                     }
 
                     return `<div data-event-id="${shortId}" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300">
-                        <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
-                        <h4 class="text-xl sm:text-2xl font-black text-gray-800 mb-3 tracking-wide pr-24 sm:pr-28 leading-snug break-words">${ev.name}</h4>
-                        <div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm">
-                            <i class="fas fa-clock mr-2"></i> ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-40">#${shortId}</span>
+                        
+                        <!-- ✨ 版面重組：將日期、QR Code 與分享按鈕統一移至頂部工具列，徹底解放標題寬度 -->
+                        <div class="flex flex-wrap justify-between items-start mb-3 gap-y-3 gap-x-2">
+                            <div class="inline-flex items-center px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-bold border border-yellow-300 shadow-sm shrink-0">
+                                <i class="fas fa-clock mr-1.5"></i> ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-50">#${shortId}</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="window.showQRCode('${shortId}', '${safeEventName}')" class="px-2.5 py-1.5 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center" title="顯示專屬 QR Code"><i class="fas fa-qrcode text-base"></i></button>
+                                <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
+                            </div>
                         </div>
+
+                        <h4 class="text-xl sm:text-2xl font-black text-gray-800 mb-4 tracking-wide leading-snug break-words">${ev.name}</h4>
                         
                         ${infoBlockHtml}
                         ${regsHtml}
