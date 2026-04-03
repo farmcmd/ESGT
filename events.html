@@ -206,21 +206,62 @@
             }
         };
 
-        // ✨ 核心升級：改用 ID 進行深度連結傳遞，避免中文 URL 編碼過長
+        // ✨ 核心修復：恢復原生社群分享呼叫與彈出視窗雙軌機制
+        window.currentShareData = { url: '', title: '', text: '' };
+
         window.shareSpecificEvent = function(shortId, encodedEventName) {
-            const eventName = decodeURIComponent(encodedEventName); 
-            const baseOrigin = 'https://farmcmd.github.io/ESGT/'; 
-            const url = new URL(baseOrigin); 
-            // 將參數由 event 改為 id，確保網址簡短俐落且無中文亂碼
-            url.searchParams.set('id', shortId);
-            
-            const finalUrl = url.toString(); 
-            const msg = `🔗 連結複製成功！\n已為您產生「${eventName}」的專屬捷徑！`;
-            
-            const textArea = document.createElement("textarea"); textArea.value = finalUrl; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
-            document.body.appendChild(textArea); textArea.focus(); textArea.select();
-            try { document.execCommand('copy'); window.showToast(msg); } catch (err) { window.prompt("請手動複製以下專屬網址分享：", finalUrl); } document.body.removeChild(textArea);
+            try {
+                const eventName = decodeURIComponent(encodedEventName); 
+                const baseOrigin = 'https://farmcmd.github.io/ESGT/'; 
+                const url = new URL(baseOrigin); 
+                url.searchParams.set('id', shortId);
+                
+                const finalUrl = url.toString(); 
+                const shareTitle = `探探里山活動：${eventName}`;
+                const shareText = `🔗 邀請您一起參加【${eventName}】！\n點擊專屬連結直接查看活動詳情與報名資訊👇`;
+                
+                // 儲存至全域供 Modal 內的按鈕使用
+                window.currentShareData = { url: finalUrl, title: shareTitle, text: shareText };
+
+                // 判斷是否為 APP 內建瀏覽器 (LINE/FB 等)，這些通常會阻擋原生分享
+                const ua = navigator.userAgent || navigator.vendor || window.opera;
+                const isInAppBrowser = (ua.indexOf('Line') > -1) || (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1);
+
+                // 優先使用手機系統原生分享 (Web Share API)
+                if (navigator.share && !isInAppBrowser) {
+                    navigator.share({ title: shareTitle, text: shareText, url: finalUrl })
+                        .then(() => window.showToast('✅ 活動分享成功！'))
+                        .catch((err) => { 
+                            if (err.name !== 'AbortError') window.openModal('share-event-modal'); 
+                        });
+                } else {
+                    // 電腦版或不支援環境，降級展開自訂的分享 Modal
+                    window.openModal('share-event-modal');
+                }
+            } catch(e) { 
+                window.openModal('share-event-modal'); 
+            }
         };
+
+        // ✨ 補回：綁定分享彈窗內的各個社群按鈕事件
+        document.getElementById('share-line-btn')?.addEventListener('click', () => { 
+            window.open(`https://line.me/R/msg/text/?${encodeURIComponent(window.currentShareData.text + '\n' + window.currentShareData.url)}`, '_blank'); 
+            window.closeModal('share-event-modal'); 
+        });
+        document.getElementById('share-fb-btn')?.addEventListener('click', () => { 
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.currentShareData.url)}`, '_blank'); 
+            window.closeModal('share-event-modal'); 
+        });
+        document.getElementById('share-x-btn')?.addEventListener('click', () => { 
+            window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.currentShareData.url)}&text=${encodeURIComponent(window.currentShareData.text)}`, '_blank'); 
+            window.closeModal('share-event-modal'); 
+        });
+        document.getElementById('share-copy-btn')?.addEventListener('click', () => {
+            const textArea = document.createElement("textarea"); textArea.value = window.currentShareData.url; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+            document.body.appendChild(textArea); textArea.focus(); textArea.select();
+            try { document.execCommand('copy'); window.showToast('🔗 專屬連結已複製！'); } catch (err) { window.prompt("請手動複製網址：", window.currentShareData.url); } document.body.removeChild(textArea);
+            window.closeModal('share-event-modal');
+        });
 
         window.toggleRegList = async function(eventName) {
             if (window.expandedRegEvents.has(eventName)) {
