@@ -141,6 +141,33 @@
         </div>
     </div>
 
+    <!-- 社群分享 Modal -->
+    <div id="share-event-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('share-event-modal')"><i class="fas fa-times text-xl"></i></button>
+            <h3 class="text-xl font-bold text-gray-800 mb-1">分享此活動</h3>
+            <p class="text-xs text-gray-500 mb-6">選擇您想使用的分享方式</p>
+            <div class="grid grid-cols-4 gap-3 mb-2">
+                <button id="share-line-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-[#06C755]/10 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fab fa-line text-3xl text-[#06C755] mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">LINE</span>
+                </button>
+                <button id="share-fb-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-[#1877F2]/10 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fab fa-facebook text-3xl text-[#1877F2] mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">Facebook</span>
+                </button>
+                <button id="share-x-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-gray-200 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fab fa-x-twitter text-3xl text-gray-800 mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">X</span>
+                </button>
+                <button id="share-copy-btn" class="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:shadow-md transition-all group border border-gray-100">
+                    <i class="fas fa-link text-3xl text-blue-500 mb-2 group-hover:scale-110 transition-transform"></i>
+                    <span class="text-[10px] font-bold text-gray-600">複製連結</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ======================================================== -->
     <!-- 系統核心腳本 -->
     <!-- ======================================================== -->
@@ -150,18 +177,16 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // ==========================================
-        // 1. 全局函數與變數綁定
+        // 1. 全局函數與狀態綁定
         // ==========================================
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         let db = null, auth = null;
         
         window.currentEventsList = [];
         window.globalEventRegistrations = {};
-        window.expandedRegEvents = new Set();
-        window.loadingRegEvents = new Set();
-        window.fetchedRegEvents = new Set();
-        window.eventRegCounts = {};
+        window.hiddenRegEvents = new Set();
         window.hasHandledDeepLink = false;
+        window.isRegSnapshotLoaded = false;
         window.toastTimer = null;
 
         let state = { lineUserId: '', playerCode: '' };
@@ -194,19 +219,28 @@
             window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
         };
 
+        // ✨ 核心黑科技：安全穿透函數 (Bypass Iframe SecurityError)
+        window.safeTopNavigate = function(url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_top'; // 強制指示瀏覽器這是一次原生的頂層跳轉
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
         window.returnToMain = function() {
             if (window.self !== window.top) {
                 try {
                     const parentModals = window.parent.document.querySelectorAll('.modal-overlay:not(.hidden) .close-button');
                     if (parentModals.length > 0) { parentModals[0].click(); } 
-                    else { window.top.location.href = 'https://farmcmd.github.io/ESGT/'; }
-                } catch(e) { window.top.location.href = 'https://farmcmd.github.io/ESGT/'; }
+                    else { window.safeTopNavigate('https://farmcmd.github.io/ESGT/'); }
+                } catch(e) { window.safeTopNavigate('https://farmcmd.github.io/ESGT/'); }
             } else {
                 window.location.href = 'https://farmcmd.github.io/ESGT/';
             }
         };
 
-        // ✨ 核心修復：恢復原生社群分享呼叫與彈出視窗雙軌機制
         window.currentShareData = { url: '', title: '', text: '' };
 
         window.shareSpecificEvent = function(shortId, encodedEventName) {
@@ -220,14 +254,11 @@
                 const shareTitle = `探探里山活動：${eventName}`;
                 const shareText = `🔗 邀請您一起參加【${eventName}】！\n點擊專屬連結直接查看活動詳情與報名資訊👇`;
                 
-                // 儲存至全域供 Modal 內的按鈕使用
                 window.currentShareData = { url: finalUrl, title: shareTitle, text: shareText };
 
-                // 判斷是否為 APP 內建瀏覽器 (LINE/FB 等)，這些通常會阻擋原生分享
                 const ua = navigator.userAgent || navigator.vendor || window.opera;
                 const isInAppBrowser = (ua.indexOf('Line') > -1) || (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1);
 
-                // 優先使用手機系統原生分享 (Web Share API)
                 if (navigator.share && !isInAppBrowser) {
                     navigator.share({ title: shareTitle, text: shareText, url: finalUrl })
                         .then(() => window.showToast('✅ 活動分享成功！'))
@@ -235,7 +266,6 @@
                             if (err.name !== 'AbortError') window.openModal('share-event-modal'); 
                         });
                 } else {
-                    // 電腦版或不支援環境，降級展開自訂的分享 Modal
                     window.openModal('share-event-modal');
                 }
             } catch(e) { 
@@ -243,7 +273,6 @@
             }
         };
 
-        // ✨ 補回：綁定分享彈窗內的各個社群按鈕事件
         document.getElementById('share-line-btn')?.addEventListener('click', () => { 
             window.open(`https://line.me/R/msg/text/?${encodeURIComponent(window.currentShareData.text + '\n' + window.currentShareData.url)}`, '_blank'); 
             window.closeModal('share-event-modal'); 
@@ -263,32 +292,13 @@
             window.closeModal('share-event-modal');
         });
 
-        window.toggleRegList = async function(eventName) {
-            if (window.expandedRegEvents.has(eventName)) {
-                window.expandedRegEvents.delete(eventName);
-                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+        window.toggleRegList = function(eventName) {
+            if (window.hiddenRegEvents.has(eventName)) {
+                window.hiddenRegEvents.delete(eventName); 
             } else {
-                window.expandedRegEvents.add(eventName);
-                if (!window.fetchedRegEvents.has(eventName)) {
-                    window.loadingRegEvents.add(eventName);
-                    if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                    
-                    try {
-                        if (db) {
-                            const q = query(collection(db, 'event_registrations'), where('eventName', '==', eventName));
-                            const querySnapshot = await getDocs(q);
-                            const fetchedRegs = []; querySnapshot.forEach((doc) => fetchedRegs.push(doc.data()));
-                            window.globalEventRegistrations[eventName] = fetchedRegs; window.fetchedRegEvents.add(eventName);
-                            window.eventRegCounts[eventName] = fetchedRegs.length;
-                        }
-                    } catch (e) {
-                        window.showToast("載入名單失敗，請檢查網路連線"); window.expandedRegEvents.delete(eventName); 
-                    } finally {
-                        window.loadingRegEvents.delete(eventName);
-                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                    }
-                } else { if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI(); }
+                window.hiddenRegEvents.add(eventName); 
             }
+            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
         };
 
         // ==========================================
@@ -338,7 +348,8 @@
             const urlDisplay = document.getElementById(`display-url-${cardId}`);
             if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) {
                 if (window.self !== window.top) {
-                    window.parent.location.href = urlDisplay.value;
+                    // ✨ 核心修復：使用安全跳轉引擎
+                    window.safeTopNavigate(urlDisplay.value);
                     try { window.parent.document.querySelectorAll('.modal-overlay:not(.hidden) .close-button')[0]?.click(); } catch(e){}
                 } else {
                     window.open(urlDisplay.value, '_blank');
@@ -573,7 +584,7 @@
         };
 
         // ==========================================
-        // 3. 獨立卡片渲染引擎 (套用 30% 縮小與字體加粗的完美佈局)
+        // 3. 獨立卡片渲染引擎
         // ==========================================
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
@@ -590,7 +601,7 @@
                 
                 const safeEventName = encodeURIComponent(ev.name).replace(/'/g, "%27");
                 const dateStr = (ev.date || '00000000').replace(/[\/\-]/g, '');
-                const shortId = `${dateStr}-${index + 1}`; // ✨ 產生卡片專屬編號 (ID)
+                const shortId = `${dateStr}-${index + 1}`; 
 
                 if(ev.date && !isExpired) {
                     try {
@@ -628,7 +639,6 @@
                 let regsHtml = '';
                 const isRegOpen = ev.isRegistrationOpen !== false; 
                 
-                // ✨ 將 onclick 參數改為傳遞 shortId
                 const shareBtnHtml = `<button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0 w-fit"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>`;
 
                 if(isRegOpen) { 
@@ -669,29 +679,35 @@
                         return `<div class="flex items-center shrink-0 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm gap-3 hover:border-yellow-300 transition-all duration-300 group"><img src="${r.socialPicture || 'https://via.placeholder.com/150'}" class="w-10 h-10 rounded-full border-2 ${borderColor} shadow-sm object-cover flex-shrink-0 ${avatarStyle}"><div class="flex flex-col items-start min-w-[120px]"><div class="flex items-center gap-2 mb-1"><span class="text-[13px] ${nameStyle} font-bold tracking-wide">${r.socialName || '匿名'}</span><span class="bg-yellow-100 text-yellow-800 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border border-yellow-200 whitespace-nowrap">${timeStr}</span></div><div class="flex items-center gap-1.5"><span class="text-[10px] text-gray-500 font-mono tracking-tighter bg-gray-50 border border-gray-200 px-1.5 py-px rounded w-fit shadow-sm">${displayId}</span>${customTag}</div></div></div>`;
                     }).join('');
                     
-                    const isExpanded = window.expandedRegEvents.has(ev.name);
-                    const isLoading = window.loadingRegEvents.has(ev.name);
-                    const hasFetched = window.fetchedRegEvents.has(ev.name);
+                    const isExpanded = !window.hiddenRegEvents.has(ev.name);
                     
                     let toggleBtnText = '', toggleBtnClass = '';
-                    if (isLoading) { toggleBtnText = '<i class="fas fa-spinner fa-spin mr-1.5"></i>載入中...'; toggleBtnClass = 'bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200 shadow-none'; } 
-                    else if (isExpanded) { toggleBtnText = '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單'; toggleBtnClass = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'; } 
-                    else if (hasFetched) { toggleBtnText = '<i class="fas fa-chevron-down mr-1.5"></i>查看名單'; toggleBtnClass = 'bg-white text-yellow-600 border border-yellow-300 hover:bg-yellow-50'; } 
-                    else { toggleBtnText = '<i class="fas fa-cloud-download-alt mr-1.5 animate-bounce text-yellow-500"></i>展開報名清單'; toggleBtnClass = 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'; }
+                    if (isExpanded) { 
+                        toggleBtnText = '<i class="fas fa-chevron-up mr-1.5"></i>隱藏名單'; 
+                        toggleBtnClass = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'; 
+                    } else { 
+                        toggleBtnText = '<i class="fas fa-chevron-down mr-1.5"></i>查看名單'; 
+                        toggleBtnClass = 'bg-white text-yellow-600 border border-yellow-300 hover:bg-yellow-50'; 
+                    }
 
                     let countDisplay = '<i class="fas fa-spinner fa-spin text-yellow-500 mx-1 text-sm"></i>';
-                    if (hasFetched && regs) { countDisplay = `<span class="text-yellow-600 mx-1 text-lg font-black">${regs.length}</span>`; } 
-                    else if (window.eventRegCounts[ev.name] !== undefined) { countDisplay = `<span class="text-yellow-600 mx-1 text-lg font-black">${window.eventRegCounts[ev.name]}</span>`; }
+                    if (window.isRegSnapshotLoaded) { 
+                        countDisplay = `<span class="text-yellow-600 mx-1 text-lg font-black">${regs.length}</span>`; 
+                    }
                     const countHtml = `<p class="text-[14px] font-bold text-gray-700 flex items-center m-0 tracking-wide"><i class="fas fa-users text-yellow-500 mr-2 text-lg"></i>目前報名：${countDisplay} 人</p>`;
 
                     let avatarsSection = '';
                     if (isExpanded) {
-                        if (isLoading) { avatarsSection = `<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`; } 
-                        else if (regs.length > 0) { avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-200 mt-2">${avatarsHtml}</div>`; } 
-                        else { avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-yellow-200 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`; }
+                        if (!window.isRegSnapshotLoaded) { 
+                            avatarsSection = `<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>`; 
+                        } else if (regs.length > 0) { 
+                            avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-200 mt-2">${avatarsHtml}</div>`; 
+                        } else { 
+                            avatarsSection = `<div class="flex justify-center items-center py-5 text-gray-500 text-sm font-bold border-t border-yellow-200 mt-2 animate-fade-in-down"><i class="fas fa-user-slash mr-2 text-lg opacity-50"></i>目前尚無人報名</div>`; 
+                        }
                     }
 
-                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">${countHtml}<button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}" ${isLoading ? 'disabled' : ''}>${toggleBtnText}</button></div>${avatarsSection}</div>`;
+                    regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">${countHtml}<button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">${toggleBtnText}</button></div>${avatarsSection}</div>`;
                 } else {
                     if (isExpired) {
                         regsHtml = `<div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200"><div class="flex justify-start mb-2">${shareBtnHtml}</div></div>`;
@@ -776,7 +792,6 @@
                         </div>
                     </div>`;
 
-                    // ✨ 針對已過期卡片，替換呼叫參數為 shortId
                     return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享</button><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-200"><i class="fas fa-sticky-note mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
                 } else {
                     let regMethodHtml = '';
@@ -800,7 +815,6 @@
                         quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
                     }
 
-                    // ✨ 針對未過期卡片，替換呼叫參數為 shortId
                     return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300"><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-red-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-orange-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end pt-5 border-t-2 border-gray-100 gap-4"><div class="flex flex-col items-start w-full lg:w-auto flex-grow gap-1"><div class="flex items-center"><i class="fas fa-info-circle text-yellow-500 mr-1.5 shrink-0 text-lg"></i><span class="font-black text-gray-700 shrink-0 text-[13px]">報名方式:</span></div>${regMethodHtml}</div><div class="flex flex-col sm:flex-row justify-between items-center w-full lg:w-auto lg:min-w-[350px] gap-3 shrink-0">${quickRegBtnHtml}<button onclick="${safeCalendarUrl !== '#' ? `window.open('${safeCalendarUrl}', '_blank')` : `window.showToast('活動日期格式異常，無法產生行事曆連結')`}" class="shrink-0 w-full sm:w-auto px-2 py-1 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center justify-center"><i class="far fa-calendar-plus mr-1.5 text-blue-500 text-sm"></i> 加入行事曆</button></div></div></div>`;
                 }
             }).join('');
@@ -832,29 +846,38 @@
         };
 
         // ==========================================
-        // 4. 社群登入與報名邏輯
+        // 4. 社群登入與報名邏輯 (✨ 核心修復：突破 Iframe 沙盒並自動跳轉)
         // ==========================================
         let currentSocialData = null; 
 
         document.getElementById('line-login-btn')?.addEventListener('click', async () => {
             if (typeof MY_LINE_LIFF_ID === 'undefined' || MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return window.showToast('⚠️ 系統尚未設定 LINE LIFF ID');
-            try {
-                await liff.ready; 
-                if (!liff.isLoggedIn()) {
-                    localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
-                    liff.login({ redirectUri: window.location.href });
-                } else {
-                    window.showToast('🔄 正在載入 LINE 資料中...');
-                    const profile = await liff.getProfile();
-                    currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                    document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                    document.getElementById('social-user-name').textContent = currentSocialData.name;
-                    document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
-                }
-            } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
+            
+            localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
+
+            if (window.self !== window.top) {
+                // ✨ 核心修復：安全突破瀏覽器限制，強制外層跳轉至 LINE 授權
+                const liffUrl = `https://liff.line.me/${MY_LINE_LIFF_ID}?line_reg=${encodeURIComponent(window.currentRegEvent)}`;
+                window.safeTopNavigate(liffUrl);
+            } else {
+                // 單獨使用 events.html 網頁時的邏輯
+                try {
+                    await liff.ready; 
+                    if (!liff.isLoggedIn()) {
+                        liff.login({ redirectUri: window.location.href });
+                    } else {
+                        window.showToast('🔄 正在載入 LINE 資料中...');
+                        const profile = await liff.getProfile();
+                        currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
+                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
+                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
+                        document.getElementById('social-user-name').textContent = currentSocialData.name;
+                        document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
+                        document.getElementById('social-auth-step').classList.add('hidden');
+                        document.getElementById('social-preview-step').classList.remove('hidden');
+                    }
+                } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
+            }
         });
 
         document.getElementById('fb-login-btn')?.addEventListener('click', () => {
@@ -912,12 +935,20 @@
 
                 if (!window.globalEventRegistrations[window.currentRegEvent]) window.globalEventRegistrations[window.currentRegEvent] = [];
                 window.globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
-                window.expandedRegEvents.add(window.currentRegEvent);
+                
                 if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
 
                 await addDoc(collection(db, 'event_registrations'), regData);
                 window.showToast('✅ 報名成功！大頭貼已即時上榜。');
                 window.closeModal('event-registration-modal');
+                
+                // ✨ 核心修復：報名完成後，使用安全跳轉引擎回到主網頁定位
+                if (window.self !== window.top) {
+                    setTimeout(() => {
+                        window.safeTopNavigate(`https://farmcmd.github.io/ESGT/?event=${encodeURIComponent(window.currentRegEvent)}`);
+                    }, 800);
+                }
+
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
             } finally {
@@ -996,6 +1027,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // 單獨網頁時才啟動 LINE 引擎，避免與主系統衝突
             if (window.self === window.top && typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
                 try {
                     await liff.init({ liffId: MY_LINE_LIFF_ID });
