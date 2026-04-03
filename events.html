@@ -883,9 +883,14 @@
 
                 let regMethodExtraHtml = '';
                 if (ev.regMethod && ev.regMethod.trim() !== '') {
-                    if (ev.regMethod.startsWith('http') || ev.regMethod.startsWith('www')) {
-                        let url = ev.regMethod.startsWith('www') ? 'https://' + ev.regMethod : ev.regMethod;
-                        regMethodExtraHtml = `<div class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 leading-relaxed break-words"><i class="fas fa-external-link-alt mr-1.5 opacity-80 text-gray-500"></i><strong class="mr-1">外部連結:</strong><a href="${url}" target="_blank" class="text-blue-600 font-bold hover:text-blue-800 underline break-all bg-blue-50 px-2 py-0.5 rounded shadow-sm inline-block mt-0.5">點擊前往查看或報名</a></div>`;
+                    // ✨ 升級：智慧正則表達式，自動偵測文字中的網址並轉換為可點擊連結，完整保留管理員輸入的原始文字
+                    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
+                    if (urlRegex.test(ev.regMethod)) {
+                        let linkedText = ev.regMethod.replace(urlRegex, function(url) {
+                            let href = url.startsWith('www.') ? 'https://' + url : url;
+                            return `<a href="${href}" target="_blank" class="text-blue-600 font-bold hover:text-blue-800 underline break-all bg-blue-50 px-1.5 py-0.5 rounded shadow-sm inline-block mx-0.5">${url}</a>`;
+                        });
+                        regMethodExtraHtml = `<div class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 leading-relaxed break-words whitespace-pre-line"><i class="fas fa-external-link-alt mr-1.5 opacity-80 text-gray-500"></i><strong class="mr-1">外部連結:</strong><span class="font-bold">${linkedText}</span></div>`;
                     } else {
                         regMethodExtraHtml = `<div class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 leading-relaxed break-words whitespace-pre-line"><i class="fas fa-bullhorn mr-1.5 opacity-80 text-gray-500"></i><strong class="mr-1">活動說明:</strong><span class="font-bold">${ev.regMethod}</span></div>`;
                     }
