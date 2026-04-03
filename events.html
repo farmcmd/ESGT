@@ -695,57 +695,26 @@
             }
         };
 
-        // ✨ 核心修復：接回遺失的管理員 LINE 臨時群組設定引擎
-        window.setLineGroupLink = function(cardId, encodedEventName, encodedCurrentLink) {
-            const eventName = decodeURIComponent(encodedEventName);
-            const currentLink = decodeURIComponent(encodedCurrentLink);
-            
-            window.customPrompt('🧙‍♂️ 請輸入管理員密碼解鎖：', '', (pwd) => {
-                if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
-                    // 使用 setTimeout 確保第一個密碼彈窗關閉後，再彈出第二個輸入網址的彈窗，避免 CSS 動畫衝突
-                    setTimeout(() => {
-                        window.customPrompt(`請貼上「${eventName}」的 LINE 臨時群組連結：\n(若要取消連結請留空)`, currentLink, async (newLink) => {
-                            if (newLink !== null) {
-                                if (db) {
-                                    try {
-                                        window.showToast('🔄 正在同步群組連結至雲端...');
-                                        const docRef = doc(db, 'system_messages', 'event_schedule');
-                                        const snap = await getDoc(docRef);
-                                        if (snap.exists()) {
-                                            let events = snap.data().events || [];
-                                            let idx = events.findIndex(e => e.name === eventName);
-                                            if (idx !== -1) {
-                                                // 更新資料庫中的 lineGroupLink 欄位
-                                                events[idx].lineGroupLink = newLink.trim();
-                                                await updateDoc(docRef, { events: events });
-                                                window.showToast(newLink.trim() ? '✅ 群組連結已設定成功！' : '🧹 群組連結已清除！');
-                                            }
-                                        }
-                                    } catch (e) {
-                                        window.showToast('❌ 同步失敗: ' + e.message);
-                                    }
-                                }
-                            }
-                        });
-                    }, 350);
-                } else if (pwd !== null) {
-                    window.showToast('❌ 密碼錯誤！');
-                }
-            });
-        };
-
+        // ✨ 核心修復：將分享網址強制定錨至「獨立報名網頁」，徹底避開 LINE Iframe 阻擋
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
-                const baseOrigin = 'https://farmcmd.github.io/ESGT/'; 
+                // 將原本的 'https://farmcmd.github.io/ESGT/' 改為精準指向獨立網頁
+                const baseOrigin = 'https://farmcmd.github.io/ESGT/events_standalone.html'; 
                 const url = new URL(baseOrigin); 
                 url.searchParams.set('id', shortId); 
                 const finalUrl = url.toString(); 
                 const shareText = `🔗 邀請您參加【${eventName}】！\n查看詳情：${finalUrl}`;
                 window.currentShareData = { url: finalUrl, text: shareText };
-                if (navigator.share) { navigator.share({ title: '探探里山', text: shareText, url: finalUrl }).catch(() => window.openModal('share-event-modal')); } 
-                else { window.openModal('share-event-modal'); }
-            } catch(e) { window.openModal('share-event-modal'); }
+                
+                if (navigator.share) { 
+                    navigator.share({ title: '探探里山', text: shareText, url: finalUrl }).catch(() => window.openModal('share-event-modal')); 
+                } else { 
+                    window.openModal('share-event-modal'); 
+                }
+            } catch(e) { 
+                window.openModal('share-event-modal'); 
+            }
         };
 
         window.toggleRegList = function(eventName) {
@@ -754,6 +723,7 @@
             window.renderEventsListUI();
         };
 
+        // ✨ 修復：重構語法樹，確保單一且乾淨的 if(isExpired) 判斷，消除重複區塊
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList.length) return;
@@ -1008,16 +978,37 @@
                 }
             }).join('');
 
-            // 防呆深層連結跳轉
+            // ✨ 核心修復：升級為「智慧輪詢 (Polling) 定位引擎」
             if (!window.hasHandledDeepLink) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const eventIdParam = urlParams.get('id');
                 if (eventIdParam) {
                     window.hasHandledDeepLink = true;
-                    setTimeout(() => {
+                    let scrollAttempts = 0;
+                    
+                    // 由於活動清單被包裝在主網頁的彈出視窗(Modal)中，直接 scrollIntoView 會因為元素還隱藏著 (display:none) 而失效。
+                    // 這裡啟動每 0.5 秒檢查一次的引擎，直到視窗完全打開且卡片真實出現在畫面上，才執行精準捲動。
+                    const scrollInterval = setInterval(() => {
                         const targetCard = document.querySelector(`#event-schedule-container [data-event-id="${eventIdParam}"]`);
-                        if (targetCard) { targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' }); targetCard.classList.add('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-10'); setTimeout(() => targetCard.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-10'), 4000); }
-                    }, 800);
+                        
+                        // offsetParent !== null 代表元素已經真實顯示在畫面上
+                        if (targetCard && targetCard.offsetParent !== null) {
+                            clearInterval(scrollInterval); // 找到目標，停止輪詢
+                            
+                            setTimeout(() => {
+                                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                targetCard.classList.add('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-20', 'transition-all', 'duration-500');
+                                window.showToast('🎯 已為您精準定位到該活動！');
+                                
+                                setTimeout(() => {
+                                    targetCard.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-4', 'z-20');
+                                }, 4000);
+                            }, 300); // 緩衝 0.3 秒讓 Modal 動畫平滑跑完
+                        }
+                        
+                        scrollAttempts++;
+                        if (scrollAttempts > 40) clearInterval(scrollInterval); // 20秒後若還是沒打開視窗，則自動放棄避免浪費效能
+                    }, 500);
                 }
             }
         };
