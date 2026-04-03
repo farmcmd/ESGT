@@ -101,6 +101,7 @@
         </div>
     </div>
 
+    <!-- 活動快速報名 Modal -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -109,17 +110,17 @@
             <p id="reg-event-name" class="text-sm font-bold text-blue-700 mb-5 bg-blue-50/50 p-2 rounded-lg border border-blue-100"></p>
             
             <div id="social-auth-step" class="mb-6">
-                <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 授權取得社群身分 (免填寫)</p>
+                <p class="text-[13px] text-gray-600 font-bold mb-3 text-left"><i class="fas fa-shield-alt text-blue-400 mr-1"></i>1. 選擇報名方式</p>
                 <div class="flex flex-col gap-3">
                     <button id="line-login-btn" class="w-full py-3.5 bg-[#06C755] text-white rounded-xl font-bold shadow-md hover:bg-[#05B34C] transition flex justify-center items-center">
-                        <i class="fab fa-line text-2xl mr-2"></i> 以 LINE 登入並帶入資料
+                        <i class="fab fa-line text-2xl mr-2"></i> 以 LINE 登入一鍵報名
                     </button>
                     <!-- 保留 Messenger 作為極簡備援 -->
                     <button id="messenger-fallback-btn" class="w-full py-3.5 bg-[#0084FF] text-white rounded-xl font-bold shadow-md hover:bg-[#0073E6] transition flex justify-center items-center">
                         <i class="fab fa-facebook-messenger text-xl mr-2"></i> 留言給我們 (無LINE者適用)
                     </button>
                 </div>
-                <p class="text-[10px] text-gray-400 mt-3 leading-relaxed"><i class="fas fa-lock mr-1 text-gray-300"></i>我們僅會取得您的公開大頭貼與姓名作為報名憑證。</p>
+                <p class="text-[10px] text-gray-400 mt-3 leading-relaxed"><i class="fas fa-lock mr-1 text-gray-300"></i>使用 LINE 登入將僅取得您的公開大頭貼與姓名作為報名憑證；若無法使用，請點選留言，系統將自動為您帶入報名格式。</p>
             </div>
 
             <div id="social-preview-step" class="mb-2 hidden">
@@ -172,6 +173,51 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+        // ==========================================
+        // 0. ✨ 內部遙控開窗引擎 (極度重要：解決登入後停留在主頁的問題)
+        // ==========================================
+        if (window.self !== window.top) {
+            try {
+                const parentUrl = new URL(window.parent.location.href);
+                // 只要主系統網址上有 LINE 的任何包裹參數，我們就主動出擊
+                if (parentUrl.searchParams.has('line_reg') || parentUrl.searchParams.has('liff.state') || parentUrl.searchParams.has('code')) {
+                    
+                    // 1. 將父層的參數「偷渡複製」到 iframe 自己的網址上，讓待會的 liff.init 能成功驗證
+                    const currentUrl = new URL(window.location.href);
+                    parentUrl.searchParams.forEach((val, key) => currentUrl.searchParams.set(key, val));
+                    window.history.replaceState(null, '', currentUrl.toString());
+
+                    // 2. 暴力破解：不斷嘗試打開父層的彈出視窗，確保使用者一定看得到報名卡片
+                    let attempts = 0;
+                    const tryOpenModal = setInterval(() => {
+                        attempts++;
+                        let opened = false;
+                        try {
+                            if (typeof window.parent.openModal === 'function') {
+                                window.parent.openModal('events-main-modal');
+                                opened = true;
+                            } else {
+                                // 若找不到全域函數，則深入 DOM 樹強制移除 hidden
+                                const iframes = window.parent.document.querySelectorAll('iframe');
+                                iframes.forEach(iframe => {
+                                    if (iframe.contentWindow === window.self) {
+                                        const modal = iframe.closest('.modal-overlay');
+                                        if (modal) { modal.classList.remove('hidden'); opened = true; }
+                                    }
+                                });
+                                if (!opened) {
+                                    const modalById = window.parent.document.getElementById('events-main-modal');
+                                    if (modalById) { modalById.classList.remove('hidden'); opened = true; }
+                                }
+                            }
+                        } catch(e) {}
+                        
+                        if (opened || attempts > 10) clearInterval(tryOpenModal);
+                    }, 300);
+                }
+            } catch(e) {}
+        }
 
         // ==========================================
         // 1. 全局函數與狀態綁定
@@ -789,7 +835,7 @@
                         </div>
                     </div>`;
 
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl font-bold text-gray-600 mb-3 leading-snug pr-20">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 mb-4 shadow-sm"><i class="fas fa-clock mr-1.5"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-gray-300/60 text-gray-700 rounded font-mono text-[10px] tracking-widest border border-gray-400/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-500 mb-5"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
+                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden mb-4 opacity-90 transition-all"><div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm"><i class="fas fa-flag-checkered mr-1.5"></i>活動已圓滿結束</div><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-gray-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}${dashboardButtonsHtml}</div>`;
                 } else {
                     let regMethodHtml = '';
                     if (isRegOpen) { 
@@ -812,7 +858,7 @@
                         quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-xs font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>請參照左側說明</button>`;
                     }
 
-                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300"><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-red-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-orange-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end pt-5 border-t-2 border-gray-100 gap-4"><div class="flex flex-col items-start w-full lg:w-auto flex-grow gap-1"><div class="flex items-center"><i class="fas fa-info-circle text-yellow-500 mr-1.5 shrink-0 text-lg"></i><span class="font-black text-gray-700 shrink-0 text-[13px]">報名方式:</span></div>${regMethodHtml}</div><div class="flex flex-col sm:flex-row justify-between items-center w-full lg:w-auto lg:min-w-[350px] gap-3 shrink-0">${quickRegBtnHtml}<button onclick="${safeCalendarUrl !== '#' ? `window.open('${safeCalendarUrl}', '_blank')` : `window.showToast('活動日期格式異常，無法產生行事曆連結')`}" class="shrink-0 w-full sm:w-auto px-2 py-1 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center justify-center"><i class="far fa-calendar-plus mr-1.5 text-blue-500 text-sm"></i> 加入行事曆</button></div></div></div>`;
+                    return `<div data-event-name="${safeEventName}" data-event-id="${shortId}" class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300"><button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all"><i class="fas fa-share-alt"></i> 分享此活動</button><h4 class="text-xl md:text-2xl font-black text-gray-800 mb-3 leading-snug tracking-wide pr-28">${ev.name}</h4><div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm"><i class="fas fa-clock mr-2 text-yellow-600"></i> 活動日期: ${ev.date} <span class="ml-2 px-1.5 py-0.5 bg-yellow-200/60 text-yellow-800 rounded font-mono text-[10px] tracking-widest border border-yellow-300/50">#${shortId}</span></div><div class="space-y-2 text-[13px] text-gray-600 mb-6"><p class="flex items-start"><i class="fas fa-sitemap mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">執行單位:</span> <span class="leading-relaxed">${ev.executor || '里山團隊'}</span></p><p class="flex items-start"><i class="fas fa-map-marker-alt mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">活動地點:</span> <span class="leading-relaxed">${ev.location || '水里里山基地'}</span></p><p class="flex items-start"><i class="fas fa-hourglass-half mr-2.5 mt-0.5 text-gray-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-gray-700">報名截止:</span> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>${(ev.remark && ev.remark.trim() !== '') ? `<p class="flex items-start mt-2 pt-2 border-t border-gray-100"><i class="fas fa-info-circle mr-2.5 mt-0.5 text-blue-400 w-3 text-center shrink-0"></i> <span class="font-bold mr-1 shrink-0 text-blue-700">活動備註:</span> <span class="leading-relaxed text-blue-700 font-bold">${ev.remark}</span></p>` : ''}</div>${regsHtml}<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end pt-5 border-t-2 border-gray-100 gap-4"><div class="flex flex-col items-start w-full lg:w-auto flex-grow gap-1"><div class="flex items-center"><i class="fas fa-info-circle text-yellow-500 mr-1.5 shrink-0 text-lg"></i><span class="font-black text-gray-700 shrink-0 text-[13px]">報名方式:</span></div>${regMethodHtml}</div><div class="flex flex-col sm:flex-row justify-between items-center w-full lg:w-auto lg:min-w-[350px] gap-3 shrink-0">${quickRegBtnHtml}<button onclick="${safeCalendarUrl !== '#' ? `window.open('${safeCalendarUrl}', '_blank')` : `window.showToast('活動日期格式異常，無法產生行事曆連結')`}" class="shrink-0 w-full sm:w-auto px-2 py-1 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center justify-center"><i class="far fa-calendar-plus mr-1.5 text-blue-500 text-sm"></i> 加入行事曆</button></div></div></div>`;
                 }
             }).join('');
             
@@ -842,7 +888,7 @@
         };
 
         // ==========================================
-        // 4. 社群登入與報名邏輯
+        // 4. 社群登入與報名邏輯 (✨ 核心修復：強制觸發父層彈窗並安全解碼)
         // ==========================================
         let currentSocialData = null; 
 
@@ -851,9 +897,11 @@
             
             localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
 
+            // ✨ 完全不理會 iframe 狀態，統一強制作為普通網頁執行 LINE 授權流程
             try {
                 await liff.ready; 
                 if (!liff.isLoggedIn()) {
+                    // 使用當前 iframe 網址作為回傳頁，確保跳轉後會回到這裡
                     const redirectUrl = new URL(window.location.href);
                     redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
                     liff.login({ redirectUri: redirectUrl.toString() });
@@ -915,6 +963,7 @@
                 window.showToast('✅ 報名成功！大頭貼已即時上榜。');
                 window.closeModal('event-registration-modal');
 
+                // ✨ 核心修復：拔除強制跳轉主網頁的邏輯，報名完成就留在原地
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
             } finally {
@@ -994,21 +1043,13 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             
+            // 無論在哪個環境，都初始化 LIFF
             if (typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
                 try {
                     await liff.init({ liffId: MY_LINE_LIFF_ID });
                     if (liff.isLoggedIn()) {
                         let urlParams = new URLSearchParams(window.location.search);
                         let urlEvent = urlParams.get('line_reg');
-
-                        if (!urlEvent && urlParams.has('liff.state')) {
-                            try {
-                                const liffState = urlParams.get('liff.state');
-                                const stateStr = liffState.startsWith('?') ? liffState.substring(1) : liffState;
-                                const stateParams = new URLSearchParams(stateStr);
-                                urlEvent = stateParams.get('line_reg');
-                            } catch(e) {}
-                        }
                         
                         let decodedEvent = urlEvent;
                         try {
@@ -1024,11 +1065,10 @@
                         if (pendingEvent) {
                             window.showToast('🔄 LINE 授權成功，載入資料中...');
                             
+                            // 清理網址
                             try {
                                 const cUrl = new URL(window.location);
                                 cUrl.searchParams.delete('line_reg');
-                                cUrl.searchParams.delete('liff.state');
-                                cUrl.searchParams.delete('liff.referrer');
                                 window.history.replaceState({}, '', cUrl);
                             } catch(e) {}
 
@@ -1051,7 +1091,7 @@
                         }
                     }
                 } catch(e) {
-                    console.warn("LIFF 初始化或參數抓取受阻:", e);
+                    console.warn("LIFF 初始化受阻:", e);
                 }
             }
             initFirebase();
