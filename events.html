@@ -13,10 +13,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- LINE SDK 載入 -->
+    <!-- LINE & Facebook SDK 載入 -->
     <script>
         const MY_LINE_LIFF_ID = '2009624342-oTTGaOJl'; 
+        window.fbAsyncInit = function() {
+            FB.init({ appId: '803120779511252', cookie: true, xfbml: true, version: 'v19.0' });
+        };
     </script>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/zh_TW/sdk.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <!-- Tailwind 客製化設定 -->
@@ -101,7 +105,6 @@
         </div>
     </div>
 
-    <!-- 活動快速報名 Modal -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -173,51 +176,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-
-        // ==========================================
-        // 0. ✨ 內部遙控開窗引擎 (極度重要：解決登入後停留在主頁的問題)
-        // ==========================================
-        if (window.self !== window.top) {
-            try {
-                const parentUrl = new URL(window.parent.location.href);
-                // 只要主系統網址上有 LINE 的任何包裹參數，我們就主動出擊
-                if (parentUrl.searchParams.has('line_reg') || parentUrl.searchParams.has('liff.state') || parentUrl.searchParams.has('code')) {
-                    
-                    // 1. 將父層的參數「偷渡複製」到 iframe 自己的網址上，讓待會的 liff.init 能成功驗證
-                    const currentUrl = new URL(window.location.href);
-                    parentUrl.searchParams.forEach((val, key) => currentUrl.searchParams.set(key, val));
-                    window.history.replaceState(null, '', currentUrl.toString());
-
-                    // 2. 暴力破解：不斷嘗試打開父層的彈出視窗，確保使用者一定看得到報名卡片
-                    let attempts = 0;
-                    const tryOpenModal = setInterval(() => {
-                        attempts++;
-                        let opened = false;
-                        try {
-                            if (typeof window.parent.openModal === 'function') {
-                                window.parent.openModal('events-main-modal');
-                                opened = true;
-                            } else {
-                                // 若找不到全域函數，則深入 DOM 樹強制移除 hidden
-                                const iframes = window.parent.document.querySelectorAll('iframe');
-                                iframes.forEach(iframe => {
-                                    if (iframe.contentWindow === window.self) {
-                                        const modal = iframe.closest('.modal-overlay');
-                                        if (modal) { modal.classList.remove('hidden'); opened = true; }
-                                    }
-                                });
-                                if (!opened) {
-                                    const modalById = window.parent.document.getElementById('events-main-modal');
-                                    if (modalById) { modalById.classList.remove('hidden'); opened = true; }
-                                }
-                            }
-                        } catch(e) {}
-                        
-                        if (opened || attempts > 10) clearInterval(tryOpenModal);
-                    }, 300);
-                }
-            } catch(e) {}
-        }
 
         // ==========================================
         // 1. 全局函數與狀態綁定
@@ -456,7 +414,7 @@
                         }
                     }
 
-                    if (saveBtn) saveBtn.classList.remove('hidden');
+                    if (saveBtn) saveBtn.classList.add('hidden');
                     
                     if (lockBtn) {
                         lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500 text-xs animate-pulse"></i>';
@@ -864,6 +822,7 @@
             
             if(container) container.innerHTML = html;
 
+            // 深度連結路由器觸發捲動
             if (!window.hasHandledDeepLink && processedEvents.length > 0) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const eventIdParam = urlParams.get('id');
@@ -888,7 +847,7 @@
         };
 
         // ==========================================
-        // 4. 社群登入與報名邏輯 (✨ 核心修復：強制觸發父層彈窗並安全解碼)
+        // 4. 社群登入與報名邏輯 (✨ 核心修復：拔除所有跳轉父視窗指令，強迫留在小視窗內完成)
         // ==========================================
         let currentSocialData = null; 
 
@@ -897,11 +856,10 @@
             
             localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
 
-            // ✨ 完全不理會 iframe 狀態，統一強制作為普通網頁執行 LINE 授權流程
             try {
                 await liff.ready; 
                 if (!liff.isLoggedIn()) {
-                    // 使用當前 iframe 網址作為回傳頁，確保跳轉後會回到這裡
+                    // ✨ 核心修復：強制把 redirectUri 設定為小視窗自己 (events.html)
                     const redirectUrl = new URL(window.location.href);
                     redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
                     liff.login({ redirectUri: redirectUrl.toString() });
@@ -961,9 +919,10 @@
 
                 await addDoc(collection(db, 'event_registrations'), regData);
                 window.showToast('✅ 報名成功！大頭貼已即時上榜。');
+                
+                // ✨ 核心修復：拔除強制跳轉主網頁的邏輯。完成後只關閉報名小視窗，讓使用者舒服地留在原地！
                 window.closeModal('event-registration-modal');
 
-                // ✨ 核心修復：拔除強制跳轉主網頁的邏輯，報名完成就留在原地
             } catch (err) {
                 window.showToast(`🚨 報名失敗: ${err.message}`);
             } finally {
@@ -1043,14 +1002,25 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             
-            // 無論在哪個環境，都初始化 LIFF
+            // ✨ 核心修復：子網頁現在完全自己負責啟動 LINE 引擎與拆包裹，不再騷擾父視窗
             if (typeof MY_LINE_LIFF_ID !== 'undefined' && MY_LINE_LIFF_ID !== '請在這裡填入您的_LIFF_ID') {
                 try {
                     await liff.init({ liffId: MY_LINE_LIFF_ID });
                     if (liff.isLoggedIn()) {
                         let urlParams = new URLSearchParams(window.location.search);
                         let urlEvent = urlParams.get('line_reg');
+
+                        // 若自身網址沒直接帶參數，檢查是否有被打包的 liff.state
+                        if (!urlEvent && urlParams.has('liff.state')) {
+                            try {
+                                const liffState = urlParams.get('liff.state');
+                                const stateStr = liffState.startsWith('?') ? liffState.substring(1) : liffState;
+                                const stateParams = new URLSearchParams(stateStr);
+                                urlEvent = stateParams.get('line_reg');
+                            } catch(e) {}
+                        }
                         
+                        // 安全解碼處理：防禦 LINE 的雙重 URL 編碼 (%25E5...)
                         let decodedEvent = urlEvent;
                         try {
                             if (urlEvent && urlEvent.includes('%')) {
@@ -1065,10 +1035,12 @@
                         if (pendingEvent) {
                             window.showToast('🔄 LINE 授權成功，載入資料中...');
                             
-                            // 清理網址
+                            // 閱後即焚：自動將子網頁的冗長認證包裹擦除，保持乾淨，不影響父視窗
                             try {
                                 const cUrl = new URL(window.location);
                                 cUrl.searchParams.delete('line_reg');
+                                cUrl.searchParams.delete('liff.state');
+                                cUrl.searchParams.delete('liff.referrer');
                                 window.history.replaceState({}, '', cUrl);
                             } catch(e) {}
 
@@ -1091,7 +1063,7 @@
                         }
                     }
                 } catch(e) {
-                    console.warn("LIFF 初始化受阻:", e);
+                    console.warn("LIFF 初始化或參數抓取受阻:", e);
                 }
             }
             initFirebase();
