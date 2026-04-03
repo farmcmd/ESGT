@@ -227,6 +227,9 @@
         import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
+        // ==========================================
+        // 1. 全局函數與狀態綁定
+        // ==========================================
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         let db = null, auth = null;
         
@@ -239,12 +242,21 @@
 
         let state = { lineUserId: '', playerCode: '' };
         function loadLocalData() {
-            try { const raw = localStorage.getItem('shuilMoriData_v3.0'); if(raw) { state = { ...state, ...JSON.parse(raw) }; } } catch(e) { }
-            if (!state.playerCode) { state.playerCode = Math.random().toString(36).substring(2, 7).toUpperCase(); try { localStorage.setItem('shuilMoriData_v3.0', JSON.stringify(state)); } catch(e) {} }
+            try { 
+                const raw = localStorage.getItem('shuilMoriData_v3.0'); 
+                if(raw) { state = { ...state, ...JSON.parse(raw) }; } 
+            } catch(e) { }
+            if (!state.playerCode) {
+                state.playerCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                try { localStorage.setItem('shuilMoriData_v3.0', JSON.stringify(state)); } catch(e) {}
+            }
         }
-        function saveData() { try { localStorage.setItem('shuilMoriData_v3.0', JSON.stringify(state)); } catch(e) {} }
+        function saveData() {
+            try { localStorage.setItem('shuilMoriData_v3.0', JSON.stringify(state)); } catch(e) {}
+        }
         loadLocalData();
 
+        // 通用工具函數
         window.showToast = function(msg) {
             let toast = document.getElementById('custom-toast');
             if(toast) { 
@@ -286,21 +298,6 @@
             else { window.showToast('⚠️ 請先點擊選擇企業或政府儀表板！'); }
         };
 
-        // ✨ 核心升級：子網頁的發射器 (一鍵帶入儀表板)
-        window.autoFillDashboard = function(type, code) {
-            if (window.self !== window.top) {
-                // 如果在 Iframe 裡面，把代碼當作球丟給外面的主網頁去接
-                window.parent.postMessage({ 
-                    action: 'FILL_DASHBOARD_CODE', 
-                    boardType: type, 
-                    boardCode: code 
-                }, '*');
-            } else {
-                // 如果是直接用瀏覽器開這個獨立網頁，就用網址跳轉的方式帶回去主系統
-                window.location.href = `https://farmcmd.github.io/ESGT/?dashboard=${type}&code=${code}`;
-            }
-        };
-
         window.unlockAdminPanel = function(cardId) {
             window.customPrompt('🧙‍♂️ 請輸入管理員密碼：', '', (pwd) => {
                 if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
@@ -309,20 +306,38 @@
                     const inputNum = document.getElementById(`input-num-${cardId}`);
                     const lockBtn = document.getElementById(`admin-lock-btn-${cardId}`);
                     const saveBtn = document.getElementById(`btn-save-${cardId}`);
-                    [btnEnt, btnGov].forEach(btn => { if (btn) { btn.disabled = false; btn.classList.remove('bg-gray-100', 'text-gray-400'); btn.classList.add('cursor-pointer'); } });
-                    if (inputNum) { inputNum.disabled = false; inputNum.classList.remove('bg-gray-100'); }
+                    
+                    [btnEnt, btnGov].forEach(btn => { 
+                        if (btn) { 
+                            btn.disabled = false; 
+                            btn.classList.remove('bg-gray-100', 'text-gray-400'); 
+                            btn.classList.add('cursor-pointer'); 
+                        } 
+                    });
+                    
+                    if (inputNum) { 
+                        inputNum.disabled = false; 
+                        inputNum.placeholder = "自動帶入"; 
+                        if (!inputNum.value) {
+                            inputNum.classList.remove('bg-gray-100', 'text-gray-400'); 
+                            inputNum.classList.add('bg-white');
+                        }
+                    }
+                    
                     if (saveBtn) saveBtn.classList.remove('hidden');
                     if (lockBtn) { lockBtn.innerHTML = '<i class="fas fa-unlock-alt text-green-500"></i>'; lockBtn.disabled = true; }
-                    window.showToast('✨ 魔法解除！修改後請點擊打勾儲存。');
+                    window.showToast('✨ 魔法解除！請點擊儀表板按鈕，系統將呼叫主視窗讓您選擇。');
                 } else if (pwd !== null) { window.showToast('❌ 密碼錯誤！'); }
             });
         };
 
+        // ✨ 核心升級：智慧代碼帶入防呆邏輯 (雙向通訊呼叫器)
         window.toggleBoard = function(cardId, type) {
             const btn = document.getElementById(`btn-${type}-${cardId}`);
             if (!btn || btn.disabled) return;
             const isActive = btn.getAttribute('data-active') === 'true';
             btn.setAttribute('data-active', isActive ? 'false' : 'true');
+            
             if (type === 'ent') { 
                 const btnGov = document.getElementById(`btn-gov-${cardId}`); 
                 if (btnGov && !isActive) { btnGov.setAttribute('data-active', 'false'); btnGov.className = "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-white text-gray-600 border border-gray-300 shrink-0"; }
@@ -330,11 +345,46 @@
                 const btnEnt = document.getElementById(`btn-ent-${cardId}`);
                 if (btnEnt && !isActive) { btnEnt.setAttribute('data-active', 'false'); btnEnt.className = "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-white text-gray-600 border border-gray-300 shrink-0"; }
             }
+            
             if (!isActive) {
                 btn.className = type === 'ent' ? "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-yellow-100 text-yellow-700 border border-yellow-400 shrink-0" : "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-blue-100 text-blue-700 border border-blue-400 shrink-0";
             } else {
                 btn.className = "flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all bg-white text-gray-600 border border-gray-300 shrink-0";
             }
+
+            // 🎯 智慧帶入卡片代碼 (觸發父層選單或本地防呆)
+            const inputNum = document.getElementById(`input-num-${cardId}`);
+            if (inputNum) {
+                const entActive = type === 'ent' ? !isActive : document.getElementById(`btn-ent-${cardId}`).getAttribute('data-active') === 'true';
+                const govActive = type === 'gov' ? !isActive : document.getElementById(`btn-gov-${cardId}`).getAttribute('data-active') === 'true';
+                
+                if (entActive || govActive) {
+                    if (!inputNum.value) { 
+                        // ✨ 通知主系統隱藏彈窗，並展開看板區讓管理員挑選
+                        if (window.self !== window.top) {
+                            window.showToast('🔄 正在切換至主系統，請點選您要綁定的看板...');
+                            window.parent.postMessage({ action: 'REQUEST_BOARD_SELECTION', boardType: type, cardId: cardId }, '*');
+                        } else {
+                            // 獨立網頁的 Fallback，改為手動輸入
+                            window.customPrompt(`請輸入 ${type === 'ent' ? '企業永續' : '永續政府'} 的儀表板代碼：`, '', (val) => {
+                                if (val) {
+                                    inputNum.value = val;
+                                    inputNum.classList.add('bg-orange-50', 'text-orange-700', 'border-orange-300', 'shadow-sm', 'font-black', 'tracking-wide');
+                                    inputNum.classList.remove('bg-white', 'text-gray-400', 'border-gray-200', 'font-bold');
+                                    window.updateDashboardUrl(cardId);
+                                } else {
+                                    btn.click(); // 取消則復原按鈕狀態
+                                }
+                            });
+                        }
+                    }
+                } else {
+                    inputNum.value = ''; // 取消綁定則自動清空代碼
+                    inputNum.classList.remove('bg-orange-50', 'text-orange-700', 'border-orange-300', 'shadow-sm', 'font-black', 'tracking-wide');
+                    inputNum.classList.add('bg-white', 'text-gray-400', 'border-gray-200', 'font-bold');
+                }
+            }
+
             window.updateDashboardUrl(cardId);
         };
 
@@ -397,25 +447,6 @@
                     let savedBoardCode = ev.boardCode || '';
                     let initUrl = savedBoardType === 'ent' ? `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}` : (savedBoardType === 'gov' ? `https://farmcmd.github.io/ESGT/#OKR-board${savedBoardCode ? '-' + savedBoardCode : ''}` : '');
 
-                    // ✨ 為一般旅客渲染「一鍵帶入」按鈕 (只要管理員有設定代碼就顯示)
-                    let quickBindHtml = '';
-                    if (savedBoardType && savedBoardCode) {
-                        const isEnt = savedBoardType === 'ent';
-                        const btnColorClass = isEnt ? 'from-yellow-400 to-yellow-500 hover:shadow-yellow-500/30' : 'from-blue-500 to-blue-600 hover:shadow-blue-500/30';
-                        const iconClass = isEnt ? 'fa-building' : 'fa-landmark';
-                        const boardName = isEnt ? '企業永續儀表板' : '永續政府儀表板';
-                        
-                        quickBindHtml = `
-                        <div class="mt-4 pt-4 border-t-2 border-dashed border-gray-100">
-                            <button onclick="window.autoFillDashboard('${savedBoardType}', '${savedBoardCode}')" class="w-full py-3 bg-gradient-to-r ${btnColorClass} text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center group transform hover:-translate-y-0.5 animate-pulse">
-                                <i class="fas ${iconClass} text-xl mr-2 group-hover:scale-110 transition-transform"></i> 
-                                一鍵帶入歸戶：${boardName}
-                                <span class="ml-2 bg-white/20 px-2 py-0.5 rounded text-xs font-mono tracking-widest">#${savedBoardCode}</span>
-                            </button>
-                        </div>
-                        `;
-                    }
-
                     return `<div data-event-id="${shortId}" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm relative opacity-95 mb-4 transition-all hover:shadow-md">
                         <div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex flex-col items-end shadow-sm">
                             <span class="flex items-center"><i class="fas fa-flag-checkered mr-1.5"></i>活動已結束</span>
@@ -433,16 +464,16 @@
                             <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="px-3 py-1 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-500 border border-gray-200 hover:border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
                         </div>
                         
-                        ${quickBindHtml}
-
                         <!-- 管理員成效區 (過期卡片專屬) -->
                         <div class="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-200 flex flex-col gap-2">
                              <div class="flex items-center gap-2">
                                 <button onclick="window.unlockAdminPanel('${shortId}')" id="admin-lock-btn-${shortId}" class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded-full shadow-sm text-xs" title="解鎖編輯看板"><i class="fas fa-lightbulb grayscale opacity-50"></i></button>
                                 <button id="btn-ent-${shortId}" data-active="${savedBoardType==='ent'}" disabled onclick="window.toggleBoard('${shortId}','ent')" class="flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all ${savedBoardType==='ent'?'bg-yellow-100 text-yellow-700 border-yellow-400':'bg-white text-gray-400 border-gray-200'}">企業永續</button>
                                 <button id="btn-gov-${shortId}" data-active="${savedBoardType==='gov'}" disabled onclick="window.toggleBoard('${shortId}','gov')" class="flex items-center gap-1.5 text-[10px] font-black px-2.5 py-1 rounded transition-all ${savedBoardType==='gov'?'bg-blue-100 text-blue-700 border-blue-400':'bg-white text-gray-400 border-gray-200'}">永續政府</button>
-                                <input type="text" id="input-num-${shortId}" maxlength="5" value="${savedBoardCode}" disabled class="w-16 px-1.5 py-0.5 text-xs font-mono border rounded text-center bg-gray-100">
-                                <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-6 h-6 bg-green-500 text-white rounded shadow-md flex items-center justify-center"><i class="fas fa-check text-xs"></i></button>
+                                
+                                <input type="text" id="input-num-${shortId}" maxlength="20" value="${savedBoardCode}" disabled oninput="window.updateDashboardUrl('${shortId}')" class="w-24 px-1.5 py-0.5 text-[11px] font-mono border rounded text-center transition-all focus:outline-none ${savedBoardCode ? 'bg-orange-50 text-orange-700 border-orange-300 shadow-sm font-black tracking-wide' : 'bg-gray-100 text-gray-400 border-gray-200 font-bold'}">
+                                
+                                <button id="btn-save-${shortId}" onclick="window.saveAdminPanel('${shortId}', '${safeEventName}')" class="hidden w-6 h-6 bg-green-500 text-white rounded shadow-md flex items-center justify-center hover:bg-green-600 transition-colors"><i class="fas fa-check text-xs"></i></button>
                              </div>
                              <div class="flex bg-white border border-gray-300 rounded-lg overflow-hidden mt-1">
                                 <input type="text" id="display-url-${shortId}" readonly class="w-full px-3 py-1.5 text-[10px] text-blue-600 font-mono truncate bg-transparent focus:outline-none" value="${initUrl}" placeholder="尚未建立儀表板">
@@ -595,6 +626,21 @@
                 } catch(e) {}
             }
             initFirebase();
+        });
+        
+        // ✨ 全局接收器：接住主系統回傳的看板 5 碼，並自動寫入 UI
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.action === 'PROVIDE_BOARD_CODE') {
+                const { cardId, code } = event.data;
+                const inputNum = document.getElementById(`input-num-${cardId}`);
+                if (inputNum) {
+                    inputNum.value = code;
+                    inputNum.classList.add('bg-orange-50', 'text-orange-700', 'border-orange-300', 'shadow-sm', 'font-black', 'tracking-wide');
+                    inputNum.classList.remove('bg-white', 'text-gray-400', 'border-gray-200', 'font-bold');
+                    window.updateDashboardUrl(cardId);
+                    window.showToast(`✅ 已成功帶入代碼：#${code}！請點擊綠色打勾按鈕儲存。`);
+                }
+            }
         });
     </script>
 </body>
