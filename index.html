@@ -3067,6 +3067,52 @@
                 }, 600); // 延遲以配合進站畫面動畫，營造流暢感
             }
 
+            // ✨ 跨視窗通訊接收端：監聽來自子網頁 (events_standalone.html) 的指令
+            window.addEventListener('message', (event) => {
+                // 🛡️ 基礎資安防護：確保指令來源為官方網域，杜絕跨站偽造請求 (CSRF/XSS)
+                if (event.origin !== window.location.origin && !event.origin.includes('farmcmd.github.io')) return;
+
+                // 指令 1：關閉活動彈窗 (保留相容性)
+                if (event.data && event.data.action === 'CLOSE_EVENTS_MODAL') {
+                    if (typeof window.closeEventsModal === 'function') window.closeEventsModal();
+                    else window.closeModal('events-modal');
+                }
+                
+                // ✨ 指令 2：一鍵帶入儀表板代碼 (智慧反查與下拉選單自動選擇)
+                if (event.data && event.data.action === 'FILL_DASHBOARD_CODE') {
+                    const isEnt = event.data.boardType === 'ent';
+                    const targetModalId = isEnt ? 'enterprise-modal' : 'gov-modal';
+                    const searchCode = (event.data.boardCode || '').toUpperCase();
+                    
+                    // 1. 打開對應的儀表板
+                    window.openModal(targetModalId);
+                    
+                    // 2. 延遲 400 毫秒等待 DOM 與資料渲染完成
+                    setTimeout(() => {
+                        let targetProjId = null;
+                        const selectEl = document.getElementById(isEnt ? 'ent-proj-select' : 'user-proj-select');
+                        
+                        // 代碼反查引擎：比對 cardCode 或 Firebase ID 尾碼
+                        if (isEnt) {
+                            const p = globalEntData.projects.find(x => x.cardCode === searchCode || x.id.toUpperCase().endsWith(searchCode));
+                            if (p) targetProjId = p.id;
+                        } else {
+                            const p = globalGovData.projects.find(x => x.cardCode === searchCode || x.id.toUpperCase().endsWith(searchCode));
+                            if (p) targetProjId = p.id;
+                        }
+
+                        // 自動賦值給下拉選單並觸發更新
+                        if (selectEl && targetProjId) {
+                            selectEl.value = targetProjId;
+                            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                            window.showToast(`✅ 已自動為您選定專案代碼：#${searchCode}`);
+                        } else {
+                            window.showToast(`⚠️ 找不到代碼為 #${searchCode} 的專案，請手動選擇`);
+                        }
+                    }, 400); 
+                }
+            });
+
             window.addEventListener('online', () => { if(isOfflineMode) { isOfflineMode = false; initFirebase(); window.showToast('網路已恢復，系統連線中...'); } });
             window.addEventListener('offline', () => { isOfflineMode = true; window.showToast('網路已斷開，切換至離線模式'); loadMockData(); });
         });
