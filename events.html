@@ -836,18 +836,18 @@
 
                 let avatarsSection = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-100 mt-2">${window.isRegSnapshotLoaded ? avatarsHtml : '<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>'}</div>`;
                 
-                // ✨ 核心升級：動態產生活動備註與外部說明的 HTML 區塊 (若無則自動隱藏)
+                // ✨ 核心修復：解除手機版 Flex 排版擠壓，改用自然換行 (break-words) 與保留斷行 (whitespace-pre-line)
                 const remarkHtml = (ev.remark && ev.remark.trim() !== '') 
-                    ? `<p class="mt-2.5 pt-2.5 border-t border-gray-100 text-blue-700 font-bold flex items-start"><i class="fas fa-info-circle mr-2 mt-1 opacity-80 text-blue-500 shrink-0"></i><span class="mr-1 shrink-0"><strong>活動備註:</strong></span><span class="leading-relaxed">${ev.remark}</span></p>` 
+                    ? `<div class="mt-2.5 pt-2.5 border-t border-gray-100 text-blue-700 leading-relaxed break-words whitespace-pre-line"><i class="fas fa-info-circle mr-1.5 opacity-80 text-blue-500"></i><strong class="mr-1">活動備註:</strong><span class="font-bold">${ev.remark}</span></div>` 
                     : '';
 
                 let regMethodExtraHtml = '';
                 if (ev.regMethod && ev.regMethod.trim() !== '') {
                     if (ev.regMethod.startsWith('http') || ev.regMethod.startsWith('www')) {
                         let url = ev.regMethod.startsWith('www') ? 'https://' + ev.regMethod : ev.regMethod;
-                        regMethodExtraHtml = `<p class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 font-bold flex items-start"><i class="fas fa-external-link-alt mr-2 mt-1 opacity-80 text-gray-500 shrink-0"></i><span class="mr-1 shrink-0"><strong>外部連結:</strong></span><a href="${url}" target="_blank" class="text-blue-600 hover:text-blue-800 underline break-all bg-blue-50 px-2 py-0.5 rounded shadow-sm">點擊前往查看或報名</a></p>`;
+                        regMethodExtraHtml = `<div class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 leading-relaxed break-words"><i class="fas fa-external-link-alt mr-1.5 opacity-80 text-gray-500"></i><strong class="mr-1">外部連結:</strong><a href="${url}" target="_blank" class="text-blue-600 font-bold hover:text-blue-800 underline break-all bg-blue-50 px-2 py-0.5 rounded shadow-sm inline-block mt-0.5">點擊前往查看或報名</a></div>`;
                     } else {
-                        regMethodExtraHtml = `<p class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 font-bold flex items-start"><i class="fas fa-bullhorn mr-2 mt-1 opacity-80 text-gray-500 shrink-0"></i><span class="mr-1 shrink-0"><strong>活動說明:</strong></span><span class="leading-relaxed break-words">${ev.regMethod}</span></p>`;
+                        regMethodExtraHtml = `<div class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 leading-relaxed break-words whitespace-pre-line"><i class="fas fa-bullhorn mr-1.5 opacity-80 text-gray-500"></i><strong class="mr-1">活動說明:</strong><span class="font-bold">${ev.regMethod}</span></div>`;
                     }
                 }
 
@@ -874,7 +874,7 @@
                         <div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm">
                             <i class="fas fa-flag-checkered mr-1.5"></i>活動已結束
                         </div>
-                        <h4 class="text-xl font-bold text-gray-600 mb-3 pr-20">${ev.name}</h4>
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-600 mb-3 pr-20 leading-snug break-words">${ev.name}</h4>
                         <div class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded text-xs font-bold border border-gray-200 mb-4">
                             <i class="fas fa-clock mr-1.5"></i> ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-60">#${shortId}</span>
                         </div>
@@ -957,7 +957,7 @@
 
                     return `<div data-event-id="${shortId}" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-md relative overflow-hidden mb-6 hover:shadow-xl transition-all duration-300">
                         <button onclick="window.shareSpecificEvent('${shortId}', '${safeEventName}')" class="absolute top-4 right-4 z-20 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>
-                        <h4 class="text-2xl font-black text-gray-800 mb-3 tracking-wide pr-28">${ev.name}</h4>
+                        <h4 class="text-xl sm:text-2xl font-black text-gray-800 mb-3 tracking-wide pr-24 sm:pr-28 leading-snug break-words">${ev.name}</h4>
                         <div class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-bold border border-yellow-300 mb-4 shadow-sm">
                             <i class="fas fa-clock mr-2"></i> ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-40">#${shortId}</span>
                         </div>
