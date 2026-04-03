@@ -280,7 +280,8 @@
     <!-- 系統核心腳本 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        // ✨ 核心修復：在下方的清單最後，補上 getCountFromServer 這個聚合查詢神器！
+        import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc, setDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // ==========================================
@@ -757,13 +758,91 @@
             window.openModal('qrcode-modal');
         };
 
-        window.toggleRegList = function(eventName) {
-            if (window.hiddenRegEvents.has(eventName)) { window.hiddenRegEvents.delete(eventName); } 
-            else { window.hiddenRegEvents.add(eventName); }
-            window.renderEventsListUI();
+        // ✨ 核心升級 1：實作按需載入 (Lazy Loading) 的查詢名單引擎
+        window.fetchRegistrations = async function(encodedEventName, shortId) {
+            const eventName = decodeURIComponent(encodedEventName);
+            const btn = document.getElementById(`query-btn-${shortId}`);
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>載入中...'; }
+
+            try {
+                // 如果本地沒有暫存，才向伺服器發起精準查詢 (節省讀取次數)
+                if (!window.globalEventRegistrations[eventName]) {
+                    const q = query(collection(db, 'event_registrations'), where('eventName', '==', eventName));
+                    const snap = await getDocs(q);
+                    let rawRegs = [];
+                    snap.forEach(doc => rawRegs.push(doc.data()));
+                    window.globalEventRegistrations[eventName] = rawRegs;
+                }
+
+                let rawRegs = window.globalEventRegistrations[eventName] || [];
+                
+                // 排序與去重邏輯
+                rawRegs.sort((a, b) => {
+                    const timeA = a.timestamp ? (typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : (a.timestamp.seconds * 1000)) : Date.now();
+                    const timeB = b.timestamp ? (typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : (b.timestamp.seconds * 1000)) : Date.now();
+                    return timeB - timeA; 
+                });
+                
+                let uniqueRegsMap = new Map();
+                rawRegs.forEach(r => {
+                    const uniqueKey = r.socialId || r.userId;
+                    if (uniqueKey && !uniqueRegsMap.has(uniqueKey)) { uniqueRegsMap.set(uniqueKey, r); } 
+                    else if (!uniqueKey) { uniqueRegsMap.set(Math.random().toString(), r); }
+                });
+                const uniqueRegs = Array.from(uniqueRegsMap.values());
+                
+                let avatarsHtml = '';
+                if (uniqueRegs.length > 0) {
+                    avatarsHtml = uniqueRegs.map(r => {
+                        const borderColor = r.platform === 'LINE' ? 'border-[#06C755]' : (r.platform === 'Facebook' ? 'border-[#1877F2]' : 'border-gray-300');
+                        let displayId = '無代碼';
+                        if (r.userId && r.userId !== 'anonymous' && r.userId !== 'anonymous_visitor') { displayId = r.userId; }
+                        else if (r.socialId) { displayId = r.socialId.substring(0, 5) + '***'; }
+
+                        let timeStr = '剛剛';
+                        if (r.timestamp) {
+                            try {
+                                const ms = typeof r.timestamp.toMillis === 'function' ? r.timestamp.toMillis() : (r.timestamp.seconds * 1000);
+                                const dateObj = new Date(ms);
+                                if (!isNaN(dateObj)) {
+                                    const m = String(dateObj.getMonth() + 1).padStart(2, '0'), d = String(dateObj.getDate()).padStart(2, '0'), h = String(dateObj.getHours()).padStart(2, '0'), min = String(dateObj.getMinutes()).padStart(2, '0');
+                                    timeStr = `${m}/${d} ${h}:${min}`;
+                                }
+                            } catch(e) {}
+                        }
+
+                        let customTag = '', nameStyle = 'text-gray-800', avatarStyle = '';
+                        if (r.status && r.status.trim() !== '') {
+                            const st = r.status.trim();
+                            let bgC = 'bg-blue-50', textC = 'text-blue-600', borderC = 'border-blue-100', dotC = 'bg-blue-500';
+                            if (st.includes('取消') || st.includes('放棄')) { bgC = 'bg-red-50'; textC = 'text-red-600'; borderC = 'border-red-100'; dotC = 'bg-red-500'; nameStyle = 'text-gray-500'; avatarStyle = 'opacity-80'; }
+                            else if (st.includes('繳費') || st.includes('確認') || st.includes('完成') || st.includes('成功')) { bgC = 'bg-green-50'; textC = 'text-green-700'; borderC = 'border-green-200'; dotC = 'bg-green-500'; }
+                            else if (st.includes('候補') || st.includes('等待')) { bgC = 'bg-amber-50'; textC = 'text-amber-700'; borderC = 'border-amber-200'; dotC = 'bg-amber-500'; }
+                            customTag = `<span class="flex items-center text-[10px] ${bgC} ${textC} font-bold px-1.5 py-0.5 rounded border ${borderC} shadow-sm whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full ${dotC} mr-1 animate-pulse"></span>${st}</span>`;
+                        }
+
+                        return `<div class="flex items-center shrink-0 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm gap-3 hover:border-yellow-300 transition-all duration-300 group"><img src="${r.socialPicture || 'https://via.placeholder.com/150'}" class="w-10 h-10 rounded-full border-2 ${borderColor} shadow-sm object-cover flex-shrink-0 ${avatarStyle}"><div class="flex flex-col items-start min-w-[120px]"><div class="flex items-center gap-2 mb-1"><span class="text-[13px] ${nameStyle} font-bold tracking-wide">${r.socialName || '匿名'}</span><span class="bg-yellow-100 text-yellow-800 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border border-yellow-200 whitespace-nowrap">${timeStr}</span></div><div class="flex items-center gap-1.5"><span class="text-[10px] text-gray-500 font-mono tracking-tighter bg-gray-50 border border-gray-200 px-1.5 py-px rounded w-fit shadow-sm">${displayId}</span>${customTag}</div></div></div>`;
+                    }).join('');
+                } else {
+                    avatarsHtml = '<div class="w-full py-4 text-center text-gray-400 font-bold text-xs"><i class="fas fa-user-slash mr-2"></i>目前尚未有人報名</div>';
+                }
+
+                // 更新畫面的 DOM 元素
+                const countBox = document.getElementById(`reg-count-box-${shortId}`);
+                if (countBox) countBox.innerHTML = `<p class="text-[14px] font-bold text-gray-700 flex items-center m-0 tracking-wide"><i class="fas fa-users text-yellow-500 mr-2 text-lg"></i>目前報名：<span class="text-yellow-600 mx-1 text-lg font-black">${uniqueRegs.length}</span> 人</p>`;
+
+                const avatarsBox = document.getElementById(`reg-avatars-box-${shortId}`);
+                if (avatarsBox) avatarsBox.innerHTML = `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-100 mt-2">${avatarsHtml}</div>`;
+
+                // 隱藏查詢按鈕
+                if (btn) btn.classList.add('hidden');
+
+            } catch (e) {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search mr-1.5"></i>重試查詢'; }
+                window.showToast('🚨 查詢失敗: ' + e.message);
+            }
         };
 
-        // ✨ 修復：重構語法樹，確保單一且乾淨的 if(isExpired) 判斷，消除重複區塊
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList.length) return;
@@ -981,15 +1060,20 @@
                     }
                     let groupActionHtml = `<div class="flex items-center gap-2 w-full sm:w-auto justify-end">${joinBtn}${adminLockBtn}</div>`;
 
+                    // ✨ 核心升級 2：大頭貼區塊改為「按需載入容器」與「查詢按鈕」
                     const regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-100 bg-gray-50/80 -mx-6 px-6 shadow-inner pb-2 transition-all duration-300">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">
-                            ${countHtml}
-                            ${groupActionHtml}
+                            <div id="reg-count-box-${shortId}">
+                                <p class="text-[14px] font-bold text-gray-500 flex items-center m-0 tracking-wide"><i class="fas fa-users text-gray-400 mr-2 text-lg"></i>報名人數：<span id="live-count-${shortId}"><i class="fas fa-spinner fa-spin text-gray-400 text-xs ml-1.5"></i></span></p>
+                            </div>
+                            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <button id="query-btn-${shortId}" onclick="window.fetchRegistrations('${safeEventName}', '${shortId}')" class="px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center bg-white text-blue-600 border border-blue-300 hover:bg-blue-50 transition-colors w-full sm:w-auto shrink-0"><i class="fas fa-search mr-1.5"></i>查詢名單</button>
+                                ${groupActionHtml}
+                            </div>
                         </div>
-                        ${avatarsSection}
+                        <div id="reg-avatars-box-${shortId}"></div>
                     </div>`;
                     
-                    // ✨ 底部按鈕區塊解耦：不論是否開放報名，都各自顯示專屬狀態
                     let bottomRegStatusHtml = '';
                     if (isRegOpen) {
                         bottomRegStatusHtml = `<div class="bg-yellow-50 text-yellow-700 px-4 py-2 rounded-xl border border-yellow-200 font-bold shadow-sm text-[12px] flex items-center w-full sm:w-fit"><i class="fas fa-bolt mr-1.5 animate-pulse text-yellow-500 text-sm"></i>系統開放 LINE 一鍵快速報名中</div>`;
@@ -999,7 +1083,8 @@
 
                     let quickRegBtnHtml = '';
                     if (isRegOpen) {
-                        quickRegBtnHtml = `<button onclick="window.openRegistrationModal('${safeEventName}')" class="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-xl"></i>LINE+1 快速報名</button>`;
+                        // ✨ 傳入 shortId 以便報名成功後自動重新整理名單
+                        quickRegBtnHtml = `<button onclick="window.openRegistrationModal('${safeEventName}', '${shortId}')" class="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-[#06C755] to-[#05B34C] text-white rounded-xl hover:shadow-lg transition-all text-[15px] font-black shadow-md flex items-center justify-center border-b-4 border-[#048F3A]"><i class="fab fa-line mr-2 text-xl"></i>LINE+1 快速報名</button>`;
                     } else {
                         quickRegBtnHtml = `<button disabled class="shrink-0 w-full sm:w-auto px-6 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 rounded-xl cursor-not-allowed text-sm font-bold shadow-sm flex items-center justify-center"><i class="fas fa-lock mr-1.5 opacity-50"></i>報名已鎖定</button>`;
                     }
@@ -1035,7 +1120,27 @@
                 }
             }).join('');
 
-            // ✨ 核心修復：升級為「智慧輪詢 (Polling) 定位引擎」
+            // ✨ 核心升級 3：動態撈取各卡片報名人數 (聚合查詢，每張卡片僅消耗 1 次讀取)
+            processedEvents.forEach((ev, index) => {
+                const dateStr = (ev.date || '00000000').replace(/[\/\-\.]/g, '');
+                const shortId = `${dateStr}-${index + 1}`;
+                
+                if (db) {
+                    const q = query(collection(db, 'event_registrations'), where('eventName', '==', ev.name));
+                    getCountFromServer(q).then(snapshot => {
+                        const count = snapshot.data().count;
+                        const countEl = document.getElementById(`live-count-${shortId}`);
+                        if (countEl) {
+                            countEl.innerHTML = `<span class="text-gray-700 mx-1 text-base font-black">${count}</span> 人`;
+                        }
+                    }).catch(e => {
+                        const countEl = document.getElementById(`live-count-${shortId}`);
+                        if (countEl) countEl.innerHTML = `<span class="text-red-400 text-xs ml-1">失敗</span>`;
+                    });
+                }
+            });
+
+            // 防呆深層連結跳轉
             if (!window.hasHandledDeepLink) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const eventIdParam = urlParams.get('id');
@@ -1076,15 +1181,8 @@
                 db = getFirestore(app);
                 if (db) {
                     onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => { window.currentEventsList = docSnap.exists() ? (docSnap.data().events || []) : []; window.renderEventsListUI(); });
-                    onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
-                        window.isRegSnapshotLoaded = true;
-                        window.globalEventRegistrations = {};
-                        snapshot.forEach(doc => {
-                            const data = doc.data();
-                            if(data.eventName) { if(!window.globalEventRegistrations[data.eventName]) window.globalEventRegistrations[data.eventName] = []; window.globalEventRegistrations[data.eventName].push(data); }
-                        });
-                        window.renderEventsListUI();
-                    });
+                    
+                    // ✨ 核心升級 3：移除 event_registrations 的全域耗能監聽器，改為點擊時才單次抓取
                 }
                 try { auth = getAuth(app); signInAnonymously(auth).catch(() => console.warn('Auth受限，資料仍可公開讀取')); } catch(e) {}
             } catch (e) { console.error("Firebase init error:", e); }
@@ -1104,20 +1202,32 @@
             if (!currentSocialData) return;
             const originalHtml = e.currentTarget.innerHTML;
             e.currentTarget.disabled = true; e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
+            
+            // 防呆確認 (若本地有快取)
             const regs = window.globalEventRegistrations[window.currentRegEvent] || [];
             if (regs.some(r => r.socialId === currentSocialData.id)) { window.showToast('⚠️ 您已經報名過囉！'); e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml; return; }
+            
             try {
                 const regData = { eventName: window.currentRegEvent, platform: currentSocialData.platform, socialId: currentSocialData.id, socialName: currentSocialData.name, socialPicture: currentSocialData.picture, userId: state.playerCode || 'anonymous', timestamp: serverTimestamp() };
                 await addDoc(collection(db, 'event_registrations'), regData);
                 window.showToast('✅ 報名成功！大頭貼已即時上榜。');
                 window.closeModal('event-registration-modal');
+                
+                // ✨ 體驗優化：報名成功後，強制清除該活動的舊快取，並自動呼叫查詢，讓旅客立刻看到自己的大頭貼！
+                delete window.globalEventRegistrations[window.currentRegEvent];
+                if (window.currentRegShortId) {
+                    window.fetchRegistrations(encodeURIComponent(window.currentRegEvent), window.currentRegShortId);
+                }
+                
             } catch (err) { window.showToast(`🚨 報名失敗: ${err.message}`); } finally { e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml; }
         });
 
         let currentSocialData = null; 
-        window.openRegistrationModal = async function(encodedEventName) {
+        window.openRegistrationModal = async function(encodedEventName, shortId) {
             const eventName = decodeURIComponent(encodedEventName);
             window.currentRegEvent = eventName;
+            window.currentRegShortId = shortId; // 記錄 ID，以便報名後自動刷新名單
+            
             const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = eventName;
             document.getElementById('social-auth-step').classList.remove('hidden');
             document.getElementById('social-preview-step').classList.add('hidden');
