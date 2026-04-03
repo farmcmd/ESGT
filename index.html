@@ -3069,6 +3069,53 @@
                 }, 600); // 延遲以配合進站畫面動畫，營造流暢感
             }
 
+            // ========================================================
+            // 🚀 核心升級：LINE LIFF 路由器與子網頁 (events.html) 狀態同步
+            // ========================================================
+            const urlObj = new URL(window.location);
+            let urlParams = new URLSearchParams(urlObj.search);
+
+            // 1. 攔截並解析 LINE 帶回來的 liff.state 包裹
+            const liffState = urlParams.get('liff.state');
+            if (liffState) {
+                // 將隱藏的參數提取出來
+                const stateStr = liffState.startsWith('?') ? liffState.substring(1) : liffState;
+                const stateParams = new URLSearchParams(stateStr);
+                
+                for (const [key, value] of stateParams.entries()) {
+                    urlParams.set(key, value);
+                    urlObj.searchParams.set(key, value); // 同步更新網址列參數
+                }
+                
+                // 刪除醜陋的 liff 原生參數，保持網址乾淨
+                urlObj.searchParams.delete('liff.state');
+                urlObj.searchParams.delete('liff.referrer');
+                window.history.replaceState({}, '', urlObj);
+            }
+
+            // 2. 深度連結路由器 (確保偵測到 event, id, 或 line_reg 時傳遞參數並打開活動彈窗)
+            if (urlParams.has('event') || urlParams.has('id') || urlParams.has('line_reg')) {
+                const iframe = document.getElementById('events-iframe');
+                if (iframe) {
+                    const baseSrc = iframe.src.split('?')[0];
+                    iframe.src = `${baseSrc}?${urlParams.toString()}`;
+                }
+                // 延遲打開彈窗，確保 iframe 有時間接收參數載入
+                setTimeout(() => {
+                    if (typeof window.openModal === 'function') window.openModal('events-modal');
+                }, 600);
+            }
+
+            // 3. 監聽子網頁 (events.html) 傳來的安全廣播，用於關閉彈窗
+            window.addEventListener('message', (event) => {
+                // 基礎資安防護：確保訊息來源為自身網域，防止跨站腳本攻擊
+                if (event.origin !== window.location.origin && !event.origin.includes('farmcmd.github.io')) return;
+                
+                if (event.data && event.data.action === 'CLOSE_EVENTS_MODAL') {
+                    if (typeof window.closeModal === 'function') window.closeModal('events-modal');
+                }
+            });
+
             window.addEventListener('online', () => { if(isOfflineMode) { isOfflineMode = false; initFirebase(); window.showToast('網路已恢復，系統連線中...'); } });
             window.addEventListener('offline', () => { isOfflineMode = true; window.showToast('網路已斷開，切換至離線模式'); loadMockData(); });
         });
