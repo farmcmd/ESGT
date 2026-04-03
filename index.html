@@ -3022,20 +3022,51 @@
             initFirebase();
             loadGoogleMaps();
             
-            // 👇 新增：深度連結 (Deep Linking) 路由偵測引擎
-            // 只要網址中包含 esg-board (例如: https://.../ESGT/#ESG-board)，即自動開啟視窗
+            // 👇 新增與升級：深度連結 (Deep Linking) 路由偵測引擎與精準定位
+            // 只要網址中包含 esg-board 或 okr-board，即自動開啟視窗並嘗試定位卡片
             const currentUrl = window.location.href.toLowerCase();
-            if (currentUrl.includes('esg-board')) {
+            const currentHash = window.location.hash; // 取得 # 後面的完整值 (例: #ESG-board-USI88)
+
+            if (currentUrl.includes('esg-board') || currentUrl.includes('okr-board')) {
+                const isESG = currentUrl.includes('esg-board');
+                const modalId = isESG ? 'enterprise-modal' : 'gov-modal';
+                const msg = isESG ? '🔗 已為您開啟企業儀表板' : '🔗 已為您開啟政府計畫儀表板';
+                
+                // 嘗試解析 5 碼 (從 #ESG-board-12345 拆解出 12345)
+                let targetCode = null;
+                if (currentHash) {
+                    const parts = currentHash.split('-');
+                    if (parts.length >= 3) targetCode = parts[2].toUpperCase();
+                }
+
                 setTimeout(() => {
-                    window.openModal('enterprise-modal');
-                    window.showToast('🔗 已透過專屬連結為您開啟企業儀表板');
-                }, 600); // 延遲 0.6 秒以配合進站動畫，營造流暢感
-            } else if (currentUrl.includes('okr-board')) {
-                // 👇 新增：針對政府計畫儀表板的專屬路由偵測
-                setTimeout(() => {
-                    window.openModal('gov-modal');
-                    window.showToast('🔗 已透過專屬連結為您開啟政府計畫儀表板');
-                }, 600);
+                    window.openModal(modalId);
+                    window.showToast(msg);
+
+                    // 如果網址有指定 5 碼，執行精準定位與高亮動畫
+                    if (targetCode) {
+                        setTimeout(() => {
+                            const targetCardId = isESG ? `ent-card-${targetCode}` : `gov-card-${targetCode}`;
+                            const targetEl = document.getElementById(targetCardId);
+                            
+                            if (targetEl) {
+                                // 1. 平滑滾動到該卡片 (置中顯示)
+                                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                
+                                // 2. 加上黃色光暈與微放大動畫，強烈吸引使用者視線
+                                const cardInner = targetEl.firstElementChild;
+                                if (cardInner) {
+                                    cardInner.classList.add('ring-4', 'ring-yellow-400', 'shadow-2xl', 'scale-[1.02]');
+                                    
+                                    // 3 秒後自動解除光暈
+                                    setTimeout(() => {
+                                        cardInner.classList.remove('ring-4', 'ring-yellow-400', 'shadow-2xl', 'scale-[1.02]');
+                                    }, 3000);
+                                }
+                            }
+                        }, 800); // 確保 Modal 打開且 Firebase 卡片渲染完成後再執行滾動
+                    }
+                }, 600); // 延遲以配合進站畫面動畫，營造流暢感
             }
 
             window.addEventListener('online', () => { if(isOfflineMode) { isOfflineMode = false; initFirebase(); window.showToast('網路已恢復，系統連線中...'); } });
