@@ -406,12 +406,13 @@
                 if (!entActive && !govActive) {
                     btnImport.setAttribute('data-code', '');
                     btnImport.innerHTML = '<i class="fas fa-search-plus animate-pulse mr-1"></i>導入卡片編號';
-                    btnImport.className = "w-auto px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide";
+                    btnImport.className = "px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide w-auto";
                 }
             }
             window.updateDashboardUrl(cardId);
         };
 
+        // ✨ 置換完成：已拔除嚴格濾網，無條件顯示所有已截止卡片的引擎
         window.openBoardSelector = async function(cardId) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
@@ -437,6 +438,7 @@
                     ['esg_reports', 'esg_evaluations', 'esg_dashboards', 'esg_boards', 'esg_projects', 'esg_records', 'esg_data', 'corporate_esg', 'ESG', 'esg'] : 
                     ['okr_reports', 'okr_evaluations', 'okr_dashboards', 'okr_boards', 'okr_projects', 'okr_records', 'okr_data', 'gov_okr', 'OKR', 'okr'];
                 
+                // 1. 掃描實體儀表板集合
                 for (const colName of colNames) {
                     try {
                         const snap = await getDocs(collection(db, colName));
@@ -472,6 +474,7 @@
                     } catch(e) {}
                 }
                 
+                // 2. 掃描陣列型集合備援
                 try {
                     const docName = boardType === 'ent' ? 'esg_projects' : 'okr_projects';
                     const snap = await getDoc(doc(db, 'system_messages', docName));
@@ -504,21 +507,58 @@
                         });
                     }
                 } catch(e) {}
-                
-                try {
-                    const snap = await getDoc(doc(db, 'system_messages', 'event_schedule'));
-                    if (snap.exists() && snap.data().events) {
-                        const events = snap.data().events;
-                        events.forEach(ev => {
-                            if (ev.boardType === boardType && ev.boardCode && !uniqueCodes.has(ev.boardCode)) {
-                                uniqueCodes.add(ev.boardCode);
-                                boards.push({ id: ev.boardCode, code: ev.boardCode, name: `活動：${ev.name}`, status: '', source: '📍 已綁定活動' });
-                            }
-                        });
-                    }
-                } catch(e) {}
             }
 
+            // 3. ✨ 終極升級：動態代碼映射 (拔除 boardType 濾網，無條件列出所有已過期的活動卡片)
+            const today = new Date(); today.setHours(0,0,0,0);
+            const processedForIds = [...window.currentEventsList].map(ev => { 
+                let isExpired = false; 
+                if(ev.date) { 
+                    const dateMatch = ev.date.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
+                    if (dateMatch) {
+                        const evDate = new Date(dateMatch[0].replace(/[\-\.]/g, '/')); 
+                        if(!isNaN(evDate) && evDate < today) isExpired = true; 
+                    } else {
+                        const fallbackDate = new Date(ev.date.replace(/[\-\.]/g, '/')); 
+                        if(!isNaN(fallbackDate) && fallbackDate < today) isExpired = true; 
+                    }
+                } 
+                if(ev.deadline) {
+                    const dlMatch = ev.deadline.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
+                    if (dlMatch) {
+                        const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
+                        dlDate.setDate(dlDate.getDate() + 1); 
+                        if (!isNaN(dlDate) && today >= dlDate) isExpired = true; 
+                    }
+                }
+                return { ...ev, isExpired }; 
+            }).sort((a,b) => (a.isExpired === b.isExpired ? 0 : (a.isExpired ? 1 : -1)));
+
+            processedForIds.forEach((ev, index) => {
+                // 🔥 無條件檢查：只要卡片已過期/截止，就加入候選清單
+                if (ev.isExpired) {
+                    const dateStr = (ev.date || '00000000').replace(/[\/\-\.]/g, '');
+                    const shortId = `${dateStr}-${index + 1}`;
+                    
+                    // 如果這張卡片已經被手動存過代碼，就顯示手動的，否則顯示系統幫它算好的短代碼
+                    const codeToUse = ev.boardCode || shortId;
+                    
+                    if (!uniqueCodes.has(codeToUse)) {
+                        uniqueCodes.add(codeToUse);
+                        
+                        let statusHtml = ' <span class="text-red-500 font-black text-[10px] bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shrink-0 whitespace-nowrap">(已截止歸戶)</span>';
+                        
+                        // 狀態標記：清楚告訴管理員這張卡片目前的綁定狀況
+                        let sourceLabel = '📌 待綁定卡片';
+                        if (ev.boardType === 'ent') sourceLabel = '📍 已綁定 (企業)';
+                        else if (ev.boardType === 'gov') sourceLabel = '📍 已綁定 (政府)';
+
+                        boards.push({ id: codeToUse, code: codeToUse, name: `活動：${ev.name}`, status: statusHtml, source: sourceLabel });
+                    }
+                }
+            });
+
+            // 4. 渲染畫面
             if (boards.length > 0) {
                 container.innerHTML = boards.map(b => `
                     <label class="flex items-center gap-3 p-3 border-2 border-gray-100 rounded-xl hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-all shadow-sm group bg-white">
