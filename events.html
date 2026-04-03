@@ -152,9 +152,16 @@
                     <span class="text-[11px] font-bold text-gray-400 whitespace-nowrap pl-2"><i class="fas fa-keyboard mr-1"></i>或手動輸入:</span>
                     <input type="text" id="manual-board-code" class="w-full bg-transparent border-none px-2 py-1 font-mono text-[13px] font-black text-gray-700 focus:outline-none uppercase placeholder-gray-300" placeholder="輸入 5 碼代碼">
                 </div>
-                <button id="confirm-board-selection-btn" class="w-full py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-md transition-all transform hover:-translate-y-0.5 text-[15px] flex justify-center items-center">
-                    <i class="fas fa-check-circle mr-2 text-lg"></i> 確認勾選並導入
-                </button>
+                
+                <!-- ✨ 升級：新增「清除」按鈕，與確認按鈕並列 -->
+                <div class="flex gap-2">
+                    <button id="clear-board-selection-btn" class="w-1/3 py-3.5 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 border border-gray-200 hover:border-red-200 rounded-xl font-bold shadow-sm transition-all text-[14px] flex justify-center items-center group">
+                        <i class="fas fa-eraser mr-1.5 group-hover:animate-bounce"></i> 清除
+                    </button>
+                    <button id="confirm-board-selection-btn" class="w-2/3 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-md transition-all transform hover:-translate-y-0.5 text-[15px] flex justify-center items-center">
+                        <i class="fas fa-check-circle mr-2 text-lg"></i> 確認並導入
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -357,7 +364,7 @@
                         btnImport.disabled = false; 
                         if (!btnImport.getAttribute('data-code')) {
                             btnImport.innerHTML = '<i class="fas fa-search-plus animate-pulse mr-1"></i>導入卡片編號'; 
-                            btnImport.className = "px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide w-auto";
+                            btnImport.className = "w-auto px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide";
                         } else {
                             btnImport.classList.remove('cursor-not-allowed');
                             btnImport.classList.add('cursor-pointer', 'hover:bg-orange-100');
@@ -399,7 +406,7 @@
                 if (!entActive && !govActive) {
                     btnImport.setAttribute('data-code', '');
                     btnImport.innerHTML = '<i class="fas fa-search-plus animate-pulse mr-1"></i>導入卡片編號';
-                    btnImport.className = "px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide w-auto";
+                    btnImport.className = "w-auto px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide";
                 }
             }
             window.updateDashboardUrl(cardId);
@@ -439,15 +446,64 @@
                                 const code = data.code || data.id || data.projectId || doc.id.substring(0, 5).toUpperCase();
                                 const name = data.name || data.title || data.companyName || data.projectName || '未命名看板卡片';
                                 
+                                let statusHtml = '';
+                                const today = new Date();
+                                today.setHours(0,0,0,0);
+                                if (data.deadline || data.endDate) {
+                                    const dlStr = data.deadline || data.endDate;
+                                    const dlMatch = dlStr.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
+                                    if (dlMatch) {
+                                        const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
+                                        dlDate.setDate(dlDate.getDate() + 1); 
+                                        if (!isNaN(dlDate) && today >= dlDate) {
+                                            statusHtml = ' <span class="text-red-500 font-black text-[10px] bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shrink-0 whitespace-nowrap">(已截止歸戶)</span>';
+                                        } else {
+                                            statusHtml = ' <span class="text-emerald-500 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">(收集中)</span>';
+                                        }
+                                    }
+                                }
+
                                 if (!uniqueCodes.has(code)) {
                                     uniqueCodes.add(code);
-                                    boards.push({ id: doc.id, code: code, name: name, source: '🌟 雲端看板' });
+                                    boards.push({ id: doc.id, code: code, name: name, status: statusHtml, source: '🌟 雲端看板' });
                                 }
                             });
-                            break; 
                         }
                     } catch(e) {}
                 }
+                
+                try {
+                    const docName = boardType === 'ent' ? 'esg_projects' : 'okr_projects';
+                    const snap = await getDoc(doc(db, 'system_messages', docName));
+                    if (snap.exists() && snap.data().projects) {
+                        snap.data().projects.forEach(p => {
+                            const code = p.code || p.id || p.projectId;
+                            const name = p.name || p.title || p.companyName || p.projectName || '未命名專案';
+                            
+                            let statusHtml = '';
+                            const today = new Date();
+                            today.setHours(0,0,0,0);
+                            if (p.deadline || p.endDate) {
+                                const dlStr = p.deadline || p.endDate;
+                                const dlMatch = dlStr.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
+                                if (dlMatch) {
+                                    const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
+                                    dlDate.setDate(dlDate.getDate() + 1); 
+                                    if (!isNaN(dlDate) && today >= dlDate) {
+                                        statusHtml = ' <span class="text-red-500 font-black text-[10px] bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shrink-0 whitespace-nowrap">(已截止歸戶)</span>';
+                                    } else {
+                                        statusHtml = ' <span class="text-emerald-500 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">(收集中)</span>';
+                                    }
+                                }
+                            }
+
+                            if (code && !uniqueCodes.has(code)) {
+                                uniqueCodes.add(code);
+                                boards.push({ id: code, code: code, name: name, status: statusHtml, source: '📁 專案庫' });
+                            }
+                        });
+                    }
+                } catch(e) {}
                 
                 try {
                     const snap = await getDoc(doc(db, 'system_messages', 'event_schedule'));
@@ -456,7 +512,7 @@
                         events.forEach(ev => {
                             if (ev.boardType === boardType && ev.boardCode && !uniqueCodes.has(ev.boardCode)) {
                                 uniqueCodes.add(ev.boardCode);
-                                boards.push({ id: ev.boardCode, code: ev.boardCode, name: `活動：${ev.name}`, source: '📍 已綁定活動' });
+                                boards.push({ id: ev.boardCode, code: ev.boardCode, name: `活動：${ev.name}`, status: '', source: '📍 已綁定活動' });
                             }
                         });
                     }
@@ -470,8 +526,8 @@
                             <input type="radio" name="board_selection" value="${b.code}" class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
                         </div>
                         <div class="flex-grow overflow-hidden">
-                            <h4 class="font-bold text-gray-800 text-[14px] truncate group-hover:text-blue-700 transition-colors">${b.name}</h4>
-                            <div class="mt-1 flex items-center text-[10px] text-gray-500 font-mono gap-2">
+                            <h4 class="font-bold text-gray-800 text-[14px] group-hover:text-blue-700 transition-colors flex items-center flex-wrap gap-1 leading-snug">${b.name} ${b.status}</h4>
+                            <div class="mt-1.5 flex items-center text-[10px] text-gray-500 font-mono gap-2">
                                 <span class="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">#${b.code}</span>
                                 <span class="text-gray-400 opacity-80">${b.source}</span>
                             </div>
@@ -489,6 +545,7 @@
             }
         };
 
+        // 確認勾選按鈕
         document.getElementById('confirm-board-selection-btn')?.addEventListener('click', () => {
             if (!window.pendingImportCardId) return;
             
@@ -514,6 +571,26 @@
                 btnImport.className = "w-auto px-3 py-1.5 text-[11px] font-mono border-2 rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-orange-50 text-orange-700 border-orange-400 shadow-md font-black tracking-wide cursor-pointer hover:bg-orange-100";
                 window.updateDashboardUrl(cardId);
                 window.showToast(`✅ 成功導入看板代碼：#${finalCode}！請記得點擊綠色打勾按鈕儲存。`);
+            }
+            
+            window.closeModal('board-selector-modal');
+            window.pendingImportCardId = null;
+        });
+
+        // ✨ 新增：清除看板代碼的功能按鈕
+        document.getElementById('clear-board-selection-btn')?.addEventListener('click', () => {
+            if (!window.pendingImportCardId) return;
+            
+            const cardId = window.pendingImportCardId;
+            const btnImport = document.getElementById(`btn-import-${cardId}`);
+            
+            if (btnImport) {
+                // 將按鈕恢復為初始的「點擊導入」狀態
+                btnImport.setAttribute('data-code', '');
+                btnImport.innerHTML = '<i class="fas fa-search-plus mr-1"></i>導入卡片編號';
+                btnImport.className = "w-auto px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide";
+                window.updateDashboardUrl(cardId);
+                window.showToast('🧹 已清除看板代碼！請記得點擊綠色打勾按鈕儲存。');
             }
             
             window.closeModal('board-selector-modal');
@@ -584,7 +661,6 @@
             window.renderEventsListUI();
         };
 
-        // ✨ 修復：重構語法樹，確保單一且乾淨的 if(isExpired) 判斷，消除重複區塊
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
             if (!window.currentEventsList.length) return;
@@ -592,23 +668,34 @@
             
             const processedEvents = [...window.currentEventsList].map(ev => { 
                 let isExpired = false; 
+                
                 if(ev.date) { 
-                    const dateMatch = ev.date.match(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/);
+                    const dateMatch = ev.date.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
                     if (dateMatch) {
-                        const evDate = new Date(dateMatch[0].replace(/-/g, '/')); 
+                        const evDate = new Date(dateMatch[0].replace(/[\-\.]/g, '/')); 
                         if(!isNaN(evDate) && evDate < today) isExpired = true; 
                     } else {
-                        const fallbackDate = new Date(ev.date.replace(/-/g, '/')); 
+                        const fallbackDate = new Date(ev.date.replace(/[\-\.]/g, '/')); 
                         if(!isNaN(fallbackDate) && fallbackDate < today) isExpired = true; 
                     }
                 } 
+                
+                if(ev.deadline) {
+                    const dlMatch = ev.deadline.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
+                    if (dlMatch) {
+                        const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
+                        dlDate.setDate(dlDate.getDate() + 1); 
+                        if (!isNaN(dlDate) && today >= dlDate) isExpired = true; 
+                    }
+                }
+
                 return { ...ev, isExpired }; 
             }).sort((a,b) => (a.isExpired === b.isExpired ? 0 : (a.isExpired ? 1 : -1)));
 
             container.innerHTML = processedEvents.map((ev, index) => {
                 const isExpired = ev.isExpired;
                 const safeEventName = encodeURIComponent(ev.name).replace(/'/g, "%27");
-                const dateStr = (ev.date || '00000000').replace(/[\/\-]/g, '');
+                const dateStr = (ev.date || '00000000').replace(/[\/\-\.]/g, '');
                 const shortId = `${dateStr}-${index + 1}`;
                 const regs = window.globalEventRegistrations[ev.name] || [];
                 const isExpanded = !window.hiddenRegEvents.has(ev.name);
@@ -616,7 +703,7 @@
                 let calendarUrl = '#';
                 if(ev.date && !isExpired) {
                     try {
-                        const evDate = new Date(ev.date.replace(/-/g, '/'));
+                        const evDate = new Date(ev.date.replace(/[\-\.]/g, '/'));
                         if(!isNaN(evDate)) {
                             const y1 = evDate.getFullYear(), m1 = String(evDate.getMonth()+1).padStart(2,'0'), d1 = String(evDate.getDate()).padStart(2,'0');
                             const nextDate = new Date(evDate); nextDate.setDate(nextDate.getDate() + 1);
@@ -646,7 +733,6 @@
                 });
                 const uniqueRegs = Array.from(uniqueRegsMap.values());
                 
-                // --- 華麗大頭貼渲染區塊 ---
                 let avatarsHtml = '';
                 if (uniqueRegs.length > 0) {
                     avatarsHtml = uniqueRegs.map(r => {
@@ -691,9 +777,6 @@
                 let avatarsSection = isExpanded ? `<div class="flex gap-2.5 overflow-x-auto custom-scrollbar pb-3 pt-2 pr-2 animate-fade-in-down border-t border-yellow-100 mt-2">${window.isRegSnapshotLoaded ? avatarsHtml : '<div class="flex justify-center items-center py-5 text-yellow-600 text-sm font-bold border-t border-yellow-200 mt-2 animate-pulse"><i class="fas fa-circle-notch fa-spin mr-2 text-lg"></i>連線至資料庫抓取中...</div>'}</div>` : '';
                 const regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-100 bg-gray-50/80 -mx-6 px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">${countHtml}<button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}">${toggleBtnText}</button></div>${avatarsSection}</div>`;
 
-                // ==========================
-                // 卡片本體渲染 (單一乾淨的 if...else)
-                // ==========================
                 if (isExpired) {
                     let savedBoardType = ev.boardType || '';
                     let savedBoardCode = ev.boardCode || '';
@@ -742,9 +825,9 @@
                     
                     let isDeadlinePassed = false;
                     if (ev.deadline) {
-                        const dlMatch = ev.deadline.match(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/);
+                        const dlMatch = ev.deadline.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
                         if (dlMatch) {
-                            const dlDate = new Date(dlMatch[0].replace(/-/g, '/'));
+                            const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
                             dlDate.setDate(dlDate.getDate() + 1); 
                             if (!isNaN(dlDate) && today >= dlDate) isDeadlinePassed = true;
                         }
