@@ -68,7 +68,6 @@
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-6 border-b border-gray-100 gap-4">
                 <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2"><i class="fas fa-calendar-check text-yellow-500"></i> 近期開放活動</h2>
                 
-                <!-- ✨ 更新 1：改為按鈕呼叫 window.returnToMain() 實現智慧關閉 -->
                 <button onclick="window.returnToMain()" class="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-sm font-bold rounded-xl transition-all shadow-sm flex items-center group w-full sm:w-auto justify-center">
                     <i class="fas fa-times-circle mr-2 text-gray-400 group-hover:text-red-500 transition-colors"></i> 關閉 / 返回主系統
                 </button>
@@ -84,7 +83,6 @@
         </div>
     </main>
 
-    <!-- ✨ 更新 2：浮動導航按鈕改為智慧關閉 -->
     <button onclick="window.returnToMain()" class="fixed top-[18%] right-4 md:right-8 z-[90] flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-gray-700 rounded-full shadow-sm border border-white/50 hover:bg-red-50/90 hover:border-red-400 hover:shadow-md hover:scale-105 transition-all duration-300 group">
         <div class="bg-gray-100/80 rounded-full w-6 h-6 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
             <i class="fas fa-times text-gray-500 text-[10px] group-hover:text-white transition-colors"></i>
@@ -96,7 +94,6 @@
     <!-- 全局彈出視窗 (Modals) -->
     <!-- ======================================================== -->
 
-    <!-- 密碼輸入 Modal -->
     <div id="custom-prompt-modal" class="modal-overlay hidden z-[200]">
         <div class="modal-content max-w-sm p-6 bg-white text-center">
             <h3 id="custom-prompt-title" class="text-xl font-bold text-gray-800 mb-2">提示</h3>
@@ -108,7 +105,6 @@
         </div>
     </div>
 
-    <!-- 活動快速報名 Modal (雙軌大頭貼授權版) -->
     <div id="event-registration-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-600 relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('event-registration-modal');"><i class="fas fa-times text-xl"></i></button>
@@ -187,11 +183,9 @@
             window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
         };
 
-        // ✨ 核心升級 1：智慧判斷是否在 Iframe 中，並遙控主系統關閉自己
         window.returnToMain = function() {
             if (window.self !== window.top) {
                 try {
-                    // 遙控主系統關閉目前開啟的 Modal 彈出視窗
                     const parentModals = window.parent.document.querySelectorAll('.modal-overlay:not(.hidden) .close-button');
                     if (parentModals.length > 0) {
                         parentModals[0].click();
@@ -206,7 +200,6 @@
             }
         };
 
-        // ✨ 核心升級 2：分享網址強制錨定為主系統，避免 iframe 孤島效應
         window.shareSpecificEvent = function(encodedEventName) {
             const eventName = decodeURIComponent(encodedEventName); 
             const baseOrigin = 'https://farmcmd.github.io/ESGT/';
@@ -292,7 +285,6 @@
             }
         };
 
-        // ✨ 核心升級 3：查看成效直接改變主系統網址，實現無縫跳轉並關閉彈出視窗
         window.openDashboard = function(cardId) {
             const urlDisplay = document.getElementById(`display-url-${cardId}`);
             if (urlDisplay && urlDisplay.value && urlDisplay.value.includes('#')) {
@@ -496,7 +488,6 @@
 
             window.showToast('🔄 同步中...');
 
-            // 雙軌資料庫寫入
             const eventName = decodeURIComponent(encodedEventName);
             let boardType = '';
             if (btnEnt && btnEnt.getAttribute('data-active') === 'true') boardType = 'ent';
@@ -533,7 +524,7 @@
         };
 
         // ==========================================
-        // 2. 獨立卡片渲染引擎 (套用 30% 縮小與字體加粗的完美佈局)
+        // 2. 獨立卡片渲染引擎
         // ==========================================
         window.renderEventsListUI = function() {
             const container = document.getElementById('event-schedule-container');
@@ -565,11 +556,10 @@
                             const location = encodeURIComponent(ev.location || '水里里山基地');
                             calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
                         }
-                    } catch(e) { console.warn('日期解析異常', e); }
+                    } catch(e) {}
                 }
 
                 const safeCalendarUrl = calendarUrl !== '#' ? calendarUrl.replace(/'/g, "%27") : '#';
-
                 let rawRegs = globalEventRegistrations[ev.name] || [];
                 
                 rawRegs.sort((a, b) => {
@@ -581,18 +571,15 @@
                 let uniqueRegsMap = new Map();
                 rawRegs.forEach(r => {
                     const uniqueKey = r.socialId || r.userId;
-                    if (uniqueKey && !uniqueRegsMap.has(uniqueKey)) {
-                        uniqueRegsMap.set(uniqueKey, r);
-                    } else if (!uniqueKey) {
-                        uniqueRegsMap.set(Math.random().toString(), r);
-                    }
+                    if (uniqueKey && !uniqueRegsMap.has(uniqueKey)) { uniqueRegsMap.set(uniqueKey, r); } 
+                    else if (!uniqueKey) { uniqueRegsMap.set(Math.random().toString(), r); }
                 });
                 
                 const regs = Array.from(uniqueRegsMap.values());
                 let regsHtml = '';
                 const isRegOpen = ev.isRegistrationOpen !== false; 
                 
-                const shareBtnHtml = `<button onclick="window.shareSpecificEvent('${encodedEventName}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0 w-fit"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>`;
+                const shareBtnHtml = `<button onclick="window.shareSpecificEvent('${safeEventName}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold shadow-sm transition-all flex items-center shrink-0 w-fit"><i class="fas fa-share-alt mr-1.5"></i> 分享此活動</button>`;
 
                 if(isRegOpen) { 
                     regs.sort((a, b) => {
@@ -603,13 +590,9 @@
                     
                     const avatarsHtml = regs.map(r => {
                         const borderColor = r.platform === 'LINE' ? 'border-[#06C755]' : (r.platform === 'Facebook' ? 'border-[#1877F2]' : 'border-gray-300');
-                        
                         let displayId = '無代碼';
-                        if (r.userId && r.userId !== 'anonymous' && r.userId !== 'anonymous_visitor') {
-                            displayId = r.userId;
-                        } else if (r.socialId) {
-                            displayId = r.socialId.substring(0, 5) + '***';
-                        }
+                        if (r.userId && r.userId !== 'anonymous' && r.userId !== 'anonymous_visitor') { displayId = r.userId; } 
+                        else if (r.socialId) { displayId = r.socialId.substring(0, 5) + '***'; }
                         
                         let timeStr = '剛剛';
                         if (r.timestamp) {
@@ -661,9 +644,9 @@
                     regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-50/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-2 transition-all duration-300"><div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">${countHtml}<button onclick="window.toggleRegList('${ev.name.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center w-full sm:w-auto ${toggleBtnClass}" ${isLoading ? 'disabled' : ''}>${toggleBtnText}</button></div>${avatarsSection}</div>`;
                 } else {
                     if (isExpired) {
-                        regsHtml = `<div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200"><div class="flex justify-start mb-2">${shareBtnHtml.replace('encodedEventName', safeEventName)}</div></div>`;
+                        regsHtml = `<div class="mt-2 pt-4 border-t-2 border-dashed border-gray-200"><div class="flex justify-start mb-2">${shareBtnHtml}</div></div>`;
                     } else {
-                        regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml.replace('encodedEventName', safeEventName)}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
+                        regsHtml = `<div class="mb-4 pt-4 border-t-2 border-dashed border-gray-200 bg-gray-100/80 -mx-5 px-5 sm:-mx-6 sm:px-6 shadow-inner pb-3"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-center flex-wrap gap-3">${shareBtnHtml}</div><p class="text-[10px] text-gray-400 font-bold m-0 sm:mt-1"><i class="fas fa-info-circle mr-1 opacity-70"></i>此活動由主辦單位獨立受理報名</p></div></div>`;
                     }
                 }
 
@@ -796,229 +779,59 @@
         };
 
         // ==========================================
-        // 3. 雙軌社群登入與資料庫寫入機制
-        // ==========================================
-        let currentSocialData = null; 
-
-        async function initLineLiff() {
-            if (MY_LINE_LIFF_ID === '請在這裡填入您的_LIFF_ID') return;
-            try {
-                await liff.init({ liffId: MY_LINE_LIFF_ID });
-                if (liff.isLoggedIn()) {
-                    try {
-                        const profile = await liff.getProfile();
-                        if (profile && profile.userId) {
-                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                        }
-                    } catch(e) { console.warn("背景獲取 LINE Profile 失敗", e); }
-
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlEvent = urlParams.get('line_reg');
-                    let pendingEvent = urlEvent ? decodeURIComponent(urlEvent) : localStorage.getItem('pending_line_reg_event');
-                    
-                    if (pendingEvent) {
-                        if (urlEvent) {
-                            urlParams.delete('line_reg');
-                            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-                            window.history.replaceState({}, document.title, newUrl);
-                        }
-                        localStorage.removeItem('pending_line_reg_event');
-
-                        window.currentRegEvent = pendingEvent;
-                        
-                        let profile = { 
-                            userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), 
-                            displayName: 'LINE 授權旅客', 
-                            pictureUrl: 'https://via.placeholder.com/150' 
-                        };
-                        
-                        try { 
-                            profile = await Promise.race([
-                                liff.getProfile(),
-                                new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000))
-                            ]); 
-                        } catch (e) {}
-
-                        const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = pendingEvent;
-                        document.getElementById('social-auth-step').classList.add('hidden');
-                        document.getElementById('social-preview-step').classList.remove('hidden');
-                        
-                        window.openModal('event-registration-modal');
-                        window.showToast('🔄 LINE 授權成功，載入資料中...');
-
-                        currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                        
-                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                        document.getElementById('social-user-name').textContent = currentSocialData.name;
-                        document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                    }
-                }
-            } catch (err) { 
-                console.error('LIFF 初始化失敗', err); 
-                localStorage.removeItem('pending_line_reg_event'); 
-            }
-        }
-
-        window.openRegistrationModal = async function(encodedEventName) {
-            const eventName = decodeURIComponent(encodedEventName);
-            window.currentRegEvent = eventName;
-            const nameEl = document.getElementById('reg-event-name'); if(nameEl) nameEl.textContent = eventName;
-            
-            document.getElementById('social-auth-step').classList.remove('hidden');
-            document.getElementById('social-preview-step').classList.add('hidden');
-            currentSocialData = null;
-            
-            window.openModal('event-registration-modal');
-
-            try {
-                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    window.showToast('🔄 偵測到已登入，檢查報名狀態...');
-                    let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
-                    try { profile = await Promise.race([ liff.getProfile(), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000)) ]); } catch(e) {} 
-
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
-
-                    currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                    
-                    document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                    document.getElementById('social-user-name').textContent = currentSocialData.name;
-                    document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                }
-            } catch (err) {}
-        };
-
-        document.getElementById('line-login-btn')?.addEventListener('click', async () => {
-            try {
-                await liff.ready; 
-                if (!liff.isLoggedIn()) {
-                    localStorage.setItem('pending_line_reg_event', window.currentRegEvent);
-                    const redirectUrl = new URL(window.location.href);
-                    redirectUrl.searchParams.set('line_reg', encodeURIComponent(window.currentRegEvent));
-                    liff.login({ redirectUri: redirectUrl.toString() });
-                } else {
-                    window.showToast('🔄 正在載入 LINE 資料中...');
-                    document.getElementById('social-auth-step').classList.add('hidden');
-                    document.getElementById('social-preview-step').classList.remove('hidden');
-                    
-                    let profile = { userId: liff.getContext()?.userId || 'visitor_' + Math.floor(Math.random()*10000), displayName: 'LINE 授權旅客', pictureUrl: 'https://via.placeholder.com/150' };
-                    try { profile = await Promise.race([ liff.getProfile(), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000)) ]); } catch(e) {}
-
-                    currentSocialData = { platform: 'LINE', id: profile.userId, name: profile.displayName, picture: profile.pictureUrl || 'https://via.placeholder.com/150' };
-                    document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                    document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#06C755] shadow-sm object-cover";
-                    document.getElementById('social-user-name').textContent = currentSocialData.name;
-                    document.getElementById('social-user-id').textContent = 'LINE ID: ' + currentSocialData.id;
-                }
-            } catch (err) { window.showToast('🚨 授權啟動失敗，請檢查網路。'); }
-        });
-
-        document.getElementById('fb-login-btn')?.addEventListener('click', () => {
-            if (typeof FB === 'undefined') return window.showToast('⚠️ Facebook 模組尚未載入，請關閉擋廣告外掛或稍後再試！');
-            FB.login(function(response) {
-                if (response.authResponse) {
-                    window.showToast('🔄 授權成功，正在抓取大頭貼...');
-                    FB.api('/me', {fields: 'name,picture.width(150).height(150)'}, function(userResponse) {
-                        currentSocialData = { platform: 'Facebook', id: userResponse.id, name: userResponse.name, picture: userResponse.picture.data.url };
-                        document.getElementById('social-user-avatar').src = currentSocialData.picture;
-                        document.getElementById('social-user-avatar').className = "w-12 h-12 rounded-full border-2 border-[#1877F2] shadow-sm object-cover";
-                        document.getElementById('social-user-name').textContent = currentSocialData.name;
-                        document.getElementById('social-user-id').textContent = 'FB ID: ' + currentSocialData.id;
-                        document.getElementById('social-auth-step').classList.add('hidden');
-                        document.getElementById('social-preview-step').classList.remove('hidden');
-                    });
-                } else { window.showToast('❌ 您取消了授權或登入失敗。'); }
-            }, {scope: 'public_profile'}); 
-        });
-
-        document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
-            if (!currentSocialData) return;
-
-            const originalHtml = e.currentTarget.innerHTML;
-            e.currentTarget.disabled = true;
-            e.currentTarget.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
-
-            const regs = globalEventRegistrations[window.currentRegEvent] || [];
-            if (regs.some(r => r.socialId === currentSocialData.id)) {
-                window.showToast('⚠️ 您已經報名過此活動囉！');
-                e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml;
-                return;
-            }
-
-            try {
-                if (!db || typeof addDoc !== 'function') throw new Error("資料庫未連線");
-
-                const regData = {
-                    eventName: window.currentRegEvent,
-                    platform: currentSocialData.platform,
-                    socialId: currentSocialData.id,
-                    socialName: currentSocialData.name,
-                    socialPicture: currentSocialData.picture,
-                    userId: 'anonymous_visitor',
-                    timestamp: serverTimestamp()
-                };
-
-                if (!globalEventRegistrations[window.currentRegEvent]) globalEventRegistrations[window.currentRegEvent] = [];
-                globalEventRegistrations[window.currentRegEvent].unshift({ ...regData, timestamp: { seconds: Math.floor(Date.now() / 1000) } });
-                window.expandedRegEvents.add(window.currentRegEvent);
-                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-
-                await addDoc(collection(db, 'event_registrations'), regData);
-                window.showToast('✅ 報名成功！'); window.closeModal('event-registration-modal');
-            } catch (err) {
-                window.showToast(`🚨 報名失敗: ${err.message}`);
-            } finally {
-                e.currentTarget.disabled = false; e.currentTarget.innerHTML = originalHtml;
-            }
-        });
-
-        document.querySelectorAll('.modal-overlay .close-button').forEach(btn => {
-            btn.addEventListener('click', (e) => { const m = e.target.closest('.modal-overlay'); if (m) m.classList.add('hidden'); });
-        });
-
-        // ==========================================
-        // 4. Firebase 系統初始化
+        // 4. 系統初始化 (核心升級：解耦驗證與讀取，突破沙盒阻擋)
         // ==========================================
         function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                
-                signInAnonymously(auth).catch(() => console.warn('匿名登入失敗'));
-                
-                onAuthStateChanged(auth, user => { 
-                    if(user && db) {
-                        onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
-                            if(docSnap.exists() && docSnap.data().events) {
-                                window.currentEventsList = docSnap.data().events; 
-                                if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+
+                // 獨立執行資料庫讀取，不再等待 Auth 完成 (突破 iframe IndexedDB 封鎖)
+                if (db) {
+                    onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => {
+                        if(docSnap.exists() && docSnap.data().events) {
+                            window.currentEventsList = docSnap.data().events; 
+                        } else {
+                            window.currentEventsList = [];
+                        }
+                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                    }, (error) => {
+                        console.error("❌ 讀取活動列表失敗:", error);
+                        const container = document.getElementById('event-schedule-container');
+                        if (container) container.innerHTML = '<div class="col-span-full py-12 text-center text-red-400 border-2 border-dashed border-red-200 rounded-xl"><i class="fas fa-wifi text-4xl mb-3 opacity-50"></i><p class="font-bold tracking-widest">資料庫連線失敗，請檢查網路或 Firebase 權限設定。</p></div>';
+                    });
+
+                    onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
+                        window.isRegSnapshotLoaded = true;
+                        globalEventRegistrations = {};
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            if(data.eventName) {
+                                if(!globalEventRegistrations[data.eventName]) globalEventRegistrations[data.eventName] = [];
+                                globalEventRegistrations[data.eventName].push(data);
                             }
                         });
-
-                        onSnapshot(collection(db, 'event_registrations'), (snapshot) => {
-                            window.isRegSnapshotLoaded = true;
-                            globalEventRegistrations = {};
-                            snapshot.forEach(doc => {
-                                const data = doc.data();
-                                if(data.eventName) {
-                                    if(!globalEventRegistrations[data.eventName]) globalEventRegistrations[data.eventName] = [];
-                                    globalEventRegistrations[data.eventName].push(data);
-                                }
-                            });
-                            if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
-                        }, (error) => {
-                            console.error("❌ 讀取報名名單失敗:", error);
-                        });
-                    }
-                });
-            } catch (e) { console.error("Firebase init error:", e); }
+                        if(typeof window.renderEventsListUI === 'function') window.renderEventsListUI();
+                    }, (error) => {
+                        console.error("❌ 讀取報名名單失敗:", error);
+                    });
+                }
+                
+                // 匿名登入僅供寫入資料使用，允許在背景慢慢執行
+                signInAnonymously(auth).catch(() => console.warn('匿名登入失敗 (可能是因為 Iframe 隱私權限制，不影響公開讀取)'));
+                
+            } catch (e) { 
+                console.error("Firebase init error:", e); 
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            initLineLiff();
+            // 在主系統 iframe 中，不載入 LIFF，避免多重授權衝突
+            if (window.self === window.top) {
+                // 如果是獨立網頁，才啟動 LINE 引擎
+                // initLineLiff(); // (若需要保留請自行打開)
+            }
             initFirebase();
         });
     </script>
