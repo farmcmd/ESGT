@@ -773,7 +773,7 @@
             }
         };
 
-        // ✨ 核心修復：將分享網址強制定錨至「獨立報名網頁」，徹底避開 LINE Iframe 阻擋與 404 錯誤
+        // ✨ 核心修復：拔除獨立 url 參數，避免手機作業系統(如LINE)將網址雙重疊加
         window.shareSpecificEvent = function(shortId, encodedEventName) {
             try {
                 const eventName = decodeURIComponent(encodedEventName); 
@@ -781,11 +781,14 @@
                 const url = new URL(baseOrigin); 
                 url.searchParams.set('id', shortId); 
                 const finalUrl = url.toString(); 
-                const shareText = `🔗 邀請您參加【${eventName}】！\n查看詳情：${finalUrl}`;
+                
+                // ✨ 排版優化：在網址前多加一個換行，讓 LINE 的訊息更美觀
+                const shareText = `🔗 邀請您參加【${eventName}】！\n查看詳情：\n${finalUrl}`;
                 window.currentShareData = { url: finalUrl, text: shareText };
                 
                 if (navigator.share) { 
-                    navigator.share({ title: '探探里山', text: shareText, url: finalUrl }).catch(() => window.openModal('share-event-modal')); 
+                    // ✨ 修復點：只傳送 text (內含網址)，不傳送 url，防堵 LINE 的重複疊加
+                    navigator.share({ title: '探探里山', text: shareText }).catch(() => window.openModal('share-event-modal')); 
                 } else { 
                     window.openModal('share-event-modal'); 
                 }
@@ -1324,6 +1327,31 @@
         document.addEventListener('DOMContentLoaded', async () => {
             // ✨ 啟動智慧偵測引擎
             window.detectInAppBrowser();
+
+            // ✨ 補強：為電腦版或不支援原生分享的瀏覽器，綁定「備用分享視窗」的按鈕功能
+            document.getElementById('share-line-btn')?.addEventListener('click', () => {
+                const data = window.currentShareData;
+                if(data) window.open(`https://line.me/R/msg/text/?${encodeURIComponent(data.text)}`, '_blank');
+            });
+            document.getElementById('share-fb-btn')?.addEventListener('click', () => {
+                const data = window.currentShareData;
+                if(data) window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(data.url)}`, '_blank');
+            });
+            document.getElementById('share-x-btn')?.addEventListener('click', () => {
+                const data = window.currentShareData;
+                if(data) window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(data.text)}`, '_blank');
+            });
+            document.getElementById('share-copy-btn')?.addEventListener('click', () => {
+                const data = window.currentShareData;
+                if(!data) return;
+                const dummy = document.createElement('textarea');
+                document.body.appendChild(dummy);
+                dummy.value = data.text;
+                dummy.select();
+                try { document.execCommand('copy'); window.showToast('📋 網址與活動資訊已複製！'); } catch(e) {}
+                document.body.removeChild(dummy);
+                window.closeModal('share-event-modal');
+            });
 
             if (typeof MY_LINE_LIFF_ID !== 'undefined') {
                 try {
