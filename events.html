@@ -277,10 +277,37 @@
         </div>
     </div>
 
+    <!-- ✨ 新增：內建瀏覽器 (FB/IG) 專屬警告與引導 Modal -->
+    <div id="inapp-browser-modal" class="modal-overlay hidden z-[500]">
+        <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-red-500 relative text-center shadow-2xl">
+            <div class="mb-3 flex justify-center">
+                <div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center shadow-inner">
+                    <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-black text-gray-800 mb-2">建議使用預設瀏覽器</h3>
+            <p class="text-[13px] text-gray-600 font-medium mb-5 leading-relaxed">
+                我們偵測到您目前使用社群軟體的內建瀏覽器。<br>
+                這可能會導致 <strong class="text-[#06C755] font-black">LINE 快速報名</strong> 功能遭到阻擋而無法順利運作。
+            </p>
+            <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 mb-5 text-left shadow-sm">
+                <p class="text-xs text-gray-500 font-bold mb-1.5"><i class="fas fa-lightbulb text-yellow-500 mr-1"></i> 解決方法：</p>
+                <p class="text-xs text-gray-600 leading-relaxed">請點擊畫面上方或下方的 <strong class="bg-gray-200 px-1.5 py-0.5 rounded tracking-widest border border-gray-300">⋯</strong> 圖示，選擇<br><strong class="text-blue-600">「以預設瀏覽器開啟」</strong> 或 <strong class="text-blue-600">「在 Safari / Chrome 中開啟」</strong>。</p>
+            </div>
+            <div class="flex flex-col gap-2">
+                <button onclick="window.copyCurrentUrl()" class="w-full py-3.5 bg-blue-500 text-white rounded-xl font-bold shadow-md hover:bg-blue-600 transition flex justify-center items-center">
+                    <i class="fas fa-copy mr-2"></i> 點此複製網址
+                </button>
+                <button onclick="window.closeModal('inapp-browser-modal')" class="w-full py-2 bg-transparent text-gray-400 hover:text-gray-600 rounded-xl text-[11px] font-bold transition flex justify-center items-center mt-1">
+                    我知道了，繼續留在這裡嘗試
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 系統核心腳本 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        // ✨ 核心修復：在下方的清單最後，補上 getCountFromServer 這個聚合查詢神器！
         import { getFirestore, collection, doc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, updateDoc, setDoc, getCountFromServer } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
@@ -334,6 +361,36 @@
             confirmBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(inputEl.value); };
             cancelBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(null); };
             window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100);
+        };
+
+        // ✨ 新增：複製當前網址功能
+        window.copyCurrentUrl = function() {
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = window.location.href;
+            dummy.select();
+            try {
+                document.execCommand('copy');
+                window.showToast('📋 網址已複製！請貼到 Chrome 或 Safari 開啟');
+            } catch (err) {
+                window.showToast('🚨 複製失敗，請手動複製網址');
+            }
+            document.body.removeChild(dummy);
+        };
+
+        // ✨ 新增：智慧內建瀏覽器偵測引擎 (針對 FB/IG/Threads 攔截，放行 LINE)
+        window.detectInAppBrowser = function() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            // 偵測 FB, IG, Messenger, Threads 等容易阻擋 OAuth 的瀏覽器
+            const isProblematicInApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1) || (ua.indexOf("Threads") > -1);
+            
+            // 注意：我們刻意不阻擋 LINE (ua.indexOf("Line") > -1)，因為 LIFF 必須在 LINE 裡面跑才能無縫登入！
+            if (isProblematicInApp) {
+                // 延遲 1 秒彈出，確保不會跟其他系統動畫衝突
+                setTimeout(() => {
+                    window.openModal('inapp-browser-modal');
+                }, 1000);
+            }
         };
 
         window.returnToMain = function() {
@@ -1265,6 +1322,9 @@
         });
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // ✨ 啟動智慧偵測引擎
+            window.detectInAppBrowser();
+
             if (typeof MY_LINE_LIFF_ID !== 'undefined') {
                 try {
                     await liff.init({ liffId: MY_LINE_LIFF_ID });
