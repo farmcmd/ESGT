@@ -182,9 +182,10 @@
                         <i class="fab fa-line text-2xl mr-2"></i> 使用LINE ID立即報名
                     </button>
                     
-                    <a href="https://line.me/R/ti/g/6Hcvx4VKCe" target="_blank" class="w-full py-3 mt-1 bg-white border-2 border-[#06C755]/80 text-[#06C755] rounded-xl font-bold shadow-sm hover:bg-[#06C755] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px] group">
-                        <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
-                    </a>
+                    <!-- ✨ UI 升級：將群組連結改為上鎖按鈕，需密碼解鎖 -->
+                    <button id="modal-group-btn-1" data-locked="true" onclick="window.handleModalGroupLink(this)" class="w-full py-3 mt-1 bg-gray-50 border-2 border-gray-300 text-gray-500 rounded-xl font-bold shadow-sm hover:bg-gray-100 transition-all duration-300 flex justify-center items-center text-[14px] group">
+                        <i class="fas fa-lock text-xl mr-2"></i> 遊程類別行前確認群組
+                    </button>
                     
                     <div class="text-[13px] text-gray-500 font-medium text-left leading-relaxed space-y-1.5 px-1 mt-2 mb-1">
                         <p><i class="fas fa-user-shield text-emerald-400 mr-1.5 opacity-80"></i>1. 我們僅會取得您的LINE公開大頭貼與姓名(ID)作為報名憑證。</p>
@@ -208,9 +209,10 @@
                         <i class="fas fa-paper-plane mr-2"></i> 確認報名並聯絡主辦方
                     </button>
                     
-                    <a href="https://line.me/R/ti/g/6Hcvx4VKCe" target="_blank" class="w-full py-3 bg-white border-2 border-[#06C755]/80 text-[#06C755] rounded-xl font-bold shadow-sm hover:bg-[#06C755] hover:text-white transition-all duration-300 flex justify-center items-center text-[14px] group">
-                        <i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 請加入臨時群組以便確認
-                    </a>
+                    <!-- ✨ UI 升級：同步將第二階段的群組連結改為上鎖按鈕 -->
+                    <button id="modal-group-btn-2" data-locked="true" onclick="window.handleModalGroupLink(this)" class="w-full py-3 bg-gray-50 border-2 border-gray-300 text-gray-500 rounded-xl font-bold shadow-sm hover:bg-gray-100 transition-all duration-300 flex justify-center items-center text-[14px] group">
+                        <i class="fas fa-lock text-xl mr-2"></i> 遊程類別行前確認群組
+                    </button>
                 </div>
             </div>
 
@@ -1263,6 +1265,43 @@
             setTimeout(() => { window.open(`https://m.me/Satoyamadining?text=${encodeURIComponent(msgTemplate)}`, '_blank'); }, 800);
         });
 
+        // ✨ 核心升級：實作管理員密碼解鎖群組連結功能
+        window.handleModalGroupLink = function(btn) {
+            // 如果已經解鎖，點擊時直接開啟網頁
+            if (btn.getAttribute('data-locked') === 'false') {
+                const link = btn.getAttribute('data-link');
+                if (link) window.open(link, '_blank');
+                return;
+            }
+            
+            // 尚未解鎖，要求輸入密碼
+            window.customPrompt('🔐 請輸入管理員密碼以解鎖群組：', '', (pwd) => {
+                if (pwd === '545366' || pwd === '772059' || pwd === 'mori2025') {
+                    let groupLink = 'https://line.me/R/ti/g/6Hcvx4VKCe'; // 預設備用網址
+                    
+                    // 動態抓取該活動專屬的 LINE 群組網址
+                    const ev = window.currentEventsList.find(e => e.name === window.currentRegEvent);
+                    if (ev && ev.lineGroupLink) groupLink = ev.lineGroupLink;
+                    
+                    // 執行按鈕解鎖變色動畫
+                    const unlockBtn = (id) => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.setAttribute('data-locked', 'false');
+                            el.setAttribute('data-link', groupLink);
+                            el.className = el.className.replace('bg-gray-50 border-gray-300 text-gray-500 hover:bg-gray-100', 'bg-white border-[#06C755]/80 text-[#06C755] hover:bg-[#06C755] hover:text-white');
+                            el.innerHTML = '<i class="fab fa-line text-xl mr-2 group-hover:animate-bounce"></i> 遊程類別行前確認群組';
+                        }
+                    };
+                    unlockBtn('modal-group-btn-1');
+                    unlockBtn('modal-group-btn-2');
+                    window.showToast('✨ 已解鎖！請點擊按鈕加入群組。');
+                } else if (pwd !== null) {
+                    window.showToast('❌ 密碼錯誤！');
+                }
+            });
+        };
+
         document.getElementById('final-submit-reg-btn')?.addEventListener('click', async (e) => {
             if (!currentSocialData) return;
             const originalHtml = e.currentTarget.innerHTML;
@@ -1297,6 +1336,20 @@
             document.getElementById('social-auth-step').classList.remove('hidden');
             document.getElementById('social-preview-step').classList.add('hidden');
             currentSocialData = null;
+
+            // ✨ 防呆重置：每次打開彈窗時，確保群組按鈕恢復為「嚴格上鎖」狀態
+            const resetBtn = (id, extraClasses) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.setAttribute('data-locked', 'true');
+                    el.removeAttribute('data-link');
+                    el.className = `w-full py-3 ${extraClasses} bg-gray-50 border-2 border-gray-300 text-gray-500 rounded-xl font-bold shadow-sm hover:bg-gray-100 transition-all duration-300 flex justify-center items-center text-[14px] group`;
+                    el.innerHTML = '<i class="fas fa-lock text-xl mr-2"></i> 遊程類別行前確認群組';
+                }
+            };
+            resetBtn('modal-group-btn-1', 'mt-1');
+            resetBtn('modal-group-btn-2', '');
+
             window.openModal('event-registration-modal');
             if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
                 try {
