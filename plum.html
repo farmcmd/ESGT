@@ -990,97 +990,145 @@ function initGame1() {
     document.getElementById('sun-btn').addEventListener('click', triggerBloom);
 }
 
-// --- Game 2: 成長 (澆水/日照 養青梅) ---
+// --- Game 2: 成長 (追隨太陽並接雨水) ---
 function initGame2() {
     const container = document.getElementById('game-2');
     container.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:20px;position:relative;">
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;position:relative;">
             <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;">果實成長: <span id="plum-size-pct">0</span>%</div>
-            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:10px;">剩餘時間: <span id="g2-timer">15</span>秒</div>
-            <div style="display:flex;gap:15px;margin-bottom:30px;z-index:10;">
-                <button class="tool-btn" id="tool-water" style="padding:10px;font-size:1.2rem;background:rgba(255,255,255,0.2);border:2px solid white;color:white;cursor:pointer;border-radius:10px;">🌧️ 澆水</button>
-                <button class="tool-btn" id="tool-sun2" style="padding:10px;font-size:1.2rem;background:rgba(255,255,255,0.2);border:2px solid white;color:white;cursor:pointer;border-radius:10px;">☀️ 日照</button>
-            </div>
+            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g2-timer">20</span>秒</div>
+            <p id="g2-hint" style="font-size:1rem;color:#fff;margin-bottom:5px;font-weight:bold;text-align:center;background:rgba(230, 126, 34, 0.8);padding:5px 15px;border-radius:20px;">💡 滑動樹根追隨太陽☀️，並接住雨水💧！</p>
             
-            <div style="position:relative;width:200px;height:200px;display:flex;justify-content:center;align-items:center;">
-                <!-- 梅子本體 -->
-                <div id="green-plum" style="width:20px;height:20px;background:radial-gradient(circle at 30% 30%, #AED581, #689F38);border-radius:50%;box-shadow:inset -5px -5px 10px rgba(0,0,0,0.3);transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);cursor:pointer;display:flex;justify-content:center;align-items:flex-start;">
-                    <!-- 蒂頭 -->
-                    <div style="width:4px;height:6px;background:#3E2723;border-radius:2px;margin-top:-2px;"></div>
+            <div id="g2-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(255,255,255,0.05);border-radius:10px;cursor:pointer;">
+                <!-- 移動的太陽 -->
+                <div id="sun-obj" style="position:absolute;top:10px;left:50%;font-size:2rem;transform:translateX(-50%);text-shadow:0 0 15px rgba(255,202,40,0.8);">☀️</div>
+                
+                <!-- 玩家控制的樹根與青梅 -->
+                <div id="tree-obj" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:60px;height:70px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;user-select:none;touch-action:none;">
+                    <div id="green-plum" style="width:15px;height:15px;background:radial-gradient(circle at 30% 30%, #AED581, #689F38);border-radius:50%;margin-bottom:5px;transition:all 0.3s;box-shadow:inset -3px -3px 6px rgba(0,0,0,0.3);"></div>
+                    <div style="width:20px;height:30px;background:#5D4037;border-radius:5px 5px 0 0;"></div>
                 </div>
             </div>
         </div>
-        <div id="g2-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;">時間到！<br>青梅長大囉。</div>
+        <div id="g2-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>青梅長大囉。</div>
     `;
 
-    const waterBtn = document.getElementById('tool-water');
-    const sunBtn = document.getElementById('tool-sun2');
+    const gameArea = document.getElementById('g2-game-area');
+    const sunObj = document.getElementById('sun-obj');
+    const treeObj = document.getElementById('tree-obj');
     const plum = document.getElementById('green-plum');
     const pctSpan = document.getElementById('plum-size-pct');
     const msg = document.getElementById('g2-message');
+    const timerSpan = document.getElementById('g2-timer');
 
-    let activeTool = null; let growthPct = 0; let isCompleted = false;
-    let timeLeft = 15; const timerSpan = document.getElementById('g2-timer');
-    let timerInterval = null; let hasStarted = false;
+    let growthPct = 0; let isCompleted = false; let gameLoop; let raindrops = [];
+    let timeLeft = 20; let timerInterval = null; let gameActive = false;
+    
+    let treeX = gameArea.clientWidth / 2;
+    let sunX = gameArea.clientWidth / 2;
+    let sunDirection = 1; let sunSpeed = 1.5;
 
-    function startTimer() {
-        if(hasStarted) return;
-        hasStarted = true;
+    treeObj.style.left = treeX + 'px';
+    sunObj.style.left = sunX + 'px';
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
         timerInterval = setInterval(() => {
             timeLeft--; timerSpan.textContent = timeLeft;
             if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
         }, 1000);
+        spawnRain();
+        updateGame();
     }
 
-    function selectTool(toolKey, btn) {
+    const handleMove = (e) => {
         if(isCompleted) return;
-        startTimer();
-        activeTool = toolKey;
-        waterBtn.style.background = 'rgba(255,255,255,0.2)'; sunBtn.style.background = 'rgba(255,255,255,0.2)';
-        btn.style.background = 'var(--color-s2)';
+        startGameLogic();
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        const rect = gameArea.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        if(clientX === undefined) return;
+        let x = clientX - rect.left;
+        const halfWidth = 30;
+        if(x < halfWidth) x = halfWidth;
+        if(x > gameArea.clientWidth - halfWidth) x = gameArea.clientWidth - halfWidth;
+        treeX = x; treeObj.style.left = treeX + 'px';
+    };
+
+    gameArea.addEventListener('mousedown', handleMove); gameArea.addEventListener('touchstart', handleMove, {passive: false});
+    gameArea.addEventListener('mousemove', handleMove); gameArea.addEventListener('touchmove', handleMove, {passive: false});
+
+    function showFloatingText(text, x, y) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = (x - 10) + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.2rem'; f.style.transition = 'all 0.4s ease-out'; f.style.zIndex = '30';
+        f.style.textShadow = '1px 1px 2px #000';
+        gameArea.appendChild(f);
+        setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 450);
     }
 
-    waterBtn.addEventListener('click', () => selectTool('water', waterBtn));
-    sunBtn.addEventListener('click', () => selectTool('sun', sunBtn));
+    function spawnRain() {
+        if(isCompleted) return;
+        const el = document.createElement('div');
+        el.style.position='absolute'; el.style.fontSize='1.5rem'; el.textContent = '💧';
+        const x = Math.random() * (gameArea.clientWidth - 20) + 10;
+        el.style.left = x + 'px'; el.style.top = '-20px'; 
+        gameArea.appendChild(el);
+        raindrops.push({ el, x, y: -20, speed: Math.random() * 2 + 1.5, active: true });
+        if(!isCompleted) setTimeout(spawnRain, Math.random() * 500 + 300);
+    }
 
-    plum.addEventListener('click', () => {
-        if(isCompleted || !activeTool) return;
-        startTimer();
-        growthPct += 5; pctSpan.textContent = Math.min(growthPct, 100);
+    function updateGame() {
+        if(isCompleted) return;
         
-        // Size mapping: 20px to 120px
-        const currentSize = 20 + (Math.min(growthPct, 100) * 1);
-        plum.style.width = currentSize + 'px';
-        plum.style.height = currentSize + 'px';
-        
-        // Add particle effect
-        const particle = document.createElement('div');
-        particle.textContent = activeTool === 'water' ? '💧' : '✨';
-        particle.style.position = 'absolute';
-        particle.style.fontSize = '20px';
-        particle.style.left = '50%';
-        particle.style.top = '50%';
-        particle.style.transform = `translate(-50%, -50%) translate(${(Math.random()-0.5)*50}px, ${(Math.random()-0.5)*50}px)`;
-        particle.style.opacity = '1';
-        particle.style.transition = 'all 0.5s ease-out';
-        particle.style.pointerEvents = 'none';
-        plum.parentElement.appendChild(particle);
-        
-        setTimeout(() => {
-            particle.style.opacity = '0';
-            particle.style.transform += ' translateY(-20px)';
-            setTimeout(() => particle.remove(), 500);
-        }, 50);
+        // 太陽來回移動邏輯
+        sunX += sunSpeed * sunDirection;
+        if(sunX > gameArea.clientWidth - 20) { sunDirection = -1; sunX = gameArea.clientWidth - 20; }
+        if(sunX < 20) { sunDirection = 1; sunX = 20; }
+        if(Math.random() < 0.005) sunDirection *= -1; // 偶爾隨機改變方向增加難度
+        sunObj.style.left = sunX + 'px';
 
-        if(growthPct >= 100) completeGame();
-    });
+        const treeTop = treeObj.offsetTop;
+        const areaRect = gameArea.getBoundingClientRect();
+
+        raindrops.forEach(r => {
+            if(!r.active) return;
+            r.y += r.speed; r.el.style.top = r.y + 'px';
+            
+            // 判斷是否接住雨水
+            if(r.y > treeTop - 10 && r.y < treeTop + 40 && r.x > treeX - 35 && r.x < treeX + 35) {
+                r.active = false; r.el.remove();
+                
+                // 判斷是否同時對齊太陽 (容錯範圍 50px)
+                if(Math.abs(treeX - sunX) < 50) {
+                    growthPct += 8;
+                    showFloatingText('✨', r.x, treeTop);
+                    
+                    // 梅子變大動畫
+                    const currentSize = 15 + (Math.min(growthPct, 100) * 0.45);
+                    plum.style.width = currentSize + 'px';
+                    plum.style.height = currentSize + 'px';
+                } else {
+                    showFloatingText('☀️?', r.x, treeTop); // 提示需要日照
+                }
+                pctSpan.textContent = Math.min(growthPct, 100);
+            } else if(r.y > areaRect.height) { 
+                r.active = false; r.el.remove(); 
+            }
+        });
+        
+        raindrops = raindrops.filter(r => r.active);
+        if(!isCompleted) gameLoop = requestAnimationFrame(updateGame);
+    }
 
     function completeGame() {
         if(isCompleted) return;
         isCompleted = true; clearInterval(timerInterval); msg.classList.remove('hidden');
+        raindrops.forEach(r => r.el.remove());
         const score = Math.min(growthPct, 100);
         window.globalScores.s2 = score; window.addLayerToJar('s2', '#81C784', score);
-        
         setTimeout(() => { window.triggerNextCourseStep('layer-3', 13); }, 2000);
     }
 }
@@ -1205,13 +1253,15 @@ function initGame4() {
     container.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;">
             <div style="font-size:1.2rem;font-weight:bold;margin:5px 0;z-index:10;">殺青進度: <span id="g4-pct">0</span>%</div>
-            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g4-timer">15</span>秒</div>
-            <p style="font-size:0.9rem;color:#ccc;">在梅子上按住並<span style="color:#FFCA28;">來回快速滑動搓揉</span>加粗鹽去澀！</p>
+            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g4-timer">25</span>秒</div>
+            <p style="font-size:0.9rem;color:#ccc;">在梅子上按住並<span style="color:#FFCA28;">左右來回滑動</span>，用雙手加粗鹽揉捻去澀！</p>
             <div style="position:relative;width:100%;max-width:300px;height:250px;display:flex;justify-content:center;align-items:center;cursor:crosshair;touch-action:none;overflow:hidden;">
                 <!-- 大梅子 -->
                 <div id="big-plum" style="position:relative;width:180px;height:180px;background:radial-gradient(circle at 30% 30%, #81C784, #388E3C);border-radius:50%;box-shadow:inset -10px -10px 30px rgba(0,0,0,0.5);overflow:hidden;">
                     <!-- 鹽巴刮痕效果區 -->
                     <div id="scratch-area" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.8;"></div>
+                    <!-- 雙手揉捻 Emoji -->
+                    <div id="rubbing-hands" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:4rem; opacity:0; pointer-events:none; transition: opacity 0.2s; text-shadow: 0 4px 10px rgba(0,0,0,0.6); z-index:20;">👐</div>
                 </div>
             </div>
         </div>
@@ -1220,11 +1270,12 @@ function initGame4() {
 
     const bigPlum = document.getElementById('big-plum');
     const scratchArea = document.getElementById('scratch-area');
+    const rubbingHands = document.getElementById('rubbing-hands');
     const pctSpan = document.getElementById('g4-pct');
     const msg = document.getElementById('g4-message');
 
     let rubProgress = 0; let isCompleted = false;
-    let timeLeft = 15; const timerSpan = document.getElementById('g4-timer');
+    let timeLeft = 25; const timerSpan = document.getElementById('g4-timer');
     let timerInterval = null; let hasStarted = false;
 
     function startTimer() {
@@ -1239,11 +1290,19 @@ function initGame4() {
     let isRubbing = false;
     let lastPos = {x: 0, y: 0};
 
+    function updateHandsPosition(pos) {
+        rubbingHands.style.left = pos.x + 'px';
+        rubbingHands.style.top = pos.y + 'px';
+        rubbingHands.style.transform = 'translate(-50%, -50%)';
+    }
+
     const startRub = (e) => {
         if(isCompleted) return;
         startTimer();
         isRubbing = true;
         lastPos = getPos(e);
+        rubbingHands.style.opacity = '1';
+        updateHandsPosition(lastPos);
     };
 
     const moveRub = (e) => {
@@ -1253,6 +1312,8 @@ function initGame4() {
         const pos = getPos(e);
         const dist = Math.hypot(pos.x - lastPos.x, pos.y - lastPos.y);
         
+        updateHandsPosition(pos);
+
         if (dist > 5) {
             rubProgress += dist * 0.1; // 摩擦換算進度
             pctSpan.textContent = Math.min(Math.round(rubProgress), 100);
@@ -1261,14 +1322,15 @@ function initGame4() {
             const darkRatio = Math.min(rubProgress, 100) / 100;
             bigPlum.style.background = `radial-gradient(circle at 30% 30%, rgb(${129-darkRatio*40}, ${199-darkRatio*40}, ${132-darkRatio*40}), rgb(${56-darkRatio*20}, ${142-darkRatio*20}, ${60-darkRatio*20}))`;
             
-            // 隨機產生刮痕或鹽巴點
-            if(Math.random() < 0.3) {
+            // 隨機產生粗鹽粒
+            if(Math.random() < 0.35) {
                 const salt = document.createElement('div');
                 salt.style.position = 'absolute';
-                salt.style.width = Math.random()*4+2 + 'px';
+                salt.style.width = Math.random()*5+3 + 'px';
                 salt.style.height = salt.style.width;
-                salt.style.background = 'rgba(255,255,255,0.7)';
-                salt.style.borderRadius = '50%';
+                salt.style.background = 'rgba(255,255,255,0.85)';
+                salt.style.borderRadius = '2px'; // 讓粗鹽看起來有點方正的結晶感
+                salt.style.boxShadow = '1px 1px 2px rgba(0,0,0,0.3)';
                 salt.style.left = Math.random()*100 + '%';
                 salt.style.top = Math.random()*100 + '%';
                 scratchArea.appendChild(salt);
@@ -1280,7 +1342,10 @@ function initGame4() {
         if(rubProgress >= 100) completeGame();
     };
 
-    const endRub = () => { isRubbing = false; };
+    const endRub = () => { 
+        isRubbing = false; 
+        rubbingHands.style.opacity = '0';
+    };
 
     function getPos(e) {
         const rect = bigPlum.getBoundingClientRect();
@@ -1296,6 +1361,7 @@ function initGame4() {
     function completeGame() {
         if(isCompleted) return;
         isCompleted = true; clearInterval(timerInterval);
+        rubbingHands.style.opacity = '0';
         const score = Math.min(Math.round(rubProgress), 100);
         pctSpan.textContent = score; msg.classList.remove('hidden');
         window.globalScores.s4 = score; window.addLayerToJar('s4', '#BCAAA4', score);
