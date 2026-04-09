@@ -731,7 +731,7 @@ const slidesData = [
     { title: "台灣的養殖蜂種", content: "<ul><li><span class='highlight'>義大利蜂 (Apis mellifera)：</span>性格溫和，採蜜能力極強，是台灣商業採蜜的主力。</li><li><span class='highlight'>東方蜂 (Apis cerana)：</span>俗稱野蜂，適應台灣氣候，對部分病蟲害抵抗力較好。</li></ul>", class: "unit-1" },
     { title: "里山倡議與生態廊道", content: "<ul><li>養蜂產業與「里山環境」密不可分</li><li>無農藥的環境與多樣性的生態廊道，是蜂群存活的關鍵</li><li>保護蜜蜂，就是在保護我們居住的環境</li></ul>", class: "unit-1" },
     { title: "氣候變遷的危機", content: "<ul><li>極端氣候（如乾旱、連日大雨）會導致花朵不泌蜜</li><li>溫度過高會影響蜜蜂外出採蜜的意願與存活率</li></ul>", class: "unit-1" },
-    { title: "互動環節：召喚蜜蜂授粉", content: "<ul><li>在互動遊戲中：</li><li>點擊畫面召喚蜜蜂前往花朵</li><li>幫助果樹完成授粉，體驗蜜蜂的辛勞！</li></ul>", class: "unit-1", gameTarget: "layer-1" },
+    { title: "互動環節：生態生存挑戰", content: "<ul><li>在互動遊戲中：</li><li>左右滑動控制蜜蜂，閃避<span class='highlight'>農藥、惡劣氣候與蜂蟹蟎</span>的危害。</li><li>在嚴苛的環境中生存下來，幫助蜂群成長茁壯！</li></ul>", class: "unit-1", gameTarget: "layer-1" },
 
     // --- 第二章：遷徙 (頁 10-14) (Index 9-13) ---
     { title: "【第二章】逐花而居", content: "<ul><li>蜂農被稱為「農業游牧民族」</li><li>必須配合植物開花的季節，將蜂箱大舉遷移</li><li>但出發前，還有一項<span class='highlight'>最關鍵的準備工作</span>！</li></ul>", class: "unit-2" },
@@ -881,83 +881,60 @@ initPPT();
    互動遊戲邏輯 (蜂蜜版 7 關)
    ========================================= */
 
-// --- Game 1: 選擇採粉或採蜜，移動蜜蜂收集 ---
+// --- Game 1: 生態生存挑戰 (閃避農藥、氣候、蜂蟹蟎，漸漸變強壯) ---
 function initGame1() {
     const container = document.getElementById('game-1');
     container.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
-            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;">採集進度: <span id="g1-pct">0</span>%</div>
-            <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g1-timer">15</span>秒</div>
-            <p id="g1-hint" style="font-size:0.9rem;color:#fff;background:rgba(230, 126, 34, 0.8);padding:3px 10px;border-radius:10px;">💡 請先選擇指派蜜蜂的任務</p>
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;">強壯度 (生存進度): <span id="g1-pct">0</span>%</div>
+            <div style="width:80%; height:12px; background:rgba(255,255,255,0.2); border-radius:10px; overflow:hidden; border:2px solid #fff; z-index:10; margin-bottom:5px;">
+                <div id="g1-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #4CAF50, #8BC34A); transition:width 0.2s;"></div>
+            </div>
+            <p id="g1-hint" style="font-size:0.9rem;color:#fff;background:rgba(230, 126, 34, 0.8);padding:3px 10px;border-radius:10px; z-index:10;">💡 左右滑動蜜蜂，躲避上方掉落的危害！</p>
             
-            <div id="g1-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(255,255,255,0.05);border-radius:10px;cursor:pointer;">
-                
-                <!-- 選擇任務 UI 覆蓋層 -->
-                <div id="g1-recipe-select" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:20;display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:10px;">
-                    <p style="color:#FFCA28;font-size:1.1rem;font-weight:bold;margin-bottom:15px;text-align:center;">你要派遣蜜蜂採集什麼？</p>
-                    <button id="btn-g1-pollen" style="padding:8px 15px;margin-bottom:10px;border-radius:8px;border:2px solid white;background:#8D6E63;color:white;font-size:1rem;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.3);">🌼 採花粉 (茶樹/玉米/豆科)</button>
-                    <button id="btn-g1-nectar" style="padding:8px 15px;border-radius:8px;border:2px solid white;background:#F57F17;color:white;font-size:1rem;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.3);">🍯 採花蜜 (龍眼/荔枝/百花)</button>
-                </div>
-
-                <div id="bee-avatar-g1" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);user-select:none;touch-action:none;transition: transform 0.1s; display:flex; flex-direction:column; align-items:center;">
-                    <span style="font-size:2.5rem;">🐝</span>
-                    <div style="width:30px; height:20px; background:rgba(255,255,255,0.3); border:2px solid #fff; border-top:none; border-radius:0 0 10px 10px; margin-top:-5px; box-shadow:inset 0 0 5px rgba(255,255,255,0.5);"></div>
-                </div>
+            <div id="g1-game-area" style="position:relative;width:100%;flex-grow:1;min-height:200px;overflow:hidden;background:rgba(255,255,255,0.05);border-radius:10px;cursor:pointer;margin-top:5px;">
+                <div id="bee-avatar-g1" style="position:absolute;bottom:15px;left:50%;transform:translateX(-50%) scale(1);font-size:2.5rem;user-select:none;touch-action:none;transition: transform 0.3s, filter 0.2s; z-index:20;">🐝</div>
             </div>
         </div>
-        <div id="g1-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>滿載而歸。</div>
+        
+        <div id="g1-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:100;border-radius:10px;">
+            <p style="color:#FFCA28;font-size:1.1rem;font-weight:bold;margin-bottom:15px;text-align:center;">安全無毒的環境是生存關鍵！<br>請閃避【☠️農藥】【⛈️惡劣氣候】【🕷️蜂蟹蟎】</p>
+            <button id="btn-g1-start" style="padding:10px 20px;border-radius:8px;border:2px solid white;background:#4CAF50;color:white;font-size:1.1rem;cursor:pointer;font-weight:bold;box-shadow:0 4px 6px rgba(0,0,0,0.3);">🚀 開始求生</button>
+        </div>
+
+        <div id="g1-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:110;text-align:center;width:80%;box-shadow:0 10px 20px rgba(0,0,0,0.6);">成功存活！<br>蜜蜂變得強壯了。</div>
     `;
 
     const gameArea = document.getElementById('g1-game-area');
     const bee = document.getElementById('bee-avatar-g1');
     const pctSpan = document.getElementById('g1-pct');
+    const progressBar = document.getElementById('g1-progress-bar');
     const msg = document.getElementById('g1-message');
-    const hint = document.getElementById('g1-hint');
-    
-    const recipeSelect = document.getElementById('g1-recipe-select');
-    const btnPollen = document.getElementById('btn-g1-pollen');
-    const btnNectar = document.getElementById('btn-g1-nectar');
+    const overlay = document.getElementById('g1-overlay');
+    const btnStart = document.getElementById('btn-g1-start');
 
-    let catchPct = 0; let isCompleted = false; let gameLoop; let targets = [];
-    let timeLeft = 15; const timerSpan = document.getElementById('g1-timer');
-    let timerInterval = null; let gameActive = false;
-    let selectedMission = null; 
+    let strengthPct = 0; let isCompleted = false; let gameLoop; let hazards = [];
+    let gameActive = false; let beeX = gameArea.clientWidth / 2;
+    let catchRadius = 25; 
 
-    // 植物資料庫
-    const pollenItems = ['🌼茶樹花', '🌽玉米', '🌿田菁', '🌱太陽麻'];
-    const nectarItems = ['🏵️龍眼花', '🌸荔枝花', '🍊柑橘花', '🌼咸豐草', '🍃白匏子', '🌺酸藤花'];
+    const hazardTypes = ['☠️', '⛈️', '🌪️', '🕷️'];
 
-    btnPollen.addEventListener('click', (e) => {
-        e.stopPropagation(); selectedMission = 'pollen';
-        hint.innerHTML = '💡 左右滑動，收集粉源<span style="color:#FFCA28;">(茶樹/玉米/豆科)</span>，避開蜜源！';
-        recipeSelect.style.display = 'none'; startGameLogic();
-    });
-
-    btnNectar.addEventListener('click', (e) => {
-        e.stopPropagation(); selectedMission = 'nectar';
-        hint.innerHTML = '💡 左右滑動，收集蜜源<span style="color:#FFCA28;">(龍眼/荔枝/百花等)</span>，避開粉源！';
-        recipeSelect.style.display = 'none'; startGameLogic();
+    btnStart.addEventListener('click', () => {
+        overlay.style.display = 'none';
+        startGameLogic();
     });
 
     function startGameLogic() {
-        if(gameActive || isCompleted || !selectedMission) return;
+        if(gameActive || isCompleted) return;
         gameActive = true;
+        bee.style.left = beeX + 'px';
         
-        timerInterval = setInterval(() => {
-            timeLeft--; timerSpan.textContent = timeLeft;
-            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
-        }, 1000);
-        
-        spawnTarget();
+        spawnHazard();
         updateGame();
     }
 
-    let beeX = gameArea.clientWidth / 2;
-    bee.style.left = beeX + 'px';
-    let catchRadius = 35;
-
     const handleMove = (e) => {
-        if(isCompleted || !selectedMission) return; 
+        if(isCompleted || !gameActive) return; 
         if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
         
         const rect = gameArea.getBoundingClientRect();
@@ -973,76 +950,106 @@ function initGame1() {
     gameArea.addEventListener('mousedown', handleMove); gameArea.addEventListener('touchstart', handleMove, {passive: false});
     gameArea.addEventListener('mousemove', handleMove); gameArea.addEventListener('touchmove', handleMove, {passive: false});
 
-    function showFloatingText(text, x, y) {
+    function spawnHazard() {
+        if(isCompleted) return;
+        
+        const el = document.createElement('div');
+        el.style.position='absolute'; el.style.fontSize='1.8rem'; el.style.userSelect='none';
+        el.textContent = hazardTypes[Math.floor(Math.random() * hazardTypes.length)];
+        
+        // 農藥會帶有一點綠色毒氣背景
+        if(el.textContent === '☠️') {
+            el.style.background = 'radial-gradient(circle, rgba(46,204,113,0.6) 0%, transparent 70%)';
+            el.style.borderRadius = '50%';
+        }
+
+        const x = Math.random() * (gameArea.clientWidth - 40) + 20;
+        el.style.left = x + 'px'; el.style.top = '-30px'; 
+        el.style.transform = 'translateX(-50%)';
+        gameArea.appendChild(el);
+
+        // 難度隨時間增加，速度變快
+        let baseSpeed = 2 + (strengthPct / 100) * 3;
+        hazards.push({ el, x, y: -30, speed: Math.random() * 1.5 + baseSpeed, active: true });
+        
+        // 生成頻率隨進度加快
+        let spawnRate = Math.max(250, 700 - (strengthPct * 4));
+        if(!isCompleted) setTimeout(spawnHazard, Math.random() * 200 + spawnRate);
+    }
+
+    function showDamageEffect(x, y) {
+        // 畫面閃紅光
+        gameArea.style.background = 'rgba(231, 76, 60, 0.4)';
+        setTimeout(() => { gameArea.style.background = 'rgba(255,255,255,0.05)'; }, 150);
+        
+        // 蜜蜂閃爍受傷
+        bee.style.filter = 'sepia(100%) hue-rotate(300deg) saturate(300%)';
+        setTimeout(() => { bee.style.filter = 'none'; }, 300);
+
+        // 扣分文字
         const f = document.createElement('div');
-        f.textContent = text; f.style.position = 'absolute'; f.style.left = (x - 10) + 'px'; f.style.top = y + 'px';
-        f.style.fontSize = '1.5rem'; f.style.transition = 'all 0.4s ease-out'; f.style.zIndex = '30';
+        f.textContent = '⚠️ 受傷 -15'; f.style.position = 'absolute'; f.style.left = (x - 30) + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.2rem'; f.style.color = '#e74c3c'; f.style.fontWeight = 'bold'; f.style.zIndex = '30';
+        f.style.transition = 'all 0.5s ease-out';
         gameArea.appendChild(f);
         setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
         setTimeout(() => f.remove(), 450);
     }
 
-    function spawnTarget() {
-        if(isCompleted) return;
-        const isPollen = Math.random() > 0.5; 
-        const text = isPollen ? pollenItems[Math.floor(Math.random()*pollenItems.length)] : nectarItems[Math.floor(Math.random()*nectarItems.length)];
-        
-        const el = document.createElement('div');
-        el.style.position='absolute'; el.style.fontSize='0.9rem'; el.style.fontWeight='bold';
-        el.style.background='rgba(255,255,255,0.9)'; el.style.padding='4px 8px'; el.style.borderRadius='10px'; 
-        el.style.color='#3E2723'; el.style.whiteSpace='nowrap'; el.style.boxShadow='0 2px 5px rgba(0,0,0,0.3)';
-        el.textContent = text;
-
-        const x = Math.random() * (gameArea.clientWidth - 80) + 40;
-        el.style.left = x + 'px'; el.style.top = '-30px'; 
-        el.style.transform = 'translateX(-50%)';
-        gameArea.appendChild(el);
-
-        targets.push({ el, x, y: -30, speed: Math.random() * 2 + 1.5, active: true, isPollen });
-        
-        if(!isCompleted) setTimeout(spawnTarget, Math.random() * 400 + 400);
-    }
-
     function updateGame() {
         if(isCompleted) return;
+        
+        // 每幀自動增加生存進度 (大約 15秒達標)
+        strengthPct += 0.11;
+        
         const beeTop = bee.offsetTop; const areaRect = gameArea.getBoundingClientRect();
-        targets.forEach(t => {
-            if(!t.active) return;
-            t.y += t.speed; t.el.style.top = t.y + 'px';
-            if(t.y > beeTop - 20 && t.y < beeTop + 30 && t.x > beeX - catchRadius && t.x < beeX + catchRadius) {
-                t.active = false; t.el.remove();
-                
-                if (selectedMission === 'pollen') {
-                    if (t.isPollen) {
-                        catchPct += 10; showFloatingText('✨', t.x, beeTop); 
-                    } else {
-                        catchPct = Math.max(0, catchPct - 5); showFloatingText('❌', t.x, beeTop); 
-                    }
-                } else if (selectedMission === 'nectar') {
-                    if (!t.isPollen) {
-                        catchPct += 10; showFloatingText('✨', t.x, beeTop); 
-                    } else {
-                        catchPct = Math.max(0, catchPct - 5); showFloatingText('❌', t.x, beeTop); 
-                    }
-                }
-
-                const score = Math.min(Math.round(catchPct), 100);
-                pctSpan.textContent = score; 
-            } else if(t.y > areaRect.height) { t.active = false; t.el.remove(); }
+        
+        hazards.forEach(h => {
+            if(!h.active) return;
+            h.y += h.speed; h.el.style.top = h.y + 'px';
+            
+            // 碰撞判定 (距離小於 35)
+            let distY = Math.abs(h.y - beeTop);
+            let distX = Math.abs(h.x - beeX);
+            
+            if(distY < 30 && distX < 30) {
+                h.active = false; h.el.remove();
+                strengthPct = Math.max(0, strengthPct - 15); // 撞到扣 15%
+                showDamageEffect(h.x, beeTop);
+            } else if(h.y > areaRect.height) { 
+                h.active = false; h.el.remove(); 
+            }
         });
-        targets = targets.filter(t => t.active);
-        if(!isCompleted) gameLoop = requestAnimationFrame(updateGame);
+        
+        hazards = hazards.filter(h => h.active);
+        
+        // 更新 UI
+        let displayPct = Math.min(Math.floor(strengthPct), 100);
+        pctSpan.textContent = displayPct;
+        progressBar.style.width = displayPct + '%';
+        
+        // 蜜蜂隨進度變強壯 (變大最多 1.5 倍)
+        let scaleSize = 1 + (displayPct / 100) * 0.5;
+        bee.style.transform = `translateX(-50%) scale(${scaleSize})`;
+
+        if(strengthPct >= 100) {
+            completeGame();
+        } else {
+            gameLoop = requestAnimationFrame(updateGame);
+        }
     }
 
     function completeGame() {
         if(isCompleted) return;
-        isCompleted = true; clearInterval(timerInterval);
-        msg.classList.remove('hidden'); targets.forEach(t => t.el.remove());
-        const score = Math.min(Math.round(catchPct), 100); 
-        pctSpan.textContent = score;
-        window.globalScores.s1 = score; window.addLayerToJar('s1', '#4CAF50', score);
+        isCompleted = true; 
+        msg.classList.remove('hidden'); 
+        hazards.forEach(h => h.el.remove());
         
-        setTimeout(() => { window.triggerNextCourseStep('layer-2', 9); }, 2000); 
+        pctSpan.textContent = 100;
+        progressBar.style.width = '100%';
+        window.globalScores.s1 = 100; window.addLayerToJar('s1', '#4CAF50', 100);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-2', 9); }, 2500); 
     }
 }
 
@@ -1448,17 +1455,23 @@ function initGame4() {
     }
 }
 
-// --- Game 5: 真假蜂蜜科學測試 (無計時限制，手機搖晃感測 / 電腦拖曳搖晃) ---
+// --- Game 5: 真假蜂蜜科學測試 (計次搖晃版：至少15次) ---
 function initGame5() {
     const container = document.getElementById('game-5');
     container.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
             <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;">第 <span id="g5-round" style="color:#FFCA28;">1</span>/2 回合 | 辨識分數: <span id="g5-pct">0</span></div>
             <p style="font-size:0.9rem;color:#fff;background:rgba(230, 126, 34, 0.8);padding:5px 10px;border-radius:10px;text-align:center;max-width:95%; line-height:1.4;">
-                💡 手機請直接<span style="color:#FFCA28;font-weight:bold;">搖晃裝置</span>！<br>電腦請<span style="color:#FFCA28;font-weight:bold;">拖曳右下角小手</span>左右晃動。觀察泡沫與水體！
+                💡 請<span style="color:#FFCA28;font-weight:bold;">搖晃裝置</span>或<span style="color:#FFCA28;font-weight:bold;">拖曳小手</span>來回搖晃。<br>至少搖晃 <span style="color:#FFCA28;font-weight:bold;font-size:1.2rem;">15</span> 次觀察變化！
             </p>
             
-            <div style="position:relative;width:100%;height:180px;display:flex;justify-content:center;align-items:center;touch-action:none;overflow:hidden;margin-top:10px;">
+            <!-- 搖晃進度條 -->
+            <div style="width:80%; height:15px; background:rgba(255,255,255,0.2); border-radius:10px; margin-top:5px; overflow:hidden; border:2px solid #fff; box-shadow:0 0 10px rgba(0,0,0,0.5); z-index:10;">
+                <div id="g5-shake-progress" style="width:0%; height:100%; background:linear-gradient(90deg, #f39c12, #f1c40f); transition:width 0.2s;"></div>
+            </div>
+            <div style="font-size:1rem; font-weight:bold; margin-top:2px; color:#FFCA28; z-index:10;">搖晃進度: <span id="g5-shake-text">0</span>% (<span id="g5-count-text" style="color:white;">0</span>/15 次)</div>
+
+            <div style="position:relative;width:100%;height:160px;display:flex;justify-content:center;align-items:center;touch-action:none;overflow:hidden;margin-top:5px;">
                 <div id="test-bottle" style="position:relative;width:70px;height:140px;background:rgba(255,255,255,0.2);border:4px solid white;border-radius:10px 10px 20px 20px;overflow:hidden;transition:transform 0.1s;cursor:grab;box-shadow:0 10px 20px rgba(0,0,0,0.5);">
                     <div id="g5-liquid" style="position:absolute;bottom:0;width:100%;height:80%;background:linear-gradient(#FFC107, #FF9800);transition:all 0.5s;"></div>
                     <div id="g5-foam" style="position:absolute;bottom:80%;width:100%;height:0%;background:rgba(255,255,255,0.9);border-radius:50% 50% 0 0;transition:height 0.2s;"></div>
@@ -1493,13 +1506,23 @@ function initGame5() {
     const hand = document.getElementById('floating-hand');
     const choiceDiv = document.getElementById('choice-buttons');
     const overlay = document.getElementById('g5-overlay');
+    
+    // 進度條元件
+    const shakeProgressBar = document.getElementById('g5-shake-progress');
+    const shakeProgressText = document.getElementById('g5-shake-text');
+    const countText = document.getElementById('g5-count-text');
 
     let round = 1;
     let score = 0;
     let currentIsReal = false;
     let isTesting = false;
     let isCompleted = false;
-    let shakeAccumulator = 0;
+    
+    // 搖晃計次相關變數
+    let shakeCount = 0;
+    const TARGET_SHAKES = 15; // 明確要求搖晃 15 次
+    let lastShakeTime = 0;    // 防抖機制(Debounce)，避免單次移動算多次
+    
     let fakeTimeout = null;
 
     // --- 啟動與感測器授權 ---
@@ -1523,11 +1546,16 @@ function initGame5() {
     function startRound() {
         roundSpan.textContent = round;
         currentIsReal = Math.random() > 0.5; // 隨機決定此回合為真蜜或假蜜
-        shakeAccumulator = 0;
+        
+        shakeCount = 0;
+        lastShakeTime = Date.now();
         isTesting = true;
         
-        // 重置視覺狀態
+        // 重置視覺與進度狀態
         clearTimeout(fakeTimeout);
+        shakeProgressBar.style.width = '0%';
+        shakeProgressText.textContent = '0';
+        countText.textContent = '0';
         foam.style.height = '0%';
         liquid.style.background = 'linear-gradient(#FFC107, #FF9800)'; // 恢復清澈亮黃
         hand.style.opacity = '1';
@@ -1537,6 +1565,28 @@ function initGame5() {
         bottle.style.transform = 'rotate(0deg)';
         choiceDiv.classList.add('hidden');
         msg.classList.add('hidden');
+    }
+
+    // 更新次數與進度條邏輯
+    function countShake() {
+        if(!isTesting || isCompleted) return;
+        
+        const now = Date.now();
+        // 防抖：兩次搖晃判定至少間隔 120 毫秒（代表合理的物理搖動速度）
+        if (now - lastShakeTime > 120) {
+            shakeCount++;
+            lastShakeTime = now;
+            
+            let pct = Math.min(100, Math.floor((shakeCount / TARGET_SHAKES) * 100));
+            
+            shakeProgressBar.style.width = pct + '%';
+            shakeProgressText.textContent = pct;
+            countText.textContent = shakeCount;
+
+            if (shakeCount >= TARGET_SHAKES) {
+                triggerFoam();
+            }
+        }
     }
 
     // --- 手機感測器搖晃處理 ---
@@ -1550,16 +1600,11 @@ function initGame5() {
         let deltaY = Math.abs(acc.y - lastY);
         let deltaZ = Math.abs(acc.z - lastZ);
         
-        // 搖晃閾值
+        // 感測器搖晃閾值（數值較大表示瞬間折返出力）
         if (deltaX + deltaY + deltaZ > 15) { 
-            shakeAccumulator += (deltaX + deltaY + deltaZ);
-            
             // 視覺微調反饋
             bottle.style.transform = `rotate(${(Math.random() - 0.5) * 30}deg)`;
-            
-            if(shakeAccumulator > 150) {
-                triggerFoam();
-            }
+            countShake();
         }
         lastX = acc.x; lastY = acc.y; lastZ = acc.z;
     }
@@ -1587,13 +1632,10 @@ function initGame5() {
         hand.style.right = 'auto';
         hand.style.left = (x - containerRect.left - 20) + 'px';
         
-        if(delta > 5) {
-            shakeAccumulator += delta * 0.8;
+        // 滑鼠拖曳的有效閾值（單次滑動超過 20 像素計為嘗試搖晃）
+        if(delta > 20) {
             bottle.style.transform = `rotate(${(x > handLastX ? 1 : -1) * 15}deg)`;
-            
-            if(shakeAccumulator > 150) {
-                triggerFoam();
-            }
+            countShake();
             handLastX = x;
         }
     };
@@ -1613,7 +1655,7 @@ function initGame5() {
 
     // --- 觸發起泡物理特性 ---
     function triggerFoam() {
-        isTesting = false; // 停止累積搖晃
+        isTesting = false; // 停止判定
         bottle.style.transform = 'rotate(0deg)';
         hand.style.opacity = '0';
         
@@ -1685,15 +1727,17 @@ function initGame5() {
     }
 }
 
-// --- Game 6: 市場防詐 (收集 TAP 標籤) ---
+// --- Game 6: 市場防詐 (收集 TAP 標籤 與 認識的蜂農) ---
 function initGame6() {
     const container = document.getElementById('game-6');
     container.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
             <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;">辨識正確率: <span id="g6-pct">0</span>%</div>
             <div style="font-size:1.2rem;color:#ffeb3b;margin-bottom:5px;">剩餘時間: <span id="g6-timer">15</span>秒</div>
-            <p style="font-size:0.9rem;color:#fff;background:rgba(230, 126, 34, 0.8);padding:3px 10px;border-radius:10px;">點擊收集【✅TAP標章】 避開【❌假蜜低價】</p>
-            <div id="g6-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(255,255,255,0.05);border-radius:10px;cursor:crosshair;">
+            <p style="font-size:0.9rem;color:#fff;background:rgba(230, 126, 34, 0.8);padding:3px 10px;border-radius:10px;text-align:center;">
+                點擊收集安全來源【✅TAP履歷】與【🤝認識的蜂農】<br>避開一頁式詐騙【❌破盤1折假蜜】
+            </p>
+            <div id="g6-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(255,255,255,0.05);border-radius:10px;cursor:crosshair;margin-top:5px;">
             </div>
         </div>
         <div id="g6-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#2ecc71;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">時間到！<br>防詐小達人。</div>
@@ -1724,31 +1768,49 @@ function initGame6() {
         el.style.fontWeight = 'bold';
         el.style.cursor = 'pointer';
         el.style.userSelect = 'none';
+        el.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
         
         if (isGood) {
-            el.textContent = '✅ TAP履歷';
+            // 新增邏輯：從安全的選項中隨機挑選
+            const goodOptions = ['✅ TAP履歷', '🤝 認識的蜂農'];
+            el.textContent = goodOptions[Math.floor(Math.random() * goodOptions.length)];
             el.style.background = '#27ae60';
         } else {
             el.textContent = '❌ 破盤1折假蜜';
             el.style.background = '#c0392b';
         }
 
-        const maxX = area.clientWidth - 100;
+        const maxX = area.clientWidth - 120; // 預留寬度避免溢出
         const maxY = area.clientHeight - 40;
-        el.style.left = Math.random() * maxX + 'px';
-        el.style.top = Math.random() * maxY + 'px';
+        el.style.left = Math.max(0, Math.random() * maxX) + 'px';
+        el.style.top = Math.max(0, Math.random() * maxY) + 'px';
         
         el.addEventListener('mousedown', () => {
             if(isCompleted) return;
-            if(isGood) score = Math.min(100, score + 15);
-            else score = Math.max(0, score - 10);
+            if(isGood) {
+                score = Math.min(100, score + 15);
+                showFloatingText('✨+15', el.style.left, el.style.top, '#2ecc71');
+            } else {
+                score = Math.max(0, score - 10);
+                showFloatingText('⚠️扣分', el.style.left, el.style.top, '#e74c3c');
+            }
             pctSpan.textContent = score;
             el.remove();
         });
         
         area.appendChild(el);
         setTimeout(() => { if(el.parentElement) el.remove(); }, 1500);
-        if(!isCompleted) setTimeout(spawnTarget, 800);
+        if(!isCompleted) setTimeout(spawnTarget, 700);
+    }
+
+    function showFloatingText(text, x, y, color) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = x; f.style.top = y;
+        f.style.fontSize = '1.2rem'; f.style.color = color; f.style.fontWeight = 'bold'; f.style.textShadow = '1px 1px 2px black';
+        f.style.transition = 'all 0.5s ease-out'; f.style.zIndex = '30'; f.style.pointerEvents = 'none';
+        area.appendChild(f);
+        setTimeout(() => { f.style.transform = 'translateY(-30px)'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 550);
     }
 
     // click area to start
