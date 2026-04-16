@@ -1945,8 +1945,10 @@
                     if (govLoaded && entLoaded && !absoluteLoaded) {
                         absoluteLoaded = 'pending';
                         onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
-                            // 🛡️ 核心修復：設定「絕對安全底線 (Baseline)」，保護歷史辛勞不被歸零
-                            const HISTORICAL_BASE = { carbon: 22647, green: 186500, visitor_count: 1250 };
+                            // 🛡️ 核心修復：將 AI 先前預設的舊數字 (22647) 升級為您真實營運的底線 (50000)
+                            // 💡 您可以隨時手動把 50000 改成更精準的數字 (例如 52300)
+                            // 如果瀏覽人次也比 1250 多，您也可以把 visitor_count 改成您印象中的數字 (例如 2500)
+                            const HISTORICAL_BASE = { carbon: 50000, green: 186500, visitor_count: 1250 };
                             
                             if (docSnap.exists()) { 
                                 globalAbsolute = docSnap.data(); 
@@ -3175,8 +3177,21 @@
                 }
             });
 
-            window.addEventListener('online', () => { if(isOfflineMode) { isOfflineMode = false; initFirebase(); window.showToast('網路已恢復，系統連線中...'); } });
-            window.addEventListener('offline', () => { isOfflineMode = true; window.showToast('網路已斷開，切換至離線模式'); loadMockData(); });
+            // 🚀 核心升級：網路狀態智慧偵測與自動同步機制
+            window.addEventListener('online', () => { 
+                if(isOfflineMode) { 
+                    isOfflineMode = false; 
+                    initFirebase(); 
+                    window.showToast('📶 網路連線已恢復...'); 
+                    // 延遲 3 秒等待 Firebase 初始化完畢，再執行背景同步
+                    setTimeout(() => { if(typeof window.syncOfflineData === 'function') window.syncOfflineData(); }, 3000);
+                } 
+            });
+            window.addEventListener('offline', () => { 
+                isOfflineMode = true; 
+                window.showToast('⚠️ 網路不穩定，系統已切換為「離線保護模式」。您的新數據將會暫存於手機中，請安心使用，網路恢復時將自動為您上傳。'); 
+                loadMockData(); 
+            });
         });
     </script>
 </body>
