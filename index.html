@@ -1931,14 +1931,51 @@
         function initGlobalCounters() {
             if (!db) return;
             try {
+                // ✨ 新增：Firebase 權限異常與斷線的統一錯誤攔截器
+                const handleFirebaseError = (err) => {
+                    console.warn("⚠️ Firebase 連線或權限異常 (可能為規則到期):", err);
+                    if (!isOfflineMode) { 
+                        isOfflineMode = true; 
+                        loadMockData(); // 強制啟動備援數據，防止畫面歸零
+                        window.showToast('資料庫連線受阻，已自動切換至備援展示模式'); 
+                    }
+                };
+
                 const checkBackendReady = () => {
                     if (govLoaded && entLoaded && !absoluteLoaded) {
                         absoluteLoaded = 'pending';
                         onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
-                            if (docSnap.exists()) { globalAbsolute = docSnap.data(); } 
-                            else { const todayStr = getTodayKey(); globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; globalAbsolute[`daily_${todayStr}_carbon`] = 0; await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); }
+                            // 🛡️ 核心修復：設定「絕對安全底線 (Baseline)」，保護歷史辛勞不被歸零
+                            const HISTORICAL_BASE = { carbon: 22647, green: 186500, visitor_count: 1250 };
+                            
+                            if (docSnap.exists()) { 
+                                globalAbsolute = docSnap.data(); 
+                                
+                                // ✨ 自癒引擎：如果有人誤刪後又觸發了 increment 從 0 累積，數字會異常小。
+                                // 此時強制拉回基準線，並自動修復資料庫。
+                                if ((globalAbsolute.carbon || 0) < HISTORICAL_BASE.carbon) {
+                                    console.warn("🛡️ 系統偵測到全局數據異常低落，啟動自動修復機制...");
+                                    globalAbsolute.carbon = Math.max(globalAbsolute.carbon || 0, HISTORICAL_BASE.carbon);
+                                    globalAbsolute.green = Math.max(globalAbsolute.green || 0, HISTORICAL_BASE.green);
+                                    globalAbsolute.visitor_count = Math.max(globalAbsolute.visitor_count || 0, HISTORICAL_BASE.visitor_count);
+                                    
+                                    if (!isOfflineMode) {
+                                        await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute, { merge: true });
+                                    }
+                                }
+                            } else { 
+                                // ✨ 防呆機制：如果檔案被誤刪，立刻用歷史基準點重建，防止下一次 increment 從 0 開始
+                                const todayStr = getTodayKey(); 
+                                globalAbsolute = { ...HISTORICAL_BASE }; 
+                                globalAbsolute[`daily_${todayStr}_carbon`] = 0; 
+                                
+                                if (!isOfflineMode) {
+                                    await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); 
+                                    console.warn("🛡️ 已自動觸發防呆修復，重建遺失的全局數據庫文件。");
+                                }
+                            }
                             absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
-                        });
+                        }, handleFirebaseError); // 👈 確保錯誤攔截機制存在
                     }
                 };
 
@@ -1949,7 +1986,7 @@
                     const badge = document.getElementById('badge-gov');
                     if (badge) { if (unreadCount > 0) { badge.textContent = 'NEW'; badge.classList.remove('hidden'); badge.classList.add('animate-bounce'); } else { badge.classList.add('hidden'); badge.classList.remove('animate-bounce'); } }
                     govLoaded = true; checkBackendReady(); renderGovDashboard(); updateProjectDropdown(); renderAuthList();
-                });
+                }, handleFirebaseError); // 👈 補上錯誤攔截
 
                 onSnapshot(collection(db, 'ent_projects'), (snapshot) => {
                     globalEntData.projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1958,17 +1995,17 @@
                     const badge = document.getElementById('badge-enterprise');
                     if (badge) { if (unreadCount > 0) { badge.textContent = 'NEW'; badge.classList.remove('hidden'); badge.classList.add('animate-bounce'); } else { badge.classList.add('hidden'); badge.classList.remove('animate-bounce'); } }
                     entLoaded = true; checkBackendReady(); renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList();
-                });
+                }, handleFirebaseError); // 👈 補上錯誤攔截
 
                 onSnapshot(doc(db, 'system_messages', 'broadcast'), (docSnap) => {
                     const bar = document.getElementById('system-broadcast-bar'), textEl = document.getElementById('system-broadcast-text');
                     if(docSnap.exists() && docSnap.data().message) { textEl.textContent = docSnap.data().message; bar.classList.remove('hidden'); } else { bar.classList.add('hidden'); }
-                });
+                }, (err) => { console.warn('Broadcast 讀取阻擋:', err); }); // 👈 補上靜默錯誤攔截
 
                 onSnapshot(doc(db, 'system_messages', 'certifications'), (docSnap) => {
                     if(docSnap.exists()) { globalCerts = docSnap.data(); } else { globalCerts = { operators: [], lecturers: [] }; }
                     renderCertifications();
-                });
+                }, (err) => { console.warn('Certifications 讀取阻擋:', err); }); // 👈 補上靜默錯誤攔截
 
             } catch(e) { console.error("Firebase init error:", e); isOfflineMode = true; loadMockData(); }
         }
