@@ -1440,8 +1440,86 @@
         async function addToGlobalTotal(carbonDelta, greenDelta) {
             const todayStr = getTodayKey(); globalAbsolute.carbon = (globalAbsolute.carbon || 0) + carbonDelta; globalAbsolute.green = (globalAbsolute.green || 0) + greenDelta; globalAbsolute[`daily_${todayStr}_carbon`] = (globalAbsolute[`daily_${todayStr}_carbon`] || 0) + carbonDelta;
             updateGlobalSummary();
-            if (!isOfflineMode && db) { try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(carbonDelta), green: increment(greenDelta), [`daily_${todayStr}_carbon`]: increment(carbonDelta) }, { merge: true }); } catch(e) {} }
+            
+            // 🛡️ 終極修復：立刻將數據存入實體硬碟 (localStorage)，防止手機殺掉網頁導致記憶體流失
+            state.pendingSync.carbon += carbonDelta;
+            state.pendingSync.green += greenDelta;
+            saveData();
+            
+            if (typeof window.triggerSync === 'function') window.triggerSync();
         }
+
+        // 🚀 核心防護：實體硬碟資料背景同步引擎 (導入「互斥鎖」與「樂觀清除」防重複機制)
+        window.isSyncing = false; // 🔒 宣告全域互斥鎖
+        window.triggerSync = async function() {
+            // 如果沒連線、沒資料，或是「已經有人在同步了」，就直接退出，防止重複執行
+            if (!db || isOfflineMode || !state.pendingSync || window.isSyncing) return;
+            window.isSyncing = true; // 🔒 上鎖
+            let synced = false;
+            
+            // 【1. 全局減碳與綠消】
+            const c = state.pendingSync.carbon || 0;
+            const g = state.pendingSync.green || 0;
+
+            if (c > 0 || g > 0) {
+                // ✨ 樂觀清除：先將本機硬碟的待傳數字歸零並存檔。防止傳送途中被併發重整引發重複上傳。
+                state.pendingSync.carbon = 0;
+                state.pendingSync.green = 0;
+                saveData();
+
+                const todayStr = getTodayKey();
+                try {
+                    await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(c), green: increment(g), [`daily_${todayStr}_carbon`]: increment(c) }, { merge: true });
+                    synced = true;
+                } catch(e) {
+                    // ❌ 萬一真的網路斷線傳送失敗，再把數字「退回」硬碟裡，等待下次救援
+                    state.pendingSync.carbon += c;
+                    state.pendingSync.green += g;
+                    saveData();
+                }
+            }
+            
+            // 【2. 企業歸戶問卷批次處理】
+            if (state.pendingSync.entEvals && state.pendingSync.entEvals.length > 0) {
+                const batchEnt = [...state.pendingSync.entEvals]; // 提取副本
+                state.pendingSync.entEvals = []; // 本機先清空
+                saveData();
+
+                for (let ev of batchEnt) {
+                    try {
+                        const updates = { carbon: increment(ev.carbon), green: increment(ev.green), eval_count: increment(ev.eval_count), total_score: increment(ev.total_score), score_e: increment(ev.score_e), score_s: increment(ev.score_s), score_g: increment(ev.score_g), updatedAt: serverTimestamp() };
+                        if (ev.feedback) updates.feedbacks = arrayUnion(ev.feedback);
+                        await setDoc(doc(db, 'ent_projects', ev.id), updates, { merge: true });
+                        synced = true;
+                    } catch(e) {
+                        state.pendingSync.entEvals.push(ev); // 失敗退回
+                        saveData();
+                    }
+                }
+            }
+
+            // 【3. 政府計畫問卷批次處理】
+            if (state.pendingSync.govEvals && state.pendingSync.govEvals.length > 0) {
+                const batchGov = [...state.pendingSync.govEvals]; // 提取副本
+                state.pendingSync.govEvals = []; // 本機先清空
+                saveData();
+
+                for (let ev of batchGov) {
+                    try {
+                        const updates = { carbon: increment(ev.carbon), green: increment(ev.green), eval_count: increment(ev.eval_count), total_score: increment(ev.total_score), updatedAt: serverTimestamp() };
+                        if (ev.feedback) updates.feedbacks = arrayUnion(ev.feedback);
+                        await setDoc(doc(db, 'gov_projects', ev.id), updates, { merge: true });
+                        synced = true;
+                    } catch(e) {
+                        state.pendingSync.govEvals.push(ev); // 失敗退回
+                        saveData();
+                    }
+                }
+            }
+            
+            window.isSyncing = false; // 🔓 解鎖，允許下一次同步
+            if (synced) { window.showToast('🔄 網路連線優良，離線暫存數據已安全同步至雲端！'); }
+        };
 
         function renderCheckoutHistory() {
             const list = document.getElementById('checkout-history-list'); if(!list) return;
@@ -2020,6 +2098,7 @@
                 onAuthStateChanged(auth, user => { 
                     if(user && db) {
                         initGlobalCounters(); 
+                        if (typeof window.triggerSync === 'function') window.triggerSync(); // 👈 關鍵防護：啟動網頁時，自動檢查硬碟並將昨天遺失的數據補推上雲端
                         if (!pageLoaded) { pageLoaded = true; setDoc(doc(db, 'system_stats', 'global_absolute'), { visitor_count: increment(1) }, { merge: true }).catch(e => {}); }
                     } else if (isOfflineMode) { loadMockData(); }
                 });
