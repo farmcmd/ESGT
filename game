@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>地球日誌 - 生態觀測站</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0f172a;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #gameCanvas {
+            image-rendering: pixelated; /* 確保縮放時保持復古感 */
+            display: block;
+        }
+        .ui-layer {
+            position: absolute;
+            pointer-events: none;
+        }
+        .interactive-btn {
+            pointer-events: auto;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="relative text-white font-sans">
+
+    <!-- 遊戲畫布 -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI 層 -->
+    <div class="ui-layer top-0 left-0 w-full p-4 flex justify-between items-start">
+        <div class="bg-slate-900/90 border-2 border-emerald-500/80 p-3 rounded-lg shadow-lg backdrop-blur-sm">
+            <h1 class="text-xl font-bold text-emerald-400 tracking-wider">地球日誌 <span class="text-xs text-slate-400">生態觀測 v1.0</span></h1>
+            <p class="text-sm text-green-300 mt-1" id="location-info">目前位置：系統載入中...</p>
+            <p class="text-xs text-slate-400 mt-1">使用 WASD / 方向鍵 或 螢幕搖桿移動</p>
+            <button onclick="openESGTModal()" class="mt-2 interactive-btn bg-teal-700 hover:bg-teal-600 text-white text-xs py-1 px-3 rounded shadow transition-colors border border-teal-500">
+                🔗 導入 ESGT 外部數據
+            </button>
+        </div>
+        
+        <div class="bg-slate-900/90 border-2 border-teal-600/80 p-3 rounded-lg text-right hidden sm:block shadow-lg">
+            <p class="text-sm text-teal-400">觀測點數: <span id="eco-points" class="font-bold">0</span></p>
+            <p class="text-sm text-blue-400 mt-1">生態復育率: <span class="font-bold">0 %</span></p>
+        </div>
+    </div>
+
+    <!-- 互動提示框 -->
+    <div id="interaction-prompt" class="ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border-2 border-yellow-500 p-5 rounded-xl hidden text-center shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all duration-300">
+        <h2 id="prompt-title" class="text-xl font-bold text-yellow-400 mb-2 flex items-center justify-center gap-2">發現生態熱點</h2>
+        <p id="prompt-desc" class="text-sm text-slate-200 mb-4 max-w-xs leading-relaxed">這是一段描述。</p>
+        <button class="interactive-btn bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 px-8 rounded-full shadow-lg transform transition active:scale-95" onclick="triggerEvent()">
+            寫入觀測日誌
+        </button>
+    </div>
+
+    <!-- 留言板 UI (全球觀測通訊頻道) -->
+    <div class="ui-layer bottom-8 right-8 w-80 bg-slate-900/90 border-2 border-blue-500/80 rounded-lg shadow-xl backdrop-blur-md hidden sm:flex flex-col" id="chat-panel" style="pointer-events: auto; max-height: 300px; z-index: 50;">
+        <div class="bg-blue-900/50 p-2 border-b border-blue-500/50 rounded-t-md flex justify-between items-center">
+            <span class="text-sm font-bold text-blue-300">🌍 全球觀測通訊頻道</span>
+            <span class="text-xs text-green-400" id="auth-status">連線中...</span>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-2 text-sm" id="chat-messages">
+            <div class="text-slate-400 italic text-center">正在同步全球觀測紀錄...</div>
+        </div>
+        <div class="p-2 border-t border-slate-700 flex gap-2">
+            <input type="text" id="chat-input" class="flex-1 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-400" placeholder="分享觀測發現...">
+            <button id="chat-send" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition-colors shadow">發送</button>
+        </div>
+    </div>
+
+    <!-- ESGT 數據導入面板 (隱藏) -->
+    <div id="esgt-modal" class="ui-layer absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 100;">
+        <div class="bg-slate-900 border-2 border-emerald-500 p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4 interactive-btn">
+            <h2 class="text-xl font-bold text-emerald-400 mb-2">🔗 同步 ESGT 數據</h2>
+            <p class="text-sm text-slate-300 mb-4">請輸入您的 ESGT 觀測員 ID，以載入真實世界的永續數據與點數。</p>
+            <input type="text" id="esgt-id-input" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white mb-4 focus:outline-none focus:border-emerald-400" placeholder="例如: user_01">
+            <div id="esgt-status" class="text-xs text-yellow-400 mb-4 h-4"></div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeESGTModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-white text-sm transition-colors">取消</button>
+                <button onclick="fetchESGTData()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white text-sm font-bold shadow transition-colors">開始同步</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 手機端虛擬搖桿 -->
+    <div class="ui-layer bottom-8 left-8 sm:hidden">
+        <div class="relative w-36 h-36 bg-slate-800/60 rounded-full border border-slate-500/50 backdrop-blur-md shadow-xl">
+            <button class="interactive-btn absolute top-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-slate-700/80 rounded-full hover:bg-slate-600 flex items-center justify-center text-xl shadow" id="btn-up">▲</button>
+            <button class="interactive-btn absolute bottom-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-slate-700/80 rounded-full hover:bg-slate-600 flex items-center justify-center text-xl shadow" id="btn-down">▼</button>
+            <button class="interactive-btn absolute left-1 top-1/2 -translate-y-1/2 w-12 h-12 bg-slate-700/80 rounded-full hover:bg-slate-600 flex items-center justify-center text-xl shadow" id="btn-left">◀</button>
+            <button class="interactive-btn absolute right-1 top-1/2 -translate-y-1/2 w-12 h-12 bg-slate-700/80 rounded-full hover:bg-slate-600 flex items-center justify-center text-xl shadow" id="btn-right">▶</button>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-slate-500/50 rounded-full"></div>
+        </div>
+    </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+/**
+ * 永續旅行者 - 核心引擎 (SVG 渲染版)
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const TILE_SIZE = 64; // 加大圖塊以展示 SVG 細節
+let CANVAS_WIDTH = window.innerWidth;
+let CANVAS_HEIGHT = window.innerHeight;
+
+// ==========================================
+// 1. SVG 資源定義庫 (使用原始 SVG 標籤字串)
+// ==========================================
+const svgAssets = {
+    // 0: 湖泊/海洋 (波浪紋理)
+    0: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+          <rect width="64" height="64" fill="#0284c7"/>
+          <path d="M 10 20 Q 18 12 26 20 T 42 20 T 58 20" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+          <path d="M 5 45 Q 13 37 21 45 T 37 45 T 53 45" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+        </svg>`,
+    // 1: 綠色平原 (小草叢)
+    1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+          <rect width="64" height="64" fill="#84cc16"/>
+          <path d="M 15 45 Q 18 35 22 45 M 22 45 Q 26 38 29 45" fill="none" stroke="#4d7c0f" stroke-width="2" stroke-linecap="round"/>
+          <path d="M 40 25 Q 43 15 47 25 M 47 25 Q 51 18 54 25" fill="none" stroke="#65a30d" stroke-width="2" stroke-linecap="round"/>
+        </svg>`,
+    // 2: 原始森林 (樹冠交疊)
+    2: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+          <rect width="64" height="64" fill="#65a30d"/>
+          <!-- 後方樹木 -->
+          <rect x="18" y="30" width="4" height="15" fill="#78350f"/>
+          <path d="M 20 15 L 8 35 L 32 35 Z" fill="#14532d"/>
+          <rect x="42" y="25" width="4" height="15" fill="#78350f"/>
+          <path d="M 44 10 L 32 30 L 56 30 Z" fill="#166534"/>
+          <!-- 前方大樹 -->
+          <rect x="30" y="40" width="6" height="20" fill="#451a03"/>
+          <path d="M 33 20 L 15 45 L 51 45 Z" fill="#15803d"/>
+        </svg>`,
+    // 3: 險峻山脈 (雪頂山峰)
+    3: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+          <rect width="64" height="64" fill="#a8a29e"/>
+          <!-- 左側山峰 -->
+          <polygon points="25,15 5,64 45,64" fill="#57534e"/>
+          <polygon points="25,15 17,35 25,40 33,35" fill="#f5f5f4"/>
+          <!-- 右側主峰 -->
+          <polygon points="45,25 25,64 64,64" fill="#78716c"/>
+          <polygon points="45,25 38,40 45,45 52,40" fill="#e7e5e4"/>
+        </svg>`,
+    // 4: 沙化荒地 (沙丘波紋)
+    4: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+          <rect width="64" height="64" fill="#fcd34d"/>
+          <path d="M 10 30 Q 30 20 50 35" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+          <path d="M 20 50 Q 40 40 60 55" fill="none" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>`,
+    // 玩家角色 (背著行囊的旅行者)
+    'player': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+          <circle cx="24" cy="15" r="8" fill="#fcd34d" />
+          <path d="M 14 44 L 18 25 L 30 25 L 34 44" stroke="#0f172a" stroke-width="4" fill="none" />
+          <rect x="16" y="25" width="16" height="15" rx="4" fill="#3b82f6" />
+          <rect x="12" y="25" width="24" height="12" rx="3" fill="#1e40af" />
+          <!-- 綠色行囊 -->
+          <rect x="18" y="20" width="12" height="14" rx="2" fill="#22c55e" />
+        </svg>`
+};
+
+// 預先加載的 Image 物件庫
+const tileImages = {};
+let imagesLoaded = 0;
+const totalImages = Object.keys(svgAssets).length;
+
+// 將 SVG 字串轉化為 Image 物件 (提升 Canvas 渲染效能)
+function initAssets(callback) {
+    for (const [key, svgString] of Object.entries(svgAssets)) {
+        const img = new Image();
+        // 使用 Blob 建立 Data URI
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        img.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages && callback) callback();
+        };
+        img.src = url;
+        tileImages[key] = img;
+    }
+}
+
+// 地形設定檔
+const TERRAIN_CONFIG = {
+    0: { walkable: false, name: '原始水脈' },
+    1: { walkable: true, name: '初生草原' },
+    2: { walkable: true, name: '生態庇護林' },
+    3: { walkable: false, name: '險峻岩脈' },
+    4: { walkable: true, name: '沙化觀測區' }
+};
+
+// ==========================================
+// 2. 地圖生成邏輯 (稍微平滑化處理)
+// ==========================================
+const MAP_COLS = 50;
+const MAP_ROWS = 50;
+let mapData = [];
+
+function generateMap() {
+    // 基礎隨機
+    for (let y = 0; y < MAP_ROWS; y++) {
+        let row = [];
+        for (let x = 0; x < MAP_COLS; x++) {
+            if (x < 2 || x > MAP_COLS - 3 || y < 2 || y > MAP_ROWS - 3) row.push(0);
+            else {
+                let r = Math.random();
+                if (r < 0.1) row.push(0);
+                else if (r < 0.25) row.push(3);
+                else if (r < 0.45) row.push(2);
+                else if (r < 0.55) row.push(4);
+                else row.push(1);
+            }
+        }
+        mapData.push(row);
+    }
+
+    // 簡單的細胞自動機平滑化 (讓地形聚集)
+    let newMap = JSON.parse(JSON.stringify(mapData));
+    for (let i = 0; i < 2; i++) {
+        for (let y = 2; y < MAP_ROWS - 2; y++) {
+            for (let x = 2; x < MAP_COLS - 2; x++) {
+                let counts = {0:0, 1:0, 2:0, 3:0, 4:0};
+                for(let dy=-1; dy<=1; dy++){
+                    for(let dx=-1; dx<=1; dx++){
+                        counts[mapData[y+dy][x+dx]]++;
+                    }
+                }
+                // 找出周圍最多的地形
+                let maxType = mapData[y][x];
+                let maxCount = 0;
+                for(let t=0; t<=4; t++){
+                    if(counts[t] > maxCount) { maxCount = counts[t]; maxType = t; }
+                }
+                newMap[y][x] = maxType;
+            }
+        }
+        mapData = JSON.parse(JSON.stringify(newMap));
+    }
+
+    // 確保中心出生點是草地
+    for(let y=23; y<=26; y++) {
+        for(let x=23; x<=26; x++) {
+            mapData[y][x] = 1;
+        }
+    }
+}
+generateMap();
+
+// 永續地標定義 (更新為地球日誌主題)
+const landmarks = [
+    { x: 15, y: 15, name: '季風觀測峽谷', icon: '🎐', desc: '記錄峽谷強風數據，分析大氣環流與區域氣候變遷的關聯。' },
+    { x: 35, y: 18, name: '濕地水質監測站', icon: '💧', desc: '採樣地下水純淨度，觀察水生生態系在復育後的健康狀況。' },
+    { x: 12, y: 35, name: '日照能量記錄所', icon: '☀️', desc: '觀測荒地的日照輻射量，尋找適合耐旱植物復育的關鍵熱點。' },
+    { x: 35, y: 35, name: '土壤生態庇護所', icon: '🏡', desc: '記錄無農藥土壤中的微生物活躍度，撰寫完整的生態復原日誌。' }
+];
+
+// 確保地標位置可達
+landmarks.forEach(lm => { mapData[lm.y][lm.x] = 1; });
+
+// ==========================================
+// 3. 遊戲物件與控制
+// ==========================================
+const player = {
+    x: 25 * TILE_SIZE,
+    y: 25 * TILE_SIZE,
+    width: TILE_SIZE * 0.7,
+    height: TILE_SIZE * 0.7,
+    speed: 5
+};
+
+const camera = { x: 0, y: 0 };
+const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, s: false, a: false, d: false };
+
+// 事件監聽
+window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+const setupBtn = (id, key) => {
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    const press = (e) => { e.preventDefault(); keys[key] = true; };
+    const release = (e) => { e.preventDefault(); keys[key] = false; };
+    btn.addEventListener('touchstart', press); btn.addEventListener('touchend', release);
+    btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release); btn.addEventListener('mouseleave', release);
+};
+setupBtn('btn-up', 'ArrowUp'); setupBtn('btn-down', 'ArrowDown'); setupBtn('btn-left', 'ArrowLeft'); setupBtn('btn-right', 'ArrowRight');
+
+function resize() {
+    CANVAS_WIDTH = window.innerWidth;
+    CANVAS_HEIGHT = window.innerHeight;
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+    // 關閉影像平滑，保持像素/銳利風格
+    ctx.imageSmoothingEnabled = false; 
+}
+window.addEventListener('resize', resize);
+resize();
+
+// UI 元素
+const uiLocation = document.getElementById('location-info');
+const uiPrompt = document.getElementById('interaction-prompt');
+const uiTitle = document.getElementById('prompt-title');
+const uiDesc = document.getElementById('prompt-desc');
+let currentLandmark = null;
+
+function isWalkable(px, py) {
+    const gX = Math.floor((px + player.width/2) / TILE_SIZE);
+    const gY = Math.floor((py + player.height/2) / TILE_SIZE);
+    if (gX < 0 || gX >= MAP_COLS || gY < 0 || gY >= MAP_ROWS) return false;
+    return TERRAIN_CONFIG[mapData[gY][gX]].walkable;
+}
+
+// ==========================================
+// 4. 遊戲主迴圈
+// ==========================================
+function update() {
+    let dx = 0, dy = 0;
+    if (keys.ArrowUp || keys.w) dy -= player.speed;
+    if (keys.ArrowDown || keys.s) dy += player.speed;
+    if (keys.ArrowLeft || keys.a) dx -= player.speed;
+    if (keys.ArrowRight || keys.d) dx += player.speed;
+
+    if (dx !== 0 && isWalkable(player.x + dx, player.y)) player.x += dx;
+    if (dy !== 0 && isWalkable(player.x, player.y + dy)) player.y += dy;
+
+    // 攝影機追蹤
+    camera.x = player.x + player.width / 2 - CANVAS_WIDTH / 2;
+    camera.y = player.y + player.height / 2 - CANVAS_HEIGHT / 2;
+    camera.x = Math.max(0, Math.min(camera.x, MAP_COLS * TILE_SIZE - CANVAS_WIDTH));
+    camera.y = Math.max(0, Math.min(camera.y, MAP_ROWS * TILE_SIZE - CANVAS_HEIGHT));
+
+    // 偵測位置
+    const gX = Math.floor((player.x + player.width/2) / TILE_SIZE);
+    const gY = Math.floor((player.y + player.height/2) / TILE_SIZE);
+    
+    if (gX >= 0 && gX < MAP_COLS && gY >= 0 && gY < MAP_ROWS) {
+        uiLocation.innerText = `目前位置：${TERRAIN_CONFIG[mapData[gY][gX]].name} (${gX}, ${gY})`;
+    }
+
+    // 偵測地標
+    let found = landmarks.find(lm => lm.x === gX && lm.y === gY);
+    if (found !== currentLandmark) {
+        currentLandmark = found;
+        if (currentLandmark) {
+            uiTitle.innerHTML = `<span class="text-2xl">${currentLandmark.icon}</span> ${currentLandmark.name}`;
+            uiDesc.innerText = currentLandmark.desc;
+            uiPrompt.classList.remove('hidden');
+            uiPrompt.classList.add('opacity-100', 'translate-y-0');
+        } else {
+            uiPrompt.classList.add('hidden');
+        }
+    }
+}
+
+function triggerEvent() {
+    if(!currentLandmark) return;
+    const btn = uiPrompt.querySelector('button');
+    const oriText = btn.innerText;
+    btn.innerText = "✓ 日誌已登錄";
+    btn.classList.replace('from-emerald-600', 'from-amber-500');
+    btn.classList.replace('to-teal-600', 'to-yellow-500');
+    
+    let pts = document.getElementById('eco-points');
+    pts.innerText = parseInt(pts.innerText) + 50;
+
+    setTimeout(() => {
+        btn.innerText = oriText;
+        btn.classList.replace('from-amber-500', 'from-emerald-600');
+        btn.classList.replace('to-yellow-500', 'to-teal-600');
+        uiPrompt.classList.add('hidden');
+    }, 1500);
+}
+window.triggerEvent = triggerEvent; // 導出至全域，供 HTML onClick 使用
+
+// ==========================================
+// ESGT 外部數據串接邏輯
+// ==========================================
+function openESGTModal() {
+    document.getElementById('esgt-modal').classList.remove('hidden');
+    document.getElementById('esgt-status').innerText = '';
+}
+window.openESGTModal = openESGTModal;
+
+function closeESGTModal() {
+    document.getElementById('esgt-modal').classList.add('hidden');
+}
+window.closeESGTModal = closeESGTModal;
+
+async function fetchESGTData() {
+    const userId = document.getElementById('esgt-id-input').value.trim() || 'default';
+    const statusEl = document.getElementById('esgt-status');
+    const ptsEl = document.getElementById('eco-points');
+    
+    statusEl.className = 'text-xs text-blue-400 mb-4 h-4';
+    statusEl.innerText = '連線至 farmcmd.github.io...';
+
+    try {
+        // 假設 ESGT 網站將使用者數據存放在 /data/{userId}.json 中
+        // 為了展示防呆機制，若網址不存在會觸發 catch
+        const targetUrl = `https://farmcmd.github.io/ESGT/data/${userId}.json`;
+        const response = await fetch(targetUrl);
+        
+        if (!response.ok) {
+            throw new Error(`找不到該 ID 的數據 (HTTP ${response.status})`);
+        }
+
+        const data = await response.json();
+        
+        // 安全地解析 JSON 數據 (防禦 XSS: 只取數值，不取字串寫入 HTML)
+        const newPoints = parseInt(data.points) || 0;
+        const newEcoRate = parseFloat(data.ecoRate) || 0;
+        
+        // 更新 UI
+        ptsEl.innerText = (parseInt(ptsEl.innerText) + newPoints).toString();
+        // 假設您的生態復育率 UI 在此處可直接抓取 DOM 更新 (簡化示意)
+        const ecoRateUI = document.querySelectorAll('.text-blue-400 .font-bold')[0];
+        if(ecoRateUI) ecoRateUI.innerText = newEcoRate + ' %';
+
+        statusEl.className = 'text-xs text-emerald-400 mb-4 h-4 font-bold';
+        statusEl.innerText = '✓ 同步成功！點數已更新。';
+        
+        setTimeout(() => closeESGTModal(), 1500);
+
+    } catch (error) {
+        console.error("ESGT 同步錯誤:", error);
+        statusEl.className = 'text-xs text-red-400 mb-4 h-4';
+        statusEl.innerText = '同步失敗：請確認 ID 或 GitHub 資料格式是否正確。';
+    }
+}
+window.fetchESGTData = fetchESGTData;
+
+function draw() {
+    // 背景填色
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    if (imagesLoaded < totalImages) {
+        ctx.fillStyle = 'white';
+        ctx.font = '20px sans-serif';
+        ctx.fillText('載入精緻地圖素材中...', CANVAS_WIDTH/2 - 100, CANVAS_HEIGHT/2);
+        return;
+    }
+
+    const startCol = Math.floor(camera.x / TILE_SIZE);
+    const endCol = startCol + (CANVAS_WIDTH / TILE_SIZE) + 1;
+    const startRow = Math.floor(camera.y / TILE_SIZE);
+    const endRow = startRow + (CANVAS_HEIGHT / TILE_SIZE) + 1;
+
+    // 1. 繪製地形 SVG
+    for (let y = startRow; y <= endRow; y++) {
+        for (let x = startCol; x <= endCol; x++) {
+            if (x >= 0 && x < MAP_COLS && y >= 0 && y < MAP_ROWS) {
+                const type = mapData[y][x];
+                const drawX = Math.floor(x * TILE_SIZE - camera.x);
+                const drawY = Math.floor(y * TILE_SIZE - camera.y);
+                
+                // 使用快取的 SVG Image 渲染
+                if(tileImages[type]) {
+                    ctx.drawImage(tileImages[type], drawX, drawY, TILE_SIZE, TILE_SIZE);
+                }
+            }
+        }
+    }
+
+    // 2. 繪製地標
+    for (let lm of landmarks) {
+        if (lm.x >= startCol && lm.x <= endCol && lm.y >= startRow && lm.y <= endRow) {
+            const drawX = Math.floor(lm.x * TILE_SIZE - camera.x + TILE_SIZE/2);
+            const drawY = Math.floor(lm.y * TILE_SIZE - camera.y + TILE_SIZE/2);
+            
+            // 地標光環
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.4)';
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, TILE_SIZE/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.font = '32px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(lm.icon, drawX, drawY - 5);
+            
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillStyle = '#fde047';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.strokeText(lm.name, drawX, drawY - 35);
+            ctx.fillText(lm.name, drawX, drawY - 35);
+        }
+    }
+
+    // 3. 繪製玩家 SVG
+    const pDrawX = Math.floor(player.x - camera.x);
+    const pDrawY = Math.floor(player.y - camera.y);
+    
+    // 陰影
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(pDrawX + player.width/2, pDrawY + player.height - 2, player.width/2.5, player.height/5, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // 渲染玩家 SVG
+    if(tileImages['player']) {
+        ctx.drawImage(tileImages['player'], pDrawX, pDrawY, player.width, player.height);
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// 啟動流程：先將 SVG 轉為 Image 記憶體快取，完成後開始迴圈
+initAssets(() => {
+    gameLoop();
+});
+
+// ==========================================
+// 5. Firebase 多人連線留言板系統
+// ==========================================
+let db, auth, currentUser;
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'earth-diary-default';
+
+async function initFirebase() {
+    if (typeof __firebase_config !== 'undefined') {
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // 確保先驗證身份
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("認證失敗", e);
+                document.getElementById('auth-status').innerText = '連線失敗';
+                document.getElementById('auth-status').className = 'text-xs text-red-400';
+            }
+        };
+        await initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('auth-status').innerText = '🟢 已連線';
+                setupChatListener();
+            } else {
+                document.getElementById('auth-status').innerText = '🔴 未連線';
+            }
+        });
+    } else {
+        document.getElementById('auth-status').innerText = '🟡 區域測試模式';
+        document.getElementById('auth-status').className = 'text-xs text-yellow-400';
+        document.getElementById('chat-messages').innerHTML = '<div class="text-slate-400 italic text-center">本機環境無法使用連線頻道</div>';
+    }
+}
+
+function setupChatListener() {
+    if(!db || !currentUser) return;
+    // 嚴格遵守路徑規範：/artifacts/{appId}/public/data/{collectionName}
+    const chatRef = collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages');
+    
+    // 監聽集合變化 (依循規範：不使用複雜查詢限制，由前端陣列處理排序)
+    onSnapshot(chatRef, (snapshot) => {
+        const msgs = [];
+        snapshot.forEach(doc => msgs.push({ id: doc.id, ...doc.data() }));
+        
+        // 前端記憶體內排序 (依時間戳)
+        msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+        
+        if (msgs.length === 0) {
+            container.innerHTML = '<div class="text-slate-400 italic text-center">尚無觀測紀錄，搶先發言吧！</div>';
+        }
+        
+        // 取最後 30 筆訊息顯示
+        msgs.slice(-30).forEach(msg => {
+            const isMe = msg.uid === currentUser.uid;
+            const name = isMe ? '我' : '觀測員 ' + msg.uid.slice(0, 4).toUpperCase();
+            const color = isMe ? 'text-amber-400' : 'text-emerald-400';
+            const div = document.createElement('div');
+            div.className = "break-words mt-1";
+            div.innerHTML = `<span class="${color} font-bold">[${name}]</span> <span class="text-slate-200">${msg.text}</span>`;
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    }, (err) => {
+        console.error("同步錯誤:", err);
+    });
+}
+
+// 發送訊息事件
+document.getElementById('chat-send').addEventListener('click', async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    
+    if(!text) return;
+    if(!db || !currentUser) {
+        input.value = '';
+        input.placeholder = "雲端尚未連線...";
+        setTimeout(() => input.placeholder = "分享觀測發現...", 2000);
+        return;
+    }
+    
+    input.value = '';
+    try {
+        const chatRef = collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages');
+        await addDoc(chatRef, {
+            text: text,
+            uid: currentUser.uid,
+            timestamp: Date.now()
+        });
+    } catch(e) {
+        console.error("發送失敗", e);
+    }
+});
+
+document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') document.getElementById('chat-send').click();
+});
+
+// 初始化資料庫連線
+initFirebase();
+
+</script>
+</body>
+</html>
