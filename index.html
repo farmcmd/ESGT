@@ -2132,7 +2132,7 @@
                 onAuthStateChanged(auth, user => { 
                     if(user && db) {
                         initGlobalCounters(); 
-                        if (typeof window.triggerSync === 'function') window.triggerSync(); // 👈 關鍵防護：啟動網頁時，自動檢查硬碟並將昨天遺失的數據補推上雲端
+                        // 👇 核心修復：拔除 triggerSync
                         if (!pageLoaded) { pageLoaded = true; setDoc(doc(db, 'system_stats', 'global_absolute'), { visitor_count: increment(1) }, { merge: true }).catch(e => {}); }
                     } else if (isOfflineMode) { loadMockData(); }
                 });
@@ -2849,6 +2849,7 @@
 
                 const totalGreen = state.greenProcure + state.sroiProcure;
                 
+                // 🚀 核心修復：直球對決！如果寫入失敗，直接中斷歸戶流程並報錯
                 if (db && !isOfflineMode && !pendingGovEvalSubmission.startsWith('mock_')) {
                     try {
                         const updates = {
@@ -2857,7 +2858,11 @@
                         };
                         if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
                         await setDoc(doc(db, 'gov_projects', pendingGovEvalSubmission), updates, { merge: true });
-                    } catch(e) { window.showToast('雲端歸戶失敗，請重試'); return; }
+                    } catch(e) { 
+                        console.error("🚨 政府計畫寫入失敗：", e);
+                        window.showToast('🚨 雲端歸戶失敗，請檢查 Firebase 權限！您的積分已保留。'); 
+                        return; // 寫入失敗則中斷流程，不扣除個人積分
+                    }
                 } else {
                     const proj = globalGovData.projects.find(p => p.id === pendingGovEvalSubmission);
                     if(proj) {
