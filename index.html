@@ -1438,90 +1438,55 @@
         function getTodayKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
         async function addToGlobalTotal(carbonDelta, greenDelta) {
-            const todayStr = getTodayKey(); globalAbsolute.carbon = (globalAbsolute.carbon || 0) + carbonDelta; globalAbsolute.green = (globalAbsolute.green || 0) + greenDelta; globalAbsolute[`daily_${todayStr}_carbon`] = (globalAbsolute[`daily_${todayStr}_carbon`] || 0) + carbonDelta;
-            updateGlobalSummary();
+            // 🚨 防呆檢查：如果沒連上線，直接降下紅布條警告，阻止幽靈假象！
+            if (!db || isOfflineMode) {
+                const bar = document.getElementById('system-broadcast-bar');
+                const textEl = document.getElementById('system-broadcast-text');
+                if (bar && textEl) {
+                    textEl.innerHTML = `🚨 系統處於離線狀態！請確認 Firebase Console 的「Authentication (驗證) > 匿名登入」是否已啟用！`;
+                    bar.classList.remove('hidden', 'bg-yellow-500');
+                    bar.classList.add('bg-red-600', 'h-auto', 'py-4', 'animate-pulse');
+                }
+                return window.showToast('⚠️ 網路離線或匿名登入未開啟，無法寫入');
+            }
             
-            // 🛡️ 終極修復：立刻將數據存入實體硬碟 (localStorage)，防止手機殺掉網頁導致記憶體流失
-            state.pendingSync.carbon += carbonDelta;
-            state.pendingSync.green += greenDelta;
-            saveData();
+            const todayStr = getTodayKey(); 
             
-            if (typeof window.triggerSync === 'function') window.triggerSync();
+            // 🚨 撕下假象：寫入前將看板數字轉為「紅色轉圈圈」，強制等待伺服器真實回應
+            const carbonEl = document.getElementById('network-total-carbon-reduction');
+            if (carbonEl) carbonEl.innerHTML = '<i class="fas fa-spinner fa-spin text-4xl text-red-500"></i>';
+
+            try {
+                // 🚀 核心修復：直接呼叫 Firebase (附帶 8 秒強制超時機制)
+                const writePromise = setDoc(doc(db, 'system_stats', 'global_absolute'), { 
+                    carbon: increment(carbonDelta), 
+                    green: increment(greenDelta), 
+                    [`daily_${todayStr}_carbon`]: increment(carbonDelta) 
+                }, { merge: true });
+                
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("伺服器沒有回應 (可能是規則被鎖死或網路阻擋)")), 8000));
+                
+                // 誰先完成就聽誰的
+                await Promise.race([writePromise, timeoutPromise]);
+                
+                window.showToast('✅ 數據已真實寫入雲端！');
+                // 成功後不手動修改數字！Firebase onSnapshot 會自動抓取真實數字更新畫面
+            } catch(e) {
+                console.error("🚨 雲端寫入失敗：", e);
+                
+                // 🚨 終極暴力除錯：全螢幕紅色阻斷警告！絕對不可能漏看！
+                const errDiv = document.createElement('div');
+                errDiv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(220,38,38,0.95);color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;backdrop-filter:blur(8px);';
+                errDiv.innerHTML = `<i class="fas fa-exclamation-triangle text-7xl mb-4 animate-bounce"></i><h2 class="text-4xl font-black mb-4">雲端寫入被拒絕</h2><p class="text-xl font-bold mb-6">${e.message}</p><p class="text-sm mb-8">這代表 Firebase 後台規則未成功發布，或被安全機制阻擋！請截圖此畫面回報！</p><button onclick="this.parentElement.remove()" class="px-8 py-3 bg-white text-red-600 font-black rounded-full text-lg shadow-xl hover:scale-105 transition-transform">關閉警告</button>`;
+                document.body.appendChild(errDiv);
+                
+                updateGlobalSummary(); // 強制刷回原本的真實數字
+            }
         }
 
-        // 🚀 核心防護：實體硬碟資料背景同步引擎 (導入「互斥鎖」與「樂觀清除」防重複機制)
-        window.isSyncing = false; // 🔒 宣告全域互斥鎖
+        // 🗑️ 徹底清空舊版的本機暫存同步引擎，防止幽靈干擾
         window.triggerSync = async function() {
-            // 如果沒連線、沒資料，或是「已經有人在同步了」，就直接退出，防止重複執行
-            if (!db || isOfflineMode || !state.pendingSync || window.isSyncing) return;
-            window.isSyncing = true; // 🔒 上鎖
-            let synced = false;
-            
-            // 【1. 全局減碳與綠消】(強制轉為數字，杜絕 NaN)
-            const c = Number(state.pendingSync.carbon) || 0;
-            const g = Number(state.pendingSync.green) || 0;
-
-            if (c > 0 || g > 0) {
-                // ✨ 樂觀清除：先將本機硬碟的待傳數字歸零並存檔。防止傳送途中被併發重整引發重複上傳。
-                state.pendingSync.carbon = 0;
-                state.pendingSync.green = 0;
-                saveData();
-
-                const todayStr = getTodayKey();
-                try {
-                    await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(c), green: increment(g), [`daily_${todayStr}_carbon`]: increment(c) }, { merge: true });
-                    synced = true;
-                } catch(e) {
-                    console.error("⚠️ Firebase 寫入遭拒絕 (請檢查後台 Security Rules)：", e);
-                    // ❌ 萬一真的網路斷線傳送失敗，再把數字「退回」硬碟裡，等待下次救援
-                    state.pendingSync.carbon = (Number(state.pendingSync.carbon) || 0) + c;
-                    state.pendingSync.green = (Number(state.pendingSync.green) || 0) + g;
-                    saveData();
-                }
-            }
-            
-            // 【2. 企業歸戶問卷批次處理】
-            if (state.pendingSync.entEvals && state.pendingSync.entEvals.length > 0) {
-                const batchEnt = [...state.pendingSync.entEvals]; // 提取副本
-                state.pendingSync.entEvals = []; // 本機先清空
-                saveData();
-
-                for (let ev of batchEnt) {
-                    try {
-                        const updates = { carbon: increment(ev.carbon), green: increment(ev.green), eval_count: increment(ev.eval_count), total_score: increment(ev.total_score), score_e: increment(ev.score_e), score_s: increment(ev.score_s), score_g: increment(ev.score_g), updatedAt: serverTimestamp() };
-                        if (ev.feedback) updates.feedbacks = arrayUnion(ev.feedback);
-                        await setDoc(doc(db, 'ent_projects', ev.id), updates, { merge: true });
-                        synced = true;
-                    } catch(e) {
-                        console.error("⚠️ 企業歸戶寫入失敗：", e);
-                        state.pendingSync.entEvals.push(ev); // 失敗退回
-                        saveData();
-                    }
-                }
-            }
-
-            // 【3. 政府計畫問卷批次處理】
-            if (state.pendingSync.govEvals && state.pendingSync.govEvals.length > 0) {
-                const batchGov = [...state.pendingSync.govEvals]; // 提取副本
-                state.pendingSync.govEvals = []; // 本機先清空
-                saveData();
-
-                for (let ev of batchGov) {
-                    try {
-                        const updates = { carbon: increment(ev.carbon), green: increment(ev.green), eval_count: increment(ev.eval_count), total_score: increment(ev.total_score), updatedAt: serverTimestamp() };
-                        if (ev.feedback) updates.feedbacks = arrayUnion(ev.feedback);
-                        await setDoc(doc(db, 'gov_projects', ev.id), updates, { merge: true });
-                        synced = true;
-                    } catch(e) {
-                        console.error("⚠️ 政府計畫寫入失敗：", e);
-                        state.pendingSync.govEvals.push(ev); // 失敗退回
-                        saveData();
-                    }
-                }
-            }
-            
-            window.isSyncing = false; // 🔓 解鎖，允許下一次同步
-            if (synced) { window.showToast('🔄 網路連線優良，離線暫存數據已安全同步至雲端！'); }
+            console.log("🗑️ 舊版暫存機制已停用，改為即時直寫雲端。");
         };
 
         function renderCheckoutHistory() {
@@ -2117,7 +2082,23 @@
         function initFirebase() {
             try {
                 const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app);
-                signInAnonymously(auth).catch(() => { isOfflineMode = true; loadMockData(); });
+                
+                // 🚀 核心升級：將匿名登入失敗的「真實原因與代碼」直接印在紅色橫幅上，逼出 GCP 防火牆問題
+                signInAnonymously(auth).catch((err) => { 
+                    console.error("🚨 匿名登入失敗:", err.code, err.message);
+                    
+                    const bar = document.getElementById('system-broadcast-bar');
+                    const textEl = document.getElementById('system-broadcast-text');
+                    if (bar && textEl) {
+                        textEl.innerHTML = `🚨 登入遭 Google 阻擋: <br><span class="text-xl font-mono text-yellow-200">${err.code}</span><br>${err.message}<br>請截圖此畫面回報！`;
+                        bar.classList.remove('hidden', 'bg-yellow-500');
+                        bar.classList.add('bg-red-600', 'h-auto', 'py-4', 'animate-pulse');
+                    }
+
+                    isOfflineMode = true; 
+                    loadMockData(); 
+                });
+                
                 let pageLoaded = false; 
                 onAuthStateChanged(auth, user => { 
                     if(user && db) {
@@ -2125,7 +2106,11 @@
                         if (!pageLoaded) { pageLoaded = true; setDoc(doc(db, 'system_stats', 'global_absolute'), { visitor_count: increment(1) }, { merge: true }).catch(e => {}); }
                     } else if (isOfflineMode) { loadMockData(); }
                 });
-            } catch (e) { isOfflineMode = true; loadMockData(); }
+            } catch (e) { 
+                console.error("🚨 Firebase 初始化失敗:", e);
+                isOfflineMode = true; 
+                loadMockData(); 
+            }
         }
 
         // ==========================================
@@ -2749,7 +2734,11 @@
                         };
                         if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
                         await setDoc(doc(db, 'ent_projects', pendingEntEvalSubmission), updates, { merge: true });
-                    } catch(e) { window.showToast('雲端歸戶失敗，請重試'); return; }
+                    } catch(e) { 
+                        console.error("🚨 企業歸戶寫入失敗：", e);
+                        window.showToast(`🚨 雲端歸戶失敗: ${e.message}`); 
+                        return; // 寫入失敗則中斷流程，不扣除個人積分
+                    }
                 } else {
                     const proj = globalEntData.projects.find(p => p.id === pendingEntEvalSubmission);
                     if(proj) {
@@ -2849,7 +2838,7 @@
                         await setDoc(doc(db, 'gov_projects', pendingGovEvalSubmission), updates, { merge: true });
                     } catch(e) { 
                         console.error("🚨 政府計畫寫入失敗：", e);
-                        window.showToast('🚨 雲端歸戶失敗，請檢查 Firebase 權限！您的積分已保留。'); 
+                        window.showToast(`🚨 雲端歸戶失敗: ${e.message}`); 
                         return; // 寫入失敗則中斷流程，不扣除個人積分
                     }
                 } else {
