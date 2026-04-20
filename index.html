@@ -2048,9 +2048,12 @@
                     if (govLoaded && entLoaded && !absoluteLoaded) {
                         absoluteLoaded = 'pending';
                         
-                        // 🚨 核心升級：拔除 metadata 檢查，讓 Firebase 的樂觀 UI 發揮作用
-                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
+                        // 🚨 核心升級：加入 includeMetadataChanges，攔截 Firebase SDK 內建的樂觀假象
+                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), { includeMetadataChanges: true }, async (docSnap) => {
                             
+                            // 🛑 終極剝除假象：拒絕本地記憶體假象，強制等待伺服器真實確認！
+                            if (docSnap.metadata.hasPendingWrites) return; 
+
                             const HISTORICAL_BASE = { carbon: 50000, green: 186500, visitor_count: 1250 };
                             
                             if (docSnap.exists()) { 
@@ -2073,7 +2076,6 @@
                                 
                                 if (!isOfflineMode) {
                                     await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); 
-                                    console.warn("🛡️ 已自動觸發防呆修復，重建遺失的全局數據庫文件。");
                                 }
                             }
                             absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
