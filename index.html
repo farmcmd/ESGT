@@ -1457,9 +1457,9 @@
             window.isSyncing = true; // 🔒 上鎖
             let synced = false;
             
-            // 【1. 全局減碳與綠消】
-            const c = state.pendingSync.carbon || 0;
-            const g = state.pendingSync.green || 0;
+            // 【1. 全局減碳與綠消】(強制轉為數字，杜絕 NaN)
+            const c = Number(state.pendingSync.carbon) || 0;
+            const g = Number(state.pendingSync.green) || 0;
 
             if (c > 0 || g > 0) {
                 // ✨ 樂觀清除：先將本機硬碟的待傳數字歸零並存檔。防止傳送途中被併發重整引發重複上傳。
@@ -1472,9 +1472,10 @@
                     await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(c), green: increment(g), [`daily_${todayStr}_carbon`]: increment(c) }, { merge: true });
                     synced = true;
                 } catch(e) {
+                    console.error("⚠️ Firebase 寫入遭拒絕 (請檢查後台 Security Rules)：", e);
                     // ❌ 萬一真的網路斷線傳送失敗，再把數字「退回」硬碟裡，等待下次救援
-                    state.pendingSync.carbon += c;
-                    state.pendingSync.green += g;
+                    state.pendingSync.carbon = (Number(state.pendingSync.carbon) || 0) + c;
+                    state.pendingSync.green = (Number(state.pendingSync.green) || 0) + g;
                     saveData();
                 }
             }
@@ -1492,6 +1493,7 @@
                         await setDoc(doc(db, 'ent_projects', ev.id), updates, { merge: true });
                         synced = true;
                     } catch(e) {
+                        console.error("⚠️ 企業歸戶寫入失敗：", e);
                         state.pendingSync.entEvals.push(ev); // 失敗退回
                         saveData();
                     }
@@ -1511,6 +1513,7 @@
                         await setDoc(doc(db, 'gov_projects', ev.id), updates, { merge: true });
                         synced = true;
                     } catch(e) {
+                        console.error("⚠️ 政府計畫寫入失敗：", e);
                         state.pendingSync.govEvals.push(ev); // 失敗退回
                         saveData();
                     }
