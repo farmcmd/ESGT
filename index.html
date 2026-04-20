@@ -1438,8 +1438,11 @@
         function getTodayKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
         async function addToGlobalTotal(carbonDelta, greenDelta) {
-            // 恢復平靜優雅的離線阻斷，不再降下紅色廣播條
-            if (!db || isOfflineMode) return window.showToast('⚠️ 目前離線，無法將數據寫入雲端');
+            // 🚨 嚴格阻斷：若離線，直接回傳失敗，絕不產生本地假象
+            if (!db || isOfflineMode) {
+                window.showToast('⚠️ 目前網路不穩無法累計到探探里山旅者共同累積減碳量，請用戶稍後再做嘗試');
+                return false; 
+            }
             
             const todayStr = getTodayKey(); 
             
@@ -1448,19 +1451,26 @@
             if (carbonEl) carbonEl.innerHTML = '<i class="fas fa-spinner fa-spin text-mori-sage"></i>';
 
             try {
-                // 🚀 正式版：直接寫入雲端，拔除 8 秒超時與暴力除錯機制
-                await setDoc(doc(db, 'system_stats', 'global_absolute'), { 
+                // 🚀 正式版防卡死機制：加入 8 秒強制超時判斷 (Timeout)
+                const writePromise = setDoc(doc(db, 'system_stats', 'global_absolute'), { 
                     carbon: increment(carbonDelta), 
                     green: increment(greenDelta), 
                     [`daily_${todayStr}_carbon`]: increment(carbonDelta) 
                 }, { merge: true });
                 
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000));
+                
+                // 誰先完成就聽誰的
+                await Promise.race([writePromise, timeoutPromise]);
+                
                 window.showToast('✅ 數據已寫入雲端！');
-                // 成功後不手動修改數字！Firebase onSnapshot 會自動抓取真實數字更新畫面
+                return true; // 成功寫入雲端
             } catch(e) {
                 console.warn("⚠️ 雲端寫入異常：", e.message);
-                window.showToast('⚠️ 網路異常，數據寫入失敗');
+                // 🎯 依照要求：明確提示網路不穩，並阻斷回傳
+                window.showToast('⚠️ 目前網路不穩無法累計到探探里山旅者共同累積減碳量，請用戶稍後再做嘗試');
                 updateGlobalSummary(); // 強制刷回原本的真實數字
+                return false; // 寫入失敗
             }
         }
 
@@ -2254,14 +2264,23 @@
             if (selectedStart && selectedEnd && state.currentTransport) document.getElementById('preview-trip-button')?.classList.remove('hidden');
         }
 
-        function processTripCompletion(distKm, carbon) {
-            state.totalMileage += (distKm * 1000); 
-            state.totalCarbon += carbon;
-            state.totalScore += Math.round(carbon / 10);
-            updateDisplays();
-            addToGlobalTotal(carbon, 0);
-            window.addLog(`完成旅程: ${distKm.toFixed(1)}km, 獲得減碳 ${carbon}g`);
-            window.showToast('✅ 積分已記錄！');
+        // 🚀 核心升級：將旅程完成改為非同步 (async)，確保雲端寫入成功後才配發個人成就
+        async function processTripCompletion(distKm, carbon) {
+            window.showToast('🔄 正在同步數據至雲端...');
+            const success = await addToGlobalTotal(carbon, 0);
+            
+            // 🔒 原子性交易防護：只有成功寫入大盤，才允許寫入個人成就
+            if (success) {
+                state.totalMileage += (distKm * 1000); 
+                state.totalCarbon += carbon;
+                state.totalScore += Math.round(carbon / 10);
+                updateDisplays();
+                saveData(); // 確保存檔
+                window.addLog(`完成旅程: ${distKm.toFixed(1)}km, 獲得減碳 ${carbon}g`);
+                window.showToast('✅ 積分已記錄！');
+            } else {
+                console.warn('網路異常，已撤銷本次個人成就累計');
+            }
         }
 
         function bindGlobalEvents() {
@@ -2473,37 +2492,76 @@
             document.getElementById('green-qty')?.addEventListener('input', updateGreenTotal);
             document.getElementById('green-price')?.addEventListener('input', updateGreenTotal);
 
-            document.getElementById('log-green-procure-btn')?.addEventListener('click', () => {
+            // 🚀 核心升級：綠色消費登錄改為非同步，加入按鈕鎖定防連點機制
+            document.getElementById('log-green-procure-btn')?.addEventListener('click', async () => {
                 const qty = parseFloat(document.getElementById('green-qty').value) || 0; 
                 const price = parseFloat(document.getElementById('green-price').value) || 0;
-                const labelName = window.selectedGreenLabel || '未指定標章'; // 帶入剛剛點擊的標章
+                const labelName = window.selectedGreenLabel || '未指定標章'; 
 
                 if(qty > 0 && price > 0) {
                     const total = qty * price; 
-                    state.greenProcure += total; 
-                    addToGlobalTotal(0, total); 
-                    window.addLog(`綠消登錄 (${labelName}): $${total}`); // 紀錄加上標章名稱
-                    updateDisplays(); 
-                    window.closeModal('green-consumption-modal'); 
-                    window.showToast('綠色消費登錄成功！');
                     
-                    // 重置表單狀態
-                    document.getElementById('green-qty').value = '1'; 
-                    document.getElementById('green-price').value = '';
-                    if(document.getElementById('green-total-display')) document.getElementById('green-total-display').textContent = '$0';
-                    document.querySelectorAll('.label-card').forEach(c => c.classList.remove('border-mori-forest', 'bg-mori-light', 'shadow-md'));
-                    window.selectedGreenLabel = null;
+                    const btn = document.getElementById('log-green-procure-btn');
+                    const origHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 同步中...';
+                    btn.disabled = true;
+
+                    const success = await addToGlobalTotal(0, total); 
+                    
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+
+                    // 🔒 原子性交易防護：只有成功寫入大盤，才允許寫入個人成就
+                    if (success) {
+                        state.greenProcure += total; 
+                        saveData();
+                        window.addLog(`綠消登錄 (${labelName}): $${total}`); 
+                        updateDisplays(); 
+                        window.closeModal('green-consumption-modal'); 
+                        window.showToast('綠色消費登錄成功！');
+                        
+                        document.getElementById('green-qty').value = '1'; 
+                        document.getElementById('green-price').value = '';
+                        if(document.getElementById('green-total-display')) document.getElementById('green-total-display').textContent = '$0';
+                        document.querySelectorAll('.label-card').forEach(c => c.classList.remove('border-mori-forest', 'bg-mori-light', 'shadow-md'));
+                        window.selectedGreenLabel = null;
+                    }
                 } else { 
                     window.showToast('請輸入正確的數量與單價'); 
                 }
             });
 
-            document.getElementById('log-sroi-btn')?.addEventListener('click', () => {
-                const select = document.getElementById('sroi-unit-select'); const price = parseFloat(document.getElementById('sroi-price').value) || 0;
+            // 🚀 核心升級：SROI 登錄改為非同步，加入按鈕鎖定防連點機制
+            document.getElementById('log-sroi-btn')?.addEventListener('click', async () => {
+                const select = document.getElementById('sroi-unit-select'); 
+                const price = parseFloat(document.getElementById('sroi-price').value) || 0;
+                
                 if(select.value && price > 0) {
                     const weight = parseFloat(select.options[select.selectedIndex].dataset.weight) || 1;
-                    const total = price * weight; state.sroiProcure += total; addToGlobalTotal(0, total); window.addLog(`SROI 登錄: $${total.toFixed(0)}`); updateDisplays(); window.closeModal('green-consumption-modal'); window.showToast('SROI 價值登錄成功！');
-                } else { window.showToast('請選擇農場並輸入金額'); }
+                    const total = price * weight; 
+
+                    const btn = document.getElementById('log-sroi-btn');
+                    const origHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 同步中...';
+                    btn.disabled = true;
+
+                    const success = await addToGlobalTotal(0, total); 
+
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+
+                    // 🔒 原子性交易防護：只有成功寫入大盤，才允許寫入個人成就
+                    if (success) {
+                        state.sroiProcure += total; 
+                        saveData();
+                        window.addLog(`SROI 登錄: $${total.toFixed(0)}`); 
+                        updateDisplays(); 
+                        window.closeModal('green-consumption-modal'); 
+                        window.showToast('SROI 價值登錄成功！');
+                    }
+                } else { 
+                    window.showToast('請選擇農場並輸入金額'); 
+                }
             });
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
