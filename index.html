@@ -2056,17 +2056,22 @@
                 const checkBackendReady = () => {
                     if (govLoaded && entLoaded && !absoluteLoaded) {
                         absoluteLoaded = 'pending';
-                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
-                            // 🛡️ 核心修復：將 AI 先前預設的舊數字 (22647) 升級為您真實營運的底線 (50000)
-                            // 💡 您可以隨時手動把 50000 改成更精準的數字 (例如 52300)
-                            // 如果瀏覽人次也比 1250 多，您也可以把 visitor_count 改成您印象中的數字 (例如 2500)
+                        
+                        // 🚨 核心升級：加入 includeMetadataChanges，主動監聽這筆數據的「真實來源」
+                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), { includeMetadataChanges: true }, async (docSnap) => {
+                            
+                            // 🛑 終極剝除假象：如果這筆資料只是 Firebase SDK 騙我們的本機暫存 (hasPendingWrites)
+                            // 我們就「拒絕更新畫面」，強制看板維持在轉圈圈，直到 Google 伺服器傳回真實確認！
+                            if (docSnap.metadata.hasPendingWrites) {
+                                console.log("⏳ 拒絕本地假象，等待伺服器真實確認中...");
+                                return;
+                            }
+
                             const HISTORICAL_BASE = { carbon: 50000, green: 186500, visitor_count: 1250 };
                             
                             if (docSnap.exists()) { 
                                 globalAbsolute = docSnap.data(); 
                                 
-                                // ✨ 自癒引擎：如果有人誤刪後又觸發了 increment 從 0 累積，數字會異常小。
-                                // 此時強制拉回基準線，並自動修復資料庫。
                                 if ((globalAbsolute.carbon || 0) < HISTORICAL_BASE.carbon) {
                                     console.warn("🛡️ 系統偵測到全局數據異常低落，啟動自動修復機制...");
                                     globalAbsolute.carbon = Math.max(globalAbsolute.carbon || 0, HISTORICAL_BASE.carbon);
@@ -2078,7 +2083,6 @@
                                     }
                                 }
                             } else { 
-                                // ✨ 防呆機制：如果檔案被誤刪，立刻用歷史基準點重建，防止下一次 increment 從 0 開始
                                 const todayStr = getTodayKey(); 
                                 globalAbsolute = { ...HISTORICAL_BASE }; 
                                 globalAbsolute[`daily_${todayStr}_carbon`] = 0; 
@@ -2089,7 +2093,7 @@
                                 }
                             }
                             absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
-                        }, handleFirebaseError); // 👈 確保錯誤攔截機制存在
+                        }, handleFirebaseError); 
                     }
                 };
 
