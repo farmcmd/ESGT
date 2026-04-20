@@ -1533,7 +1533,6 @@
         function updateGlobalSummary() {
             const todayStr = getTodayKey();
             
-            // 🛡️ 終極修復：UI 呈現 = 雲端真實數據 + 本機尚未上傳的數據 + 傳送途中的緩衝數據
             const serverCarbon = Math.max(0, Number(globalAbsolute.carbon || 0));
             const serverGreen = Math.max(0, Number(globalAbsolute.green || 0));
             const serverDaily = Math.max(0, Number(globalAbsolute[`daily_${todayStr}_carbon`] || 0));
@@ -1542,13 +1541,32 @@
             const pendingC = (Number(state.pendingSync?.carbon) || 0) + (window.inFlightCarbon || 0);
             const pendingG = (Number(state.pendingSync?.green) || 0) + (window.inFlightGreen || 0);
 
-            const totalCarbon = serverCarbon + pendingC;
-            const totalGreen = serverGreen + pendingG;
-            const dailyCarbon = serverDaily + pendingC;
+            // 🚨 撕下假象：主數字「絕對只顯示雲端真實數據」，不再將暫存加進去粉飾太平
+            const totalCarbon = serverCarbon;
+            const totalGreen = serverGreen;
+            const dailyCarbon = serverDaily;
 
             const trees = parseFloat((totalCarbon / 12000).toFixed(2)).toString();
             const carbonEl = document.getElementById('network-total-carbon-reduction'), greenEl = document.getElementById('display-grand-total-green'), treeEl = document.getElementById('trees-planted-count'), dailyEl = document.getElementById('daily-carbon-addition'), visitorEl = document.getElementById('visitor-count'); 
-            if(carbonEl) carbonEl.textContent = Math.round(totalCarbon).toLocaleString(); if(greenEl) greenEl.textContent = `$${totalGreen.toLocaleString()}`; if(treeEl) treeEl.textContent = trees; if(dailyEl) dailyEl.textContent = Math.round(dailyCarbon).toLocaleString(); if(visitorEl) visitorEl.textContent = visitorCount.toLocaleString(); 
+            
+            // 寫入純粹的伺服器數字
+            if(carbonEl) carbonEl.textContent = Math.round(totalCarbon).toLocaleString(); 
+            if(greenEl) greenEl.textContent = `$${totalGreen.toLocaleString()}`; 
+            if(treeEl) treeEl.textContent = trees; 
+            if(dailyEl) dailyEl.textContent = Math.round(dailyCarbon).toLocaleString(); 
+            if(visitorEl) visitorEl.textContent = visitorCount.toLocaleString(); 
+
+            // 🚨 動態顯示/隱藏卡彈警告標籤
+            const syncBadge = document.getElementById('sync-warning-badge');
+            const unsyncedAmount = document.getElementById('unsynced-carbon-amount');
+            if (pendingC > 0 && syncBadge && unsyncedAmount) {
+                syncBadge.classList.remove('hidden');
+                syncBadge.classList.add('inline-flex');
+                unsyncedAmount.textContent = Math.round(pendingC).toLocaleString();
+            } else if (syncBadge) {
+                syncBadge.classList.add('hidden');
+                syncBadge.classList.remove('inline-flex');
+            }
         }
 
         // ==========================================
