@@ -1438,48 +1438,28 @@
         function getTodayKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
         async function addToGlobalTotal(carbonDelta, greenDelta) {
-            // 🚨 防呆檢查：如果沒連上線，直接降下紅布條警告，阻止幽靈假象！
-            if (!db || isOfflineMode) {
-                const bar = document.getElementById('system-broadcast-bar');
-                const textEl = document.getElementById('system-broadcast-text');
-                if (bar && textEl) {
-                    textEl.innerHTML = `🚨 系統處於離線狀態！請確認 Firebase Console 的「Authentication (驗證) > 匿名登入」是否已啟用！`;
-                    bar.classList.remove('hidden', 'bg-yellow-500');
-                    bar.classList.add('bg-red-600', 'h-auto', 'py-4', 'animate-pulse');
-                }
-                return window.showToast('⚠️ 網路離線或匿名登入未開啟，無法寫入');
-            }
+            // 恢復平靜優雅的離線阻斷，不再降下紅色廣播條
+            if (!db || isOfflineMode) return window.showToast('⚠️ 目前離線，無法將數據寫入雲端');
             
             const todayStr = getTodayKey(); 
             
-            // 🚨 撕下假象：寫入前將看板數字轉為「紅色轉圈圈」，強制等待伺服器真實回應
+            // 寫入前將看板數字轉為「質感綠色轉圈圈」
             const carbonEl = document.getElementById('network-total-carbon-reduction');
-            if (carbonEl) carbonEl.innerHTML = '<i class="fas fa-spinner fa-spin text-4xl text-red-500"></i>';
+            if (carbonEl) carbonEl.innerHTML = '<i class="fas fa-spinner fa-spin text-mori-sage"></i>';
 
             try {
-                // 🚀 核心修復：直接呼叫 Firebase (附帶 8 秒強制超時機制)
-                const writePromise = setDoc(doc(db, 'system_stats', 'global_absolute'), { 
+                // 🚀 正式版：直接寫入雲端，拔除 8 秒超時與暴力除錯機制
+                await setDoc(doc(db, 'system_stats', 'global_absolute'), { 
                     carbon: increment(carbonDelta), 
                     green: increment(greenDelta), 
                     [`daily_${todayStr}_carbon`]: increment(carbonDelta) 
                 }, { merge: true });
                 
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("伺服器沒有回應 (可能是規則被鎖死或網路阻擋)")), 8000));
-                
-                // 誰先完成就聽誰的
-                await Promise.race([writePromise, timeoutPromise]);
-                
-                window.showToast('✅ 數據已真實寫入雲端！');
+                window.showToast('✅ 數據已寫入雲端！');
                 // 成功後不手動修改數字！Firebase onSnapshot 會自動抓取真實數字更新畫面
             } catch(e) {
-                console.error("🚨 雲端寫入失敗：", e);
-                
-                // 🚨 終極暴力除錯：全螢幕紅色阻斷警告！絕對不可能漏看！
-                const errDiv = document.createElement('div');
-                errDiv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(220,38,38,0.95);color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;backdrop-filter:blur(8px);';
-                errDiv.innerHTML = `<i class="fas fa-exclamation-triangle text-7xl mb-4 animate-bounce"></i><h2 class="text-4xl font-black mb-4">雲端寫入被拒絕</h2><p class="text-xl font-bold mb-6">${e.message}</p><p class="text-sm mb-8">這代表 Firebase 後台規則未成功發布，或被安全機制阻擋！請截圖此畫面回報！</p><button onclick="this.parentElement.remove()" class="px-8 py-3 bg-white text-red-600 font-black rounded-full text-lg shadow-xl hover:scale-105 transition-transform">關閉警告</button>`;
-                document.body.appendChild(errDiv);
-                
+                console.warn("⚠️ 雲端寫入異常：", e.message);
+                window.showToast('⚠️ 網路異常，數據寫入失敗');
                 updateGlobalSummary(); // 強制刷回原本的真實數字
             }
         }
@@ -2083,18 +2063,9 @@
             try {
                 const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app);
                 
-                // 🚀 核心升級：將匿名登入失敗的「真實原因與代碼」直接印在紅色橫幅上，逼出 GCP 防火牆問題
+                // 恢復優雅的匿名登入攔截 (僅在背景紀錄並切換為離線模式)
                 signInAnonymously(auth).catch((err) => { 
-                    console.error("🚨 匿名登入失敗:", err.code, err.message);
-                    
-                    const bar = document.getElementById('system-broadcast-bar');
-                    const textEl = document.getElementById('system-broadcast-text');
-                    if (bar && textEl) {
-                        textEl.innerHTML = `🚨 登入遭 Google 阻擋: <br><span class="text-xl font-mono text-yellow-200">${err.code}</span><br>${err.message}<br>請截圖此畫面回報！`;
-                        bar.classList.remove('hidden', 'bg-yellow-500');
-                        bar.classList.add('bg-red-600', 'h-auto', 'py-4', 'animate-pulse');
-                    }
-
+                    console.warn("⚠️ 系統進入離線模式 (匿名登入受限)");
                     isOfflineMode = true; 
                     loadMockData(); 
                 });
