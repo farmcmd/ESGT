@@ -2057,16 +2057,9 @@
                     if (govLoaded && entLoaded && !absoluteLoaded) {
                         absoluteLoaded = 'pending';
                         
-                        // 🚨 核心升級：加入 includeMetadataChanges，主動監聽這筆數據的「真實來源」
-                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), { includeMetadataChanges: true }, async (docSnap) => {
+                        // 🚨 核心升級：拔除 metadata 檢查，讓 Firebase 的樂觀 UI 發揮作用
+                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), async (docSnap) => {
                             
-                            // 🛑 終極剝除假象：如果這筆資料只是 Firebase SDK 騙我們的本機暫存 (hasPendingWrites)
-                            // 我們就「拒絕更新畫面」，強制看板維持在轉圈圈，直到 Google 伺服器傳回真實確認！
-                            if (docSnap.metadata.hasPendingWrites) {
-                                console.log("⏳ 拒絕本地假象，等待伺服器真實確認中...");
-                                return;
-                            }
-
                             const HISTORICAL_BASE = { carbon: 50000, green: 186500, visitor_count: 1250 };
                             
                             if (docSnap.exists()) { 
