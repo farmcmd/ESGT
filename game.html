@@ -227,7 +227,7 @@
             <div class="text-6xl mb-4">🔌</div>
             <h2 class="text-2xl font-bold text-red-400 mb-2">連線已中斷</h2>
             <p class="text-sm text-slate-300 mb-6 leading-relaxed">
-                伺服器訪客負載已達 10 人上限。<br>為了讓新玩家體驗，系統已隨機釋放您的連線名額。<br>
+                伺服器訪客負載已達 15 人上限。<br>為了讓新玩家體驗，系統已隨機釋放您的連線名額。<br>
                 <span class="text-amber-400 font-bold mt-3 inline-block bg-amber-900/30 p-2 rounded">🏆 專案競賽模式玩家不受此限制。</span>
             </p>
             <button onclick="location.reload()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg shadow-lg transition-colors">重新連線</button>
@@ -396,10 +396,10 @@
             </div>
             <div id="cert-error" class="text-sm text-red-400 mb-2 h-4 text-center font-bold"></div>
             
-            <!-- 點數連動與實質消耗的知情同意警示 -->
-            <div class="bg-amber-900/40 border border-amber-500/50 p-3 rounded-lg mb-5 text-xs text-amber-200/90 leading-relaxed shadow-inner">
-                <span class="font-bold text-amber-400 flex items-center gap-1 mb-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+            <!-- 點數連動與實質消耗的知情同意警示 (更新：放大字體、圖示與排版留白) -->
+            <div class="bg-amber-900/40 border border-amber-500/50 p-4 rounded-lg mb-5 text-sm text-amber-200/90 leading-relaxed shadow-inner">
+                <span class="font-bold text-amber-400 text-base flex items-center gap-1.5 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                     積分連動授權提示
                 </span>
                 本世界將自動載入您於「探探里山-永續旅遊」的減碳數據與積分。請注意，遊戲內的<span class="text-red-300 font-bold">裝備兌換與戰術蓄能將會實質消耗您的永續積分</span>。若您的積分有其他企業獎勵兌換用途，建議詢問後再行探索。
@@ -866,7 +866,8 @@ window.submitCertification = async () => {
                 }
             });
 
-            if (activeGuests.length >= 10) {
+            // 更新：將訪客乘載量上限調整為 15 人
+            if (activeGuests.length >= 15) {
                 let victim = activeGuests[Math.floor(Math.random() * activeGuests.length)];
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'kicks', victim.id), { timestamp: Date.now() });
                 console.log(`已為您踢除隨機訪客: ${victim.name}`);
