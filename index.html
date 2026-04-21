@@ -3121,37 +3121,51 @@
             };
         }
 
+        // 👇 核心修復：徹底還原被覆寫的「星等評分動態渲染與點擊引擎」
         function bindStarRatings() {
-            document.getElementById('import-data-input')?.addEventListener('change', (e) => {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const importedState = JSON.parse(event.target.result);
-                        if (importedState && typeof importedState === 'object') {
-                            state = { ...state, ...importedState }; saveData(); updateDisplays();
-                            if(typeof renderCheckoutHistory === 'function') renderCheckoutHistory(); if(typeof renderLogs === 'function') renderLogs();
-                            if(document.getElementById('player-name')) document.getElementById('player-name').value = state.playerName || '';
-                            if(document.getElementById('player-code')) document.getElementById('player-code').textContent = state.playerCode || '...';
-                            window.showToast('✅ 進度檔匯入成功！所有資料已還原。');
-                        } else { window.showToast('❌ 檔案格式不符，無法匯入。'); }
-                    } catch (err) { window.showToast('❌ 檔案解析失敗，請確認是否為有效的備份檔。'); }
-                    e.target.value = ''; 
-                };
-                reader.readAsText(file);
+            // 動態為每一題生成 5 顆星星
+            document.querySelectorAll('.number-rating').forEach(container => {
+                if (container.innerHTML.trim() !== '') return; // 避免重複生成
+                let starsHtml = '';
+                for(let i=1; i<=5; i++) {
+                    starsHtml += `<i class="fas fa-star text-3xl md:text-4xl cursor-pointer text-gray-300 hover:scale-110 transition-transform" data-val="${i}"></i>`;
+                }
+                container.innerHTML = starsHtml;
+
+                // 綁定點擊事件，達成點擊該星後，前面全亮的視覺效果
+                const stars = container.querySelectorAll('i');
+                stars.forEach(star => {
+                    star.addEventListener('click', (e) => {
+                        const val = parseInt(e.target.dataset.val);
+                        stars.forEach((s, idx) => {
+                            if (idx < val) {
+                                s.classList.remove('text-gray-300'); 
+                                s.classList.add('text-yellow-400', 'drop-shadow-sm');
+                            } else {
+                                s.classList.add('text-gray-300'); 
+                                s.classList.remove('text-yellow-400', 'drop-shadow-sm');
+                            }
+                        });
+                    });
+                });
             });
 
-            // 👇 補回：下載空白重置檔邏輯 (加入 heroIndex 歸零)
-            document.getElementById('download-blank-btn')?.addEventListener('click', () => {
-                try {
-                    const blankState = { totalMileage: 0, totalCarbon: 0, totalScore: 0, heroIndex: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], currentTransport: null };
-                    const dataStr = JSON.stringify(blankState, null, 2);
-                    const blob = new Blob([dataStr], { type: "application/json" });
-                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
-                    a.download = `探探里山_空白重置檔.json`;
-                    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-                    window.showToast('✅ 空白重置檔下載成功！請利用匯入功能進行重置。');
-                } catch (e) { window.showToast('❌ 下載失敗，請稍後再試。'); }
+            // 快速填滿 5 分按鈕 (企業評鑑)
+            document.getElementById('quick-fill-ent-stars-btn')?.addEventListener('click', () => {
+                document.querySelectorAll('.ent-eval-q .number-rating i').forEach(i => {
+                    i.classList.remove('text-gray-300'); 
+                    i.classList.add('text-yellow-400', 'drop-shadow-sm');
+                });
+                window.showToast('✅ 已自動為您填滿 5 分評鑑！');
+            });
+
+            // 快速填滿 5 分按鈕 (政府計畫評鑑)
+            document.getElementById('quick-fill-gov-stars-btn')?.addEventListener('click', () => {
+                document.querySelectorAll('.gov-eval-q .number-rating i').forEach(i => {
+                    i.classList.remove('text-gray-300'); 
+                    i.classList.add('text-yellow-400', 'drop-shadow-sm');
+                });
+                window.showToast('✅ 已自動為您填滿 5 分評鑑！');
             });
         }
 
