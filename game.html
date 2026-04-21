@@ -1310,16 +1310,24 @@ window.setGender = (g) => {
 // 3. UI 與任務系統
 // ==========================================
 
-// 🧩 拼圖三：地球勇者指數回報器 (發送回主網頁)
+// 🧩 拼圖三：地球勇者指數回報器 (升級為跨分頁廣播支援)
 window.sendHeroIndexToMainPage = (currentPts) => {
-    if (window.parent && window.parent !== window) {
-        window.parent.postMessage({
+    // 1. 跨分頁 (New Tab) 廣播：透過 LocalStorage 事件傳遞給主頁
+    localStorage.setItem('esgt_hero_index_update', JSON.stringify({
+        heroIndex: currentPts,
+        timestamp: Date.now() // 加入時間戳，確保分數相同時也能觸發 storage 事件
+    }));
+
+    // 2. 向下相容 iframe 或 opener 模式 (備用雙保險)
+    const targetWindow = (window.opener && !window.opener.closed) ? window.opener : (window.parent !== window ? window.parent : null);
+    if (targetWindow) {
+        targetWindow.postMessage({
             type: 'SYNC_HERO_INDEX',
-            heroIndex: currentPts  // 將遊戲內計算出的最終 pts 傳出去
-        }, "https://farmcmd.github.io"); // 🛡️ 資安防護：僅限發送給官方網域
-        
-        console.log("🎮 遊戲端已回傳勇者指數：", currentPts);
+            heroIndex: currentPts
+        }, "https://farmcmd.github.io");
     }
+    
+    console.log("🎮 遊戲端已廣播勇者指數：", currentPts);
 };
 
 function updateStatusUI() {
