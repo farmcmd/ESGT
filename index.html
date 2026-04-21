@@ -1180,21 +1180,6 @@
         </div>
     </div>
 
-    <!-- 🌟 新增：20. 地球日誌 RPG 全版面 Modal -->
-    <div id="game-modal" class="modal-overlay hidden !p-0 z-[200]">
-        <div class="modal-content w-full h-[100dvh] !max-h-[100dvh] !rounded-none border-0 relative flex flex-col bg-black">
-            <!-- 專屬頂部狀態列 -->
-            <div class="bg-gradient-to-r from-green-700 to-green-900 p-3 md:p-4 flex justify-between items-center shadow-md z-10 shrink-0">
-                <h3 class="text-lg md:text-xl font-bold text-white tracking-wide flex items-center"><i class="fas fa-globe-americas text-green-300 animate-pulse mr-2"></i>地球日誌 RPG</h3>
-                <button class="close-button text-white hover:text-green-200 bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm"><i class="fas fa-times text-lg"></i></button>
-            </div>
-            <!-- Iframe 載入區塊 (🚀 終極修復：初始不載入 src，避免遊戲偷跑導致讀取到空抽屜) -->
-            <div class="flex-grow w-full relative bg-gray-900 overflow-hidden">
-                <iframe id="esgt-iframe" src="" class="absolute inset-0 w-full h-full border-none" title="地球日誌 RPG"></iframe>
-            </div>
-        </div>
-    </div>
-
     <!-- 隱藏的專屬匯出長圖區塊 -->
     <div id="export-receipt-container" class="p-8 w-[600px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0"></div>
     <div id="certificate-dom-container" class="p-8 w-[800px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans"></div>
@@ -1342,70 +1327,25 @@
         window.openModal = function(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); };
         window.closeModal = function(modalId) { document.getElementById(modalId)?.classList.add('hidden'); };
 
-        // 🚀 遊戲子頁新規格實裝：地球日誌啟動引擎 (準備交接抽屜 - Iframe 專用)
-        window.launchEarthLogGame = function() {
-            // 1. 抓取旅者名稱與代碼 (從系統核心 state 抓取最精準)
-            let travelerName = state.playerName || document.getElementById('player-name')?.value.trim() || '';
-            let travelerCode = state.playerCode || document.getElementById('player-code')?.textContent.trim() || '';
-
-            // 將姓名與代碼合併 (例如：王大明_A123)
-            let finalName = travelerName;
-            if (travelerCode && travelerCode !== '...') finalName += (finalName ? '_' : '') + travelerCode;
-            if (!finalName) finalName = '未命名旅者';
-
-            // 2. 抓取玩家目前的永續成就真實數值
-            let currentDist = (state.totalMileage || 0) / 1000; // 轉換為 km
-            let currentCarb = Math.round(state.totalCarbon || 0); // 取整數
-            let currentPts = state.totalScore || 0;
-            let currentHeroIndex = state.heroIndex || 0;
-
-            // 3. 打包放入同網域共用的 LocalStorage (交接抽屜)
-            try {
-                localStorage.setItem('esgt_init_data', JSON.stringify({
-                    name: finalName,
-                    dist: currentDist,
-                    carb: currentCarb,
-                    pts: currentPts,
-                    heroIndex: currentHeroIndex
-                }));
-                console.log("🌍 [系統連動] 已準備好初始資料交接抽屜:", JSON.parse(localStorage.getItem('esgt_init_data')));
-            } catch (e) {
-                console.warn("⚠️ 寫入交接抽屜失敗:", e);
-            }
-
-            // 4. 先開啟地球日誌 Modal，讓 iframe 進入 DOM 渲染樹
-            window.openModal('game-modal');
-
-            // 🚀 終極除錯修復與雙重保險：動態注入完整 Query String 與時間戳
-            // 解決部分手機瀏覽器 (如 Safari) 阻擋 iframe 讀取 localStorage 的問題。
-            // 我們直接把所有數值掛在網址上，讓 iframe 也能享有與「備用按鈕」同等級的 100% 成功率！
-            const gameIframe = document.getElementById('esgt-iframe');
-            if (gameIframe) {
-                const targetUrl = `game.html?name=${encodeURIComponent(finalName)}&code=${encodeURIComponent(travelerCode)}&dist=${currentDist}&carb=${currentCarb}&pts=${currentPts}&heroIndex=${currentHeroIndex}&t=${Date.now()}`;
-                gameIframe.src = targetUrl; 
-            }
-        };
-
-        // 🚀 遊戲子頁終極備用方案：URL 參數傳遞引擎 (綁定於成就看板下方按鈕)
+        // 🚀 遊戲端正式規格：跨分頁通訊啟動引擎 (Cross-Tab Launch)
         window.openEarthLogGame = function() {
-            // 1. 抓取系統核心真實變數
+            // 1. 抓取系統核心真實變數 (優先讀取 state，若無則讀取畫面)
             let uName = state.playerName || document.getElementById('player-name')?.value.trim() || '未命名';
             let uCode = state.playerCode || document.getElementById('player-code')?.textContent.trim() || '';
             let dist = (state.totalMileage || 0) / 1000;
             let carb = Math.round(state.totalCarbon || 0);
             let pts = state.totalScore || 0;
-            let hi = state.heroIndex || 0;
 
             // 將姓名與代碼合併以符合遊戲端預期
             let finalName = uName;
             if (uCode && uCode !== '...') finalName += (finalName ? '_' : '') + uCode;
 
-            // 2. 將參數組合成網址字串 (🚀 配合新規格：加入 v=Date.now() 徹底打破快取機制)
-            let targetUrl = `game.html?v=${Date.now()}&name=${encodeURIComponent(finalName)}&code=${encodeURIComponent(uCode)}&dist=${dist}&carb=${carb}&pts=${pts}&heroIndex=${hi}`;
+            // 2. 將參數組合成網址字串 (🚀 核心：加入 v=Date.now() 打破快取，確保每次開啟都是最新)
+            let targetUrl = `game.html?v=${Date.now()}&name=${encodeURIComponent(finalName)}&code=${encodeURIComponent(uCode)}&pts=${pts}&dist=${dist}&carb=${carb}`;
 
-            // 3. 直接開啟帶有所有數據的新分頁！
+            // 3. 另開新分頁執行遊戲
             window.open(targetUrl, '_blank');
-            window.showToast('🚀 已啟動網頁備用版遊戲！');
+            window.showToast('🚀 已啟動地球日誌！');
         };
 
         window.customPrompt = function(message, defaultValue, callback) {
@@ -3461,52 +3401,52 @@
                 }
 
                 // ✨ 指令 3：收到選擇看板請求，自動打開儀表板供使用者點選
-                if (event.data && event.data.action === 'REQUEST_BOARD_SELECTION') {
-                    // 記錄正在等待代碼的活動卡片 ID
-                    window.pendingEventCardId = event.data.cardId;
-                    
-                    // 暫時關閉活動彈出視窗
-                    if (typeof window.closeEventsModal === 'function') window.closeEventsModal();
-                    else window.closeModal('events-modal');
-                    
-                    // 自動打開對應的看板儀表板視窗
-                    const targetModalId = event.data.boardType === 'ent' ? 'enterprise-modal' : 'gov-modal';
-                    window.openModal(targetModalId);
-                    
-                    window.showToast('👆 請在畫面上「點擊」您要綁定的看板卡片');
-                }
-            });
+            if (event.data && event.data.action === 'REQUEST_BOARD_SELECTION') {
+                // 記錄正在等待代碼的活動卡片 ID
+                window.pendingEventCardId = event.data.cardId;
+                
+                // 暫時關閉活動彈出視窗
+                if (typeof window.closeEventsModal === 'function') window.closeEventsModal();
+                else window.closeModal('events-modal');
+                
+                // 自動打開對應的看板儀表板視窗
+                const targetModalId = event.data.boardType === 'ent' ? 'enterprise-modal' : 'gov-modal';
+                window.openModal(targetModalId);
+                
+                window.showToast('👆 請在畫面上「點擊」您要綁定的看板卡片');
+            }
+        });
 
-            // ✨ 跨分頁通訊接收端：監聽來自「新分頁遊戲」的 LocalStorage 廣播 (Cross-Tab Communication)
-            window.addEventListener('storage', (event) => {
-                // 當遊戲端把分數放進這個特定的抽屜時，觸發更新
-                if (event.key === 'esgt_hero_index_update' && event.newValue) {
-                    try {
-                        const data = JSON.parse(event.newValue);
-                        if (data && data.heroIndex !== undefined) {
-                            state.heroIndex = data.heroIndex;
-                            console.log("✅ [Cross-Tab 通訊] 主頁收到遊戲新分頁的最新分數：", state.heroIndex);
-                            
-                            // 即時更新主網頁的 UI，並加入微小動畫提升互動感
-                            const displayEl = document.getElementById('display-hero-index');
-                            if (displayEl) {
-                                displayEl.textContent = state.heroIndex;
-                                displayEl.classList.add('scale-125', 'text-yellow-400');
-                                setTimeout(() => { displayEl.classList.remove('scale-125', 'text-yellow-400'); }, 300);
-                            }
-                            saveData(); // 永久保存勇者指數至硬碟
-                            
-                            // 讀完後清空抽屜，避免重複讀取 (防呆機制)
-                            localStorage.removeItem('esgt_hero_index_update');
+        // 🚀 遊戲端正式規格：跨分頁通訊接收端 (Cross-Tab Feedback Loop)
+        window.addEventListener('storage', (event) => {
+            // 24小時全天候監聽遊戲端約定的特定抽屜
+            if (event.key === 'esgt_hero_index_update' && event.newValue) {
+                try {
+                    const data = JSON.parse(event.newValue);
+                    if (data && data.heroIndex !== undefined) {
+                        state.heroIndex = data.heroIndex; // 更新系統狀態
+                        console.log("✅ [Cross-Tab] 主頁收到遊戲最新指數：", state.heroIndex);
+                        
+                        // 即時更新主網頁的 UI，並加入微小動畫提升互動感
+                        const displayEl = document.getElementById('display-hero-index');
+                        if (displayEl) {
+                            displayEl.textContent = state.heroIndex;
+                            displayEl.classList.add('scale-125', 'text-yellow-400');
+                            setTimeout(() => { displayEl.classList.remove('scale-125', 'text-yellow-400'); }, 300);
                         }
-                    } catch (e) {
-                        console.warn("⚠️ 解析跨分頁分數失敗", e);
+                        saveData(); // 持久化保存
+                        
+                        // 讀完後清除，確保下次寫入能再次觸發 storage 事件
+                        localStorage.removeItem('esgt_hero_index_update');
                     }
+                } catch (e) {
+                    console.warn("⚠️ 解析遊戲跨分頁分數失敗", e);
                 }
-            });
+            }
+        });
 
-            // 🚀 核心升級：網路狀態智慧偵測與自動同步機制
-            window.addEventListener('online', () => { 
+        // 🚀 核心升級：網路狀態智慧偵測與自動同步機制
+        window.addEventListener('online', () => { 
                 if(isOfflineMode) { 
                     isOfflineMode = false; 
                     initFirebase(); 
