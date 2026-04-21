@@ -134,6 +134,38 @@
         </div>
     </div>
 
+    <!-- 烏龜 NPC 任務面板 (多孔隙生態任務) -->
+    <div id="turtle-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 166;">
+        <div class="bg-slate-900 border-2 border-lime-500 p-6 rounded-xl shadow-[0_0_40px_rgba(132,204,22,0.3)] w-11/12 max-w-md flex flex-col interactive-btn relative">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-lime-400 flex items-center gap-2">🐢 生態老龜</h2>
+                <button onclick="closeTurtleModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="turtle-content" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- 🌟 新增：多孔隙生態農場問答面板 -->
+    <div id="farm-quiz-modal" class="ui-layer absolute inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 167;">
+        <div class="bg-slate-900 border-2 border-lime-500 p-6 rounded-xl shadow-[0_0_40px_rgba(132,204,22,0.4)] w-11/12 max-w-lg flex flex-col interactive-btn relative">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-lime-400 flex items-center gap-2">🌿 棲地營造挑戰</h2>
+                <button onclick="closeFarmQuiz()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <p class="text-sm text-slate-300 mb-4 leading-relaxed font-bold bg-slate-800 p-3 rounded-lg border border-slate-600" id="farm-quiz-q">
+                問題載入中...
+            </p>
+            <div id="farm-quiz-options" class="flex flex-col gap-3">
+                <!-- 選項動態生成於此 -->
+            </div>
+            <div id="farm-quiz-msg" class="h-5 mt-4 text-center"></div>
+        </div>
+    </div>
+
     <!-- 減災補給商店面板 -->
     <div id="shop-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 150;">
         <div class="bg-slate-900 border-2 border-emerald-500 p-6 rounded-xl shadow-2xl w-11/12 max-w-lg flex flex-col interactive-btn relative">
@@ -456,7 +488,7 @@
         </div>
     </div>
 
-    <!-- 🌟 新增：史詩破關大結局面板 (滿版感謝狀) -->
+    <!-- 🌟 史詩破關大結局面板 (滿版感謝狀) -->
     <div id="ending-modal" class="ui-layer absolute inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center hidden opacity-0 transition-opacity duration-1000" style="z-index: 999;">
         <div class="bg-slate-900 border-2 border-emerald-500 p-8 md:p-12 rounded-2xl shadow-[0_0_100px_rgba(16,185,129,0.4)] max-w-2xl w-11/12 text-center relative overflow-hidden interactive-btn">
             <!-- 裝飾背景光暈 -->
@@ -529,7 +561,19 @@ const uiBtn = document.getElementById('prompt-btn');
 
 window.tempExtData = null;
 
-// 道具字典 (🌟 強化戰鬥說明)
+// 🌟 新增：多孔隙生態問答題庫 (共8題，完美對應8個農場)
+const ECO_QUESTIONS = [
+    { q: "為了讓蜘蛛與青蛙等害蟲天敵有躲藏的空間，我們可以在農場角落做什麼？", opts: ["噴灑除草劑保持乾淨", "設置「砌石孔縫」或枯木堆", "鋪設不透水的水泥地"], a: 1 },
+    { q: "在田區周圍種植「綠籬」的主要生態功能是什麼？", opts: ["提供野生動物庇護所與生物通道", "阻擋農作物吸收陽光", "減少農田周圍的生物多樣性"], a: 0 },
+    { q: "為了吸引寄生蜂與食蚜蠅來幫忙吃害蟲，農場邊界最適合種植什麼？", opts: ["單一的高經濟作物", "外來入侵種植物", "開花的本土「蜜源植物」"], a: 2 },
+    { q: "實施「多層次種植」（如高大喬木搭配低矮灌木）有什麼好處？", opts: ["模擬天然森林結構，增加生物多樣性", "會讓農作物完全無法生長", "方便大型重機具直接開入採收"], a: 0 },
+    { q: "為了讓水生昆蟲與兩棲類能在不同水池間移動，我們應該建立什麼？", opts: ["加高且垂直的水泥護岸", "自然的「水域連接」生態溝渠", "將水源完全抽乾的地下涵管"], a: 1 },
+    { q: "健康的土壤是多孔隙的。下列哪種「土壤改良」方式對生態最友善？", opts: ["大量施用化學合成速效肥料", "使用重型機具將土壤壓實", "添加有機堆肥，促進蚯蚓等底棲生物生長"], a: 2 },
+    { q: "建立「森林連接（生態廊道）」能為農場周圍的野生動物帶來什麼幫助？", opts: ["將動物困在單一孤立的區域", "連結破碎棲地，幫助動物安全遷徙與繁衍", "讓獵人更容易捕捉野生動物"], a: 1 },
+    { q: "在多孔隙生態農法中，田埂保留一定高度的雜草（草生栽培）有什麼作用？", opts: ["草根能涵養水分，並作為天敵昆蟲的微棲地", "純粹是因為農夫懶得除草", "會把農作物的養分全部搶光"], a: 0 }
+];
+
+// 道具字典
 window.ITEM_DICT = {
     'drone': {n:'無人機', i:'🚁', d:'林區專用。戰鬥投擲引發區域轟炸(AoE)。', price: 50}, 
     'filter': {n:'過濾網', i:'💧', d:'水域專用。戰鬥投擲引發區域清洗(AoE)。', price: 30}, 
@@ -577,10 +621,11 @@ const GHG_MONSTERS = [
     { name: '[G 治理] 反競爭巨獸', icon: '🦈', maxHp: 220, attack: 26, defense: 22, exp: 80, desc: '價格壟斷與惡意併購，扼殺中小企業生存空間。', source: '托拉斯行為與破壞市場的公平競爭。', pts: 50 }
 ];
 
-// 地圖與事件
-const TERRAIN_CONFIG = { 0:{walkable:false, name:'水脈'}, 1:{walkable:true, name:'平原'}, 2:{walkable:true, name:'森林'}, 3:{walkable:false, name:'高山'}, 4:{walkable:true, name:'沙漠'}, 5:{walkable:true, name:'古道'} };
+// 地圖與事件 (🌟 新增 Terrain 6 為生態農田)
+const TERRAIN_CONFIG = { 0:{walkable:false, name:'水脈'}, 1:{walkable:true, name:'平原'}, 2:{walkable:true, name:'森林'}, 3:{walkable:false, name:'高山'}, 4:{walkable:true, name:'沙漠'}, 5:{walkable:true, name:'古道'}, 6:{walkable:true, name:'生態農田'} };
 const MAP_COLS = 50, MAP_ROWS = 50; let mapData = [];
 
+// 🌟 更新事件清單，加入烏龜與 8 個小農場
 const allEvents = [
     { x: 15, y: 15, name: '季風觀測峽谷', icon: '🎐', desc: '記錄峽谷強風數據。', type: 'landmark' },
     { x: 35, y: 18, name: '濕地水質監測站', icon: '💧', desc: '採樣地下水純淨度。', type: 'landmark' },
@@ -591,7 +636,18 @@ const allEvents = [
     { x: 10, y: 25, name: '西部重工業區', icon: '🏭', desc: '廢氣污染。', type: 'disaster', resolved: false, observed: false, reported: false },
     { x: 5, y: 10, name: '西北近海港口', icon: '🗑️', desc: '海洋垃圾。', type: 'disaster', resolved: false, observed: false, reported: false },
     { x: 42, y: 6, name: '東北冰川觀測站', icon: '⛴️🧊', desc: '冰川崩解。', type: 'disaster', resolved: false, observed: false, reported: false },
-    { x: 35, y: 30, name: '南部農業區', icon: '🌾', desc: '農藥殘留與土壤硬化。', type: 'disaster', resolved: false, observed: false, reported: false }
+    { x: 35, y: 30, name: '南部農業區', icon: '🌾', desc: '農藥殘留與土壤硬化。', type: 'disaster', resolved: false, observed: false, reported: false },
+    
+    // 🌟 烏龜任務 NPC 與 8 個分散的小農場 (位於南部農業區下方)
+    { x: 35, y: 36, name: '生態老龜', icon: '🐢', desc: '這隻老龜似乎正為了棲地發愁。', type: 'quest_npc_turtle' },
+    { x: 33, y: 35, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false },
+    { x: 37, y: 35, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false },
+    { x: 32, y: 37, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false },
+    { x: 38, y: 37, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false },
+    { x: 34, y: 39, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false },
+    { x: 36, y: 39, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false },
+    { x: 33, y: 41, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false },
+    { x: 37, y: 41, name: '荒蕪的小農場', icon: '🪹', type: 'eco_farm', built: false }
 ];
 
 // 玩家與控制狀態
@@ -639,6 +695,7 @@ const svgAssets = {
     3: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#a8a29e"/><polygon points="25,15 5,64 45,64" fill="#57534e"/><polygon points="25,15 17,35 25,40 33,35" fill="#f5f5f4"/><polygon points="45,25 25,64 64,64" fill="#78716c"/><polygon points="45,25 38,40 45,45 52,40" fill="#e7e5e4"/></svg>`,
     4: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#fcd34d"/><path d="M 10 30 Q 30 20 50 35" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/><path d="M 20 50 Q 40 40 60 55" fill="none" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/></svg>`,
     5: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#84cc16"/><path d="M 20 0 L 20 64 M 44 0 L 44 64 M 0 20 L 64 20 M 0 44 L 64 44" stroke="#a16207" stroke-width="16" fill="none"/><rect x="25" y="25" width="14" height="14" fill="#ca8a04" rx="2"/><circle cx="15" cy="15" r="3" fill="#4d7c0f"/><circle cx="49" cy="49" r="2" fill="#4d7c0f"/></svg>`,
+    6: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#b45309"/><path d="M 10 10 L 54 10 M 10 24 L 54 24 M 10 38 L 54 38 M 10 52 L 54 52" stroke="#92400e" stroke-width="6" stroke-dasharray="4,8"/><circle cx="20" cy="24" r="3" fill="#4ade80"/><circle cx="40" cy="38" r="4" fill="#22c55e"/><circle cx="30" cy="52" r="2" fill="#4ade80"/></svg>`, 
     
     // Q版雄性勇者龍 (藍綠色系)
     'player_m': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
@@ -843,10 +900,34 @@ function checkExternalLoginData() {
                     if (nameDisplay) nameDisplay.innerText = `旅者代碼：${travelerProfile.name}`;
                 }
                 
+                // 🌟 更新烏龜任務與地標狀態 (向下相容)
+                if (!travelerProfile.quests.turtle) travelerProfile.quests.turtle = { state: 'none', count: 0 };
+                if (travelerProfile.quests.turtle.count > 0) {
+                    let builtCount = travelerProfile.quests.turtle.count;
+                    let farmEvents = allEvents.filter(e => e.type === 'eco_farm');
+                    for(let i=0; i<builtCount && i<farmEvents.length; i++) {
+                        farmEvents[i].built = true;
+                        farmEvents[i].icon = '🐸';
+                        farmEvents[i].name = '多孔隙生態農場';
+                    }
+                }
+
                 window.saveProgress();
             } else {
                 // 如果外部完全沒傳資料，給予明確提示
                 console.log("⚠️ 未偵測到外部新資料，僅載入本地存檔。");
+                
+                // 🌟 同樣向下相容農場顯示狀態
+                if (!travelerProfile.quests.turtle) travelerProfile.quests.turtle = { state: 'none', count: 0 };
+                if (travelerProfile.quests.turtle.count > 0) {
+                    let builtCount = travelerProfile.quests.turtle.count;
+                    let farmEvents = allEvents.filter(e => e.type === 'eco_farm');
+                    for(let i=0; i<builtCount && i<farmEvents.length; i++) {
+                        farmEvents[i].built = true;
+                        farmEvents[i].icon = '🐸';
+                        farmEvents[i].name = '多孔隙生態農場';
+                    }
+                }
             }
             
             applyCertificationSuccess(); 
@@ -884,7 +965,7 @@ function checkExternalLoginData() {
         distance: window.tempExtData.dist, carbon: window.tempExtData.carb, gender: 'm',
         inventory: { observe_card: 3, report_card: 2 }, isExternal: true, certifiedAt: Date.now(), isGuest: false,
         stats: { monstersKilled: 0, disastersResolved: 0 },
-        quests: { eagle: { state: 'none', count: 0 } } 
+        quests: { eagle: { state: 'none', count: 0 }, turtle: { state: 'none', count: 0 } } 
     };
     window.saveProgress(); 
     applyCertificationSuccess();
@@ -1208,7 +1289,7 @@ window.submitCertification = async () => {
         distance: tD.dist, carbon: tD.carb, gender: selectedGender,
         inventory: {observe_card:3, report_card:2}, certifiedAt: Date.now(), isCertified: true, isGuest: currentLoginMode==='guest', isExternal: !!window.tempExtData,
         stats: { monstersKilled: 0, disastersResolved: 0 },
-        quests: { eagle: { state: 'none', count: 0 } } 
+        quests: { eagle: { state: 'none', count: 0 }, turtle: { state: 'none', count: 0 } } 
     };
     
     travelerProfile = newP; 
@@ -1386,6 +1467,91 @@ window.customConfirm = (title, desc, onConfirm) => {
     document.getElementById('confirm-modal').classList.remove('hidden');
     document.getElementById('btn-confirm-cancel').onclick = () => document.getElementById('confirm-modal').classList.add('hidden');
     document.getElementById('btn-confirm-ok').onclick = () => { document.getElementById('confirm-modal').classList.add('hidden'); onConfirm(); };
+};
+
+// 🌟 新增：多孔隙生態棲地知識問答邏輯
+window.openFarmQuiz = () => {
+    if (!currentEvent || currentEvent.type !== 'eco_farm' || currentEvent.built) return;
+    if (!travelerProfile.quests.turtle || travelerProfile.quests.turtle.state !== 'active') return;
+
+    // 依據目前的農場進度 (0~7) 選擇對應的題目
+    let qIndex = travelerProfile.quests.turtle.count;
+    if (qIndex >= ECO_QUESTIONS.length) qIndex = ECO_QUESTIONS.length - 1;
+    const qData = ECO_QUESTIONS[qIndex];
+
+    document.getElementById('farm-quiz-q').innerText = qData.q;
+    const btnContainer = document.getElementById('farm-quiz-options');
+    btnContainer.innerHTML = '';
+    
+    qData.opts.forEach((optText, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full text-left bg-slate-800 hover:bg-lime-900/80 border border-slate-600 hover:border-lime-500 text-slate-200 text-sm p-4 rounded-lg transition-colors font-bold";
+        btn.innerText = optText;
+        btn.onclick = () => submitFarmQuiz(idx, qData.a);
+        btnContainer.appendChild(btn);
+    });
+
+    document.getElementById('farm-quiz-msg').innerText = '';
+    document.getElementById('farm-quiz-modal').classList.remove('hidden');
+    closePromptUI();
+};
+
+window.closeFarmQuiz = () => {
+    document.getElementById('farm-quiz-modal').classList.add('hidden');
+};
+
+window.submitFarmQuiz = (selectedIdx, correctIdx) => {
+    const msg = document.getElementById('farm-quiz-msg');
+    if (selectedIdx === correctIdx) {
+        msg.innerText = "✅ 觀念正確！成功建立多孔隙生態！";
+        msg.className = "text-emerald-400 font-bold text-sm mt-3 text-center";
+        
+        // 答對後延遲一秒執行建設
+        setTimeout(() => {
+            closeFarmQuiz();
+            executeFarmBuild();
+        }, 1200);
+    } else {
+        msg.innerText = "❌ 這樣不符合永續生態的精神喔，再想想看！";
+        msg.className = "text-red-400 font-bold text-sm mt-3 text-center animate-pulse";
+    }
+};
+
+window.executeFarmBuild = () => {
+    if (!currentEvent || currentEvent.type !== 'eco_farm') return;
+
+    // 執行建設
+    currentEvent.built = true;
+    currentEvent.icon = '🐸'; // 變成青蛙，代表生態建立
+    currentEvent.name = '多孔隙生態農田';
+
+    travelerProfile.quests.turtle.count++;
+    travelerProfile.points += 5; // 每次建設給予小獎勵
+    window.saveProgress();
+
+    if (uiPrompt) {
+        uiTitle.innerHTML = `✅ 棲地建立成功`;
+        uiDesc.innerText = `小動物們進駐了！生態網進度：${travelerProfile.quests.turtle.count}/8`;
+        const btn = document.getElementById('prompt-btn');
+        btn.innerText = "確認";
+        btn.onclick = () => { closePromptUI(); };
+        btn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-8 rounded-full shadow-lg transition active:scale-95";
+        uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border-2 border-emerald-500 p-5 rounded-xl text-center shadow-lg opacity-100 transition-all duration-300 min-w-[280px]";
+        uiPrompt.classList.remove('hidden');
+    }
+    
+    updateStatusUI();
+    
+    if (travelerProfile.quests.turtle.count >= 8) {
+        setTimeout(() => {
+            if(uiPrompt) {
+                uiTitle.innerHTML = `🌟 復育網完成`;
+                uiDesc.innerText = `8 座生態農田已連線！請回去向「生態老龜」回報。`;
+                uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border-2 border-lime-500 p-5 rounded-xl text-center shadow-[0_0_20px_rgba(132,204,22,0.5)] opacity-100 transition-all duration-300 min-w-[280px]";
+                uiPrompt.classList.remove('hidden');
+            }
+        }, 1500);
+    }
 };
 
 window.useItem = async (itemId) => {
@@ -1691,7 +1857,7 @@ window.closeNpcModal = () => { document.getElementById('npc-modal').classList.ad
 
 window.openEagleModal = () => {
     if(!travelerProfile) return;
-    if(!travelerProfile.quests) travelerProfile.quests = { eagle: { state: 'none', count: 0 } };
+    if(!travelerProfile.quests) travelerProfile.quests = { eagle: { state: 'none', count: 0 }, turtle: { state: 'none', count: 0 } };
     if(!travelerProfile.quests.eagle) travelerProfile.quests.eagle = { state: 'none', count: 0 };
     
     const qState = travelerProfile.quests.eagle;
@@ -1779,6 +1945,109 @@ window.submitEagleQuest = () => {
         btn.className = "interactive-btn bg-cyan-600 px-8 py-2 rounded-full text-white font-bold";
     }
 };
+
+// 🌟 新增：老龜 NPC 任務介面控制
+window.openTurtleModal = () => {
+    if(!travelerProfile) return;
+    if(!travelerProfile.quests) travelerProfile.quests = { eagle: { state: 'none', count: 0 }, turtle: { state: 'none', count: 0 } };
+    if(!travelerProfile.quests.turtle) travelerProfile.quests.turtle = { state: 'none', count: 0 };
+    
+    const qState = travelerProfile.quests.turtle;
+    const content = document.getElementById('turtle-content');
+    content.innerHTML = '';
+
+    if (qState.state === 'none') {
+        content.innerHTML = `
+            <p class="text-sm text-slate-300 leading-relaxed bg-slate-800 p-3 rounded-lg border border-slate-700">
+                「咳咳... 年輕的旅者啊，這片農業區原本生態豐富，但過度開發讓青蛙、蜘蛛等益蟲都失去了家。<br><br>請協助我前往這附近的 <strong class="text-lime-400">8 座荒蕪小農場</strong>，在那裡建立『多孔隙生態棲地』。<br>作為回報，我將傳授你借助自然之力的戰鬥技巧。」
+            </p>
+            <button onclick="acceptTurtleQuest()" class="w-full bg-lime-600 hover:bg-lime-500 text-white font-bold py-3 rounded-lg shadow-lg transition-colors mt-4">接取多孔隙生態任務</button>
+        `;
+    } else if (qState.state === 'active') {
+        if (qState.count < 8) {
+            content.innerHTML = `
+                <p class="text-sm text-slate-300 leading-relaxed bg-slate-800 p-3 rounded-lg border border-slate-700">
+                    「生態的建立需要耐心與正確的知識。請前往周圍的荒蕪農場，在那裡接受棲地營造的考驗。」
+                </p>
+                <div class="mt-4">
+                    <div class="flex justify-between text-xs font-bold text-lime-300 mb-1">
+                        <span>棲地營造進度</span><span>${qState.count} / 8</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-3 border border-slate-600 overflow-hidden">
+                        <div class="bg-lime-500 h-3 rounded-full transition-all duration-300" style="width: ${(qState.count/8)*100}%"></div>
+                    </div>
+                </div>
+                <button onclick="closeTurtleModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg shadow transition-colors mt-6">繼續營造</button>
+            `;
+        } else {
+            content.innerHTML = `
+                <p class="text-sm text-emerald-300 font-bold leading-relaxed bg-emerald-900/30 p-3 rounded-lg border border-emerald-500/50">
+                    「太不可思議了！我聽見了青蛙的鳴叫，也看見了蜘蛛網在陽光下閃爍！<br>農場的生態系終於恢復了平衡！」
+                </p>
+                <div class="mt-4 space-y-2 text-left">
+                    <label class="block text-xs font-bold text-slate-400 mb-1">這次行動的核心精神是：</label>
+                    <select id="turtle-reflection" class="w-full bg-slate-800 border-2 border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-lime-500">
+                        <option value="A">利用化學農藥快速消滅害蟲，提高產量。</option>
+                        <option value="B" selected>營造多孔隙的微棲地，利用生物多樣性進行自然防治。</option>
+                        <option value="C">將農場全面水泥化，避免任何雜草生長。</option>
+                    </select>
+                </div>
+                <button onclick="submitTurtleQuest()" class="w-full bg-lime-600 hover:bg-lime-500 text-slate-900 font-bold py-3 rounded-lg shadow-lg transition-colors mt-6">交付任務並領取獎勵</button>
+            `;
+        }
+    } else if (qState.state === 'completed') {
+        content.innerHTML = `
+            <p class="text-sm text-slate-300 leading-relaxed bg-slate-800 p-3 rounded-lg border border-slate-700">
+                「謝謝你，旅者。看著這些農田充滿生機，是我最欣慰的事。」
+            </p>
+            <button onclick="closeTurtleModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg shadow-lg transition-colors mt-6">離開</button>
+        `;
+    }
+    
+    document.getElementById('turtle-modal').classList.remove('hidden');
+    if (uiPrompt) uiPrompt.classList.add('hidden');
+};
+
+window.closeTurtleModal = () => { document.getElementById('turtle-modal').classList.add('hidden'); if(currentEvent && !isInCombat) updatePromptUI(); };
+
+window.acceptTurtleQuest = () => {
+    travelerProfile.quests.turtle = { state: 'active', count: 0 };
+    window.saveProgress(); 
+    openTurtleModal(); 
+};
+
+window.submitTurtleQuest = () => {
+    const answer = document.getElementById('turtle-reflection').value;
+    if (answer !== 'B') {
+        alert('老龜搖了搖頭：「這似乎不是友善環境的作法喔...」');
+        return;
+    }
+
+    travelerProfile.quests.turtle = { state: 'completed', count: 8 };
+    travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 100; 
+    
+    // 🌟 獎勵：給予 5% 爆擊率、一些觀測卡與土壤改良劑
+    travelerProfile.critChance = (travelerProfile.critChance || 0) + 5;
+    travelerProfile.inventory['observe_card'] = (travelerProfile.inventory['observe_card'] || 0) + 3;
+    travelerProfile.inventory['soil_remediator'] = (travelerProfile.inventory['soil_remediator'] || 0) + 1;
+    
+    window.saveProgress(); 
+    
+    closeTurtleModal();
+    updateStatusUI();
+    
+    if(uiPrompt) {
+        uiPrompt.classList.remove('hidden');
+        uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-lime-500 p-5 rounded-xl text-center shadow-[0_0_20px_rgba(132,204,22,0.4)] transition-all opacity-100";
+        document.getElementById('prompt-title').innerHTML = `🎁 生態任務達成`;
+        document.getElementById('prompt-desc').innerHTML = `農業區的生態網已建立！獲得老龜的自然祝福。<br><span class="text-emerald-400">普通攻擊爆擊率 +5%、勇者指數 +100！<br>(附贈土壤改良劑x1, 觀測卡x3)</span>`;
+        const btn = document.getElementById('prompt-btn');
+        btn.innerText = "確認";
+        btn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
+        btn.className = "interactive-btn bg-lime-600 px-8 py-2 rounded-full text-slate-900 font-bold";
+    }
+};
+
 
 window.openRecordModal = () => { 
     if(!travelerProfile) return;
@@ -1961,7 +2230,19 @@ window.executeCombatAction = (action) => {
     }
 
     if (action === 'basic_attack') {
-        let damage = Math.max(1, Math.floor(currentMonster.maxHp * 0.01)); currentMonster.hp -= damage; addCombatLog(`${travelerProfile.name} 基礎攻擊，造成 ${damage} 傷害！`, "text-slate-300");
+        // 🌟 引入爆擊機制：預設基礎傷害 1%，爆擊時造成 2.5%
+        let currentCritChance = travelerProfile.critChance || 0;
+        let isCrit = Math.random() * 100 < currentCritChance;
+        let damage = Math.max(1, Math.floor(currentMonster.maxHp * 0.01)); 
+        
+        if (isCrit) {
+            damage = Math.max(2, Math.floor(currentMonster.maxHp * 0.025));
+            currentMonster.hp -= damage; 
+            addCombatLog(`💥 爆擊！${travelerProfile.name} 觸發生態加成，造成 ${damage} 點巨量傷害！`, "text-lime-400 font-bold text-lg");
+        } else {
+            currentMonster.hp -= damage; 
+            addCombatLog(`${travelerProfile.name} 基礎攻擊，造成 ${damage} 傷害！`, "text-slate-300");
+        }
     } else if (action === 'purify_skill') {
         combatState.purifyUsed = true; let damage = Math.max(1, Math.floor(currentMonster.maxHp * 0.10)); currentMonster.hp -= damage; addCombatLog(`${travelerProfile.name} 施放✨淨化，造成 ${damage} 大量傷害！`, "text-amber-300 font-bold");
     } else if (action === 'shield_skill') {
@@ -2043,7 +2324,7 @@ function handleVictory() {
             addCombatLog(`🎯 戰利品！野外怪物掉落了：【${window.ITEM_DICT[sdgId].n}】x1！`, "text-yellow-300 font-bold");
         }
 
-        if (!travelerProfile.quests) travelerProfile.quests = { eagle: { state: 'none', count: 0 } };
+        if (!travelerProfile.quests) travelerProfile.quests = { eagle: { state: 'none', count: 0 }, turtle: { state: 'none', count: 0 } };
         if (travelerProfile.quests.eagle && travelerProfile.quests.eagle.state === 'active') {
             travelerProfile.quests.eagle.count++;
             
@@ -2123,6 +2404,25 @@ function updatePromptUI() {
             uiTitle.innerHTML = `<span class="text-2xl">${currentEvent.icon}</span> ${currentEvent.name}`; uiDesc.innerText = '已通報，請執行復育(如無人機)。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950/95 border-2 border-blue-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
             uiBtn.innerText = "進行復育 (開行囊)"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-blue-600 text-white font-bold py-2 px-8 rounded-full shadow";
         }
+    // 🌟 小農場任務狀態判斷 (改為呼叫問答介面)
+    } else if (currentEvent.type === 'eco_farm') {
+        uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`;
+        if (!travelerProfile || !travelerProfile.quests.turtle || travelerProfile.quests.turtle.state !== 'active') {
+            uiDesc.innerText = '這裡是一塊荒蕪的小農田，似乎缺乏生機。'; 
+            uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-slate-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+            uiBtn.innerText = "離開"; uiBtn.setAttribute('onclick', 'closePromptUI()'); uiBtn.className = "interactive-btn bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
+        } else if (!currentEvent.built) {
+            uiDesc.innerText = '這塊農田需要建立多孔隙生態棲地，讓天敵進駐。'; 
+            uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-lime-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+            uiBtn.innerText = "建立棲地"; 
+            // 🌟 改變這裡：點擊後改為觸發 openFarmQuiz() 而不是直接 buildEcoFarm()
+            uiBtn.setAttribute('onclick', 'openFarmQuiz()'); 
+            uiBtn.className = "interactive-btn bg-lime-600 hover:bg-lime-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
+        } else {
+            uiDesc.innerText = '這裡已經建立了完善的多孔隙生態！'; 
+            uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-emerald-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+            uiBtn.innerText = "離開"; uiBtn.setAttribute('onclick', 'closePromptUI()'); uiBtn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
+        }
     } else if (currentEvent.type === 'shop') {
         uiTitle.innerHTML = `⛺ 補給站`; uiDesc.innerText = '兌換復育裝備'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-blue-400 p-5 rounded-xl text-center shadow-lg opacity-100"; 
         uiBtn.innerText = "進入"; uiBtn.setAttribute('onclick', 'openShopModal()'); uiBtn.className = "interactive-btn bg-blue-600 text-white font-bold py-2 px-8 rounded-full shadow";
@@ -2132,6 +2432,9 @@ function updatePromptUI() {
     } else if (currentEvent.type === 'quest_npc_eagle') {
         uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '棲息於此的神祕老鷹正盯著你。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-cyan-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
         uiBtn.innerText = "上前交談"; uiBtn.setAttribute('onclick', 'openEagleModal()'); uiBtn.className = "interactive-btn bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
+    } else if (currentEvent.type === 'quest_npc_turtle') { 
+        uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '這隻老龜似乎正為了棲地發愁。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-lime-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+        uiBtn.innerText = "上前交談"; uiBtn.setAttribute('onclick', 'openTurtleModal()'); uiBtn.className = "interactive-btn bg-lime-600 hover:bg-lime-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
     } else {
         uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '需使用【觀測卡】寫入日誌。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-yellow-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
         uiBtn.innerText = "打開行囊"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-emerald-600 text-white font-bold py-2 px-8 rounded-full shadow";
@@ -2236,12 +2539,19 @@ function generateMap() {
                 }
             }
         }
+        if (evt.type === 'eco_farm') {
+            if (evt.y >= 0 && evt.y < MAP_ROWS && evt.x >= 0 && evt.x < MAP_COLS) {
+                mapData[evt.y][evt.x] = 6;
+            }
+        }
     });
 
     const shopP = allEvents.find(e=>e.type==='shop');
     allEvents.forEach(evt => { 
-        if(evt.type!=='shop'){ let cx=shopP.x, cy=shopP.y; while(cx!==evt.x){mapData[cy][cx]=5; cx+=(evt.x>cx?1:-1);} while(cy!==evt.y){mapData[cy][cx]=5; cy+=(evt.y>cy?1:-1);} }
-        mapData[evt.y][evt.x]=5; 
+        if(evt.type!=='shop' && evt.type!=='eco_farm' && evt.type!=='quest_npc_turtle'){ let cx=shopP.x, cy=shopP.y; while(cx!==evt.x){mapData[cy][cx]=5; cx+=(evt.x>cx?1:-1);} while(cy!==evt.y){mapData[cy][cx]=5; cy+=(evt.y>cy?1:-1);} }
+        if (evt.type !== 'eco_farm') {
+            mapData[evt.y][evt.x]=5; 
+        }
     });
     for(let y=0;y<MAP_ROWS;y++) for(let x=0;x<MAP_COLS;x++) if(x===0||x===MAP_COLS-1||y===0||y===MAP_ROWS-1) mapData[y][x]=0;
 }
@@ -2279,9 +2589,16 @@ function draw() {
     allEvents.forEach(evt => {
         if(evt.x>=sc && evt.x<=ec && evt.y>=sr && evt.y<=er && !evt.resolved) {
             let px = evt.x*TILE_SIZE-camera.x+TILE_SIZE/2, py = evt.y*TILE_SIZE-camera.y+TILE_SIZE/2;
-            ctx.fillStyle = evt.type==='disaster'?'rgba(239,68,68,0.4)':(evt.type==='shop'?'rgba(96,165,250,0.4)':'rgba(250,204,21,0.4)'); ctx.beginPath(); ctx.arc(px, py, TILE_SIZE/2, 0, Math.PI*2); ctx.fill();
+            let bgColor = 'rgba(250,204,21,0.4)';
+            if (evt.type === 'disaster') bgColor = 'rgba(239,68,68,0.4)';
+            if (evt.type === 'shop') bgColor = 'rgba(96,165,250,0.4)';
+            if (evt.type === 'eco_farm') bgColor = evt.built ? 'rgba(34,197,94,0.4)' : 'rgba(217,119,6,0.4)'; 
+            
+            ctx.fillStyle = bgColor; ctx.beginPath(); ctx.arc(px, py, TILE_SIZE/2, 0, Math.PI*2); ctx.fill();
             ctx.font='32px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(evt.icon, px, py-5);
-            ctx.font='bold 14px sans-serif'; ctx.fillStyle=evt.type==='disaster'?'#fca5a5':'#fde047'; ctx.lineWidth=3; ctx.strokeStyle='#000'; ctx.strokeText(evt.name, px, py-35); ctx.fillText(evt.name, px, py-35);
+            ctx.font='bold 14px sans-serif'; 
+            ctx.fillStyle = evt.type==='disaster'?'#fca5a5':(evt.type==='eco_farm'?'#bef264':'#fde047'); 
+            ctx.lineWidth=3; ctx.strokeStyle='#000'; ctx.strokeText(evt.name, px, py-35); ctx.fillText(evt.name, px, py-35);
         }
     });
 
@@ -2342,7 +2659,7 @@ window.addEventListener('keydown', (e) => { if(isInCombat) return; if (keys.hasO
 window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 const setupBtn = (id, k) => { const btn = document.getElementById(id); if(!btn) return; const p = (e)=>{e.preventDefault(); if(isInCombat) return; keys[k]=true; clearPath();}; const r = (e)=>{e.preventDefault(); keys[k]=false;}; btn.addEventListener('touchstart', p); btn.addEventListener('touchend', r); btn.addEventListener('mousedown', p); btn.addEventListener('mouseup', r); btn.addEventListener('mouseleave', r); };
 setupBtn('btn-up', 'ArrowUp'); setupBtn('btn-down', 'ArrowDown'); setupBtn('btn-left', 'ArrowLeft'); setupBtn('btn-right', 'ArrowRight');
-canvas.addEventListener('pointerdown', (e) => { if (isInCombat) return; if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden') || !document.getElementById('eagle-modal').classList.contains('hidden') || !document.getElementById('ending-modal').classList.contains('hidden')) return; const rect = canvas.getBoundingClientRect(); const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE); const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE); const path = findPath(pX, pY, tX, tY); if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }});
+canvas.addEventListener('pointerdown', (e) => { if (isInCombat) return; if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden') || !document.getElementById('eagle-modal').classList.contains('hidden') || !document.getElementById('turtle-modal').classList.contains('hidden') || !document.getElementById('farm-quiz-modal').classList.contains('hidden') || !document.getElementById('ending-modal').classList.contains('hidden')) return; const rect = canvas.getBoundingClientRect(); const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE); const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE); const path = findPath(pX, pY, tX, tY); if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }});
 
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 
