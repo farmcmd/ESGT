@@ -2585,12 +2585,22 @@
                     // 🔒 原子性交易防護：只有成功寫入大盤，才允許寫入個人成就
                     if (success) {
                         state.greenProcure += total; 
+                        
+                        // 🎯 核心修復：補回綠消的永續積分換算 (標準：100元 = 1積分)
+                        const earnedPts = Math.round(total / 100);
+                        state.totalScore += earnedPts;
+
                         saveData();
-                        window.addLog(`綠消登錄 (${labelName}): $${total}`); 
+                        window.addLog(`綠消登錄 (${labelName}): $${total} (獲得 ${earnedPts} 積分)`); 
                         updateDisplays(); 
                         window.closeModal('green-consumption-modal'); 
-                        window.showToast('綠色消費登錄成功！');
+                        window.showToast(`綠色消費登錄成功！獲得 ${earnedPts} 積分`);
                         
+                        // 📡 向遊戲端派發積分獎勵包裹
+                        if (earnedPts > 0 && typeof window.syncToGame === 'function') {
+                            window.syncToGame({ name: state.playerName, code: state.playerCode }, { pts: earnedPts, carb: 0, dist: 0 });
+                        }
+
                         document.getElementById('green-qty').value = '1'; 
                         document.getElementById('green-price').value = '';
                         if(document.getElementById('green-total-display')) document.getElementById('green-total-display').textContent = '$0';
@@ -2624,11 +2634,21 @@
                     // 🔒 原子性交易防護：只有成功寫入大盤，才允許寫入個人成就
                     if (success) {
                         state.sroiProcure += total; 
+                        
+                        // 🎯 核心修復：補回 SROI 價值的永續積分換算 (標準：100元 = 1積分)
+                        const earnedPts = Math.round(total / 100);
+                        state.totalScore += earnedPts;
+
                         saveData();
-                        window.addLog(`SROI 登錄: $${total.toFixed(0)}`); 
+                        window.addLog(`SROI 登錄: $${total.toFixed(0)} (獲得 ${earnedPts} 積分)`); 
                         updateDisplays(); 
                         window.closeModal('green-consumption-modal'); 
-                        window.showToast('SROI 價值登錄成功！');
+                        window.showToast(`SROI 價值登錄成功！獲得 ${earnedPts} 積分`);
+
+                        // 📡 向遊戲端派發積分獎勵包裹
+                        if (earnedPts > 0 && typeof window.syncToGame === 'function') {
+                            window.syncToGame({ name: state.playerName, code: state.playerCode }, { pts: earnedPts, carb: 0, dist: 0 });
+                        }
                     }
                 } else { 
                     window.showToast('請選擇農場並輸入金額'); 
