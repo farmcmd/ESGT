@@ -686,9 +686,14 @@ function checkExternalLoginData() {
 }
 
 window.addEventListener('message', async (event) => {
+    // 🛡️ 資安防護：嚴格檢查訊息來源，阻絕駭客從外部網域偽造積分封包
+    const allowedOrigin = "https://farmcmd.github.io";
+    if (event.origin !== allowedOrigin && event.origin !== window.location.origin) return;
+
     if (!event.data) return;
     try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        // 確認收到的資料包含積分與減碳量
         if (data && data.pts !== undefined && data.carb !== undefined) {
             const incomingName = data.name || data.id;
             
@@ -1051,9 +1056,12 @@ function updateStatusUI() {
     // 更新桌面版 UI
     document.getElementById('ui-pts').innerText = travelerProfile.points; 
     document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex || 0;
-    document.getElementById('ui-status-bar').innerText = `Lv.${travelerProfile.level} | EXP:${travelerProfile.exp}/${travelerProfile.level*50} | 碳排:${travelerProfile.carbon}g`;
     
-    // 新增：同步更新手機版專屬 UI
+    let distStr = parseFloat(travelerProfile.distance || 0).toFixed(1);
+    let statText = `Lv.${travelerProfile.level} | EXP:${travelerProfile.exp}/${travelerProfile.level*50} | 里程:${distStr}km | 減碳:${travelerProfile.carbon}g`;
+    document.getElementById('ui-status-bar').innerText = statText;
+    
+    // 同步更新手機版專屬 UI
     const ptsMob = document.getElementById('ui-pts-mobile');
     if (ptsMob) ptsMob.innerText = travelerProfile.points;
     
@@ -1061,10 +1069,18 @@ function updateStatusUI() {
     if (hiMob) hiMob.innerText = travelerProfile.heroIndex || 0;
     
     const statMob = document.getElementById('ui-status-bar-mobile');
-    if (statMob) statMob.innerText = `Lv.${travelerProfile.level} | EXP:${travelerProfile.exp}/${travelerProfile.level*50} | 碳排:${travelerProfile.carbon}g`;
+    if (statMob) statMob.innerText = statText;
 
     // 更新商店 UI
     if(document.getElementById('shop-current-pts')) document.getElementById('shop-current-pts').innerText = travelerProfile.points;
+
+    // 新增：雙向通訊！當遊戲數值更新時，主動將「勇者指數」廣播回父視窗 (主網頁)
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+            type: 'SYNC_HERO_INDEX',
+            heroIndex: travelerProfile.heroIndex || 0
+        }, "https://farmcmd.github.io"); // 🛡️ 資安防護：限定傳送網域
+    }
 }
 
 function renderDisasterAlerts() {
