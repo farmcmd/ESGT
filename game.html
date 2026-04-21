@@ -646,17 +646,15 @@ const totalImages = Object.keys(svgAssets).length;
 function checkExternalLoginData() {
     let urlParams = new URLSearchParams(window.location.search);
 
-    // 🌟 智慧擷取：自動讀取父視窗 (ESGT主網頁) 的網址參數
+    // 🌟 智慧擷取 1：自動讀取父視窗 (如果用 iframe 內嵌)
     if (window.parent && window.parent !== window) {
         try {
-            // 嘗試直接讀取父視窗網址
             const parentParams = new URLSearchParams(window.parent.location.search);
             for (const [key, value] of parentParams.entries()) {
-                if (!urlParams.has(key)) urlParams.set(key, value); // 合併參數
+                if (!urlParams.has(key)) urlParams.set(key, value); 
             }
         } catch(e) { 
             console.warn("跨域安全限制，切換為 Referrer 解析模式", e); 
-            // 備用防線：透過 document.referrer 解析父網頁的網址參數
             try {
                 if (document.referrer) {
                     const refUrl = new URL(document.referrer);
@@ -667,17 +665,28 @@ function checkExternalLoginData() {
                 }
             } catch(err) { console.warn("Referrer 解析失敗", err); }
         }
-        
-        // 📡 關鍵修復：主動告訴父網頁「遊戲已載入，準備好接收名字了！」
         window.parent.postMessage({ type: 'GAME_READY' }, "https://farmcmd.github.io");
     }
 
-    const extEmail = urlParams.get('email');
-    // 擴大相容性：精準對接 ESGT 傳入的 name, id 或 code 參數
-    const extId = urlParams.get('name') || urlParams.get('id') || urlParams.get('code'); 
-    const extDist = parseFloat(urlParams.get('dist')) || 0;
-    const extCarb = parseInt(urlParams.get('carb')) || 0;
-    const extPts = parseInt(urlParams.get('pts')) || 0;
+    // 🌟 智慧擷取 2：讀取同網域共用的初始化資料 (專解「開新分頁」抓不到資料的問題)
+    let sharedData = null;
+    try {
+        const sharedStr = localStorage.getItem('esgt_init_data');
+        if (sharedStr) {
+            sharedData = JSON.parse(sharedStr);
+            localStorage.removeItem('esgt_init_data'); // 讀取後立刻刪除防重複
+            console.log("✅ 成功從 LocalStorage 攔截初始化數據：", sharedData);
+        }
+    } catch(e) {}
+
+    const extEmail = urlParams.get('email') || (sharedData ? sharedData.email : null);
+    const extId = urlParams.get('name') || urlParams.get('id') || urlParams.get('code') || (sharedData ? (sharedData.name || sharedData.code) : null);
+    
+    // 移除測試用的假數據 (114, 57.4, 1127)，改為真實預設值 0。確保沒抓到資料時不會顯示奇怪的數字。
+    const extDist = parseFloat(urlParams.get('dist')) || (sharedData ? parseFloat(sharedData.dist) : 0);
+    const extCarb = parseInt(urlParams.get('carb')) || (sharedData ? parseInt(sharedData.carb) : 0);
+    const extPts = parseInt(urlParams.get('pts')) || (sharedData ? parseInt(sharedData.pts) : 0);
+    const extHeroIndex = parseInt(urlParams.get('heroIndex')) || (sharedData ? parseInt(sharedData.heroIndex) : 0);
 
     // 1. 優先嘗試讀取本地存檔
     const localSaveJSON = localStorage.getItem('earth_log_save_v1');
@@ -686,14 +695,23 @@ function checkExternalLoginData() {
             travelerProfile = JSON.parse(localSaveJSON);
             console.log("讀取到本地 JSON 存檔，自動登入！");
             
-            // 如果外部網頁有傳入新的積分與減碳數據，將其累加上舊存檔
+            // 如果外部網頁有傳入新的數據，進行校準 (取高者，防止存檔倒退)
             if (extPts > 0 || extCarb > 0) {
-                travelerProfile.points += extPts;
-                travelerProfile.carbon += extCarb;
-                travelerProfile.distance += extDist;
-                travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + extPts;
+                travelerProfile.points = Math.max(travelerProfile.points, extPts);
+                travelerProfile.carbon = Math.max(travelerProfile.carbon, extCarb);
+                travelerProfile.distance = Math.max(travelerProfile.distance, extDist);
+                travelerProfile.heroIndex = Math.max((travelerProfile.heroIndex || 0), extHeroIndex);
+                
+                // 如果有帶入名字，且本地存檔的名字是預設的，就更新名字
+                if (extId && !travelerProfile.name.includes(extId)) {
+                    let isGuest = travelerProfile.name.includes('(訪客)');
+                    travelerProfile.name = isGuest ? extId + '(訪客)' : extId;
+                    const nameDisplay = document.getElementById('traveler-name-display');
+                    if (nameDisplay) nameDisplay.innerText = `旅者代碼：${travelerProfile.name}`;
+                }
+                
                 window.saveProgress();
-                console.log(`已成功將外部獲取的 ${extPts} 積分合併至本機存檔。`);
+                console.log(`已成功校準外部獲取的數據。`);
             }
             
             applyCertificationSuccess(); 
@@ -704,9 +722,9 @@ function checkExternalLoginData() {
     // 2. 若無本地存檔，處理全新玩家的登入介面預填
     const finalExtId = extId || ''; 
     window.tempExtData = { 
-        dist: extDist || 57.4, 
-        carb: extCarb || 1127, 
-        pts: extPts || 114, 
+        dist: extDist, 
+        carb: extCarb, 
+        pts: extPts, 
         name: finalExtId 
     };
 
@@ -714,9 +732,7 @@ function checkExternalLoginData() {
     if (!extEmail) {
         const nameInput = document.getElementById('traveler-name-input');
         if (nameInput && finalExtId) {
-            // 自動帶入外部名稱
             nameInput.value = finalExtId;
-            // 加上綠色邊框提示玩家已成功匯入外部名稱
             nameInput.classList.add('border-emerald-400', 'bg-emerald-900/20');
             console.log("✅ 成功從外部帶入名稱：", finalExtId);
         }
