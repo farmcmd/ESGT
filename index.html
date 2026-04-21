@@ -1191,9 +1191,9 @@
                 <h3 class="text-lg md:text-xl font-bold text-white tracking-wide flex items-center"><i class="fas fa-globe-americas text-green-300 animate-pulse mr-2"></i>地球日誌 RPG</h3>
                 <button class="close-button text-white hover:text-green-200 bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm"><i class="fas fa-times text-lg"></i></button>
             </div>
-            <!-- Iframe 載入區塊 (🚀 核心修復：拔除會引發變數衝突的行內 onload 腳本，改由 JS 模組內監聽) -->
+            <!-- Iframe 載入區塊 (🚀 終極修復：初始不載入 src，避免遊戲偷跑導致讀取到空抽屜) -->
             <div class="flex-grow w-full relative bg-gray-900 overflow-hidden">
-                <iframe id="esgt-iframe" src="game.html" class="absolute inset-0 w-full h-full border-none" title="地球日誌 RPG"></iframe>
+                <iframe id="esgt-iframe" src="" class="absolute inset-0 w-full h-full border-none" title="地球日誌 RPG"></iframe>
             </div>
         </div>
     </div>
@@ -1376,8 +1376,15 @@
                 console.warn("⚠️ 寫入交接抽屜失敗:", e);
             }
 
-            // 4. 開啟地球日誌遊戲 (維持高品質沉浸式 Iframe Modal，防彈出視窗被瀏覽器阻擋)
+            // 4. 先開啟地球日誌 Modal，讓 iframe 進入 DOM 渲染樹
             window.openModal('game-modal');
+
+            // 🚀 終極除錯修復：動態注入帶有時間戳的 src (Cache Buster 技巧)
+            // 確保每一次點擊，iframe 都會像 window.open 一樣進行「100% 乾淨的全新載入」，完美讀取抽屜！
+            const gameIframe = document.getElementById('esgt-iframe');
+            if (gameIframe) {
+                gameIframe.src = 'game.html?t=' + Date.now(); 
+            }
         };
 
         window.customPrompt = function(message, defaultValue, callback) {
@@ -1502,7 +1509,43 @@
                 const heroIndex = (state.totalScore || 0) + Math.floor((state.totalCarbon || 0) / 100) + Math.floor(((state.greenProcure || 0) + (state.sroiProcure || 0)) / 1000);
                 document.getElementById('display-hero-index').textContent = heroIndex;
             }
+            
+            // 📡 即時觸發：只要畫面數據一更新，立刻廣播給 RPG 遊戲
+            if (typeof window.syncToGame === 'function') {
+                window.syncToGame({ name: state.playerName, code: state.playerCode });
+            }
         }
+        
+        /**
+         * 🚀 規格書 v1.1 核心實裝：向遊戲端發送同步訊號 (拼圖 A)
+         */
+        window.syncToGame = function(userData, rewards = null) {
+            const iframe = document.getElementById('esgt-iframe');
+            if (!iframe || !iframe.contentWindow) return;
+
+            // 🚀 核心除錯修復 2：動態判定網域安全策略！
+            // 若在本地端 (Localhost) 測試，自動降級為 '*' 以允許封包傳遞。若是正式環境，則嚴格綁定官方網域。
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '';
+            const targetOrigin = isLocalhost ? '*' : 'https://farmcmd.github.io';
+
+            // 1. 同步身分 (PostMessage)
+            iframe.contentWindow.postMessage({
+                type: 'SYNC_USER_DATA',
+                name: userData.name || '匿名旅者',
+                code: userData.code || ''
+            }, targetOrigin);
+
+            // 2. 派發獎勵包裹 (LocalStorage 信箱機制 - Mailbox Pattern)
+            if (rewards) {
+                localStorage.setItem('esgt_pending_rewards', JSON.stringify({
+                    pts: rewards.pts || 0,
+                    carb: rewards.carb || 0,
+                    dist: rewards.dist || 0,
+                    timestamp: Date.now() // ✨ 優化：加入時間戳確保監聽事件必觸發
+                }));
+                console.log("📡 [規格 v1.1] 獎勵包裹已存入信箱：", rewards);
+            }
+        };
 
         function getTodayKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
