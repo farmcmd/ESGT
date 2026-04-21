@@ -417,11 +417,26 @@
             <div class="text-center mb-6">
                 <div class="text-5xl mb-3">🌍</div>
                 <h2 class="text-2xl font-bold text-emerald-400 relative inline-block">
-                    永續旅者登入
+                    地球勇者登入
                     <button onclick="openAdminModal()" class="absolute -right-6 top-1 text-slate-600 hover:text-slate-400 text-sm transition-colors">🔒</button>
                 </h2>
                 <p class="text-sm text-slate-400 mt-2">請選擇您的探索模式，以建立專屬檔案。</p>
             </div>
+
+            <!-- 🌟 恢復：繼續遊戲區塊與模式切換按鈕 -->
+            <div id="continue-section" class="hidden mb-5 bg-slate-800/80 p-4 rounded-lg border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                <p class="text-xs text-slate-400 mb-1 text-center">偵測到先前的探索紀錄</p>
+                <div class="font-bold text-emerald-400 text-lg mb-3 flex justify-center items-center gap-2">
+                    <span class="text-2xl">🏕️</span> <span id="continue-name">旅者</span>
+                </div>
+                <button onclick="continueGame()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95 text-sm tracking-wider">繼續探索</button>
+                <div class="relative flex py-4 items-center">
+                    <div class="flex-grow border-t border-slate-600"></div>
+                    <span class="flex-shrink-0 mx-4 text-slate-500 text-xs">或選擇下方模式建立新檔案</span>
+                    <div class="flex-grow border-t border-slate-600"></div>
+                </div>
+            </div>
+
             <div class="flex gap-2 mb-5 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
                 <button id="tab-comp" onclick="setLoginMode('comp')" class="flex-1 bg-emerald-600 text-white font-bold py-2 rounded shadow transition-colors text-sm">🏆 專案競賽</button>
                 <button id="tab-guest" onclick="setLoginMode('guest')" class="flex-1 bg-transparent text-slate-400 font-bold py-2 rounded transition-colors text-sm hover:text-slate-200">🚶 單次體驗</button>
@@ -1124,14 +1139,20 @@ async function initFirebase() {
                     if (snap.exists()) { 
                         travelerProfile = snap.data(); 
                         window.saveProgress(); 
-                        applyCertificationSuccess(); 
+                        showContinueUI(); // 🌟 關鍵修改 3：從雲端抓回存檔後，顯示繼續按鈕
                     } 
                     else if (!travelerProfile) { 
                         document.getElementById('certification-modal').classList.remove('hidden'); 
+                    } else {
+                        showContinueUI();
                     }
-                } catch (e) { if(!travelerProfile) document.getElementById('certification-modal').classList.remove('hidden'); }
+                } catch (e) { 
+                    if(!travelerProfile) document.getElementById('certification-modal').classList.remove('hidden'); 
+                    else showContinueUI();
+                }
             } else {
                 await window.saveProgress();
+                showContinueUI(); // 確保 UI 保持顯示
             }
             setupSOSListener();
             setupChatListener();
@@ -2704,7 +2725,7 @@ window.addEventListener('keydown', (e) => { if(isInCombat) return; if (keys.hasO
 window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 const setupBtn = (id, k) => { const btn = document.getElementById(id); if(!btn) return; const p = (e)=>{e.preventDefault(); if(isInCombat) return; keys[k]=true; clearPath();}; const r = (e)=>{e.preventDefault(); keys[k]=false;}; btn.addEventListener('touchstart', p); btn.addEventListener('touchend', r); btn.addEventListener('mousedown', p); btn.addEventListener('mouseup', r); btn.addEventListener('mouseleave', r); };
 setupBtn('btn-up', 'ArrowUp'); setupBtn('btn-down', 'ArrowDown'); setupBtn('btn-left', 'ArrowLeft'); setupBtn('btn-right', 'ArrowRight');
-canvas.addEventListener('pointerdown', (e) => { if (isInCombat) return; if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden') || !document.getElementById('eagle-modal').classList.contains('hidden') || !document.getElementById('turtle-modal').classList.contains('hidden') || !document.getElementById('farm-quiz-modal').classList.contains('hidden') || !document.getElementById('ending-modal').classList.contains('hidden')) return; const rect = canvas.getBoundingClientRect(); const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE); const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE); const path = findPath(pX, pY, tX, tY); if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }});
+canvas.addEventListener('pointerdown', (e) => { if (isInCombat) return; if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden') || !document.getElementById('eagle-modal').classList.contains('hidden') || !document.getElementById('turtle-modal').classList.contains('hidden') || !document.getElementById('farm-quiz-modal').classList.contains('hidden') || !document.getElementById('stats-modal').classList.contains('hidden') || !document.getElementById('ending-modal').classList.contains('hidden')) return; const rect = canvas.getBoundingClientRect(); const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE); const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE); const path = findPath(pX, pY, tX, tY); if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }});
 
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 
