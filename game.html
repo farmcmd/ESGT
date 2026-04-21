@@ -56,10 +56,11 @@
                 <button onclick="openRecordModal()" class="interactive-btn bg-purple-700 hover:bg-purple-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-purple-500 flex items-center gap-1" id="btn-record">
                     📊 探索紀錄
                 </button>
-                <button onclick="openESGTModal()" class="interactive-btn bg-teal-700 hover:bg-teal-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-teal-500 flex items-center gap-1 hidden" id="btn-mini-game">
-                    🎮 小遊戲
+                <!-- 🌟 修正：改為狀態技能按鈕 -->
+                <button onclick="openStatsModal()" class="interactive-btn bg-teal-700 hover:bg-teal-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-teal-500 flex items-center gap-1 hidden" id="btn-stats">
+                    🛡️ 狀態技能
                 </button>
-                <!-- 🌟 新增：手機版專屬回首頁按鈕 -->
+                <!-- 手機版專屬回首頁按鈕 -->
                 <a href="https://farmcmd.github.io/ESGT/" class="interactive-btn bg-slate-700 hover:bg-slate-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-slate-500 flex items-center gap-1 sm:hidden">
                     🏠 回首頁
                 </a>
@@ -69,7 +70,7 @@
         <!-- ESGT 專屬數據面板 (僅在桌面版顯示) -->
         <div class="bg-slate-900/95 border-2 border-teal-500/80 p-3 rounded-lg text-right hidden sm:block shadow-[0_0_15px_rgba(20,184,166,0.2)] pointer-events-auto">
             <div class="text-xs text-slate-400 mb-2 border-b border-slate-700 pb-1 flex items-center justify-between gap-4">
-                <!-- 🌟 新增：桌面版專屬回首頁按鈕 -->
+                <!-- 桌面版專屬回首頁按鈕 -->
                 <a href="https://farmcmd.github.io/ESGT/" class="interactive-btn flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2 py-0.5 rounded transition-colors border border-slate-600 font-bold">
                     <span>🏠</span> 首頁
                 </a>
@@ -157,7 +158,7 @@
         </div>
     </div>
 
-    <!-- 🌟 新增：多孔隙生態農場問答面板 -->
+    <!-- 多孔隙生態農場問答面板 -->
     <div id="farm-quiz-modal" class="ui-layer absolute inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 167;">
         <div class="bg-slate-900 border-2 border-lime-500 p-6 rounded-xl shadow-[0_0_40px_rgba(132,204,22,0.4)] w-11/12 max-w-lg flex flex-col interactive-btn relative">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
@@ -282,6 +283,51 @@
         </div>
     </div>
 
+    <!-- 🌟 新增：角色狀態與技能面板 (取代原本的小遊戲面板) -->
+    <div id="stats-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 175;">
+        <div class="bg-slate-900 border-2 border-teal-500 p-6 rounded-xl shadow-[0_0_40px_rgba(20,184,166,0.3)] w-11/12 max-w-sm flex flex-col interactive-btn relative">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-teal-400 flex items-center gap-2">🛡️ 角色狀態與技能</h2>
+                <button onclick="closeStatsModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- 基礎屬性 -->
+                <div class="bg-slate-800 border border-slate-600 rounded-lg p-3">
+                    <h3 class="text-xs font-bold text-teal-300 mb-2 border-b border-slate-700 pb-1">基礎能力</h3>
+                    <div class="grid grid-cols-2 gap-3 text-sm text-slate-300">
+                        <div>攻擊力：<span id="stat-atk" class="text-white font-bold"></span></div>
+                        <div>防禦力：<span id="stat-def" class="text-white font-bold"></span></div>
+                        <div>最大血量：<span id="stat-hp" class="text-emerald-400 font-bold"></span></div>
+                        <div>爆擊率：<span id="stat-crit" class="text-lime-400 font-bold"></span><span class="text-[10px] text-slate-400">%</span></div>
+                    </div>
+                </div>
+
+                <!-- 永續戰術技能 -->
+                <div class="bg-slate-800 border border-slate-600 rounded-lg p-3">
+                    <h3 class="text-xs font-bold text-teal-300 mb-2 border-b border-slate-700 pb-1">永續戰術技能</h3>
+                    <div class="space-y-2 text-sm text-slate-300">
+                        <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded">
+                            <span>♻️ 資源循環</span>
+                            <span id="stat-skill-recycle" class="font-bold text-xs"></span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded">
+                            <span>📗 能效專家</span>
+                            <span id="stat-skill-energy" class="font-bold text-xs"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="exportJsonSave()" class="mt-5 w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg shadow-lg transition-colors text-sm font-bold flex items-center justify-center gap-2 border border-slate-500 transform active:scale-95">
+                <span>💾</span> 備份進度 (下載 JSON 檔)
+            </button>
+            <button onclick="closeStatsModal()" class="mt-3 w-full text-slate-400 hover:text-white transition-colors text-sm font-bold">關閉面板</button>
+        </div>
+    </div>
+
     <!-- 強制踢出連線中斷提示框 -->
     <div id="kick-modal" class="ui-layer absolute inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center hidden" style="z-index: 500;">
         <div class="bg-slate-900 border-2 border-red-500 p-8 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.4)] max-w-sm w-11/12 text-center interactive-btn">
@@ -396,21 +442,6 @@
         </div>
     </div>
 
-    <!-- ESGT 內嵌遊戲面板 -->
-    <div id="esgt-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 100;">
-        <div class="bg-slate-900 border-2 border-emerald-500 p-4 rounded-xl shadow-2xl w-11/12 max-w-4xl h-5/6 flex flex-col interactive-btn relative">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-xl font-bold text-emerald-400">🎮 ESGT 生態觀測任務</h2>
-                <button onclick="closeESGTModal()" class="text-slate-400 hover:text-white transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div class="flex-1 bg-black rounded-lg border border-slate-700 overflow-hidden relative">
-                <div id="iframe-loader" class="absolute inset-0 flex items-center justify-center text-emerald-500 font-bold">遊戲環境載入中...</div>
-                <iframe id="esgt-iframe" src="" class="w-full h-full relative z-10 hidden" sandbox="allow-scripts allow-same-origin allow-forms" onload="document.getElementById('iframe-loader').style.display='none'; this.classList.remove('hidden');"></iframe>
-            </div>
-            <div class="mt-4 flex justify-between items-center text-sm text-slate-400"><p>💡 完成任務，數據將作為永續參考。</p><button onclick="closeESGTModal()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-bold transition-colors">結束並返回</button></div>
-        </div>
-    </div>
-
     <!-- 永續旅者登入面板 -->
     <div id="certification-modal" class="ui-layer absolute inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center flex-col z-[300] hidden">
         <div class="bg-slate-900 border-2 border-emerald-500 p-8 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.3)] max-w-md w-full mx-4 interactive-btn">
@@ -423,7 +454,7 @@
                 <p class="text-sm text-slate-400 mt-2">請選擇您的探索模式，以建立專屬檔案。</p>
             </div>
 
-            <!-- 🌟 恢復：繼續遊戲區塊與模式切換按鈕 -->
+            <!-- 🌟 繼續遊戲區塊與模式切換按鈕 -->
             <div id="continue-section" class="hidden mb-5 bg-slate-800/80 p-4 rounded-lg border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                 <p class="text-xs text-slate-400 mb-1 text-center">偵測到先前的探索紀錄</p>
                 <div class="font-bold text-emerald-400 text-lg mb-3 flex justify-center items-center gap-2">
@@ -435,6 +466,14 @@
                     <span class="flex-shrink-0 mx-4 text-slate-500 text-xs">或選擇下方模式建立新檔案</span>
                     <div class="flex-grow border-t border-slate-600"></div>
                 </div>
+            </div>
+
+            <!-- 讀取實體 JSON 存檔功能 -->
+            <div class="mb-5 flex justify-center w-full">
+                <label class="cursor-pointer w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-lg border border-slate-600 shadow transition-colors flex items-center justify-center gap-2 text-sm font-bold active:scale-95 transform">
+                    <span>📁</span> 讀取本機 JSON 存檔
+                    <input type="file" accept=".json" class="hidden" onchange="loadJsonSave(event)">
+                </label>
             </div>
 
             <div class="flex gap-2 mb-5 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
@@ -955,7 +994,8 @@ function checkExternalLoginData() {
                 }
             }
             
-            applyCertificationSuccess(); 
+            // 🌟 關鍵修復 1：阻斷自動登入，改為顯示繼續按鈕
+            showContinueUI(); 
             return;
         } catch (e) { console.error("本地存檔解析失敗", e); }
     }
@@ -977,6 +1017,8 @@ function checkExternalLoginData() {
             nameInput.classList.add('border-emerald-400', 'bg-emerald-900/20');
             console.log("✅ 成功從外部帶入合併名稱：", finalExtId);
         }
+        // 確保面板顯示
+        document.getElementById('certification-modal').classList.remove('hidden');
         return;
     }
     
@@ -993,8 +1035,27 @@ function checkExternalLoginData() {
         quests: { eagle: { state: 'none', count: 0 }, turtle: { state: 'none', count: 0 } } 
     };
     window.saveProgress(); 
-    applyCertificationSuccess();
+    
+    // 🌟 關鍵修復 2：強制授權登入後，同樣停留在畫面要求確認
+    showContinueUI();
 }
+
+// 🌟 新增：顯示繼續遊戲介面與按鈕的邏輯
+window.showContinueUI = () => {
+    document.getElementById('certification-modal').classList.remove('hidden');
+    if (travelerProfile) {
+        const contSec = document.getElementById('continue-section');
+        if (contSec) {
+            contSec.classList.remove('hidden');
+            let displayName = travelerProfile.name.replace('(訪客)', '');
+            document.getElementById('continue-name').innerText = displayName;
+        }
+    }
+};
+
+window.continueGame = () => {
+    applyCertificationSuccess();
+};
 
 // 🧩 拼圖二：旅者身分與基礎數值同步器 (PostMessage)
 window.addEventListener('message', async (event) => {
@@ -1139,7 +1200,8 @@ async function initFirebase() {
                     if (snap.exists()) { 
                         travelerProfile = snap.data(); 
                         window.saveProgress(); 
-                        showContinueUI(); // 🌟 關鍵修改 3：從雲端抓回存檔後，顯示繼續按鈕
+                        // 🌟 關鍵修復 3：從雲端抓回存檔後，顯示繼續按鈕
+                        showContinueUI(); 
                     } 
                     else if (!travelerProfile) { 
                         document.getElementById('certification-modal').classList.remove('hidden'); 
@@ -1331,7 +1393,9 @@ window.submitCertification = async () => {
 function applyCertificationSuccess() {
     document.getElementById('certification-modal').classList.add('hidden');
     document.getElementById('traveler-name-display').innerText = `旅者代碼：${travelerProfile.name}`; document.getElementById('traveler-name-display').classList.remove('hidden');
-    updateStatusUI(); document.getElementById('btn-mini-game').classList.remove('hidden');
+    updateStatusUI(); 
+    // 🌟 修改：顯示角色狀態面板按鈕
+    document.getElementById('btn-stats').classList.remove('hidden');
     
     setupFieldMonstersListener();
 }
@@ -1937,7 +2001,7 @@ window.openEagleModal = () => {
     } else if (qState.state === 'completed') {
         content.innerHTML = `
             <p class="text-sm text-slate-300 leading-relaxed bg-slate-800 p-3 rounded-lg border border-slate-700">
-                「願能效的智慧與你同在，精準地打擊那些異常污染吧。」
+                「願能效的智慧與你同在，精準打擊那些異常污染吧。」
             </p>
             <button onclick="closeEagleModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg shadow-lg transition-colors mt-6">離開</button>
         `;
@@ -2079,7 +2143,6 @@ window.submitTurtleQuest = () => {
     }
 };
 
-
 window.openRecordModal = () => { 
     if(!travelerProfile) return;
     if(!travelerProfile.stats) travelerProfile.stats = { monstersKilled: 0, disastersResolved: 0 };
@@ -2090,8 +2153,43 @@ window.openRecordModal = () => {
 };
 window.closeRecordModal = () => { document.getElementById('record-modal').classList.add('hidden'); if(currentEvent && !isInCombat) updatePromptUI(); };
 
-window.openESGTModal = () => { document.getElementById('esgt-iframe').src="https://farmcmd.github.io/ESGT/game.html"; document.getElementById('esgt-modal').classList.remove('hidden'); };
-window.closeESGTModal = () => { document.getElementById('esgt-modal').classList.add('hidden'); document.getElementById('esgt-iframe').src=""; };
+// 🌟 新增：角色狀態與技能面板控制邏輯
+window.openStatsModal = () => {
+    if(!travelerProfile) return;
+    
+    // 載入基礎屬性
+    document.getElementById('stat-atk').innerText = travelerProfile.attack || 25;
+    document.getElementById('stat-def').innerText = travelerProfile.defense || 10;
+    document.getElementById('stat-hp').innerText = travelerProfile.maxHp || 100;
+    document.getElementById('stat-crit').innerText = travelerProfile.critChance || 0;
+    
+    // 載入技能狀態與視覺樣式
+    let recLv = travelerProfile.recycleSkillLevel || 0;
+    let engLv = travelerProfile.energySkillLevel || 0;
+    
+    const elRecycle = document.getElementById('stat-skill-recycle');
+    if (recLv > 0) {
+        elRecycle.innerText = `Lv.${recLv}`;
+        elRecycle.className = "font-bold text-xs text-fuchsia-400 bg-fuchsia-900/30 px-2 py-0.5 rounded";
+    } else {
+        elRecycle.innerText = "未學習";
+        elRecycle.className = "font-bold text-xs text-slate-500";
+    }
+
+    const elEnergy = document.getElementById('stat-skill-energy');
+    if (engLv > 0) {
+        elEnergy.innerText = `Lv.${engLv}`;
+        elEnergy.className = "font-bold text-xs text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded";
+    } else {
+        elEnergy.innerText = "未學習";
+        elEnergy.className = "font-bold text-xs text-slate-500";
+    }
+
+    document.getElementById('stats-modal').classList.remove('hidden');
+    if (uiPrompt) uiPrompt.classList.add('hidden');
+};
+window.closeStatsModal = () => { document.getElementById('stats-modal').classList.add('hidden'); if(currentEvent && !isInCombat) updatePromptUI(); };
+
 
 window.closePromptUI = () => {
     if (uiPrompt) uiPrompt.classList.add('hidden');
@@ -2747,6 +2845,63 @@ function hideLoadingScreen() {
         }, 400); // 讓玩家稍微看清楚「連線成功」的字樣再淡出
     }
 }
+
+// 🌟 新增：實體 JSON 存檔匯入與匯出引擎
+window.loadJsonSave = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // 顯示讀取中提示
+    document.getElementById('cert-error').className = "text-sm text-emerald-400 mb-2 h-4 text-center font-bold animate-pulse";
+    document.getElementById('cert-error').innerText = "⏳ 正在讀取 JSON 存檔...";
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const loadedData = JSON.parse(e.target.result);
+            
+            // 基礎格式防呆驗證
+            if (loadedData && loadedData.name && loadedData.hp !== undefined) {
+                travelerProfile = loadedData;
+                await window.saveProgress(); // 寫入 localStorage 與 Firebase
+                
+                document.getElementById('cert-error').innerText = "✅ 存檔讀取成功！";
+                
+                // 延遲一秒讓玩家看到成功訊息後，進入遊戲
+                setTimeout(() => {
+                    document.getElementById('cert-error').innerText = "";
+                    showContinueUI(); // 成功讀取後，將玩家導向繼續確認畫面
+                }, 1000);
+            } else {
+                document.getElementById('cert-error').className = "text-sm text-red-400 mb-2 h-4 text-center font-bold";
+                document.getElementById('cert-error').innerText = "❌ 檔案格式錯誤，這似乎不是地球日誌的存檔。";
+            }
+        } catch (error) {
+            document.getElementById('cert-error').className = "text-sm text-red-400 mb-2 h-4 text-center font-bold";
+            document.getElementById('cert-error').innerText = "❌ 無法解析該檔案，JSON 格式已損壞。";
+        }
+        // 重置 input file，允許重複選擇同一個檔案
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+};
+
+window.exportJsonSave = () => {
+    if (!travelerProfile) return;
+    
+    // 將資料轉化為可下載的 URI
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(travelerProfile));
+    const downloadAnchorNode = document.createElement('a');
+    
+    // 自動帶入玩家名稱的檔名
+    let safeName = travelerProfile.name.replace(/[^a-zA-Z0-9_\u4e00-\u9fa5]/g, '');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `EarthLog_Save_${safeName}.json`);
+    
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+};
 
 checkExternalLoginData();
 initFirebase();
