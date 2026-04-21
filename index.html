@@ -2037,35 +2037,19 @@
                     if (govLoaded && entLoaded && !absoluteLoaded) {
                         absoluteLoaded = 'pending';
                         
-                        // 🚨 核心升級：加入 includeMetadataChanges，攔截 Firebase SDK 內建的樂觀假象
-                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), { includeMetadataChanges: true }, async (docSnap) => {
+                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), { includeMetadataChanges: true }, (docSnap) => {
                             
-                            // 🛑 終極剝除假象：拒絕本地記憶體假象，強制等待伺服器真實確認！
+                            // 🛑 拒絕本地記憶體假象：強制等待伺服器真實確認
                             if (docSnap.metadata.hasPendingWrites) return; 
 
-                            const HISTORICAL_BASE = { carbon: 50000, green: 186500, visitor_count: 1250 };
-                            
                             if (docSnap.exists()) { 
                                 globalAbsolute = docSnap.data(); 
-                                
-                                if ((globalAbsolute.carbon || 0) < HISTORICAL_BASE.carbon) {
-                                    console.warn("🛡️ 系統偵測到全局數據異常低落，啟動自動修復機制...");
-                                    globalAbsolute.carbon = Math.max(globalAbsolute.carbon || 0, HISTORICAL_BASE.carbon);
-                                    globalAbsolute.green = Math.max(globalAbsolute.green || 0, HISTORICAL_BASE.green);
-                                    globalAbsolute.visitor_count = Math.max(globalAbsolute.visitor_count || 0, HISTORICAL_BASE.visitor_count);
-                                    
-                                    if (!isOfflineMode) {
-                                        await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute, { merge: true });
-                                    }
-                                }
                             } else { 
+                                // 🗑️ 核心修復：拔除「自動覆寫機制 (Auto-fix)」，避免 Race Condition 導致數據回滾
+                                // 若資料庫遺失或尚未建立，僅在前端「顯示」預設值，絕不主動發送指令覆寫後台！
                                 const todayStr = getTodayKey(); 
-                                globalAbsolute = { ...HISTORICAL_BASE }; 
+                                globalAbsolute = { carbon: 50000, green: 186500, visitor_count: 1250 }; 
                                 globalAbsolute[`daily_${todayStr}_carbon`] = 0; 
-                                
-                                if (!isOfflineMode) {
-                                    await setDoc(doc(db, 'system_stats', 'global_absolute'), globalAbsolute); 
-                                }
                             }
                             absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
                         }, handleFirebaseError); 
