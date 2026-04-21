@@ -758,14 +758,24 @@ function checkExternalLoginData() {
         window.parent.postMessage({ type: 'GAME_READY' }, "https://farmcmd.github.io");
     }
 
-    // 🌟 智慧擷取 2：讀取同網域共用的初始化資料 (專解「開新分頁」抓不到資料的問題)
+    // 🌟 智慧擷取 2：讀取同網域共用的初始化資料
     let sharedData = null;
     try {
-        const sharedStr = localStorage.getItem('esgt_init_data');
+        // 嘗試讀取 init_data (標準跳轉抽屜)
+        let sharedStr = localStorage.getItem('esgt_init_data');
         if (sharedStr) {
             sharedData = JSON.parse(sharedStr);
             localStorage.removeItem('esgt_init_data'); // 讀取後立刻刪除防重複
-            console.log("✅ 成功從 LocalStorage 攔截初始化數據：", sharedData);
+            console.log("✅ 成功從 LocalStorage (init) 攔截初始化數據：", sharedData);
+        } else {
+            // 擴大寬容度：嘗試讀取 pending_rewards (動態雷達抽屜)
+            // 若主網頁開發者把資料放在這個抽屜然後跳轉，我們也一併把它接起來！
+            sharedStr = localStorage.getItem('esgt_pending_rewards');
+            if (sharedStr) {
+                sharedData = JSON.parse(sharedStr);
+                localStorage.removeItem('esgt_pending_rewards');
+                console.log("✅ 成功從 LocalStorage (pending) 攔截初始化數據：", sharedData);
+            }
         }
     } catch(e) {}
 
@@ -775,7 +785,7 @@ function checkExternalLoginData() {
     
     if (sharedData) {
         if (!qName) qName = sharedData.name || '';
-        if (!qCode) qCode = sharedData.code || '';
+        if (!qCode) qCode = sharedData.code || sharedData.id || '';
     }
 
     let extId = qName;
@@ -785,11 +795,12 @@ function checkExternalLoginData() {
     
     const extEmail = urlParams.get('email') || (sharedData ? sharedData.email : null);
     
-    // 移除測試用的假數據 (114, 57.4, 1127)，改為真實預設值 0。確保沒抓到資料時不會顯示奇怪的數字。
+    // 從各種管道抓取真實數值，若都沒有則預設為 0
     const extDist = parseFloat(urlParams.get('dist')) || (sharedData ? parseFloat(sharedData.dist) : 0);
     const extCarb = parseInt(urlParams.get('carb')) || (sharedData ? parseInt(sharedData.carb) : 0);
     const extPts = parseInt(urlParams.get('pts')) || (sharedData ? parseInt(sharedData.pts) : 0);
-    const extHeroIndex = parseInt(urlParams.get('heroIndex')) || (sharedData ? parseInt(sharedData.heroIndex) : 0);
+    // 支援多種常見命名 heroIndex 或 hi
+    const extHeroIndex = parseInt(urlParams.get('heroIndex')) || parseInt(urlParams.get('hi')) || (sharedData ? parseInt(sharedData.heroIndex) : 0);
 
     // 1. 優先嘗試讀取本地存檔
     const localSaveJSON = localStorage.getItem('earth_log_save_v1');
@@ -833,6 +844,9 @@ function checkExternalLoginData() {
                 }
                 
                 window.saveProgress();
+            } else {
+                // 如果外部完全沒傳資料，給予明確提示
+                console.log("⚠️ 未偵測到外部新資料，僅載入本地存檔。");
             }
             
             applyCertificationSuccess(); 
