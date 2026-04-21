@@ -20,14 +20,23 @@
     <canvas id="gameCanvas"></canvas>
 
     <!-- UI 層 -->
-    <div class="ui-layer top-0 left-0 w-full p-4 flex justify-between items-start">
-        <div class="bg-slate-900/90 border-2 border-emerald-500/80 p-3 rounded-lg shadow-lg backdrop-blur-sm">
+    <div class="ui-layer top-0 left-0 w-full p-3 sm:p-4 flex justify-between items-start pointer-events-none">
+        <div class="bg-slate-900/90 border-2 border-emerald-500/80 p-3 rounded-lg shadow-lg backdrop-blur-sm pointer-events-auto max-w-[75%] sm:max-w-none">
             <h1 class="text-xl font-bold text-emerald-400 tracking-wider">地球日誌 <span class="text-xs text-slate-400">生態觀測 v1.0</span></h1>
             <p class="text-sm text-green-300 mt-1" id="location-info">目前位置：系統載入中...</p>
             <p class="text-xs text-emerald-300 mt-1 font-bold hidden" id="traveler-name-display">認證旅者：</p>
-            <p class="text-xs text-slate-400 mt-1" id="control-hint">使用滑鼠/觸控點擊目的地，或使用方向鍵</p>
+            <p class="text-xs text-slate-400 mt-1 hidden sm:block" id="control-hint">使用滑鼠/觸控點擊目的地，或使用方向鍵</p>
             
-            <div class="flex gap-2 mt-2">
+            <!-- 新增：手機版專屬 ESGT 數據顯示區塊 (僅在小螢幕顯示) -->
+            <div class="sm:hidden mt-2 pt-2 border-t border-emerald-800/50">
+                <div class="flex items-center gap-3 text-xs">
+                    <span class="text-amber-400 font-bold">積分: <span id="ui-pts-mobile">0</span></span>
+                    <span class="text-fuchsia-400 font-bold">指數: <span id="ui-hero-index-mobile">0</span> 🎖️</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1" id="ui-status-bar-mobile">登入以載入角色資料</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mt-2">
                 <button onclick="openInventoryModal()" class="interactive-btn bg-amber-700 hover:bg-amber-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-amber-500 flex items-center gap-1" id="btn-inventory">
                     🎒 我的行囊
                 </button>
@@ -35,13 +44,13 @@
                     📊 探索紀錄
                 </button>
                 <button onclick="openESGTModal()" class="interactive-btn bg-teal-700 hover:bg-teal-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-teal-500 flex items-center gap-1 hidden" id="btn-mini-game">
-                    🎮 觀測小遊戲
+                    🎮 小遊戲
                 </button>
             </div>
         </div>
         
-        <!-- ESGT 專屬數據面板 -->
-        <div class="bg-slate-900/95 border-2 border-teal-500/80 p-3 rounded-lg text-right hidden sm:block shadow-[0_0_15px_rgba(20,184,166,0.2)]">
+        <!-- ESGT 專屬數據面板 (僅在桌面版顯示) -->
+        <div class="bg-slate-900/95 border-2 border-teal-500/80 p-3 rounded-lg text-right hidden sm:block shadow-[0_0_15px_rgba(20,184,166,0.2)] pointer-events-auto">
             <p class="text-xs text-slate-400 mb-2 border-b border-slate-700 pb-1 flex items-center justify-end gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-teal-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                 ESGT 雲端同步數據
@@ -1038,8 +1047,23 @@ window.setGender = (g) => {
 // ==========================================
 function updateStatusUI() {
     if(!travelerProfile) return;
-    document.getElementById('ui-pts').innerText = travelerProfile.points; document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex || 0;
+    
+    // 更新桌面版 UI
+    document.getElementById('ui-pts').innerText = travelerProfile.points; 
+    document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex || 0;
     document.getElementById('ui-status-bar').innerText = `Lv.${travelerProfile.level} | EXP:${travelerProfile.exp}/${travelerProfile.level*50} | 碳排:${travelerProfile.carbon}g`;
+    
+    // 新增：同步更新手機版專屬 UI
+    const ptsMob = document.getElementById('ui-pts-mobile');
+    if (ptsMob) ptsMob.innerText = travelerProfile.points;
+    
+    const hiMob = document.getElementById('ui-hero-index-mobile');
+    if (hiMob) hiMob.innerText = travelerProfile.heroIndex || 0;
+    
+    const statMob = document.getElementById('ui-status-bar-mobile');
+    if (statMob) statMob.innerText = `Lv.${travelerProfile.level} | EXP:${travelerProfile.exp}/${travelerProfile.level*50} | 碳排:${travelerProfile.carbon}g`;
+
+    // 更新商店 UI
     if(document.getElementById('shop-current-pts')) document.getElementById('shop-current-pts').innerText = travelerProfile.points;
 }
 
