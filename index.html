@@ -1376,11 +1376,13 @@
             // 4. 先開啟地球日誌 Modal，讓 iframe 進入 DOM 渲染樹
             window.openModal('game-modal');
 
-            // 🚀 終極除錯修復：動態注入帶有時間戳的 src (Cache Buster 技巧)
-            // 確保每一次點擊，iframe 都會像 window.open 一樣進行「100% 乾淨的全新載入」，完美讀取抽屜！
+            // 🚀 終極除錯修復與雙重保險：動態注入完整 Query String 與時間戳
+            // 解決部分手機瀏覽器 (如 Safari) 阻擋 iframe 讀取 localStorage 的問題。
+            // 我們直接把所有數值掛在網址上，讓 iframe 也能享有與「備用按鈕」同等級的 100% 成功率！
             const gameIframe = document.getElementById('esgt-iframe');
             if (gameIframe) {
-                gameIframe.src = 'game.html?t=' + Date.now(); 
+                const targetUrl = `game.html?name=${encodeURIComponent(finalName)}&code=${encodeURIComponent(travelerCode)}&dist=${currentDist}&carb=${currentCarb}&pts=${currentPts}&heroIndex=${currentHeroIndex}&t=${Date.now()}`;
+                gameIframe.src = targetUrl; 
             }
         };
 
@@ -1398,8 +1400,8 @@
             let finalName = uName;
             if (uCode && uCode !== '...') finalName += (finalName ? '_' : '') + uCode;
 
-            // 2. 將參數組合成網址字串 (動態安全編碼，防止特殊字元破壞網址)
-            let targetUrl = `game.html?name=${encodeURIComponent(finalName)}&code=${encodeURIComponent(uCode)}&dist=${dist}&carb=${carb}&pts=${pts}&heroIndex=${hi}`;
+            // 2. 將參數組合成網址字串 (🚀 配合新規格：加入 v=Date.now() 徹底打破快取機制)
+            let targetUrl = `game.html?v=${Date.now()}&name=${encodeURIComponent(finalName)}&code=${encodeURIComponent(uCode)}&dist=${dist}&carb=${carb}&pts=${pts}&heroIndex=${hi}`;
 
             // 3. 直接開啟帶有所有數據的新分頁！
             window.open(targetUrl, '_blank');
@@ -3406,7 +3408,7 @@
                 }, 500);
             };
 
-            // ✨ 跨視窗通訊接收端：監聽來自子網頁的指令
+            // ✨ 跨視窗通訊接收端：監聽來自子網頁的指令 (Iframe PostMessage 專用)
             window.addEventListener('message', (event) => {
                 // 🛡️ 基礎資安防護：確保指令來源為官方網域
                 if (event.origin !== window.location.origin && !event.origin.includes('farmcmd.github.io')) return;
@@ -3472,6 +3474,34 @@
                     window.openModal(targetModalId);
                     
                     window.showToast('👆 請在畫面上「點擊」您要綁定的看板卡片');
+                }
+            });
+
+            // ✨ 跨分頁通訊接收端：監聽來自「新分頁遊戲」的 LocalStorage 廣播 (Cross-Tab Communication)
+            window.addEventListener('storage', (event) => {
+                // 當遊戲端把分數放進這個特定的抽屜時，觸發更新
+                if (event.key === 'esgt_hero_index_update' && event.newValue) {
+                    try {
+                        const data = JSON.parse(event.newValue);
+                        if (data && data.heroIndex !== undefined) {
+                            state.heroIndex = data.heroIndex;
+                            console.log("✅ [Cross-Tab 通訊] 主頁收到遊戲新分頁的最新分數：", state.heroIndex);
+                            
+                            // 即時更新主網頁的 UI，並加入微小動畫提升互動感
+                            const displayEl = document.getElementById('display-hero-index');
+                            if (displayEl) {
+                                displayEl.textContent = state.heroIndex;
+                                displayEl.classList.add('scale-125', 'text-yellow-400');
+                                setTimeout(() => { displayEl.classList.remove('scale-125', 'text-yellow-400'); }, 300);
+                            }
+                            saveData(); // 永久保存勇者指數至硬碟
+                            
+                            // 讀完後清空抽屜，避免重複讀取 (防呆機制)
+                            localStorage.removeItem('esgt_hero_index_update');
+                        }
+                    } catch (e) {
+                        console.warn("⚠️ 解析跨分頁分數失敗", e);
+                    }
                 }
             });
 
