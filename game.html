@@ -12,9 +12,22 @@
         .interactive-btn { pointer-events: auto; user-select: none; }
         @keyframes sos-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
         .anim-pulse-fast { animation: sos-pulse 1s infinite ease-in-out; }
+        /* 🌟 新增：載入進度條動畫 */
+        @keyframes loading-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+        .anim-loading-bar { animation: loading-slide 1.5s infinite ease-in-out; }
     </style>
 </head>
 <body class="relative text-white font-sans">
+
+    <!-- 🌟 新增：平滑淡入載入畫面 -->
+    <div id="loading-screen" class="fixed inset-0 bg-slate-950 z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 interactive-btn">
+        <div class="text-7xl mb-4 animate-bounce drop-shadow-[0_0_20px_rgba(52,211,153,0.5)]">🌍</div>
+        <h2 class="text-2xl font-bold text-emerald-400 tracking-widest mb-2 animate-pulse">地球日誌</h2>
+        <p class="text-sm text-slate-400 mb-6" id="loading-text">正在初始化感測雷達...</p>
+        <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden relative shadow-inner">
+            <div class="absolute top-0 left-0 h-full w-1/2 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full anim-loading-bar"></div>
+        </div>
+    </div>
 
     <!-- 遊戲畫布 -->
     <canvas id="gameCanvas"></canvas>
@@ -27,7 +40,7 @@
             <p class="text-xs text-emerald-300 mt-1 font-bold hidden" id="traveler-name-display">認證旅者：</p>
             <p class="text-xs text-slate-400 mt-1 hidden sm:block" id="control-hint">使用滑鼠/觸控點擊目的地，或使用方向鍵</p>
             
-            <!-- 新增：手機版專屬 ESGT 數據顯示區塊 (僅在小螢幕顯示) -->
+            <!-- 手機版專屬 ESGT 數據顯示區塊 -->
             <div class="sm:hidden mt-2 pt-2 border-t border-emerald-800/50">
                 <div class="flex items-center gap-3 text-xs">
                     <span class="text-amber-400 font-bold">積分: <span id="ui-pts-mobile">0</span></span>
@@ -2263,9 +2276,26 @@ canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT; ctx.imageSmoothingEn
 
 setTimeout(() => toggleRightPanels(panelsExpanded), 100);
 
+// 🌟 新增：關閉載入畫面邏輯
+function hideLoadingScreen() {
+    const loader = document.getElementById('loading-screen');
+    if (loader) {
+        document.getElementById('loading-text').innerText = "連線成功！數據同步完畢。";
+        setTimeout(() => {
+            loader.classList.add('opacity-0'); // 觸發 CSS 平滑淡出
+            setTimeout(() => loader.classList.add('hidden'), 1000); // 動畫結束後徹底移除圖層
+        }, 400); // 讓玩家稍微看清楚「連線成功」的字樣再淡出
+    }
+}
+
 checkExternalLoginData();
 initFirebase();
-initAssets(() => gameLoop());
+
+// 更新：確保所有 SVG 素材與引擎載入後，才隱藏載入畫面
+initAssets(() => {
+    gameLoop();
+    hideLoadingScreen();
+});
 </script>
 </body>
 </html>
