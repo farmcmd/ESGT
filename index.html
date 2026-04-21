@@ -278,7 +278,8 @@
                 <div class="text-center mb-4">
                     <h3 class="text-xl md:text-2xl font-semibold text-mori-forest">我的探探里山永續成就</h3>
                 </div>
-                <div class="flex justify-center gap-6 md:gap-12 mb-5">
+                <!-- 🚀 核心升級：將排列改為 grid 網格，完美適配 4 個成就徽章 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-5 justify-items-center">
                     <div class="flex flex-col items-center">
                         <div class="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
                             <svg viewBox="0 0 36 36" class="absolute inset-0 circular-chart text-mori-sage w-full h-full">
@@ -317,6 +318,20 @@
                             </div>
                         </div>
                         <p class="mt-2 text-xs md:text-sm font-medium text-gray-600">永續積分</p>
+                    </div>
+                    <!-- 🌟 新增：地球勇者指數 -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
+                            <svg viewBox="0 0 36 36" class="absolute inset-0 circular-chart text-blue-400 w-full h-full">
+                                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle" id="circle-hero" stroke-dasharray="0, 100" stroke="#3B82F6" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="relative z-10 flex flex-col items-center mt-1">
+                                <span class="text-xl md:text-2xl font-bold text-blue-600 leading-none" id="display-hero-index">0</span>
+                                <span class="text-[10px] md:text-xs text-blue-400 font-bold mt-0.5">Lv</span>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-xs md:text-sm font-medium text-gray-600 flex items-center"><i class="fas fa-globe-americas text-blue-500 mr-1"></i>地球勇者指數</p>
                     </div>
                 </div>
                 <div class="mt-2 text-center flex flex-col items-center justify-center gap-2">
@@ -1446,6 +1461,12 @@
             if(document.getElementById('display-score')) document.getElementById('display-score').textContent = state.totalScore || 0;
             if(document.getElementById('display-green-procurement')) document.getElementById('display-green-procurement').textContent = `$${state.greenProcure || 0}`;
             if(document.getElementById('display-sroi-procurement')) document.getElementById('display-sroi-procurement').textContent = `$${Math.floor(state.sroiProcure || 0)}`;
+            
+            // 🌟 核心升級：動態計算地球勇者指數 (積分 + 減碳加成 + 綠消加成)
+            if(document.getElementById('display-hero-index')) {
+                const heroIndex = (state.totalScore || 0) + Math.floor((state.totalCarbon || 0) / 100) + Math.floor(((state.greenProcure || 0) + (state.sroiProcure || 0)) / 1000);
+                document.getElementById('display-hero-index').textContent = heroIndex;
+            }
         }
 
         function getTodayKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
@@ -2302,6 +2323,7 @@
                 state.playerName = e.target.value.trim();
                 saveData();
                 window.showToast('✅ 旅者姓名已自動儲存！');
+                if (typeof window.sendDataToGame === 'function') window.sendDataToGame(); // 🌟 核心升級：姓名一改，立刻廣播給遊戲更新
             });
 
             // 全域彈出視窗關閉按鈕事件監聽
@@ -2957,6 +2979,9 @@
                 const green = state.greenProcure || 0;
                 const sroi = Math.floor(state.sroiProcure || 0);
                 
+                // 🌟 同步計算證書上的勇者指數 (優先採用遊戲端儲存的真實指數)
+                const heroIndex = state.heroIndex || (score + Math.floor(carbon / 100) + Math.floor((green + sroi) / 1000));
+                
                 const logs = (state.activityLogs || []).slice(0, 5);
                 const logsHtml = logs.length > 0 ? logs.map(l => `<div class="text-[12px] mb-3 leading-relaxed border-b border-gray-200/60 pb-2.5 last:border-0 last:pb-0 last:mb-0"><span class="text-mori-forest font-bold bg-mori-light/50 px-1.5 py-0.5 rounded mr-1.5 shadow-sm font-mono tracking-tight">${l.time}</span> <span class="text-gray-700">${l.text}</span></div>`).join('') : '<div class="text-[12px] text-gray-400 mt-2 text-center py-4 border border-dashed border-gray-200 rounded-lg">尚無紀錄</div>';
 
@@ -2980,10 +3005,11 @@
                                 <p class="text-lg text-gray-700 flex items-baseline"><span>茲證明 旅者：</span><span class="text-2xl font-bold text-mori-forest border-b-2 border-mori-forest pb-1 px-3 mx-2">${name}</span><span>(代碼：<span class="font-mono text-mori-wood">${code}</span>)</span></p>
                                 <p class="text-sm text-gray-600 mt-3 leading-relaxed">在本次探探里山永續旅遊中，積極實踐低碳與綠色消費，達成以下卓越成就，特頒此證以資鼓勵。</p>${attributionHtml}
                             </div>
-                            <div class="grid grid-cols-3 gap-4 mb-6 text-center bg-[#F0F7F4] p-4 rounded-xl border border-mori-light">
-                                <div><p class="text-xs text-gray-500 mb-1">🌱 累積里程</p><p class="text-xl font-bold text-mori-forest">${mileage} km</p></div>
-                                <div><p class="text-xs text-gray-500 mb-1">🌳 減碳總量</p><p class="text-xl font-bold text-mori-forest">${carbon} g</p></div>
-                                <div><p class="text-xs text-gray-500 mb-1">✨ 永續積分</p><p class="text-xl font-bold text-mori-wood">${score} pts</p></div>
+                            <div class="grid grid-cols-4 gap-2 mb-6 text-center bg-[#F0F7F4] p-4 rounded-xl border border-mori-light">
+                                <div><p class="text-[11px] text-gray-500 mb-1">🌱 累積里程</p><p class="text-lg font-bold text-mori-forest">${mileage} <span class="text-[10px]">km</span></p></div>
+                                <div><p class="text-[11px] text-gray-500 mb-1">🌳 減碳總量</p><p class="text-lg font-bold text-mori-forest">${carbon} <span class="text-[10px]">g</span></p></div>
+                                <div><p class="text-[11px] text-gray-500 mb-1">✨ 永續積分</p><p class="text-lg font-bold text-mori-wood">${score} <span class="text-[10px]">pts</span></p></div>
+                                <div><p class="text-[11px] text-blue-500 font-bold mb-1">🌍 勇者指數</p><p class="text-lg font-black text-blue-600">${heroIndex} <span class="text-[10px]">Lv</span></p></div>
                             </div>
                             <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6 flex justify-between items-center">
                                 <span class="font-bold text-blue-800 text-sm"><i class="fas fa-shopping-basket mr-2"></i>綠色消費評鑑</span>
@@ -3106,36 +3132,36 @@
         }
 
         function bindStarRatings() {
-            document.querySelectorAll('.number-rating').forEach(container => {
-                container.innerHTML = [1,2,3,4,5].map(i => `<i class="fas fa-star text-gray-300 cursor-pointer text-2xl hover:text-yellow-400 transition" data-val="${i}"></i>`).join('');
-                container.querySelectorAll('i').forEach(star => {
-                    star.addEventListener('click', (e) => {
-                        const val = parseInt(e.target.dataset.val);
-                        container.querySelectorAll('i').forEach(s => {
-                            if(parseInt(s.dataset.val) <= val) { s.classList.remove('text-gray-300'); s.classList.add('text-yellow-400'); }
-                            else { s.classList.add('text-gray-300'); s.classList.remove('text-yellow-400'); }
-                        });
-                    });
-                });
+            document.getElementById('import-data-input')?.addEventListener('change', (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedState = JSON.parse(event.target.result);
+                        if (importedState && typeof importedState === 'object') {
+                            state = { ...state, ...importedState }; saveData(); updateDisplays();
+                            if(typeof renderCheckoutHistory === 'function') renderCheckoutHistory(); if(typeof renderLogs === 'function') renderLogs();
+                            if(document.getElementById('player-name')) document.getElementById('player-name').value = state.playerName || '';
+                            if(document.getElementById('player-code')) document.getElementById('player-code').textContent = state.playerCode || '...';
+                            window.showToast('✅ 進度檔匯入成功！所有資料已還原。');
+                        } else { window.showToast('❌ 檔案格式不符，無法匯入。'); }
+                    } catch (err) { window.showToast('❌ 檔案解析失敗，請確認是否為有效的備份檔。'); }
+                    e.target.value = ''; 
+                };
+                reader.readAsText(file);
             });
 
-            // 👇 核心救援：補回遺失的「快速滿分」觸發器，並適配最新的 i 標籤結構
-            document.getElementById('quick-fill-ent-stars-btn')?.addEventListener('click', () => {
-                document.querySelectorAll('.ent-eval-q .number-rating').forEach(container => {
-                    container.querySelectorAll('i').forEach(s => {
-                        s.classList.remove('text-gray-300');
-                        s.classList.add('text-yellow-400');
-                    });
-                });
-            });
-            
-            document.getElementById('quick-fill-gov-stars-btn')?.addEventListener('click', () => {
-                document.querySelectorAll('.gov-eval-q .number-rating').forEach(container => {
-                    container.querySelectorAll('i').forEach(s => {
-                        s.classList.remove('text-gray-300');
-                        s.classList.add('text-yellow-400');
-                    });
-                });
+            // 👇 補回：下載空白重置檔邏輯 (加入 heroIndex 歸零)
+            document.getElementById('download-blank-btn')?.addEventListener('click', () => {
+                try {
+                    const blankState = { totalMileage: 0, totalCarbon: 0, totalScore: 0, heroIndex: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], currentTransport: null };
+                    const dataStr = JSON.stringify(blankState, null, 2);
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
+                    a.download = `探探里山_空白重置檔.json`;
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                    window.showToast('✅ 空白重置檔下載成功！請利用匯入功能進行重置。');
+                } catch (e) { window.showToast('❌ 下載失敗，請稍後再試。'); }
             });
         }
 
@@ -3276,6 +3302,23 @@
             window.addEventListener('message', (event) => {
                 // 🛡️ 基礎資安防護：確保指令來源為官方網域
                 if (event.origin !== window.location.origin && !event.origin.includes('farmcmd.github.io')) return;
+
+                // 🌟 2. 接收來自遊戲網頁 (game.html) 回傳的「地球勇者指數」
+                if (event.data && event.data.type === 'SYNC_HERO_INDEX') {
+                    state.heroIndex = event.data.heroIndex;
+                    console.log("✅ 成功接收來自遊戲的地球勇者指數：", state.heroIndex);
+                    
+                    // 即時更新主網頁的 UI
+                    const displayEl = document.getElementById('display-hero-index');
+                    if (displayEl) {
+                        displayEl.textContent = state.heroIndex;
+                        // 加入微小動畫提升互動感
+                        displayEl.classList.add('scale-125', 'text-yellow-400');
+                        setTimeout(() => { displayEl.classList.remove('scale-125', 'text-yellow-400'); }, 300);
+                    }
+                    saveData(); // 永久保存勇者指數至硬碟
+                    return; // 處理完畢直接退出，不往下執行
+                }
 
                 // 指令 1：關閉活動彈窗
                 if (event.data && event.data.action === 'CLOSE_EVENTS_MODAL') {
