@@ -444,6 +444,40 @@
         </div>
     </div>
 
+    <!-- 🌟 新增：史詩破關大結局面板 (滿版感謝狀) -->
+    <div id="ending-modal" class="ui-layer absolute inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center hidden opacity-0 transition-opacity duration-1000" style="z-index: 999;">
+        <div class="bg-slate-900 border-2 border-emerald-500 p-8 md:p-12 rounded-2xl shadow-[0_0_100px_rgba(16,185,129,0.4)] max-w-2xl w-11/12 text-center relative overflow-hidden interactive-btn">
+            <!-- 裝飾背景光暈 -->
+            <div class="absolute -top-20 -left-20 w-40 h-40 bg-emerald-600/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-teal-600/20 rounded-full blur-3xl"></div>
+
+            <div class="text-6xl mb-6 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]">🌍</div>
+            <h2 class="text-3xl md:text-4xl font-bold text-emerald-400 mb-2 tracking-widest">地球守護者感謝狀</h2>
+            <div class="h-1 w-24 bg-gradient-to-r from-transparent via-emerald-500 to-transparent mx-auto mb-6"></div>
+
+            <p class="text-slate-300 mb-6 leading-relaxed md:text-lg text-left">
+                致 敬愛的旅者 <span id="ending-name" class="text-emerald-300 font-bold text-xl border-b border-emerald-500/50 pb-1 px-2"></span>：<br><br>
+                感謝您在「探探里山」與「地球日誌」中的卓越貢獻。您不僅親身走過了 <span id="ending-dist" class="text-amber-400 font-bold"></span>，更成功協助減少了 <span id="ending-carb" class="text-fuchsia-400 font-bold"></span> 的碳排放。<br><br>
+                今日，您成功復育了五大生態災區，徹底驅散了威脅這片大地的異常氣體。這個世界因為您的永續行動，重新煥發了盎然生機。
+            </p>
+
+            <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4 mb-8 flex justify-around">
+                <div>
+                    <div class="text-xs text-slate-400 mb-1">最終永續積分</div>
+                    <div id="ending-pts" class="text-2xl font-bold text-amber-400 font-mono"></div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400 mb-1">地球勇者指數</div>
+                    <div id="ending-hero" class="text-2xl font-bold text-fuchsia-400 font-mono"></div>
+                </div>
+            </div>
+
+            <button onclick="closeEndingModal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 px-10 rounded-full shadow-lg transform transition active:scale-95 tracking-wider">
+                繼續守護地球
+            </button>
+        </div>
+    </div>
+
     <!-- 手機端虛擬搖桿 -->
     <div class="ui-layer bottom-8 left-8 sm:hidden">
         <div class="relative w-36 h-36 bg-slate-800/60 rounded-full border border-slate-500/50 backdrop-blur-md shadow-xl">
@@ -639,6 +673,50 @@ const tileImages = {};
 let imagesLoaded = 0;
 const totalImages = Object.keys(svgAssets).length;
 
+// 🌟 新增：史詩結局邏輯函式
+window.showEpicEnding = () => {
+    if(!travelerProfile) return;
+    
+    // 將玩家數據填入感謝狀
+    let displayName = travelerProfile.name.replace('(訪客)', '');
+    document.getElementById('ending-name').innerText = displayName;
+    document.getElementById('ending-dist').innerText = `${parseFloat(travelerProfile.distance || 0).toFixed(1)} km`;
+    document.getElementById('ending-carb').innerText = `${travelerProfile.carbon || 0} g`;
+    document.getElementById('ending-pts').innerText = travelerProfile.points || 0;
+    document.getElementById('ending-hero').innerText = travelerProfile.heroIndex || 0;
+
+    const modal = document.getElementById('ending-modal');
+    modal.classList.remove('hidden');
+    
+    // 觸發漸顯動畫
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+    }, 50);
+
+    // 記錄已觀看結局，避免重複彈出
+    if(!travelerProfile.stats) travelerProfile.stats = {monstersKilled:0, disastersResolved:0};
+    travelerProfile.stats.endingViewed = true;
+    window.saveProgress();
+};
+
+window.closeEndingModal = () => {
+    const modal = document.getElementById('ending-modal');
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 1000);
+};
+
+// 檢查是否達成破關條件
+function checkEndingCondition() {
+    if (travelerProfile && travelerProfile.stats && travelerProfile.stats.disastersResolved >= 5) {
+        if (!travelerProfile.stats.endingViewed) {
+            // 延遲兩秒彈出，讓勝利或復育的綠色提示框先播完
+            setTimeout(() => window.showEpicEnding(), 2000);
+        }
+    }
+}
+
 
 // ==========================================
 // 2. 外部通訊與 Firebase 登入邏輯
@@ -695,12 +773,31 @@ function checkExternalLoginData() {
             travelerProfile = JSON.parse(localSaveJSON);
             console.log("讀取到本地 JSON 存檔，自動登入！");
             
-            // 如果外部網頁有傳入新的數據，進行校準 (取高者，防止存檔倒退)
-            if (extPts > 0 || extCarb > 0) {
-                travelerProfile.points = Math.max(travelerProfile.points, extPts);
-                travelerProfile.carbon = Math.max(travelerProfile.carbon, extCarb);
-                travelerProfile.distance = Math.max(travelerProfile.distance, extDist);
-                travelerProfile.heroIndex = Math.max((travelerProfile.heroIndex || 0), extHeroIndex);
+            // 🧹 【關鍵修復】清除舊版測試用的假數據 (114 pts, 57.4km, 1127g)
+            if (travelerProfile.distance === 57.4 && travelerProfile.carbon === 1127) {
+                console.log("🧹 偵測到舊版測試存檔，執行資料清理...");
+                travelerProfile.distance = 0;
+                travelerProfile.carbon = 0;
+                travelerProfile.points = 0;
+                travelerProfile.lastSyncPts = 0; 
+            }
+
+            // 🔄 精準校準外部數據
+            if (extPts > 0 || extCarb > 0 || extDist > 0) {
+                
+                // 里程與減碳量：直接以主網頁為絕對權威 (覆蓋舊有數據)
+                if (extDist > 0) travelerProfile.distance = extDist;
+                if (extCarb > 0) travelerProfile.carbon = extCarb;
+                if (extHeroIndex > 0) travelerProfile.heroIndex = Math.max((travelerProfile.heroIndex || 0), extHeroIndex);
+                
+                // 積分：使用水位線 (Watermark) 機制，確保玩家在遊戲內花掉的積分不會被強制補回
+                let lastSync = travelerProfile.lastSyncPts || 0;
+                if (extPts > lastSync) {
+                    let newEarned = extPts - lastSync;
+                    travelerProfile.points += newEarned;
+                    travelerProfile.lastSyncPts = extPts;
+                    console.log(`✅ 成功同步主網頁新增的積分：+${newEarned}`);
+                }
                 
                 // 如果有帶入名字，且本地存檔的名字是預設的，就更新名字
                 if (extId && !travelerProfile.name.includes(extId)) {
@@ -711,7 +808,6 @@ function checkExternalLoginData() {
                 }
                 
                 window.saveProgress();
-                console.log(`已成功校準外部獲取的數據。`);
             }
             
             applyCertificationSuccess(); 
@@ -741,7 +837,9 @@ function checkExternalLoginData() {
     
     // 3. 從外部強制帶入 Email 的正式授權登入
     travelerProfile = {
-        email: extEmail, name: finalExtId || '未命名旅者', points: window.tempExtData.pts, 
+        email: extEmail, name: finalExtId || '未命名旅者', 
+        points: window.tempExtData.pts, 
+        lastSyncPts: window.tempExtData.pts, // 新增：初始化積分水位線
         heroIndex: 0, level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10, 
         recycleSkillLevel: 0, energySkillLevel: 0, 
         distance: window.tempExtData.dist, carbon: window.tempExtData.carb, gender: 'm',
@@ -789,10 +887,11 @@ window.addEventListener('message', async (event) => {
 
         // 向下相容舊版的積分直接傳輸協定 (備用)
         if (data && data.pts !== undefined && data.carb !== undefined) {
-            // ... (保留既有的備用積分累加邏輯)
             if (travelerProfile) {
                 const earnedPts = parseInt(data.pts) || 0;
                 travelerProfile.points += earnedPts;
+                // 更新：同步推高水位線
+                travelerProfile.lastSyncPts = (travelerProfile.lastSyncPts || 0) + earnedPts;
                 travelerProfile.distance += (parseFloat(data.dist) || 0);
                 travelerProfile.carbon += (parseInt(data.carb) || 0);
                 travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + earnedPts;
@@ -820,6 +919,7 @@ window.addEventListener('storage', async (event) => {
                 
                 // 遊戲邏輯：累加玩家資源
                 travelerProfile.points += earnedPts;
+                travelerProfile.lastSyncPts = (travelerProfile.lastSyncPts || 0) + earnedPts; // 更新水位線
                 travelerProfile.carbon += earnedCarb;
                 travelerProfile.distance += earnedDist;
                 travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + earnedPts;
@@ -1052,8 +1152,10 @@ window.submitCertification = async () => {
     const tD = window.tempExtData || {dist:0, carb:0, pts:0};
     
     let newP = { 
-        email: currentLoginMode==='comp'?email:'guest', name: currentLoginMode==='guest'?name+'(訪客)':name, points: tD.pts, heroIndex: 0, 
-        level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10, 
+        email: currentLoginMode==='comp'?email:'guest', name: currentLoginMode==='guest'?name+'(訪客)':name, 
+        points: tD.pts, 
+        lastSyncPts: tD.pts, // 新增：初始化新玩家的積分水位線
+        heroIndex: 0, level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10, 
         recycleSkillLevel: 0, energySkillLevel: 0, 
         distance: tD.dist, carbon: tD.carb, gender: selectedGender,
         inventory: {observe_card:3, report_card:2}, certifiedAt: Date.now(), isCertified: true, isGuest: currentLoginMode==='guest', isExternal: !!window.tempExtData,
@@ -1412,6 +1514,8 @@ window.useItem = async (itemId) => {
                     feedback = "✅ 狀態正常，自動結案！"; currentEvent.resolved = true; success = true; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 50;
                     if(!travelerProfile.stats) travelerProfile.stats = {monstersKilled:0, disastersResolved:0};
                     travelerProfile.stats.disastersResolved++;
+                    // 🌟 觸發破關檢查
+                    checkEndingCondition();
                 } else {
                     let remainingMonsters = activeFieldMonsters.filter(m => m.disasterName === currentEvent.name);
                     if (remainingMonsters.length > 0) {
@@ -1426,6 +1530,8 @@ window.useItem = async (itemId) => {
                             
                             if(!travelerProfile.stats) travelerProfile.stats = {monstersKilled:0, disastersResolved:0};
                             travelerProfile.stats.disastersResolved++;
+                            // 🌟 觸發破關檢查
+                            checkEndingCondition();
                         } else { feedback = `❌ 道具不符，需【${window.ITEM_DICT[requiredItem].n}】`; }
                     }
                 }
@@ -1871,6 +1977,9 @@ function handleVictory() {
                         text: `🎉 狂賀！旅者 [${travelerProfile.name}] 擊破了【${dName}】的最後防線，該區域生態已完全恢復正常！`,
                         timestamp: Date.now()
                     }).catch(e => console.log(e));
+                    
+                    // 🌟 觸發破關檢查
+                    checkEndingCondition();
                 }
             }
         }
@@ -2123,7 +2232,7 @@ window.addEventListener('keydown', (e) => { if(isInCombat) return; if (keys.hasO
 window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 const setupBtn = (id, k) => { const btn = document.getElementById(id); if(!btn) return; const p = (e)=>{e.preventDefault(); if(isInCombat) return; keys[k]=true; clearPath();}; const r = (e)=>{e.preventDefault(); keys[k]=false;}; btn.addEventListener('touchstart', p); btn.addEventListener('touchend', r); btn.addEventListener('mousedown', p); btn.addEventListener('mouseup', r); btn.addEventListener('mouseleave', r); };
 setupBtn('btn-up', 'ArrowUp'); setupBtn('btn-down', 'ArrowDown'); setupBtn('btn-left', 'ArrowLeft'); setupBtn('btn-right', 'ArrowRight');
-canvas.addEventListener('pointerdown', (e) => { if (isInCombat) return; if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden') || !document.getElementById('eagle-modal').classList.contains('hidden')) return; const rect = canvas.getBoundingClientRect(); const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE); const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE); const path = findPath(pX, pY, tX, tY); if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }});
+canvas.addEventListener('pointerdown', (e) => { if (isInCombat) return; if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden') || !document.getElementById('eagle-modal').classList.contains('hidden') || !document.getElementById('ending-modal').classList.contains('hidden')) return; const rect = canvas.getBoundingClientRect(); const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE); const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE); const path = findPath(pX, pY, tX, tY); if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }});
 
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 
