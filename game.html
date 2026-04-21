@@ -141,6 +141,11 @@
                     <div class="flex items-center gap-3"><span class="text-3xl">💧</span><div><h3 class="text-blue-300 font-bold text-sm">奈米淨水過濾網</h3><p class="text-slate-400 text-xs mt-1">清除水域微型垃圾。</p></div></div>
                     <button onclick="buyItem('filter', 30, '奈米淨水過濾網')" class="bg-blue-700 hover:bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">30 pts</button>
                 </div>
+                <!-- 新增：土壤改良劑 (用於農業區) -->
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
+                    <div class="flex items-center gap-3"><span class="text-3xl">🧪</span><div><h3 class="text-amber-300 font-bold text-sm">土壤改良劑</h3><p class="text-slate-400 text-xs mt-1">改善農藥污染與土壤硬化。</p></div></div>
+                    <button onclick="buyItem('soil_remediator', 25, '土壤改良劑')" class="bg-amber-700 hover:bg-amber-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">25 pts</button>
+                </div>
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
                     <div class="flex items-center gap-3"><span class="text-3xl">🌱</span><div><h3 class="text-green-300 font-bold text-sm">抗旱樹苗</h3><p class="text-slate-400 text-xs mt-1">改善極端旱災區土壤。</p></div></div>
                     <button onclick="buyItem('sapling', 20, '抗旱樹苗')" class="bg-green-700 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">20 pts</button>
@@ -485,11 +490,12 @@ window.ITEM_DICT = {
     'drone': {n:'無人機', i:'🚁', d:'撲滅大面積森林大火', price: 50}, 
     'filter': {n:'過濾網', i:'💧', d:'清除水域微型垃圾', price: 30}, 
     'sapling': {n:'樹苗', i:'🌱', d:'改善極端旱災區土壤', price: 20},
+    // 新增：土壤改良劑
+    'soil_remediator': {n:'土壤改良劑', i:'🧪', d:'中和農藥毒性並鬆斯硬化土壤', price: 25},
     'observe_card': {n:'觀測卡', i:'🪪', d:'調查生態異常必備', price: 5}, 
     'report_card': {n:'通報卡', i:'📡', d:'上傳數據至警示網', price: 10},
     'sos_card': {n:'戰鬥求救卡', i:'🆘', d:'戰鬥中使用，請求全服支援', price: 15},
     'recycle_book': {n:'資源循環技能書', i:'📘', d:'學習或升級【資源循環】戰鬥技能', price: 100},
-    // 新增：老鷹任務專屬獎勵
     'energy_book': {n:'能效專家技能書', i:'📗', d:'研讀後永久提升防禦力', price: 0} 
 };
 
@@ -507,12 +513,32 @@ SDG_LIST.forEach((name, idx) => {
     };
 });
 
-// 怪物字典
+// 怪物字典 (擴充：完整 ESG 企業弊端與環境威脅)
 const GHG_MONSTERS = [
-    { name: '二氧化碳巨獸', icon: '👾', maxHp: 80, attack: 15, defense: 5, exp: 20, desc: '溫室效應的最大元凶。', source: '燃燒化石燃料、工業。', pts: 15 },
-    { name: '甲烷泥怪', icon: '🤢', maxHp: 120, attack: 18, defense: 8, exp: 35, desc: '暖化潛勢為二氧化碳數十倍。', source: '畜牧業、垃圾掩埋場。', pts: 20 },
-    { name: '氟氯碳惡靈', icon: '🌫️', maxHp: 60, attack: 25, defense: 2, exp: 40, desc: '極度穩定，能撕裂臭氧層。', source: '老舊冷媒、發泡劑廢氣。', pts: 25 },
-    { name: '氧化亞氮幽靈', icon: '👻', maxHp: 150, attack: 12, defense: 15, exp: 50, desc: '俗稱笑氣，暖化能力極高。', source: '化學合成肥料、農業廢棄。', pts: 22 }
+    // 原有溫室氣體 (保留為 E 類)
+    { name: '[E] 二氧化碳巨獸', icon: '👾', maxHp: 80, attack: 15, defense: 5, exp: 20, desc: '溫室效應的最大元凶。', source: '燃燒化石燃料、工業。', pts: 15 },
+    { name: '[E] 甲烷泥怪', icon: '🤢', maxHp: 120, attack: 18, defense: 8, exp: 35, desc: '暖化潛勢為二氧化碳數十倍。', source: '畜牧業、垃圾掩埋場。', pts: 20 },
+    { name: '[E] 氟氯碳惡靈', icon: '🌫️', maxHp: 60, attack: 25, defense: 2, exp: 40, desc: '極度穩定，能撕裂臭氧層。', source: '老舊冷媒、發泡劑廢氣。', pts: 25 },
+    { name: '[E] 氧化亞氮幽靈', icon: '👻', maxHp: 150, attack: 12, defense: 15, exp: 50, desc: '俗稱笑氣，暖化能力極高。', source: '化學合成肥料、農業廢棄。', pts: 22 },
+    
+    // 新增：E (Environmental) 環境災難
+    { name: '[E] 粉塵逸散魔', icon: '💨', maxHp: 75, attack: 18, defense: 4, exp: 25, desc: '懸浮微粒殺手，引發嚴重呼吸道疾病。', source: '缺乏防護的工業廠房與營建工地。', pts: 18 },
+    { name: '[E] 毒水異形', icon: '🧪', maxHp: 110, attack: 22, defense: 8, exp: 40, desc: '破壞河川生態，使當地水源無法使用。', source: '未經處理直接排放的工業廢水。', pts: 25 },
+    { name: '[E] 貪婪山老鼠', icon: '🪓', maxHp: 130, attack: 20, defense: 12, exp: 45, desc: '破壞水土保持，加速森林面積消失。', source: '非法盜伐珍貴林木的利益集團。', pts: 28 },
+    { name: '[E] 黑色油泥怪', icon: '🛢️', maxHp: 160, attack: 14, defense: 18, exp: 55, desc: '扼殺海洋生物呼吸，極難清理與復原。', source: '油輪觸礁或海底管線漏油事故。', pts: 30 },
+
+    // 新增：S (Social) 社會與人權危機
+    { name: '[S] 血汗慣老闆A', icon: '💼', maxHp: 90, attack: 24, defense: 5, exp: 35, desc: '榨乾員工精力，嚴重損害勞工身心健康。', source: '常態性強制超時加班。', pts: 20 },
+    { name: '[S] 血汗慣老闆B', icon: '📜', maxHp: 100, attack: 18, defense: 10, exp: 35, desc: '剝奪勞工生計，引發社會不安與勞資糾紛。', source: '無預警且不當解雇基層員工。', pts: 20 },
+    { name: '[S] 工安疏漏獸', icon: '🏗️', maxHp: 140, attack: 28, defense: 5, exp: 50, desc: '隨時可能爆發致命意外，視人命為草芥。', source: '忽視作業安全規範的危險廠區。', pts: 25 },
+    { name: '[S] 童工剝削者', icon: '⛓️', maxHp: 85, attack: 15, defense: 20, exp: 45, desc: '剝奪兒童教育權與正常成長機會。', source: '全球供應鏈中的童工濫用行為。', pts: 30 },
+    { name: '[S] 強迫勞動魔', icon: '🔗', maxHp: 150, attack: 16, defense: 18, exp: 55, desc: '限制人身自由，嚴重違反全球基本人權。', source: '非法扣留移工護照與薪資的惡劣仲介。', pts: 35 },
+    { name: '[S] 駭客資安怪', icon: '💻', maxHp: 65, attack: 30, defense: 2, exp: 40, desc: '竊取並外流大量機密，摧毀消費者信任。', source: '企業資安防護漏洞與客戶個資外洩。', pts: 25 },
+
+    // 新增：G (Governance) 公司治理腐敗
+    { name: '[G] 決策黑箱獸', icon: '📦', maxHp: 180, attack: 22, defense: 15, exp: 60, desc: '貪汙收賄、內線交易、掏空洗錢等金融犯罪。', source: '缺乏監管機制與透明度的腐敗高層。', pts: 40 },
+    { name: '[G] 資訊誤導獸', icon: '🤥', maxHp: 110, attack: 16, defense: 25, exp: 45, desc: '以虛假財報或漂綠(Greenwashing)欺騙大眾。', source: '企業ESG資訊與財報揭露不實。', pts: 35 },
+    { name: '[G] 反競爭巨獸', icon: '🦈', maxHp: 220, attack: 26, defense: 22, exp: 80, desc: '價格壟斷與惡意併購，扼殺中小企業生存空間。', source: '托拉斯行為與破壞市場的公平競爭。', pts: 50 }
 ];
 
 // 地圖與事件
@@ -524,12 +550,13 @@ const allEvents = [
     { x: 35, y: 18, name: '濕地水質監測站', icon: '💧', desc: '採樣地下水純淨度。', type: 'landmark' },
     { x: 25, y: 25, name: '減災物資補給站', icon: '⛺', desc: '兌換復育物資。', type: 'shop' },
     { x: 21, y: 25, name: '嚮導 AI', icon: '🤖', desc: '提供遊戲玩法解說。', type: 'npc' },
-    // 新增：守望老鷹 NPC (在補給站的右下方)
     { x: 28, y: 25, name: '守望老鷹', icon: '🦅', desc: '尋找有潛力能效專家的神鳥。', type: 'quest_npc_eagle' },
     { x: 22, y: 10, name: '北方生態林區', icon: '🔥', desc: '極端林火。', type: 'disaster', resolved: false, observed: false, reported: false },
     { x: 10, y: 25, name: '西部重工業區', icon: '🏭', desc: '廢氣污染。', type: 'disaster', resolved: false, observed: false, reported: false },
     { x: 5, y: 10, name: '西北近海港口', icon: '🗑️', desc: '海洋垃圾。', type: 'disaster', resolved: false, observed: false, reported: false },
-    { x: 42, y: 6, name: '東北冰川觀測站', icon: '⛴️🧊', desc: '冰川崩解。', type: 'disaster', resolved: false, observed: false, reported: false }
+    { x: 42, y: 6, name: '東北冰川觀測站', icon: '⛴️🧊', desc: '冰川崩解。', type: 'disaster', resolved: false, observed: false, reported: false },
+    // 新增：南部農業區
+    { x: 35, y: 30, name: '南部農業區', icon: '🌾', desc: '農藥殘留與土壤硬化。', type: 'disaster', resolved: false, observed: false, reported: false }
 ];
 
 // 玩家與控制狀態
@@ -1207,7 +1234,9 @@ window.useItem = async (itemId) => {
                         feedback = `❌ 無法復育！請與其他玩家合力清除周遭剩餘的 ${remainingMonsters.length} 隻異常氣體！`;
                         success = false;
                     } else {
-                        let requiredItem = currentEvent.name.includes('林區') ? 'drone' : (currentEvent.name.includes('工業')||currentEvent.name.includes('沙漠') ? 'sapling' : 'filter');
+                        // 更新：加入農業區的專屬道具判定 (soil_remediator)
+                        let requiredItem = currentEvent.name.includes('林區') ? 'drone' : (currentEvent.name.includes('農業') ? 'soil_remediator' : (currentEvent.name.includes('工業')||currentEvent.name.includes('沙漠') ? 'sapling' : 'filter'));
+                        
                         if (itemId === requiredItem) {
                             travelerProfile.inventory[itemId]--; currentEvent.resolved = true; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 100;
                             feedback = `✅ 成功復育！ (+100 pts)`; success = true; mapData[currentEvent.y][currentEvent.x] = 1; 
@@ -1446,6 +1475,7 @@ function triggerCombat(forcedMonster = null, isRescue = false, fieldMonsterId = 
     const baseMonster = forcedMonster || GHG_MONSTERS[Math.floor(Math.random() * GHG_MONSTERS.length)];
     
     if (fieldMonsterId) {
+        // 區域首領 (顯性怪物)：保持 100% 戰鬥力
         const fm = activeFieldMonsters.find(m => m.id === fieldMonsterId);
         const scaling = 1 + ((fm.level - 1) * 0.2);
         currentMonster = { 
@@ -1458,17 +1488,18 @@ function triggerCombat(forcedMonster = null, isRescue = false, fieldMonsterId = 
             defense: Math.floor(baseMonster.defense * scaling) 
         };
     } else {
+        // 野外隨機怪物：戰鬥力削弱約 1/3 (保留 66.6%)
         const scaling = 1 + ((travelerProfile.level - 1) * 0.2); 
-        const nerfRatio = 2 / 3; 
+        const fieldNerfRatio = 0.66; // 更新：明確設定野外怪物的削弱係數
         
         currentMonster = { 
             ...baseMonster, 
             level: travelerProfile.level, 
-            exp: Math.floor(baseMonster.exp * scaling), 
-            maxHp: Math.max(1, Math.floor(baseMonster.maxHp * scaling * nerfRatio)), 
-            hp: Math.max(1, isRescue ? Math.floor(baseMonster.maxHp * scaling * nerfRatio * 0.8) : Math.floor(baseMonster.maxHp * scaling * nerfRatio)), 
-            attack: Math.max(1, Math.floor(baseMonster.attack * scaling * nerfRatio)), 
-            defense: Math.max(0, Math.floor(baseMonster.defense * scaling * nerfRatio)) 
+            exp: Math.floor(baseMonster.exp * scaling), // 經驗值保持 100%，不削弱，鼓勵玩家戰鬥
+            maxHp: Math.max(1, Math.floor(baseMonster.maxHp * scaling * fieldNerfRatio)), 
+            hp: Math.max(1, isRescue ? Math.floor(baseMonster.maxHp * scaling * fieldNerfRatio * 0.8) : Math.floor(baseMonster.maxHp * scaling * fieldNerfRatio)), 
+            attack: Math.max(1, Math.floor(baseMonster.attack * scaling * fieldNerfRatio)), 
+            defense: Math.max(0, Math.floor(baseMonster.defense * scaling * fieldNerfRatio)) 
         };
     }
     
