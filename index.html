@@ -1345,7 +1345,7 @@
         window.openModal = function(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); };
         window.closeModal = function(modalId) { document.getElementById(modalId)?.classList.add('hidden'); };
 
-        // 🚀 遊戲子頁新規格實裝：地球日誌啟動引擎 (準備交接抽屜)
+        // 🚀 遊戲子頁新規格實裝：地球日誌啟動引擎 (準備交接抽屜 - Iframe 專用)
         window.launchEarthLogGame = function() {
             // 1. 抓取旅者名稱與代碼 (從系統核心 state 抓取最精準)
             let travelerName = state.playerName || document.getElementById('player-name')?.value.trim() || '';
@@ -1385,6 +1385,28 @@
             if (gameIframe) {
                 gameIframe.src = 'game.html?t=' + Date.now(); 
             }
+        };
+
+        // 🚀 遊戲子頁終極備用方案：URL 參數傳遞引擎 (綁定於成就看板下方按鈕)
+        window.openEarthLogGame = function() {
+            // 1. 抓取系統核心真實變數
+            let uName = state.playerName || document.getElementById('player-name')?.value.trim() || '未命名';
+            let uCode = state.playerCode || document.getElementById('player-code')?.textContent.trim() || '';
+            let dist = (state.totalMileage || 0) / 1000;
+            let carb = Math.round(state.totalCarbon || 0);
+            let pts = state.totalScore || 0;
+            let hi = state.heroIndex || 0;
+
+            // 將姓名與代碼合併以符合遊戲端預期
+            let finalName = uName;
+            if (uCode && uCode !== '...') finalName += (finalName ? '_' : '') + uCode;
+
+            // 2. 將參數組合成網址字串 (動態安全編碼，防止特殊字元破壞網址)
+            let targetUrl = `game.html?name=${encodeURIComponent(finalName)}&code=${encodeURIComponent(uCode)}&dist=${dist}&carb=${carb}&pts=${pts}&heroIndex=${hi}`;
+
+            // 3. 直接開啟帶有所有數據的新分頁！
+            window.open(targetUrl, '_blank');
+            window.showToast('🚀 已啟動網頁備用版遊戲！');
         };
 
         window.customPrompt = function(message, defaultValue, callback) {
