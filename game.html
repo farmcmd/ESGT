@@ -647,21 +647,34 @@ function checkExternalLoginData() {
     let urlParams = new URLSearchParams(window.location.search);
 
     // 🌟 智慧擷取：自動讀取父視窗 (ESGT主網頁) 的網址參數
-    // 如果遊戲是被 iframe 內嵌在 ESGT 主網頁中，自動將主網頁的 URL 參數繼承下來
     if (window.parent && window.parent !== window) {
         try {
+            // 嘗試直接讀取父視窗網址
             const parentParams = new URLSearchParams(window.parent.location.search);
             for (const [key, value] of parentParams.entries()) {
                 if (!urlParams.has(key)) urlParams.set(key, value); // 合併參數
             }
         } catch(e) { 
-            console.warn("跨域安全限制，已啟動備用監聽", e); 
+            console.warn("跨域安全限制，切換為 Referrer 解析模式", e); 
+            // 備用防線：透過 document.referrer 解析父網頁的網址參數
+            try {
+                if (document.referrer) {
+                    const refUrl = new URL(document.referrer);
+                    const refParams = new URLSearchParams(refUrl.search);
+                    for (const [key, value] of refParams.entries()) {
+                        if (!urlParams.has(key)) urlParams.set(key, value);
+                    }
+                }
+            } catch(err) { console.warn("Referrer 解析失敗", err); }
         }
+        
+        // 📡 關鍵修復：主動告訴父網頁「遊戲已載入，準備好接收名字了！」
+        window.parent.postMessage({ type: 'GAME_READY' }, "https://farmcmd.github.io");
     }
 
     const extEmail = urlParams.get('email');
-    // 精準對接 ESGT 傳入的名稱或 ID
-    const extId = urlParams.get('name') || urlParams.get('id'); 
+    // 擴大相容性：精準對接 ESGT 傳入的 name, id 或 code 參數
+    const extId = urlParams.get('name') || urlParams.get('id') || urlParams.get('code'); 
     const extDist = parseFloat(urlParams.get('dist')) || 0;
     const extCarb = parseInt(urlParams.get('carb')) || 0;
     const extPts = parseInt(urlParams.get('pts')) || 0;
@@ -705,6 +718,7 @@ function checkExternalLoginData() {
             nameInput.value = finalExtId;
             // 加上綠色邊框提示玩家已成功匯入外部名稱
             nameInput.classList.add('border-emerald-400', 'bg-emerald-900/20');
+            console.log("✅ 成功從外部帶入名稱：", finalExtId);
         }
         return;
     }
