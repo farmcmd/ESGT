@@ -786,6 +786,51 @@ window.addEventListener('message', async (event) => {
     } catch (e) {}
 });
 
+// 🌟 新增：全自動背景感測機制 (Mailbox Pattern)
+// 專門偵測父網頁 (ESGT) 寫入 localStorage 的新積分
+window.addEventListener('storage', async (event) => {
+    // 當偵測到信箱中有名為 'esgt_pending_rewards' 的新包裹時
+    if (event.key === 'esgt_pending_rewards' && event.newValue) {
+        try {
+            const reward = JSON.parse(event.newValue);
+            
+            if (travelerProfile && (reward.pts || reward.carb || reward.dist)) {
+                const earnedPts = parseInt(reward.pts) || 0;
+                const earnedCarb = parseInt(reward.carb) || 0;
+                const earnedDist = parseFloat(reward.dist) || 0;
+                
+                // 累加數值
+                travelerProfile.points += earnedPts;
+                travelerProfile.carbon += earnedCarb;
+                travelerProfile.distance += earnedDist;
+                travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + earnedPts;
+                
+                console.log(`✅ 自動感測到外部新增數據：+${earnedPts} 積分`);
+                
+                // 刷新 UI 與存檔
+                updateStatusUI();
+                await window.saveProgress();
+                
+                // 🛡️ 領取完畢後，立刻清空信箱，防止重複領取
+                localStorage.removeItem('esgt_pending_rewards');
+                
+                // 顯示華麗的獲取提示
+                if(uiPrompt) {
+                    uiPrompt.classList.remove('hidden');
+                    uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-emerald-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100";
+                    uiTitle.innerHTML = `📡 系統同步完成`;
+                    uiDesc.innerText = `偵測到外部永續行動！自動匯入 ${earnedPts} 點積分與 ${earnedDist}km 里程。`;
+                    uiBtn.innerText = "確認";
+                    uiBtn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
+                    uiBtn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 px-8 py-2 rounded-full text-white font-bold transition-colors";
+                }
+            }
+        } catch(err) {
+            console.error('解析外部獎勵包裹失敗', err);
+        }
+    }
+});
+
 // 更新：將根目錄 ID 設定為您的專案 ID，讓雲端資料庫結構更整齊
 const appId = 'sustainable-game-e1b6f';
 
