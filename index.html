@@ -1183,17 +1183,17 @@
         </div>
     </div>
 
-    <!-- 👇 核心修復：19. 最新活動訊息全版面 Modal (取消 padding 與圓角，達成 100% 滿版沉浸) -->
-    <div id="events-modal" class="modal-overlay hidden !p-0 z-[200]">
-        <div class="modal-content w-full h-[100dvh] !max-h-[100dvh] !rounded-none border-0 relative flex flex-col bg-white">
-            <!-- 專屬頂部偽裝狀態列 -->
-            <div class="bg-gradient-to-r from-yellow-400 to-amber-500 p-3 md:p-4 flex justify-between items-center shadow-md z-10 shrink-0">
-                <h3 class="text-lg md:text-xl font-bold text-yellow-950 tracking-wide flex items-center"><i class="fas fa-bullhorn text-red-600 animate-pulse mr-2"></i>最新活動訊息及報名平台</h3>
-                <button class="close-button text-yellow-950 hover:text-white bg-white/30 hover:bg-black/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm"><i class="fas fa-times text-lg"></i></button>
+    <!-- 🌟 新增：20. 地球日誌 RPG 全版面 Modal -->
+    <div id="game-modal" class="modal-overlay hidden !p-0 z-[200]">
+        <div class="modal-content w-full h-[100dvh] !max-h-[100dvh] !rounded-none border-0 relative flex flex-col bg-black">
+            <!-- 專屬頂部狀態列 -->
+            <div class="bg-gradient-to-r from-green-700 to-green-900 p-3 md:p-4 flex justify-between items-center shadow-md z-10 shrink-0">
+                <h3 class="text-lg md:text-xl font-bold text-white tracking-wide flex items-center"><i class="fas fa-globe-americas text-green-300 animate-pulse mr-2"></i>地球日誌 RPG</h3>
+                <button class="close-button text-white hover:text-green-200 bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm"><i class="fas fa-times text-lg"></i></button>
             </div>
-            <!-- Iframe 載入區塊 -->
-            <div class="flex-grow w-full relative bg-gray-50 overflow-hidden">
-                <iframe src="https://farmcmd.github.io/ESGT/events.html" class="absolute inset-0 w-full h-full border-none" title="最新活動訊息"></iframe>
+            <!-- Iframe 載入區塊 (🚀 核心修復：拔除會引發變數衝突的行內 onload 腳本，改由 JS 模組內監聽) -->
+            <div class="flex-grow w-full relative bg-gray-900 overflow-hidden">
+                <iframe id="esgt-iframe" src="game.html" class="absolute inset-0 w-full h-full border-none" title="地球日誌 RPG"></iframe>
             </div>
         </div>
     </div>
@@ -2308,6 +2308,13 @@
                 saveData();
                 window.showToast('✅ 旅者姓名已自動儲存！');
                 if (typeof window.sendDataToGame === 'function') window.sendDataToGame(); // 🌟 核心升級：姓名一改，立刻廣播給遊戲更新
+            });
+
+            // 🚀 核心修復：將 iframe 的載入監聽移入模組內部，解決 state is not defined 錯誤
+            document.getElementById('esgt-iframe')?.addEventListener('load', () => {
+                if (typeof window.syncToGame === 'function') {
+                    window.syncToGame({ name: state.playerName || '', code: state.playerCode || '' });
+                }
             });
 
             // 全域彈出視窗關閉按鈕事件監聽
