@@ -3307,6 +3307,15 @@
                 // 🛡️ 基礎資安防護：確保指令來源為官方網域
                 if (event.origin !== window.location.origin && !event.origin.includes('farmcmd.github.io')) return;
 
+                // 🌟 新增：接收遊戲端「準備完畢」的握手訊號 (Handshake)
+                if (event.data && event.data.type === 'GAME_READY') {
+                    console.log("🎮 [通訊規格] 收到遊戲準備完畢訊號，立即推送最新玩家資料！");
+                    if (typeof window.syncToGame === 'function') {
+                        window.syncToGame({ name: state.playerName, code: state.playerCode });
+                    }
+                    return; // 處理完畢直接退出
+                }
+
                 // 🌟 2. 接收來自遊戲網頁 (game.html) 回傳的「地球勇者指數」
                 if (event.data && event.data.type === 'SYNC_HERO_INDEX') {
                     state.heroIndex = event.data.heroIndex;
