@@ -644,9 +644,23 @@ const totalImages = Object.keys(svgAssets).length;
 // 2. 外部通訊與 Firebase 登入邏輯
 // ==========================================
 function checkExternalLoginData() {
-    const urlParams = new URLSearchParams(window.location.search);
+    let urlParams = new URLSearchParams(window.location.search);
+
+    // 🌟 智慧擷取：自動讀取父視窗 (ESGT主網頁) 的網址參數
+    // 如果遊戲是被 iframe 內嵌在 ESGT 主網頁中，自動將主網頁的 URL 參數繼承下來
+    if (window.parent && window.parent !== window) {
+        try {
+            const parentParams = new URLSearchParams(window.parent.location.search);
+            for (const [key, value] of parentParams.entries()) {
+                if (!urlParams.has(key)) urlParams.set(key, value); // 合併參數
+            }
+        } catch(e) { 
+            console.warn("跨域安全限制，已啟動備用監聽", e); 
+        }
+    }
+
     const extEmail = urlParams.get('email');
-    // 優化：同時支援讀取 'name' 或 'id' 參數，完美對接 ESGT 傳入的資料
+    // 精準對接 ESGT 傳入的名稱或 ID
     const extId = urlParams.get('name') || urlParams.get('id'); 
     const extDist = parseFloat(urlParams.get('dist')) || 0;
     const extCarb = parseInt(urlParams.get('carb')) || 0;
@@ -659,7 +673,7 @@ function checkExternalLoginData() {
             travelerProfile = JSON.parse(localSaveJSON);
             console.log("讀取到本地 JSON 存檔，自動登入！");
             
-            // 優化：如果外部網頁有傳入新的積分與減碳數據，將其累加上舊存檔
+            // 如果外部網頁有傳入新的積分與減碳數據，將其累加上舊存檔
             if (extPts > 0 || extCarb > 0) {
                 travelerProfile.points += extPts;
                 travelerProfile.carbon += extCarb;
@@ -675,8 +689,7 @@ function checkExternalLoginData() {
     }
 
     // 2. 若無本地存檔，處理全新玩家的登入介面預填
-    const finalExtId = extId || ''; // 移除寫死的預設代碼，讓玩家能清楚看到傳入的名稱
-    // 賦予合理的體驗初始值 (若外部無傳入則給予基礎體驗數據)
+    const finalExtId = extId || ''; 
     window.tempExtData = { 
         dist: extDist || 57.4, 
         carb: extCarb || 1127, 
@@ -688,9 +701,10 @@ function checkExternalLoginData() {
     if (!extEmail) {
         const nameInput = document.getElementById('traveler-name-input');
         if (nameInput && finalExtId) {
+            // 自動帶入外部名稱
             nameInput.value = finalExtId;
             // 加上綠色邊框提示玩家已成功匯入外部名稱
-            nameInput.classList.add('border-emerald-400');
+            nameInput.classList.add('border-emerald-400', 'bg-emerald-900/20');
         }
         return;
     }
