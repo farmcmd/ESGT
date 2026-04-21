@@ -6,27 +6,12 @@
     <title>地球日誌 - 生態觀測站</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0f172a;
-            overflow: hidden;
-            touch-action: none;
-        }
-        #gameCanvas {
-            image-rendering: pixelated; /* 確保縮放時保持復古感 */
-            display: block;
-        }
-        .ui-layer {
-            position: absolute;
-            pointer-events: none;
-        }
-        .interactive-btn {
-            pointer-events: auto;
-            user-select: none;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #0f172a; overflow: hidden; touch-action: none; }
+        #gameCanvas { image-rendering: pixelated; display: block; }
+        .ui-layer { position: absolute; pointer-events: none; }
+        .interactive-btn { pointer-events: auto; user-select: none; }
+        @keyframes sos-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        .anim-pulse-fast { animation: sos-pulse 1s infinite ease-in-out; }
     </style>
 </head>
 <body class="relative text-white font-sans">
@@ -46,6 +31,10 @@
                 <button onclick="openInventoryModal()" class="interactive-btn bg-amber-700 hover:bg-amber-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-amber-500 flex items-center gap-1" id="btn-inventory">
                     🎒 我的行囊
                 </button>
+                <!-- 新增：探索紀錄看板按鈕 -->
+                <button onclick="openRecordModal()" class="interactive-btn bg-purple-700 hover:bg-purple-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-purple-500 flex items-center gap-1" id="btn-record">
+                    📊 探索紀錄
+                </button>
                 <button onclick="openESGTModal()" class="interactive-btn bg-teal-700 hover:bg-teal-600 text-white text-xs py-1.5 px-3 rounded shadow transition-colors border border-teal-500 flex items-center gap-1 hidden" id="btn-mini-game">
                     🎮 觀測小遊戲
                 </button>
@@ -60,21 +49,75 @@
             </p>
             <p class="text-sm text-amber-400">永續積分: <span id="ui-pts" class="font-bold text-lg">0</span> pts</p>
             <p class="text-sm text-fuchsia-400 mt-1">地球勇者指數: <span id="ui-hero-index" class="font-bold text-lg">0</span> 🎖️</p>
-            <p class="text-sm text-emerald-400 mt-1">減碳總量: <span id="ui-carbon" class="font-bold">0</span> g</p>
-            <p class="text-sm text-blue-400 mt-1">累計里程: <span id="ui-dist" class="font-bold">0</span> km</p>
+            <p class="text-[10px] text-slate-500 mt-1" id="ui-status-bar">登入以載入角色資料</p>
         </div>
     </div>
 
     <!-- 互動提示框 -->
-    <div id="interaction-prompt" class="ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border-2 border-yellow-500 p-5 rounded-xl hidden text-center shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all duration-300">
-        <h2 id="prompt-title" class="text-xl font-bold text-yellow-400 mb-2 flex items-center justify-center gap-2">發現生態熱點</h2>
-        <p id="prompt-desc" class="text-sm text-slate-200 mb-4 max-w-xs leading-relaxed">這是一段描述。</p>
+    <div id="interaction-prompt" class="ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900/95 border-2 border-yellow-500 p-5 rounded-xl hidden text-center shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all duration-300 min-w-[280px]">
+        <!-- 新增：手動關閉按鈕，讓玩家能隨時收起提示框 -->
+        <button onclick="closePromptUI()" class="absolute top-2 right-3 text-slate-400 hover:text-white interactive-btn font-bold text-lg">✕</button>
+        <h2 id="prompt-title" class="text-xl font-bold text-yellow-400 mb-2 flex items-center justify-center gap-2 mt-1">發現生態熱點</h2>
+        <p id="prompt-desc" class="text-sm text-slate-200 mb-4 max-w-xs leading-relaxed mx-auto">這是一段描述。</p>
         <button id="prompt-btn" class="interactive-btn bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 px-8 rounded-full shadow-lg transform transition active:scale-95">
             打開行囊選擇道具
         </button>
     </div>
 
-    <!-- 減災補給商店面板 (隱藏) -->
+    <!-- 新增：NPC 解說教學面板 -->
+    <div id="npc-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 160;">
+        <div class="bg-slate-900 border-2 border-green-500 p-6 rounded-xl shadow-[0_0_40px_rgba(34,197,94,0.3)] w-11/12 max-w-md flex flex-col interactive-btn relative">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-green-400 flex items-center gap-2">🤖 生態觀測嚮導</h2>
+                <button onclick="closeNpcModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div class="text-slate-300 text-sm mb-4 leading-relaxed font-bold text-emerald-300">
+                歡迎來到地球日誌！您的任務是淨化被污染的大地。以下是行動指南：
+            </div>
+            
+            <div class="space-y-3 overflow-y-auto max-h-[50vh] pr-2 text-sm text-slate-300">
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-600">
+                    <div class="text-amber-400 font-bold mb-1 flex items-center gap-1"><span>1️⃣</span> 探索與觀測</div>
+                    在地圖上尋找未知的氣候異常(❓)。走到該處後，打開行囊使用<strong class="text-white">【觀測卡】</strong>進行調查。
+                </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-600">
+                    <div class="text-red-400 font-bold mb-1 flex items-center gap-1"><span>2️⃣</span> 通報與討伐</div>
+                    確認災區異常後，使用<strong class="text-white">【通報卡】</strong>。這會引出強大的區域首領！您可以合力討伐，或使用<strong class="text-white">【SOS卡】</strong>呼叫全服支援。
+                </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-600">
+                    <div class="text-emerald-400 font-bold mb-1 flex items-center gap-1"><span>3️⃣</span> 物資復育</div>
+                    當災區周圍的強敵被徹底消滅後，系統將自動完成生態復育；或您也可手動對災區使用對應的物資（如：無人機、樹苗）。
+                </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-600">
+                    <div class="text-blue-400 font-bold mb-1 flex items-center gap-1"><span>4️⃣</span> 資源循環</div>
+                    在地圖上移動會隨機遭遇野外怪物，擊敗牠們獲取「勇者指數」。積分可在旁邊的<strong class="text-white">【補給站】</strong>兌換技能與裝備。
+                </div>
+            </div>
+            
+            <button onclick="closeNpcModal()" class="mt-5 w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg transition-colors">我了解了，開始探險！</button>
+        </div>
+    </div>
+
+    <!-- 新增：老鷹 NPC 任務面板 -->
+    <div id="eagle-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 165;">
+        <div class="bg-slate-900 border-2 border-cyan-500 p-6 rounded-xl shadow-[0_0_40px_rgba(6,182,212,0.3)] w-11/12 max-w-md flex flex-col interactive-btn relative">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-cyan-400 flex items-center gap-2">🦅 守望老鷹</h2>
+                <button onclick="closeEagleModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div id="eagle-content" class="space-y-4">
+                <!-- 內容由 JS 動態生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 減災補給商店面板 -->
     <div id="shop-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 150;">
         <div class="bg-slate-900 border-2 border-emerald-500 p-6 rounded-xl shadow-2xl w-11/12 max-w-lg flex flex-col interactive-btn relative">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
@@ -85,58 +128,46 @@
             </div>
             
             <div class="text-slate-300 text-sm mb-4">
-                歡迎來到前線補給站。您可以使用積分兌換以下裝備，用於調查與復育。
+                歡迎來到前線補給站。您可以使用積分兌換以下裝備。
                 <div class="mt-2 text-amber-400 font-bold bg-amber-900/30 p-2 rounded inline-block">目前持有積分：<span id="shop-current-pts">0</span> pts</div>
             </div>
             
-            <div class="space-y-3">
+            <div class="space-y-3 overflow-y-auto max-h-[50vh]" id="shop-items-container">
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <span class="text-3xl">🚁</span>
-                        <div>
-                            <h3 class="text-emerald-300 font-bold text-sm">滅火無人機隊</h3>
-                            <p class="text-slate-400 text-xs mt-1">用於撲滅大面積森林大火。</p>
-                        </div>
-                    </div>
-                    <button onclick="buyItem('drone', 50, '滅火無人機隊')" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">50 pts 兌換</button>
+                    <div class="flex items-center gap-3"><span class="text-3xl">🚁</span><div><h3 class="text-emerald-300 font-bold text-sm">滅火無人機隊</h3><p class="text-slate-400 text-xs mt-1">用於撲滅大面積森林大火。</p></div></div>
+                    <button onclick="buyItem('drone', 50, '滅火無人機隊')" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">50 pts</button>
                 </div>
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <span class="text-3xl">💧</span>
-                        <div>
-                            <h3 class="text-blue-300 font-bold text-sm">奈米淨水過濾網</h3>
-                            <p class="text-slate-400 text-xs mt-1">清除水域微型垃圾。</p>
-                        </div>
-                    </div>
-                    <button onclick="buyItem('filter', 30, '奈米淨水過濾網')" class="bg-blue-700 hover:bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">30 pts 兌換</button>
+                    <div class="flex items-center gap-3"><span class="text-3xl">💧</span><div><h3 class="text-blue-300 font-bold text-sm">奈米淨水過濾網</h3><p class="text-slate-400 text-xs mt-1">清除水域微型垃圾。</p></div></div>
+                    <button onclick="buyItem('filter', 30, '奈米淨水過濾網')" class="bg-blue-700 hover:bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">30 pts</button>
                 </div>
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <span class="text-3xl">🪪</span>
-                        <div>
-                            <h3 class="text-emerald-300 font-bold text-sm">基礎觀測卡</h3>
-                            <p class="text-slate-400 text-xs mt-1">紀錄生態熱點數據的必要憑證。</p>
-                        </div>
-                    </div>
-                    <button onclick="buyItem('observe_card', 5, '基礎觀測卡')" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">5 pts 兌換</button>
+                    <div class="flex items-center gap-3"><span class="text-3xl">🌱</span><div><h3 class="text-green-300 font-bold text-sm">抗旱樹苗</h3><p class="text-slate-400 text-xs mt-1">改善極端旱災區土壤。</p></div></div>
+                    <button onclick="buyItem('sapling', 20, '抗旱樹苗')" class="bg-green-700 hover:bg-green-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">20 pts</button>
                 </div>
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <span class="text-3xl">📡</span>
-                        <div>
-                            <h3 class="text-red-300 font-bold text-sm">緊急通報卡</h3>
-                            <p class="text-slate-400 text-xs mt-1">連線警示網，回報異常災情。</p>
-                        </div>
-                    </div>
-                    <button onclick="buyItem('report_card', 10, '緊急通報卡')" class="bg-red-700 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">10 pts 兌換</button>
+                    <div class="flex items-center gap-3"><span class="text-3xl">🪪</span><div><h3 class="text-emerald-300 font-bold text-sm">基礎觀測卡</h3><p class="text-slate-400 text-xs mt-1">紀錄生態熱點數據。</p></div></div>
+                    <button onclick="buyItem('observe_card', 5, '基礎觀測卡')" class="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">5 pts</button>
+                </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-600 flex justify-between items-center">
+                    <div class="flex items-center gap-3"><span class="text-3xl">📡</span><div><h3 class="text-red-300 font-bold text-sm">緊急通報卡</h3><p class="text-slate-400 text-xs mt-1">回報異常災情。</p></div></div>
+                    <button onclick="buyItem('report_card', 10, '緊急通報卡')" class="bg-red-700 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">10 pts</button>
+                </div>
+                <div class="bg-indigo-900/40 p-3 rounded-lg border border-indigo-500/50 flex justify-between items-center">
+                    <div class="flex items-center gap-3"><span class="text-3xl">🆘</span><div><h3 class="text-indigo-300 font-bold text-sm">戰鬥求救卡</h3><p class="text-indigo-200/70 text-xs mt-1">戰鬥中使用，請求支援。</p></div></div>
+                    <button onclick="buyItem('sos_card', 15, '戰鬥求救卡')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">15 pts</button>
+                </div>
+                <div class="bg-fuchsia-900/40 p-3 rounded-lg border border-fuchsia-500/50 flex justify-between items-center">
+                    <div class="flex items-center gap-3"><span class="text-3xl">📘</span><div><h3 class="text-fuchsia-300 font-bold text-sm">資源循環技能書</h3><p class="text-fuchsia-200/70 text-xs mt-1">研讀後永久提升戰鬥技能傷害。</p></div></div>
+                    <button onclick="buyItem('recycle_book', 100, '資源循環技能書')" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">100 pts</button>
                 </div>
             </div>
             <div id="shop-message" class="h-6 mt-4 text-center text-sm font-bold transition-colors"></div>
         </div>
     </div>
 
-    <!-- 玩家行囊 (Inventory) 面板 (更新結構以支援使用模式) -->
-    <div id="inventory-modal" class="ui-layer absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 160;">
+    <!-- 玩家行囊 (Inventory) 面板 -->
+    <div id="inventory-modal" class="ui-layer absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 200;">
         <div class="bg-slate-900 border-2 border-amber-500 p-6 rounded-xl shadow-2xl w-11/12 max-w-md flex flex-col interactive-btn relative">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
                 <h2 id="inventory-title" class="text-xl font-bold text-amber-400 flex items-center gap-2">🎒 旅者行囊</h2>
@@ -144,110 +175,164 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
-            <div class="text-slate-300 text-sm mb-4">這裡存放了您兌換的所有裝備與憑證卡片。</div>
+            <div class="text-slate-300 text-sm mb-4">點擊「使用」來發揮道具效果。</div>
             <div id="inventory-list" class="space-y-3 overflow-y-auto max-h-[50vh] pr-2"></div>
-            
-            <!-- 新增：道具使用回饋訊息 -->
             <div id="inventory-message" class="text-center text-sm font-bold mt-3 h-5"></div>
-            
             <button onclick="closeInventoryModal()" class="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg shadow transition-colors">關閉面板</button>
         </div>
     </div>
 
-    <!-- 新增：回合制溫室氣體怪物遭遇戰面板 -->
+    <!-- 探索紀錄看板 (Record Board) 面板 -->
+    <div id="record-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 170;">
+        <div class="bg-slate-900 border-2 border-purple-500 p-6 rounded-xl shadow-[0_0_40px_rgba(168,85,247,0.3)] w-11/12 max-w-sm flex flex-col interactive-btn relative">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
+                <h2 class="text-xl font-bold text-purple-400 flex items-center gap-2">📊 旅者貢獻紀錄</h2>
+                <button onclick="closeRecordModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- 怪物擊殺紀錄 -->
+                <div class="bg-slate-800 border border-slate-600 rounded-lg p-4 flex items-center gap-4 relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 text-6xl opacity-10">👾</div>
+                    <div class="bg-red-900/50 p-3 rounded-full border border-red-500/50 text-2xl">⚔️</div>
+                    <div>
+                        <div class="text-slate-400 text-xs font-bold mb-1">累計淨化異常氣體</div>
+                        <div class="text-3xl font-bold text-red-400 font-mono"><span id="record-monsters">0</span> <span class="text-sm text-slate-500">隻</span></div>
+                    </div>
+                </div>
+
+                <!-- 災區復育紀錄 -->
+                <div class="bg-slate-800 border border-slate-600 rounded-lg p-4 flex items-center gap-4 relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 text-6xl opacity-10">🌍</div>
+                    <div class="bg-emerald-900/50 p-3 rounded-full border border-emerald-500/50 text-2xl">🌱</div>
+                    <div>
+                        <div class="text-slate-400 text-xs font-bold mb-1">累計復育生態災區</div>
+                        <div class="text-3xl font-bold text-emerald-400 font-mono"><span id="record-disasters">0</span> <span class="text-sm text-slate-500">區</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center text-xs text-slate-500 italic">
+                每一份貢獻，都讓地球變得更好。
+            </div>
+            <button onclick="closeRecordModal()" class="mt-6 w-full text-slate-400 hover:text-white transition-colors text-sm font-bold">關閉面板</button>
+        </div>
+    </div>
+
+    <!-- 強制踢出連線中斷提示框 -->
+    <div id="kick-modal" class="ui-layer absolute inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center hidden" style="z-index: 500;">
+        <div class="bg-slate-900 border-2 border-red-500 p-8 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.4)] max-w-sm w-11/12 text-center interactive-btn">
+            <div class="text-6xl mb-4">🔌</div>
+            <h2 class="text-2xl font-bold text-red-400 mb-2">連線已中斷</h2>
+            <p class="text-sm text-slate-300 mb-6 leading-relaxed">
+                伺服器訪客負載已達 10 人上限。<br>為了讓新玩家體驗，系統已隨機釋放您的連線名額。<br>
+                <span class="text-amber-400 font-bold mt-3 inline-block bg-amber-900/30 p-2 rounded">🏆 專案競賽模式玩家不受此限制。</span>
+            </p>
+            <button onclick="location.reload()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg shadow-lg transition-colors">重新連線</button>
+        </div>
+    </div>
+
+    <!-- 回合制自動戰鬥面板 -->
     <div id="combat-modal" class="ui-layer absolute inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center hidden" style="z-index: 180;">
         <div class="bg-slate-900 border-2 border-red-500/80 p-6 rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.3)] max-w-lg w-full mx-4 flex flex-col relative overflow-y-auto max-h-[95vh] interactive-btn">
-            <!-- 怪物資訊區 -->
             <div class="flex flex-col items-center mb-4 pb-4 border-b border-slate-700">
                 <h2 class="text-xl font-bold text-red-400 mb-1 flex items-center gap-2">⚠️ 遭遇異常氣體</h2>
                 <div id="monster-icon" class="text-6xl my-2 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]">👾</div>
-                <h3 id="monster-name" class="text-lg font-bold text-amber-300">二氧化碳巨獸</h3>
+                <h3 id="monster-name" class="text-lg font-bold text-amber-300">怪物</h3>
                 
-                <!-- 怪物血條 -->
                 <div class="w-3/4 mt-2">
                     <div class="flex justify-between text-xs text-red-300 font-bold mb-1">
-                        <span>HP</span>
-                        <span id="monster-hp-text">100 / 100</span>
+                        <span>HP</span><span id="monster-hp-text">100 / 100</span>
                     </div>
                     <div class="w-full bg-slate-800 rounded-full h-2.5 border border-slate-600">
                         <div id="monster-hp-bar" class="bg-red-500 h-2.5 rounded-full transition-all duration-300" style="width: 100%"></div>
                     </div>
                 </div>
 
-                <!-- 新增：生態科普圖鑑卡 (基本介紹與污染源) -->
                 <div class="w-full mt-4 text-left bg-slate-800/80 p-3 rounded-lg border border-slate-700 shadow-inner">
-                    <p id="monster-desc" class="text-xs text-slate-300 mb-2 leading-relaxed">怪物基本介紹載入中...</p>
+                    <p id="monster-desc" class="text-xs text-slate-300 mb-2 leading-relaxed">介紹載入中...</p>
                     <div class="flex items-start gap-1.5">
                         <span class="bg-red-950 text-red-400 text-[10px] px-1.5 py-0.5 rounded border border-red-800 whitespace-nowrap font-bold mt-0.5">污染源</span>
-                        <span id="monster-source" class="text-xs text-slate-400 leading-relaxed">污染來源載入中...</span>
+                        <span id="monster-source" class="text-xs text-slate-400 leading-relaxed">來源載入中...</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 戰鬥文字紀錄區 (Combat Log) -->
             <div class="bg-black/50 border border-slate-700 rounded-lg p-3 h-24 overflow-y-auto mb-4 flex flex-col justify-end">
-                <ul id="combat-log" class="text-sm space-y-1 font-mono text-slate-300">
+                <ul id="combat-log" class="text-xs space-y-1 font-mono text-slate-300">
                     <li class="text-amber-400">系統：戰鬥開始！</li>
                 </ul>
             </div>
 
-            <!-- 玩家資訊與操作區 -->
             <div class="flex flex-col gap-3">
                 <div class="flex justify-between items-end mb-1">
-                    <div>
-                        <span class="text-sm font-bold text-emerald-400" id="player-combat-name">旅者</span>
-                        <span class="text-xs text-slate-400 ml-2">Lv.<span id="player-level">1</span></span>
-                    </div>
+                    <div><span class="text-sm font-bold text-emerald-400" id="player-combat-name">旅者</span><span class="text-xs text-slate-400 ml-2">Lv.<span id="player-level">1</span></span></div>
                     <div class="text-xs text-blue-300">EXP: <span id="player-exp">0 / 50</span></div>
                 </div>
                 
-                <!-- 玩家血條 -->
                 <div class="w-full">
-                    <div class="flex justify-between text-xs text-emerald-300 font-bold mb-1">
-                        <span>HP</span>
-                        <span id="player-hp-text">100 / 100</span>
-                    </div>
+                    <div class="flex justify-between text-xs text-emerald-300 font-bold mb-1"><span>HP</span><span id="player-hp-text">100 / 100</span></div>
                     <div class="w-full bg-slate-800 rounded-full h-2.5 border border-slate-600">
                         <div id="player-hp-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 100%"></div>
                     </div>
                 </div>
 
-                <!-- 動作按鈕 (更新為三按鈕配置與技能限制) -->
-                <div class="flex gap-2 mt-2 flex-wrap">
-                    <button id="btn-attack" onclick="executeCombatAction('basic_attack')" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-slate-500 text-xs">🗡️ 基礎攻擊</button>
-                    <button id="btn-purify" onclick="executeCombatAction('purify_skill')" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-amber-500 text-xs">✨ 數據淨化</button>
-                    <button id="btn-shield" onclick="executeCombatAction('shield_skill')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-blue-500 text-xs">🛡️ 永續防護</button>
-                    <button id="btn-flee" onclick="executeCombatAction('flee')" class="w-full mt-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded shadow transition-all border border-slate-600 text-xs">戰術撤退</button>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button id="btn-attack" onclick="toggleAutoAttack()" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-slate-500 text-xs">🗡️ 自動攻擊</button>
+                    <button id="btn-purify" onclick="executeCombatAction('purify_skill')" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-amber-500 text-xs">✨ 數據淨化 (10%)</button>
+                    <button id="btn-shield" onclick="executeCombatAction('shield_skill')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-blue-500 text-xs">🛡️ 永續防護 (回血)</button>
+                    <button id="btn-charge" onclick="executeCombatAction('charge_skill')" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-teal-500 text-xs">⚡ 戰術蓄能 (-2🎖️)</button>
+                    
+                    <!-- 調整排版：將打開行囊也設為橫跨兩格 -->
+                    <button onclick="openInventoryModal(true)" class="col-span-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-indigo-500 text-xs">🎒 打開行囊 (求救)</button>
+                    <button id="btn-recycle" onclick="executeCombatAction('recycle_skill')" class="col-span-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-fuchsia-500 text-xs hidden">♻️ 資源循環</button>
                 </div>
+                <button id="btn-flee" onclick="executeCombatAction('flee')" class="w-full mt-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded shadow transition-all border border-slate-600 text-xs">戰術撤退</button>
             </div>
         </div>
     </div>
 
-    <!-- 右下角整合面板區 (警示網 + 留言板) - 確保常駐顯示且不遮擋 -->
-    <div class="ui-layer bottom-4 right-4 sm:bottom-8 sm:right-8 flex flex-col gap-2 sm:gap-4 items-end" style="z-index: 50; pointer-events: none;">
-        <!-- 災情警示面板 -->
-        <div id="alert-panel" class="w-56 sm:w-80 max-h-[180px] sm:max-h-[250px] bg-slate-900/90 border-2 border-red-500/80 rounded-lg shadow-xl backdrop-blur-md flex flex-col pointer-events-auto transition-all">
-            <div class="bg-red-900/50 p-1.5 sm:p-2 border-b border-red-500/50 rounded-t-md flex justify-between items-center">
-                <span class="text-xs sm:text-sm font-bold text-red-300">🚨 災情警示網</span>
-                <span class="text-[10px] sm:text-xs text-red-400 animate-pulse font-bold flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 inline-block"></span> 監控中
-                </span>
+    <!-- 自訂確認對話框 -->
+    <div id="confirm-modal" class="ui-layer absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden" style="z-index: 400;">
+        <div class="bg-slate-900 border-2 border-amber-500 p-6 rounded-xl shadow-2xl max-w-sm w-11/12 text-center interactive-btn">
+            <h3 id="confirm-title" class="text-lg font-bold text-amber-400 mb-2">確認</h3>
+            <p id="confirm-desc" class="text-sm text-slate-300 mb-6 leading-relaxed">您確定要執行此操作嗎？</p>
+            <div class="flex gap-3">
+                <button id="btn-confirm-cancel" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded font-bold transition-colors">取消</button>
+                <button id="btn-confirm-ok" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded font-bold transition-colors">確定</button>
             </div>
-            <div class="flex-1 overflow-y-auto p-1.5 sm:p-2 space-y-2 text-xs sm:text-sm" id="alert-list"></div>
         </div>
+    </div>
 
-        <!-- 留言板 UI -->
-        <div id="chat-panel" class="w-56 sm:w-80 max-h-[200px] sm:max-h-[300px] bg-slate-900/90 border-2 border-blue-500/80 rounded-lg shadow-xl backdrop-blur-md flex flex-col pointer-events-auto">
-            <div class="bg-blue-900/50 p-1.5 sm:p-2 border-b border-blue-500/50 rounded-t-md flex justify-between items-center">
-                <span class="text-xs sm:text-sm font-bold text-blue-300">🌍 通訊頻道</span>
-                <span class="text-[10px] sm:text-xs text-green-400" id="auth-status">連線中...</span>
+    <!-- 右下角整合面板區 -->
+    <div class="ui-layer bottom-4 right-0 sm:bottom-8 sm:right-0 flex flex-col items-end" style="z-index: 50; pointer-events: none;">
+        
+        <!-- 面板收納 / 展開按鈕 -->
+        <button onclick="toggleRightPanels()" class="interactive-btn mb-2 mr-4 sm:mr-8 bg-slate-800/95 text-slate-300 hover:text-white px-3 py-1.5 rounded-l-lg border-y border-l border-slate-600 shadow-lg text-xs font-bold flex items-center gap-1 transition-all">
+            <span id="panel-toggle-icon">▶</span> <span id="panel-toggle-text">收納看板</span>
+        </button>
+
+        <!-- 將警報與聊天面板包入群組 -->
+        <div id="right-panel-group" class="flex flex-col gap-2 sm:gap-4 items-end mr-4 sm:mr-8 transition-all duration-500 pointer-events-none origin-right">
+            <div id="alert-panel" class="w-56 sm:w-80 max-h-[180px] sm:max-h-[250px] bg-slate-900/90 border-2 border-red-500/80 rounded-lg shadow-xl backdrop-blur-md flex flex-col pointer-events-auto transition-all">
+                <div class="bg-red-900/50 p-1.5 sm:p-2 border-b border-red-500/50 rounded-t-md flex justify-between items-center">
+                    <span class="text-xs sm:text-sm font-bold text-red-300">🚨 全球災情 & 🆘 求救</span>
+                    <span class="text-[10px] sm:text-xs text-red-400 animate-pulse font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 inline-block"></span> 監控中</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-1.5 sm:p-2 space-y-2 text-xs sm:text-sm" id="alert-list"></div>
             </div>
-            <div class="flex-1 overflow-y-auto p-1.5 sm:p-2 space-y-2 text-xs sm:text-sm" id="chat-messages">
-                <div class="text-slate-400 italic text-center">正在同步紀錄...</div>
-            </div>
-            <div class="p-1.5 sm:p-2 border-t border-slate-700 flex gap-1 sm:gap-2">
-                <input type="text" id="chat-input" class="flex-1 bg-slate-800 border border-slate-600 rounded px-1.5 sm:px-2 py-1 text-white text-xs sm:text-sm focus:outline-none focus:border-blue-400" placeholder="分享發現...">
-                <button id="chat-send" class="bg-blue-600 hover:bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors shadow">發送</button>
+            <div id="chat-panel" class="w-56 sm:w-80 max-h-[200px] sm:max-h-[300px] bg-slate-900/90 border-2 border-blue-500/80 rounded-lg shadow-xl backdrop-blur-md flex flex-col pointer-events-auto">
+                <div class="bg-blue-900/50 p-1.5 sm:p-2 border-b border-blue-500/50 rounded-t-md flex justify-between items-center">
+                    <span class="text-xs sm:text-sm font-bold text-blue-300">🌍 通訊頻道</span>
+                    <span class="text-[10px] sm:text-xs text-green-400" id="auth-status">連線中...</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-1.5 sm:p-2 space-y-2 text-xs sm:text-sm" id="chat-messages"><div class="text-slate-400 italic text-center">正在同步紀錄...</div></div>
+                <div class="p-1.5 sm:p-2 border-t border-slate-700 flex gap-1 sm:gap-2">
+                    <input type="text" id="chat-input" class="flex-1 bg-slate-800 border border-slate-600 rounded px-1.5 sm:px-2 py-1 text-white text-xs sm:text-sm focus:outline-none focus:border-blue-400" placeholder="分享發現...">
+                    <button id="chat-send" class="bg-blue-600 hover:bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors shadow">發送</button>
+                </div>
             </div>
         </div>
     </div>
@@ -263,42 +348,96 @@
                 <div id="iframe-loader" class="absolute inset-0 flex items-center justify-center text-emerald-500 font-bold">遊戲環境載入中...</div>
                 <iframe id="esgt-iframe" src="" class="w-full h-full relative z-10 hidden" sandbox="allow-scripts allow-same-origin allow-forms" onload="document.getElementById('iframe-loader').style.display='none'; this.classList.remove('hidden');"></iframe>
             </div>
-            <div class="mt-4 flex justify-between items-center text-sm text-slate-400">
-                <p>💡 完成任務，數據將作為永續參考。</p>
-                <button onclick="closeESGTModal()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-bold transition-colors">結束並返回</button>
-            </div>
+            <div class="mt-4 flex justify-between items-center text-sm text-slate-400"><p>💡 完成任務，數據將作為永續參考。</p><button onclick="closeESGTModal()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-bold transition-colors">結束並返回</button></div>
         </div>
     </div>
 
-    <!-- 永續旅者雙軌登入面板 -->
-    <div id="certification-modal" class="ui-layer absolute inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center flex-col z-[200] hidden">
+    <!-- 永續旅者登入面板 -->
+    <div id="certification-modal" class="ui-layer absolute inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center flex-col z-[300] hidden">
         <div class="bg-slate-900 border-2 border-emerald-500 p-8 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.3)] max-w-md w-full mx-4 interactive-btn">
             <div class="text-center mb-6">
                 <div class="text-5xl mb-3">🌍</div>
-                <h2 class="text-2xl font-bold text-emerald-400">永續旅者登入</h2>
+                <h2 class="text-2xl font-bold text-emerald-400 relative inline-block">
+                    永續旅者登入
+                    <!-- 隱藏的管理者鎖頭 -->
+                    <button onclick="openAdminModal()" class="absolute -right-6 top-1 text-slate-600 hover:text-slate-400 text-sm transition-colors">🔒</button>
+                </h2>
                 <p class="text-sm text-slate-400 mt-2">請選擇您的探索模式，以建立專屬檔案。</p>
             </div>
             <div class="flex gap-2 mb-5 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
                 <button id="tab-comp" onclick="setLoginMode('comp')" class="flex-1 bg-emerald-600 text-white font-bold py-2 rounded shadow transition-colors text-sm">🏆 專案競賽</button>
                 <button id="tab-guest" onclick="setLoginMode('guest')" class="flex-1 bg-transparent text-slate-400 font-bold py-2 rounded transition-colors text-sm hover:text-slate-200">🚶 單次體驗</button>
             </div>
+
+            <!-- 選擇性別 -->
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-emerald-300 mb-2">選擇性別</label>
+                <div class="flex gap-2 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
+                    <button id="gender-m" onclick="setGender('m')" class="flex-1 bg-blue-600 text-white font-bold py-2 rounded shadow transition-colors text-sm">男</button>
+                    <button id="gender-f" onclick="setGender('f')" class="flex-1 bg-transparent text-slate-400 font-bold py-2 rounded transition-colors text-sm hover:text-slate-200">女</button>
+                </div>
+            </div>
+
+            <!-- Email 欄位與鎖定提示區塊 -->
             <div id="email-field-group" class="mb-4">
                 <label class="block text-sm font-bold text-emerald-300 mb-2">電子郵件 (Email) *跨平台積分綁定</label>
                 <input type="email" id="traveler-email-input" class="w-full bg-slate-800 border-2 border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="請輸入您的 Email">
             </div>
+            <!-- 競賽鎖定提示 -->
+            <div id="comp-locked-msg" class="hidden mb-4 bg-slate-800 border border-slate-600 p-4 rounded-lg text-center">
+                <div class="text-2xl mb-1">⏳</div>
+                <div class="text-emerald-400 font-bold text-sm">目前非專案競賽期間</div>
+                <div class="text-slate-400 text-xs mt-1">請選擇「單次體驗」進行遊玩，或等候主辦單位開啟新賽季。</div>
+            </div>
+
             <div class="mb-5">
                 <label class="block text-sm font-bold text-emerald-300 mb-2">旅者代號 (暱稱)</label>
                 <input type="text" id="traveler-name-input" class="w-full bg-slate-800 border-2 border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="請輸入觀測代號" maxlength="12">
             </div>
-            <div class="mb-6 bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" id="pledge-checkbox" class="mt-1 w-5 h-5 accent-emerald-500 rounded">
-                    <span class="text-sm text-slate-300 leading-relaxed">我承諾在觀測過程中不破壞環境，並據實記錄永續數據。</span>
-                </label>
+            <div id="cert-error" class="text-sm text-red-400 mb-2 h-4 text-center font-bold"></div>
+            
+            <!-- 點數連動與實質消耗的知情同意警示 -->
+            <div class="bg-amber-900/40 border border-amber-500/50 p-3 rounded-lg mb-5 text-xs text-amber-200/90 leading-relaxed shadow-inner">
+                <span class="font-bold text-amber-400 flex items-center gap-1 mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                    積分連動授權提示
+                </span>
+                本世界將自動載入您於「探探里山-永續旅遊」的減碳數據與積分。請注意，遊戲內的<span class="text-red-300 font-bold">裝備兌換與戰術蓄能將會實質消耗您的永續積分</span>。若您的積分有其他企業獎勵兌換用途，建議詢問後再行探索。
             </div>
-            <div id="cert-error" class="text-sm text-red-400 mb-4 h-4 text-center font-bold"></div>
-            <button id="btn-certify" onclick="submitCertification()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">綁定信箱並開始探索</button>
+
+            <button id="btn-certify" onclick="submitCertification()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95">進入世界</button>
             <div id="guest-warning" class="text-xs text-amber-500/80 mt-3 text-center hidden">⚠️ 一般體驗模式關閉網頁後，進度不會保留。</div>
+        </div>
+    </div>
+
+    <!-- 管理者賽季設定面板 -->
+    <div id="admin-modal" class="ui-layer absolute inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center hidden" style="z-index: 400;">
+        <div class="bg-slate-900 border-2 border-indigo-500 p-6 rounded-xl shadow-2xl max-w-sm w-11/12 interactive-btn">
+            <h3 class="text-xl font-bold text-indigo-400 mb-4 flex items-center gap-2">⚙️ 賽季管理控制台</h3>
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-300 mb-1">管理者密碼</label>
+                <input type="password" id="admin-pwd" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500" placeholder="請輸入授權密碼">
+            </div>
+            
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-slate-300 mb-1">開放時長 (小時)</label>
+                <select id="admin-duration" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                    <option value="0">🔒 立即關閉競賽</option>
+                    <option value="1">1 小時 (測試用)</option>
+                    <option value="24">24 小時 (1天)</option>
+                    <option value="72">72 小時 (3天)</option>
+                    <option value="168">168 小時 (7天)</option>
+                    <option value="720">720 小時 (30天)</option>
+                </select>
+            </div>
+            
+            <div id="admin-msg" class="text-xs text-center font-bold mb-3 h-4"></div>
+            
+            <div class="flex gap-2">
+                <button onclick="closeAdminModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded text-sm font-bold transition-colors">取消</button>
+                <button onclick="submitAdminUnlock()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded text-sm font-bold transition-colors">套用設定</button>
+            </div>
         </div>
     </div>
 
@@ -316,20 +455,167 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// ==========================================
+// 1. 全域變數與資料字典
+// ==========================================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const TILE_SIZE = 64; 
 let CANVAS_WIDTH = window.innerWidth;
 let CANVAS_HEIGHT = window.innerHeight;
 
-// ==========================================
-// 0. 全域變數與 ESGT 數據承接
-// ==========================================
-let travelerProfile = null; // 解決遺失變數的關鍵
+let travelerProfile = null;
+let currentUser = null;
+let db = null;
+let auth = null; 
+let activeSOSSignals = []; 
+
+// 抓取 UI 元件 
+const uiPrompt = document.getElementById('interaction-prompt');
+const uiTitle = document.getElementById('prompt-title');
+const uiDesc = document.getElementById('prompt-desc');
+const uiBtn = document.getElementById('prompt-btn');
+
 window.tempExtData = null;
 
+// 道具字典
+window.ITEM_DICT = {
+    'drone': {n:'無人機', i:'🚁', d:'撲滅大面積森林大火', price: 50}, 
+    'filter': {n:'過濾網', i:'💧', d:'清除水域微型垃圾', price: 30}, 
+    'sapling': {n:'樹苗', i:'🌱', d:'改善極端旱災區土壤', price: 20},
+    'observe_card': {n:'觀測卡', i:'🪪', d:'調查生態異常必備', price: 5}, 
+    'report_card': {n:'通報卡', i:'📡', d:'上傳數據至警示網', price: 10},
+    'sos_card': {n:'戰鬥求救卡', i:'🆘', d:'戰鬥中使用，請求全服支援', price: 15},
+    'recycle_book': {n:'資源循環技能書', i:'📘', d:'學習或升級【資源循環】戰鬥技能', price: 100},
+    // 新增：老鷹任務專屬獎勵
+    'energy_book': {n:'能效專家技能書', i:'📗', d:'研讀後永久提升防禦力', price: 0} 
+};
+
+// 動態生成 SDG 1~17 飛鏢加入道具字典
+const SDG_LIST = [
+    "終結貧窮", "消除飢餓", "健康與福祉", "優質教育", "性別平權", "淨水及衛生", "可負擔的潔淨能源", "合適的工作及經濟成長", 
+    "工業化、創新及基礎建設", "減少不平等", "永續城鄉", "責任消費及生產", "氣候行動", "保育海洋生態", "保育陸域生態", 
+    "和平、正義及健全制度", "多元夥伴關係"
+];
+SDG_LIST.forEach((name, idx) => {
+    window.ITEM_DICT[`sdg_${idx+1}`] = {
+        n: `SDG ${idx+1} ${name} 飛鏢`, 
+        i: '🎯', 
+        d: '戰鬥專用：擲出永續飛鏢，若精準對應污染場景可造成毀滅性真實重擊'
+    };
+});
+
+// 怪物字典
+const GHG_MONSTERS = [
+    { name: '二氧化碳巨獸', icon: '👾', maxHp: 80, attack: 15, defense: 5, exp: 20, desc: '溫室效應的最大元凶。', source: '燃燒化石燃料、工業。', pts: 15 },
+    { name: '甲烷泥怪', icon: '🤢', maxHp: 120, attack: 18, defense: 8, exp: 35, desc: '暖化潛勢為二氧化碳數十倍。', source: '畜牧業、垃圾掩埋場。', pts: 20 },
+    { name: '氟氯碳惡靈', icon: '🌫️', maxHp: 60, attack: 25, defense: 2, exp: 40, desc: '極度穩定，能撕裂臭氧層。', source: '老舊冷媒、發泡劑廢氣。', pts: 25 },
+    { name: '氧化亞氮幽靈', icon: '👻', maxHp: 150, attack: 12, defense: 15, exp: 50, desc: '俗稱笑氣，暖化能力極高。', source: '化學合成肥料、農業廢棄。', pts: 22 }
+];
+
+// 地圖與事件
+const TERRAIN_CONFIG = { 0:{walkable:false, name:'水脈'}, 1:{walkable:true, name:'平原'}, 2:{walkable:true, name:'森林'}, 3:{walkable:false, name:'高山'}, 4:{walkable:true, name:'沙漠'}, 5:{walkable:true, name:'古道'} };
+const MAP_COLS = 50, MAP_ROWS = 50; let mapData = [];
+
+const allEvents = [
+    { x: 15, y: 15, name: '季風觀測峽谷', icon: '🎐', desc: '記錄峽谷強風數據。', type: 'landmark' },
+    { x: 35, y: 18, name: '濕地水質監測站', icon: '💧', desc: '採樣地下水純淨度。', type: 'landmark' },
+    { x: 25, y: 25, name: '減災物資補給站', icon: '⛺', desc: '兌換復育物資。', type: 'shop' },
+    { x: 21, y: 25, name: '嚮導 AI', icon: '🤖', desc: '提供遊戲玩法解說。', type: 'npc' },
+    // 新增：守望老鷹 NPC (在補給站的右下方)
+    { x: 28, y: 25, name: '守望老鷹', icon: '🦅', desc: '尋找有潛力能效專家的神鳥。', type: 'quest_npc_eagle' },
+    { x: 22, y: 10, name: '北方生態林區', icon: '🔥', desc: '極端林火。', type: 'disaster', resolved: false, observed: false, reported: false },
+    { x: 10, y: 25, name: '西部重工業區', icon: '🏭', desc: '廢氣污染。', type: 'disaster', resolved: false, observed: false, reported: false },
+    { x: 5, y: 10, name: '西北近海港口', icon: '🗑️', desc: '海洋垃圾。', type: 'disaster', resolved: false, observed: false, reported: false },
+    { x: 42, y: 6, name: '東北冰川觀測站', icon: '⛴️🧊', desc: '冰川崩解。', type: 'disaster', resolved: false, observed: false, reported: false }
+];
+
+// 玩家與控制狀態
+const player = { x: 25*TILE_SIZE, y: 25*TILE_SIZE, width: 44, height: 44, speed: 5, path: [], target: null };
+const camera = { x: 0, y: 0 };
+const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, s: false, a: false, d: false };
+
+let currentEvent = null;
+let currentMonster = null;
+let isInCombat = false;
+let combatState = { turn: 1, playerDefending: false, purifyUsed: false, shieldUsed: false, recycleUsed: false, fieldMonsterId: null };
+let lastStepX = -1, lastStepY = -1;
+
+// 自動戰鬥控制
+let isAutoAttacking = false;
+let isProcessingTurn = false;
+let autoAttackTimer = null;
+
+// 全服顯性怪獸陣列與性別選擇變數
+let activeFieldMonsters = [];
+let selectedGender = 'm'; 
+
+// 全域競賽截止時間與多人連線變數
+let competitionEndTime = 0;
+let activePlayers = {};
+let lastPositionUpdate = 0;
+let lastSentX = -1, lastSentY = -1;
+
+// SVG 資源物件
+const svgAssets = {
+    0: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#0284c7"/><path d="M 10 20 Q 18 12 26 20 T 42 20 T 58 20" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/><path d="M 5 45 Q 13 37 21 45 T 37 45 T 53 45" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/></svg>`,
+    1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#84cc16"/><path d="M 15 45 Q 18 35 22 45 M 22 45 Q 26 38 29 45" fill="none" stroke="#4d7c0f" stroke-width="2" stroke-linecap="round"/><path d="M 40 25 Q 43 15 47 25 M 47 25 Q 51 18 54 25" fill="none" stroke="#65a30d" stroke-width="2" stroke-linecap="round"/></svg>`,
+    2: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#65a30d"/><rect x="18" y="30" width="4" height="15" fill="#78350f"/><path d="M 20 15 L 8 35 L 32 35 Z" fill="#14532d"/><rect x="42" y="25" width="4" height="15" fill="#78350f"/><path d="M 44 10 L 32 30 L 56 30 Z" fill="#166534"/><rect x="30" y="40" width="6" height="20" fill="#451a03"/><path d="M 33 20 L 15 45 L 51 45 Z" fill="#15803d"/></svg>`,
+    3: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#a8a29e"/><polygon points="25,15 5,64 45,64" fill="#57534e"/><polygon points="25,15 17,35 25,40 33,35" fill="#f5f5f4"/><polygon points="45,25 25,64 64,64" fill="#78716c"/><polygon points="45,25 38,40 45,45 52,40" fill="#e7e5e4"/></svg>`,
+    4: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#fcd34d"/><path d="M 10 30 Q 30 20 50 35" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/><path d="M 20 50 Q 40 40 60 55" fill="none" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    5: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#84cc16"/><path d="M 20 0 L 20 64 M 44 0 L 44 64 M 0 20 L 64 20 M 0 44 L 64 44" stroke="#a16207" stroke-width="16" fill="none"/><rect x="25" y="25" width="14" height="14" fill="#ca8a04" rx="2"/><circle cx="15" cy="15" r="3" fill="#4d7c0f"/><circle cx="49" cy="49" r="2" fill="#4d7c0f"/></svg>`,
+    
+    // Q版雄性勇者龍 (藍綠色系)
+    'player_m': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <ellipse cx="32" cy="58" rx="16" ry="4" fill="#000" opacity="0.3"/>
+        <path d="M40 45 Q55 45 50 35" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round"/>
+        <rect x="22" y="32" width="20" height="24" rx="8" fill="#34d399"/>
+        <rect x="26" y="36" width="12" height="18" rx="5" fill="#fef08a"/>
+        <rect x="14" y="10" width="36" height="28" rx="12" fill="#34d399"/>
+        <path d="M18 15 L10 5 L24 10" fill="#059669"/>
+        <path d="M46 15 L54 5 L40 10" fill="#059669"/>
+        <circle cx="24" cy="22" r="4" fill="#1e293b"/>
+        <circle cx="40" cy="22" r="4" fill="#1e293b"/>
+        <rect x="20" y="28" width="24" height="10" rx="5" fill="#a7f3d0"/>
+        <circle cx="28" cy="32" r="1.5" fill="#059669"/>
+        <circle cx="36" cy="32" r="1.5" fill="#059669"/>
+        <circle cx="16" cy="26" r="3" fill="#fca5a5" opacity="0.8"/>
+        <circle cx="48" cy="26" r="3" fill="#fca5a5" opacity="0.8"/>
+    </svg>`,
+    
+    // Q版雌性勇者龍 (粉色系帶蝴蝶結與睫毛)
+    'player_f': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <ellipse cx="32" cy="58" rx="16" ry="4" fill="#000" opacity="0.3"/>
+        <path d="M40 45 Q55 45 50 35" fill="none" stroke="#f472b6" stroke-width="8" stroke-linecap="round"/>
+        <rect x="22" y="32" width="20" height="24" rx="8" fill="#fbcfe8"/>
+        <rect x="26" y="36" width="12" height="18" rx="5" fill="#fff"/>
+        <rect x="14" y="10" width="36" height="28" rx="12" fill="#fbcfe8"/>
+        <path d="M18 15 L10 5 L24 10" fill="#db2777"/>
+        <path d="M46 15 L54 5 L40 10" fill="#db2777"/>
+        <path d="M40 7 L48 2 L48 12 Z" fill="#ef4444"/>
+        <path d="M44 7 L52 2 L52 12 Z" fill="#ef4444"/>
+        <circle cx="46" cy="7" r="3" fill="#b91c1c"/>
+        <circle cx="24" cy="22" r="4" fill="#1e293b"/>
+        <circle cx="40" cy="22" r="4" fill="#1e293b"/>
+        <path d="M26 18 Q24 16 20 18" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M38 18 Q40 16 44 18" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <rect x="20" y="28" width="24" height="10" rx="5" fill="#fce7f3"/>
+        <circle cx="28" cy="32" r="1.5" fill="#db2777"/>
+        <circle cx="36" cy="32" r="1.5" fill="#db2777"/>
+        <circle cx="16" cy="26" r="3" fill="#fca5a5"/>
+        <circle cx="48" cy="26" r="3" fill="#fca5a5"/>
+    </svg>`
+};
+const tileImages = {};
+let imagesLoaded = 0;
+const totalImages = Object.keys(svgAssets).length;
+
+
+// ==========================================
+// 2. 外部通訊與 Firebase 登入邏輯
+// ==========================================
 function checkExternalLoginData() {
     const urlParams = new URLSearchParams(window.location.search);
     const extEmail = urlParams.get('email');
@@ -338,144 +624,1200 @@ function checkExternalLoginData() {
     const extCarb = parseInt(urlParams.get('carb')) || 1127;
     const extPts = parseInt(urlParams.get('pts')) || 114;
 
+    window.tempExtData = { dist: extDist, carb: extCarb, pts: extPts, name: extId };
+
     if (!extEmail) {
-        window.tempExtData = { dist: extDist, carb: extCarb, pts: extPts };
-        document.getElementById('traveler-name-input').value = extId; 
+        const nameInput = document.getElementById('traveler-name-input');
+        if (nameInput) nameInput.value = extId;
         return;
     }
-
+    
     travelerProfile = {
-        email: extEmail,
-        name: extId,
-        distance: extDist,
-        carbon: extCarb,
-        points: extPts,
-        heroIndex: 0,
-        // 新增 RPG 戰鬥屬性
-        level: 1,
-        exp: 0,
-        maxHp: 100,
-        hp: 100,
-        attack: 25,
-        defense: 10,
-        inventory: { observe_card: 3, report_card: 2 },
-        isExternal: true,
-        certifiedAt: Date.now(),
-        isGuest: false
+        email: extEmail, name: extId, points: extPts, 
+        heroIndex: 0, level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10, 
+        recycleSkillLevel: 0, energySkillLevel: 0, // 新增：能效專家技能等級
+        distance: extDist, carbon: extCarb, gender: 'm',
+        inventory: { observe_card: 3, report_card: 2 }, isExternal: true, certifiedAt: Date.now(), isGuest: false,
+        stats: { monstersKilled: 0, disastersResolved: 0 },
+        quests: { eagle: { state: 'none', count: 0 } } // 新增：老鷹任務狀態與計數器
     };
     applyCertificationSuccess();
 }
 
-// ==========================================
-// 1. SVG 素材與地形配置
-// ==========================================
-const svgAssets = {
-    0: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#0284c7"/><path d="M 10 20 Q 18 12 26 20 T 42 20 T 58 20" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/><path d="M 5 45 Q 13 37 21 45 T 37 45 T 53 45" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/></svg>`,
-    1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#84cc16"/><path d="M 15 45 Q 18 35 22 45 M 22 45 Q 26 38 29 45" fill="none" stroke="#4d7c0f" stroke-width="2" stroke-linecap="round"/><path d="M 40 25 Q 43 15 47 25 M 47 25 Q 51 18 54 25" fill="none" stroke="#65a30d" stroke-width="2" stroke-linecap="round"/></svg>`,
-    2: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#65a30d"/><rect x="18" y="30" width="4" height="15" fill="#78350f"/><path d="M 20 15 L 8 35 L 32 35 Z" fill="#14532d"/><rect x="42" y="25" width="4" height="15" fill="#78350f"/><path d="M 44 10 L 32 30 L 56 30 Z" fill="#166534"/><rect x="30" y="40" width="6" height="20" fill="#451a03"/><path d="M 33 20 L 15 45 L 51 45 Z" fill="#15803d"/></svg>`,
-    3: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#a8a29e"/><polygon points="25,15 5,64 45,64" fill="#57534e"/><polygon points="25,15 17,35 25,40 33,35" fill="#f5f5f4"/><polygon points="45,25 25,64 64,64" fill="#78716c"/><polygon points="45,25 38,40 45,45 52,40" fill="#e7e5e4"/></svg>`,
-    4: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#fcd34d"/><path d="M 10 30 Q 30 20 50 35" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/><path d="M 20 50 Q 40 40 60 55" fill="none" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-    5: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#84cc16"/><path d="M 20 0 L 20 64 M 44 0 L 44 64 M 0 20 L 64 20 M 0 44 L 64 44" stroke="#a16207" stroke-width="16" fill="none"/><rect x="25" y="25" width="14" height="14" fill="#ca8a04" rx="2"/><circle cx="15" cy="15" r="3" fill="#4d7c0f"/><circle cx="49" cy="49" r="2" fill="#4d7c0f"/></svg>`,
-    'player': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><circle cx="24" cy="15" r="8" fill="#fcd34d" /><path d="M 14 44 L 18 25 L 30 25 L 34 44" stroke="#0f172a" stroke-width="4" fill="none" /><rect x="16" y="25" width="16" height="15" rx="4" fill="#3b82f6" /><rect x="12" y="25" width="24" height="12" rx="3" fill="#1e40af" /><rect x="18" y="20" width="12" height="14" rx="2" fill="#22c55e" /></svg>`
-};
+window.addEventListener('message', async (event) => {
+    if (!event.data) return;
+    try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data && data.pts !== undefined && data.carb !== undefined) {
+            const incomingName = data.name || data.id;
+            
+            if (travelerProfile) {
+                const earnedPts = parseInt(data.pts) || 0;
+                travelerProfile.points += earnedPts;
+                travelerProfile.distance += (parseFloat(data.dist) || 0);
+                travelerProfile.carbon += (parseInt(data.carb) || 0);
+                travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + earnedPts;
+                
+                if (incomingName) {
+                    travelerProfile.name = incomingName;
+                    const nameDisplay = document.getElementById('traveler-name-display');
+                    if (nameDisplay) nameDisplay.innerText = `旅者代碼：${travelerProfile.name}`;
+                }
+                
+                updateStatusUI();
+                closeESGTModal();
+                
+                if (db && currentUser) {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true});
+                }
 
-const tileImages = {};
-let imagesLoaded = 0;
-const totalImages = Object.keys(svgAssets).length;
+                if(uiPrompt) {
+                    uiPrompt.classList.remove('hidden');
+                    uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-emerald-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100";
+                    uiTitle.innerHTML = `✅ 觀測任務完成`;
+                    uiDesc.innerText = `表現卓越！獲得 ${earnedPts} 點永續積分。`;
+                    uiBtn.innerText = "繼續探索";
+                    uiBtn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
+                    uiBtn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 px-8 py-2 rounded-full text-white font-bold transition-colors";
+                }
+            } else {
+                window.tempExtData = {
+                    pts: (window.tempExtData?.pts || 0) + (parseInt(data.pts) || 0),
+                    dist: (window.tempExtData?.dist || 0) + (parseFloat(data.dist) || 0),
+                    carb: (window.tempExtData?.carb || 0) + (parseInt(data.carb) || 0),
+                    name: incomingName || window.tempExtData?.name
+                };
+                const nameInput = document.getElementById('traveler-name-input');
+                if (nameInput && window.tempExtData.name) nameInput.value = window.tempExtData.name;
+                closeESGTModal();
+            }
+        }
+    } catch (e) {}
+});
 
-function initAssets(callback) {
-    for (const [key, svgString] of Object.entries(svgAssets)) {
-        const img = new Image();
-        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-        img.onload = () => { imagesLoaded++; if (imagesLoaded === totalImages && callback) callback(); };
-        img.src = URL.createObjectURL(blob);
-        tileImages[key] = img;
+const appId = (typeof __app_id !== 'undefined' && __app_id) ? __app_id : 'default-app-id';
+
+async function initFirebase() {
+    if(typeof __firebase_config === 'undefined') {
+        if (!travelerProfile) document.getElementById('certification-modal').classList.remove('hidden');
+        return;
     }
+    
+    const app = initializeApp(JSON.parse(__firebase_config));
+    auth = getAuth(app); db = getFirestore(app);
+
+    if(typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+    else await signInAnonymously(auth);
+
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        document.getElementById('auth-status').innerText = user ? '🟢 已連線' : '🔴 離線';
+        if (user) {
+            if (!travelerProfile || !travelerProfile.isExternal) {
+                try {
+                    const snap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'));
+                    if (snap.exists()) { travelerProfile = snap.data(); applyCertificationSuccess(); } 
+                    else { document.getElementById('certification-modal').classList.remove('hidden'); }
+                } catch (e) { document.getElementById('certification-modal').classList.remove('hidden'); }
+            } else {
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'), travelerProfile, {merge: true}); } catch(e){}
+            }
+            setupSOSListener();
+            setupChatListener();
+            setupCompetitionListener(); 
+            setupPlayersListener(); 
+            setupKickListener();
+        } else {
+            if (!travelerProfile) document.getElementById('certification-modal').classList.remove('hidden');
+        }
+    });
 }
 
-const TERRAIN_CONFIG = {
-    0: { walkable: false, name: '水脈' }, 1: { walkable: true, name: '平原' },
-    2: { walkable: true, name: '森林' }, 3: { walkable: false, name: '高山' },
-    4: { walkable: true, name: '沙漠' }, 5: { walkable: true, name: '探險者古道' }
+function setupKickListener() {
+    if (!db || !currentUser) return;
+    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'kicks', currentUser.uid), (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (Date.now() - data.timestamp < 60000) {
+                travelerProfile = null; isInCombat = false; currentEvent = null;
+                document.getElementById('kick-modal').classList.remove('hidden');
+            }
+        }
+    }, (e) => {});
+}
+
+function setupPlayersListener() {
+    if (!db) return;
+    const playersRef = collection(db, 'artifacts', appId, 'public', 'data', 'online_players');
+    onSnapshot(playersRef, (snapshot) => {
+        activePlayers = {};
+        const now = Date.now();
+        snapshot.forEach(doc => {
+            if (doc.id !== currentUser?.uid) {
+                const data = doc.data();
+                if (now - data.timestamp < 30000) {
+                    activePlayers[doc.id] = data;
+                }
+            }
+        });
+    }, (error) => console.error("玩家座標監聽錯誤:", error));
+}
+
+window.addEventListener('beforeunload', () => {
+    if (db && currentUser) {
+        deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'online_players', currentUser.uid)).catch(e=>{});
+    }
+});
+
+function setupCompetitionListener() {
+    if (!db) return;
+    const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'competition_state', 'config');
+    onSnapshot(configRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            competitionEndTime = data.endTime || 0;
+            if (!document.getElementById('certification-modal').classList.contains('hidden')) {
+                let currentMode = document.getElementById('tab-comp').classList.contains('bg-emerald-600') ? 'comp' : 'guest';
+                setLoginMode(currentMode);
+            }
+        }
+    }, (e) => console.error("賽季監聽錯誤:", e));
+}
+
+function setupSOSListener() {
+    if (!db) return;
+    const sosRef = collection(db, 'artifacts', appId, 'public', 'data', 'battle_sos');
+    onSnapshot(sosRef, (snapshot) => {
+        activeSOSSignals = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (Date.now() - data.timestamp < 600000) activeSOSSignals.push({ id: doc.id, ...data });
+        });
+        renderDisasterAlerts(); 
+    }, (error) => {
+        console.error("SOS 監聽權限或連線錯誤:", error);
+    });
+}
+
+function setupFieldMonstersListener() {
+    if (!db) return;
+    const fmRef = collection(db, 'artifacts', appId, 'public', 'data', 'field_monsters');
+    onSnapshot(fmRef, (snapshot) => {
+        activeFieldMonsters = [];
+        snapshot.forEach(doc => {
+            activeFieldMonsters.push({ id: doc.id, ...doc.data() });
+        });
+    }, (error) => console.error("顯性怪物監聽錯誤:", error));
+}
+
+function setupChatListener() {
+    if (!db) return;
+    const chatRef = collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages');
+    onSnapshot(chatRef, (sp) => {
+        let msgs=[]; sp.forEach(d=>msgs.push(d.data())); msgs.sort((a,b)=>a.timestamp-b.timestamp);
+        const c = document.getElementById('chat-messages'); c.innerHTML='';
+        msgs.slice(-25).forEach(m=>{ c.innerHTML+=`<div><span class="text-amber-400">[${m.senderName}]</span> <span class="text-slate-200">${m.text}</span></div>`; }); 
+        c.scrollTop = c.scrollHeight;
+    }, (error) => {
+        console.error("通訊頻道監聽錯誤:", error);
+    });
+}
+
+async function emitSOS() {
+    if (!db || !currentUser || !isInCombat || !currentMonster) return;
+    try {
+        const sosRef = collection(db, 'artifacts', appId, 'public', 'data', 'battle_sos');
+        await addDoc(sosRef, {
+            uid: currentUser.uid, userName: travelerProfile.name,
+            x: Math.floor((player.x + player.width/2)/TILE_SIZE), y: Math.floor((player.y + player.height/2)/TILE_SIZE),
+            monsterName: currentMonster.name, timestamp: Date.now()
+        });
+
+        const chatRef = collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages');
+        await addDoc(chatRef, { senderName: "系統廣播", text: `🚨 旅者 [${travelerProfile.name}] 遭遇 ${currentMonster.name}，請求支援！`, timestamp: Date.now() });
+    } catch (e) { console.error("SOS 發送失敗", e); }
+}
+
+window.submitCertification = async () => {
+    let currentLoginMode = document.getElementById('tab-comp').classList.contains('bg-emerald-600') ? 'comp' : 'guest';
+    let email = document.getElementById('traveler-email-input').value, name = document.getElementById('traveler-name-input').value;
+    
+    if (currentLoginMode === 'comp' && Date.now() > competitionEndTime) {
+        document.getElementById('cert-error').innerText = "非賽季期間，無法以競賽模式登入"; return;
+    }
+    
+    if(currentLoginMode==='comp' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('cert-error').innerText="Email格式錯誤"; return; } 
+    if(!name) { document.getElementById('cert-error').innerText="請輸入暱稱"; return; }
+    
+    document.getElementById('cert-error').innerText="";
+
+    if (currentLoginMode === 'guest' && db) {
+        try {
+            document.getElementById('cert-error').className = "text-sm text-emerald-400 mb-2 h-4 text-center font-bold";
+            document.getElementById('cert-error').innerText = "⏳ 正在尋找伺服器空位...";
+            
+            const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'online_players'));
+            let activeGuests = [];
+            const now = Date.now();
+            snap.forEach(d => {
+                let dat = d.data();
+                if (dat.isGuest && (now - dat.timestamp < 30000)) {
+                    activeGuests.push({ id: d.id, ...dat });
+                }
+            });
+
+            if (activeGuests.length >= 10) {
+                let victim = activeGuests[Math.floor(Math.random() * activeGuests.length)];
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'kicks', victim.id), { timestamp: Date.now() });
+                console.log(`已為您踢除隨機訪客: ${victim.name}`);
+            }
+            document.getElementById('cert-error').className = "text-sm text-red-400 mb-2 h-4 text-center font-bold";
+            document.getElementById('cert-error').innerText = "";
+        } catch(e) { console.error("容量檢查失敗", e); }
+    }
+    
+    const tD = window.tempExtData || {dist:0, carb:0, pts:0};
+    
+    let newP = { 
+        email: currentLoginMode==='comp'?email:'guest', name: currentLoginMode==='guest'?name+'(訪客)':name, points: tD.pts, heroIndex: 0, 
+        level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10, 
+        recycleSkillLevel: 0, energySkillLevel: 0, // 新增
+        distance: tD.dist, carbon: tD.carb, gender: selectedGender,
+        inventory: {observe_card:3, report_card:2}, certifiedAt: Date.now(), isCertified: true, isGuest: currentLoginMode==='guest', isExternal: !!window.tempExtData,
+        stats: { monstersKilled: 0, disastersResolved: 0 },
+        quests: { eagle: { state: 'none', count: 0 } } // 新增
+    };
+    
+    if(db && currentUser && currentLoginMode==='comp') {
+        await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), newP);
+    }
+    travelerProfile = newP; applyCertificationSuccess();
+};
+
+function applyCertificationSuccess() {
+    document.getElementById('certification-modal').classList.add('hidden');
+    document.getElementById('traveler-name-display').innerText = `旅者代碼：${travelerProfile.name}`; document.getElementById('traveler-name-display').classList.remove('hidden');
+    updateStatusUI(); document.getElementById('btn-mini-game').classList.remove('hidden');
+    
+    setupFieldMonstersListener();
+}
+
+window.setLoginMode = (m) => {
+    const emailGroup = document.getElementById('email-field-group');
+    const lockedMsg = document.getElementById('comp-locked-msg');
+    const guestWarning = document.getElementById('guest-warning');
+    const btnCertify = document.getElementById('btn-certify');
+    
+    let isLocked = (Date.now() > competitionEndTime);
+
+    if (m === 'comp') {
+        if (isLocked) {
+            if (emailGroup) emailGroup.classList.add('hidden');
+            if (lockedMsg) lockedMsg.classList.remove('hidden');
+            if (guestWarning) guestWarning.classList.add('hidden');
+            btnCertify.disabled = true;
+            btnCertify.className = "w-full bg-slate-700 text-slate-400 font-bold py-3 rounded-lg shadow cursor-not-allowed";
+            btnCertify.innerText = "競賽未開放";
+        } else {
+            if (emailGroup) emailGroup.classList.remove('hidden');
+            if (lockedMsg) lockedMsg.classList.add('hidden');
+            if (guestWarning) guestWarning.classList.add('hidden');
+            btnCertify.disabled = false;
+            btnCertify.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95";
+            btnCertify.innerText = "進入世界";
+        }
+    } else {
+        if (emailGroup) emailGroup.classList.add('hidden');
+        if (lockedMsg) lockedMsg.classList.add('hidden');
+        if (guestWarning) guestWarning.classList.remove('hidden');
+        btnCertify.disabled = false;
+        btnCertify.className = "w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95";
+        btnCertify.innerText = "進入世界";
+    }
+    
+    document.getElementById('tab-comp').className = m==='comp'?"flex-1 bg-emerald-600 text-white font-bold py-2 rounded text-sm":"flex-1 bg-transparent text-slate-400 font-bold py-2 rounded text-sm hover:text-slate-200";
+    document.getElementById('tab-guest').className = m==='guest'?"flex-1 bg-teal-600 text-white font-bold py-2 rounded text-sm":"flex-1 bg-transparent text-slate-400 font-bold py-2 rounded text-sm hover:text-slate-200";
+};
+
+window.openAdminModal = () => {
+    document.getElementById('admin-pwd').value = '';
+    document.getElementById('admin-msg').innerText = '';
+    document.getElementById('admin-modal').classList.remove('hidden');
+};
+window.closeAdminModal = () => document.getElementById('admin-modal').classList.add('hidden');
+
+window.submitAdminUnlock = async () => {
+    const pwd = document.getElementById('admin-pwd').value;
+    const msg = document.getElementById('admin-msg');
+    
+    if (pwd !== 'esg2026') {
+        msg.className = "text-xs text-center font-bold mb-3 h-4 text-red-400";
+        msg.innerText = "❌ 授權密碼錯誤";
+        return;
+    }
+    
+    msg.className = "text-xs text-center font-bold mb-3 h-4 text-emerald-400";
+    msg.innerText = "⏳ 正在同步設定至伺服器...";
+    
+    const hours = parseInt(document.getElementById('admin-duration').value);
+    const newEndTime = hours === 0 ? 0 : Date.now() + (hours * 60 * 60 * 1000);
+    
+    try {
+        if (db) {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'competition_state', 'config'), { endTime: newEndTime });
+            msg.innerText = hours === 0 ? "✅ 競賽已成功關閉" : `✅ 成功開啟！將持續 ${hours} 小時`;
+            setTimeout(() => {
+                closeAdminModal();
+                setLoginMode('comp'); 
+            }, 1500);
+        } else {
+            msg.innerText = "❌ 尚未連線至伺服器";
+        }
+    } catch (e) {
+        msg.className = "text-xs text-center font-bold mb-3 h-4 text-red-400";
+        msg.innerText = "❌ 設定失敗，請檢查權限";
+    }
+};
+
+window.setGender = (g) => {
+    selectedGender = g;
+    document.getElementById('gender-m').className = g==='m'?"flex-1 bg-blue-600 text-white font-bold py-2 rounded shadow transition-colors text-sm":"flex-1 bg-transparent text-slate-400 font-bold py-2 rounded transition-colors text-sm hover:text-slate-200";
+    document.getElementById('gender-f').className = g==='f'?"flex-1 bg-pink-600 text-white font-bold py-2 rounded shadow transition-colors text-sm":"flex-1 bg-transparent text-slate-400 font-bold py-2 rounded transition-colors text-sm hover:text-slate-200";
 };
 
 // ==========================================
-// 2. 地標定義與地圖生成
+// 3. UI 與任務系統
 // ==========================================
-const MAP_COLS = 50; const MAP_ROWS = 50;
-let mapData = [];
-
-const landmarks = [
-    { x: 15, y: 15, name: '季風觀測峽谷', icon: '🎐', desc: '記錄峽谷強風數據。', type: 'landmark' },
-    { x: 35, y: 18, name: '濕地水質監測站', icon: '💧', desc: '採樣地下水純淨度。', type: 'landmark' }
-];
-const shops = [{ x: 25, y: 25, name: '減災物資補給站', icon: '⛺', desc: '兌換復育物資。', type: 'shop' }];
-const disasters = [
-    { x: 22, y: 10, name: '北方生態林區', icon: '🔥', desc: '極端林火。', type: 'disaster', resolved: false, observed: false, reported: false },
-    { x: 10, y: 25, name: '西部重工業區', icon: '🏭', desc: '廢氣污染。', type: 'disaster', resolved: false, observed: false, reported: false },
-    { x: 5, y: 10, name: '西北近海港口', icon: '🗑️', desc: '海洋垃圾聚積。', type: 'disaster', resolved: false, observed: false, reported: false },
-    { x: 42, y: 6, name: '東北冰川觀測站', icon: '⛴️🧊', desc: '冰川崩解危機。', type: 'disaster', resolved: false, observed: false, reported: false }
-];
-const allEvents = [...landmarks, ...disasters, ...shops];
-
-function generateMap() {
-    for (let y = 0; y < MAP_ROWS; y++) { let row = []; for (let x = 0; x < MAP_COLS; x++) row.push(1); mapData.push(row); }
-    function drawBiome(cx, cy, radius, type) {
-        for(let y=0; y<MAP_ROWS; y++) for(let x=0; x<MAP_COLS; x++)
-            if(Math.hypot(x-cx, y-cy) < radius + (Math.random()*4-2)) mapData[y][x] = type;
-    }
-    drawBiome(5, 10, 15, 0); drawBiome(42, 6, 12, 0); drawBiome(40, 40, 18, 4); drawBiome(10, 42, 16, 2); drawBiome(10, 25, 8, 3);
-    function drawRoad(sx, sy, ex, ey) {
-        let cx = sx, cy = sy;
-        while(cx !== ex) { mapData[cy][cx] = 5; cx += (ex > cx ? 1 : -1); }
-        while(cy !== ey) { mapData[cy][cx] = 5; cy += (ey > cy ? 1 : -1); }
-    }
-    const shopP = shops[0];
-    allEvents.forEach(evt => { if (evt.type !== 'shop') drawRoad(shopP.x, shopP.y, evt.x, evt.y); mapData[evt.y][evt.x] = 5; });
-    for (let y=0; y<MAP_ROWS; y++) for (let x=0; x<MAP_COLS; x++) if (x===0||x===MAP_COLS-1||y===0||y===MAP_ROWS-1) mapData[y][x] = 0;
+function updateStatusUI() {
+    if(!travelerProfile) return;
+    document.getElementById('ui-pts').innerText = travelerProfile.points; document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex || 0;
+    document.getElementById('ui-status-bar').innerText = `Lv.${travelerProfile.level} | EXP:${travelerProfile.exp}/${travelerProfile.level*50} | 碳排:${travelerProfile.carbon}g`;
+    if(document.getElementById('shop-current-pts')) document.getElementById('shop-current-pts').innerText = travelerProfile.points;
 }
-generateMap();
 
 function renderDisasterAlerts() {
-    const list = document.getElementById('alert-list'); list.innerHTML = ''; let activeCount = 0;
-    disasters.forEach(d => {
-        if (d.resolved || (!d.observed && !d.reported)) return;
-        activeCount++;
-        let bg = d.severity === 'normal' ? "bg-emerald-950/40 border-emerald-800/50" : (d.severity === 'attention' ? "bg-amber-950/40 border-amber-800/50" : "bg-red-950/40 border-red-800/50");
-        let txt = d.severity === 'normal' ? "text-emerald-300" : (d.severity === 'attention' ? "text-amber-300" : "text-red-300");
-        const div = document.createElement('div');
-        div.className = `${bg} border p-2 rounded flex justify-between items-center`;
-        div.innerHTML = `<div class="flex items-center gap-3"><span class="text-2xl drop-shadow-md ${!d.reported?'grayscale opacity-70':''}">${d.icon}</span>
-            <div><div class="${txt} font-bold text-sm">${d.name} <span class="text-xs opacity-80">- ${d.reported?'已通報':'待通報'}[${d.severityText}]</span></div>
-            <div class="text-slate-400 text-xs">📍 M1 [X:${d.x}, Y:${d.y}]</div></div></div>`;
+    const list = document.getElementById('alert-list'); list.innerHTML = '';
+    if (activeSOSSignals.length === 0) { list.innerHTML = '<div class="text-slate-500 italic text-center py-4">目前全球觀測數據正常。</div>'; return; }
+    activeSOSSignals.forEach(sos => {
+        const div = document.createElement('div'); div.className = "bg-red-950/60 p-2 rounded border border-red-800/50 flex justify-between items-center interactive-btn";
+        div.innerHTML = `<div><div class="text-red-400 font-bold text-sm">🚨 遭遇 ${sos.monsterName}</div><div class="text-slate-400 text-xs mt-0.5">旅者: ${sos.userName} | 座標: (${sos.x}, ${sos.y})</div></div><button onclick="autoPathTo(${sos.x}, ${sos.y})" class="bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold transition-colors shadow">前往支援</button>`;
         list.appendChild(div);
     });
-    if (activeCount === 0) list.innerHTML = '<div class="text-emerald-400 italic text-center py-4">✅ 目前無待辦災情。</div>';
 }
 
-// ==========================================
-// 3. 玩家控制與 A* 尋路
-// ==========================================
-const player = { x: 25*TILE_SIZE, y: 25*TILE_SIZE, width: TILE_SIZE*0.7, height: TILE_SIZE*0.7, speed: 5, path: [], target: null };
-const camera = { x: 0, y: 0 };
-const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, s: false, a: false, d: false };
-
-let isInCombat = false; // 新增：戰鬥狀態鎖
-let lastStepX = -1, lastStepY = -1; // 新增：紀錄上一次所在的網格，用於計算步伐
-
-const clearPath = () => { player.path = []; player.target = null; };
-window.addEventListener('keydown', (e) => { 
-    if(isInCombat) return; // 戰鬥中鎖定輸入
-    if (keys.hasOwnProperty(e.key)) { keys[e.key] = true; clearPath(); }
-});
-window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
-const setupBtn = (id, k) => {
-    const btn = document.getElementById(id); if(!btn) return;
-    const press = (e) => { e.preventDefault(); if(isInCombat) return; keys[k] = true; clearPath(); }; 
-    const release = (e) => { e.preventDefault(); keys[k] = false; };
-    btn.addEventListener('touchstart', press); btn.addEventListener('touchend', release); btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release); btn.addEventListener('mouseleave', release);
+window.buyItem = (id, cost, name) => {
+    if (!travelerProfile || travelerProfile.points < cost) {
+        const msg = document.getElementById('shop-message'); msg.innerText = "❌ 積分不足"; msg.className = "h-6 mt-4 text-center text-red-400 text-sm font-bold animate-bounce"; setTimeout(() => msg.classList.remove('animate-bounce'), 500); return;
+    }
+    travelerProfile.points -= cost; travelerProfile.inventory[id] = (travelerProfile.inventory[id] || 0) + 1;
+    document.getElementById('shop-current-pts').innerText = travelerProfile.points;
+    const msg = document.getElementById('shop-message'); msg.innerText = `✅ 成功兌換 ${name}`; msg.className = "h-6 mt-4 text-center text-emerald-400 text-sm font-bold";
+    updateStatusUI();
+    if(db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true}).catch(e=>{});
 };
-setupBtn('btn-up', 'ArrowUp'); setupBtn('btn-down', 'ArrowDown'); setupBtn('btn-left', 'ArrowLeft'); setupBtn('btn-right', 'ArrowRight');
+
+window.customConfirm = (title, desc, onConfirm) => {
+    document.getElementById('confirm-title').innerHTML = title;
+    document.getElementById('confirm-desc').innerText = desc;
+    document.getElementById('confirm-modal').classList.remove('hidden');
+    document.getElementById('btn-confirm-cancel').onclick = () => document.getElementById('confirm-modal').classList.add('hidden');
+    document.getElementById('btn-confirm-ok').onclick = () => { document.getElementById('confirm-modal').classList.add('hidden'); onConfirm(); };
+};
+
+window.useItem = async (itemId) => {
+    const msg = document.getElementById('inventory-message');
+    if(!travelerProfile || !travelerProfile.inventory[itemId] || travelerProfile.inventory[itemId] <= 0) return;
+    
+    let success = false; let feedback = "";
+
+    if (itemId === 'sos_card') {
+        if (!isInCombat) { feedback = "❌ 戰鬥求救卡只能在戰鬥中使用。"; } 
+        else {
+            travelerProfile.inventory[itemId]--; await emitSOS();
+            feedback = "🆘 求救信號已發送！座標廣播至全服。"; success = true;
+        }
+    } 
+    else if (itemId.startsWith('sdg_')) {
+        if (!isInCombat) {
+            feedback = "❌ 此飛鏢蘊含強大的永續能量，僅能在戰鬥中用來打擊異常氣候怪物！";
+        } else {
+            travelerProfile.inventory[itemId]--;
+            let sdgNum = parseInt(itemId.split('_')[1]);
+            let contextText = currentMonster.name + currentMonster.source + currentMonster.desc;
+            if (combatState.fieldMonsterId && typeof activeFieldMonsters !== 'undefined') {
+                const fm = activeFieldMonsters.find(m => m.id === combatState.fieldMonsterId);
+                if (fm && fm.disasterName) contextText += fm.disasterName;
+            }
+            
+            const sdgKeywords = {
+                2: ['肥料', '農業', '畜牧', '飢餓'],
+                6: ['水', '近海', '海洋', '淨水', '港口'],
+                7: ['化石燃料', '工業', '能源', '碳'],
+                9: ['工業', '廢氣', '廠', '基礎建設'],
+                11: ['垃圾', '城鄉', '掩埋場', '港口'],
+                12: ['垃圾', '廢棄', '冷媒', '發泡劑', '消費'],
+                13: ['冰川', '氣候', '二氧化碳', '氟氯碳', '氧化亞氮', '溫室'],
+                14: ['近海', '港口', '海洋', '水'],
+                15: ['林區', '森林', '陸域', '生態', '畜牧']
+            };
+            
+            let isEffective = (sdgKeywords[sdgNum] || []).some(k => contextText.includes(k));
+            
+            let damage = 0;
+            if (isEffective) {
+                damage = Math.floor(currentMonster.maxHp * 0.30) + 50;
+                addCombatLog(`🌟 屬性相剋！【${window.ITEM_DICT[itemId].n}】精準打擊污染場景！`, "text-yellow-400 font-bold text-lg");
+                addCombatLog(`🌍 對怪物造成了 ${damage} 點毀滅性真實傷害！`, "text-emerald-400 font-bold");
+                feedback = `✅ 效果拔群！成功擲出 ${window.ITEM_DICT[itemId].n}！`; 
+            } else {
+                damage = Math.floor(currentMonster.maxHp * 0.10) + 10;
+                addCombatLog(`🌍 ${travelerProfile.name} 擲出了【${window.ITEM_DICT[itemId].n}】！對怪物造成 ${damage} 點真實傷害。`, "text-slate-300");
+                feedback = `✅ 成功擲出 ${window.ITEM_DICT[itemId].n}！`; 
+            }
+            
+            currentMonster.hp -= damage;
+            success = true;
+
+            updateCombatUI();
+            
+            if (currentMonster.hp <= 0) { 
+                currentMonster.hp = 0; updateCombatUI(); resetAutoAttackUI(); 
+                closeInventoryModal(); 
+                setTimeout(() => handleVictory(), 800); 
+            }
+        }
+    }
+    else if (itemId === 'recycle_book') {
+        closeInventoryModal();
+        let nextLv = (travelerProfile.recycleSkillLevel || 0) + 1;
+        let nextDmg = 30 + (nextLv - 1) * 10;
+        
+        window.customConfirm("📖 研讀技能書", `是否確認消耗 1 本【資源循環技能書】？\n學習後將解鎖/升級「資源循環」，\nLv.${nextLv} 可對怪物造成 ${nextDmg}% 的毀滅性傷害！`, async () => {
+            travelerProfile.inventory[itemId]--; 
+            travelerProfile.recycleSkillLevel = nextLv;
+            const successMsg = `✨ 研讀完成！【資源循環】技能提升至 Lv.${nextLv}！`;
+            
+            updateStatusUI();
+            if (db && currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true});
+            
+            if(uiPrompt) {
+                uiPrompt.classList.remove('hidden');
+                uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-fuchsia-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100";
+                document.getElementById('prompt-title').innerHTML = `✨ 技能升級`;
+                document.getElementById('prompt-desc').innerText = successMsg;
+                const btn = document.getElementById('prompt-btn');
+                btn.innerText = "確認";
+                btn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
+                btn.className = "interactive-btn bg-fuchsia-600 px-8 py-2 rounded-full text-white font-bold";
+            }
+        });
+        return;
+    }
+    // 新增：處理能效專家技能書
+    else if (itemId === 'energy_book') {
+        closeInventoryModal();
+        let nextLv = (travelerProfile.energySkillLevel || 0) + 1;
+        
+        window.customConfirm("📗 研讀技能書", `是否確認消耗 1 本【能效專家技能書】？\n學習後將永久提升防禦力，\nLv.${nextLv} 額外提供 +5 防禦力！`, async () => {
+            travelerProfile.inventory[itemId]--; 
+            travelerProfile.energySkillLevel = nextLv;
+            travelerProfile.defense += 5; // 永久提升屬性
+            
+            const successMsg = `✨ 研讀完成！【能效專家】技能提升至 Lv.${nextLv}！基礎防禦力永久 +5！`;
+            updateStatusUI();
+            if (db && currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true});
+            
+            if(uiPrompt) {
+                uiPrompt.classList.remove('hidden');
+                uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-cyan-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100";
+                document.getElementById('prompt-title').innerHTML = `🛡️ 防禦力提升`;
+                document.getElementById('prompt-desc').innerText = successMsg;
+                const btn = document.getElementById('prompt-btn');
+                btn.innerText = "確認";
+                btn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
+                btn.className = "interactive-btn bg-cyan-600 px-8 py-2 rounded-full text-white font-bold";
+            }
+        });
+        return;
+    }
+    else if (isInCombat) { feedback = "❌ 戰鬥中僅能使用【求救卡】或【SDG 飛鏢】。"; } 
+    else if (currentEvent) {
+        if (currentEvent.type === 'disaster') {
+            if (!currentEvent.observed && itemId === 'observe_card') {
+                travelerProfile.inventory['observe_card']--; currentEvent.observed = true;
+                let r = Math.random(); currentEvent.severity = r<0.33?'normal':(r<0.66?'attention':'anomaly'); currentEvent.severityText = r<0.33?'正常':(r<0.66?'需注意':'異常');
+                let pts = r<0.33?5:(r<0.66?15:30); travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + pts;
+                feedback = `✅ 觀測完成：【${currentEvent.severityText}】 (+${pts} pts)`; success = true;
+            } else if (currentEvent.observed && !currentEvent.reported && itemId === 'report_card') {
+                travelerProfile.inventory['report_card']--; currentEvent.reported = true; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 10;
+                
+                if (currentEvent.severity !== 'normal') {
+                    feedback = "✅ 已上傳至警示網！區域周圍爆發顯性異常氣體！"; success = true;
+                    
+                    if (db && currentUser) {
+                        // 新增：自動將「需注意」與「異常」災情廣播至全球災情看板與聊天室
+                        try {
+                            addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'battle_sos'), {
+                                uid: currentUser.uid, userName: travelerProfile.name,
+                                x: currentEvent.x, y: currentEvent.y,
+                                monsterName: currentEvent.name + '異常', timestamp: Date.now()
+                            });
+                            addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages'), { 
+                                senderName: "系統警報", 
+                                text: `⚠️ 緊急！旅者 [${travelerProfile.name}] 通報【${currentEvent.name}】出現${currentEvent.severityText}災情，大量異常氣體湧現，請前往支援！`, 
+                                timestamp: Date.now() 
+                            });
+                        } catch (e) { console.error("災情廣播失敗", e); }
+
+                        const spawnPositions = [{dx: -1, dy: -1}, {dx: 1, dy: -1}, {dx: 0, dy: 1}];
+                        spawnPositions.forEach(async (pos) => {
+                            let mx = currentEvent.x + pos.dx;
+                            let my = currentEvent.y + pos.dy;
+                            let baseMonster = GHG_MONSTERS[Math.floor(Math.random() * GHG_MONSTERS.length)];
+                            
+                            let mLevel = travelerProfile.level + Math.floor(Math.random() * 3) + 3;
+                            let scaling = 1 + ((mLevel - 1) * 0.2);
+                            let maxHp = Math.floor(baseMonster.maxHp * scaling);
+                            
+                            try {
+                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'field_monsters'), {
+                                    disasterName: currentEvent.name,
+                                    x: mx, y: my,
+                                    monsterName: baseMonster.name,
+                                    level: mLevel,
+                                    maxHp: maxHp,
+                                    hp: maxHp
+                                });
+                            } catch (e) { console.error("生成顯性怪物失敗", e); }
+                        });
+                    }
+                } else {
+                    feedback = "✅ 已上傳至警示網！觀測結果正常，該區域十分安全。"; success = true;
+                }
+                
+            } else if (currentEvent.reported && !currentEvent.resolved) {
+                if (currentEvent.severity === 'normal') {
+                    feedback = "✅ 狀態正常，自動結案！"; currentEvent.resolved = true; success = true; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 50;
+                    if(!travelerProfile.stats) travelerProfile.stats = {monstersKilled:0, disastersResolved:0};
+                    travelerProfile.stats.disastersResolved++;
+                } else {
+                    let remainingMonsters = activeFieldMonsters.filter(m => m.disasterName === currentEvent.name);
+                    if (remainingMonsters.length > 0) {
+                        feedback = `❌ 無法復育！請與其他玩家合力清除周遭剩餘的 ${remainingMonsters.length} 隻異常氣體！`;
+                        success = false;
+                    } else {
+                        let requiredItem = currentEvent.name.includes('林區') ? 'drone' : (currentEvent.name.includes('工業')||currentEvent.name.includes('沙漠') ? 'sapling' : 'filter');
+                        if (itemId === requiredItem) {
+                            travelerProfile.inventory[itemId]--; currentEvent.resolved = true; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 100;
+                            feedback = `✅ 成功復育！ (+100 pts)`; success = true; mapData[currentEvent.y][currentEvent.x] = 1; 
+                            
+                            if(!travelerProfile.stats) travelerProfile.stats = {monstersKilled:0, disastersResolved:0};
+                            travelerProfile.stats.disastersResolved++;
+                        } else { feedback = `❌ 道具不符，需【${window.ITEM_DICT[requiredItem].n}】`; }
+                    }
+                }
+            } else { feedback = "❌ 目前無法使用此道具。"; }
+        } else if (currentEvent.type === 'landmark' && itemId === 'observe_card') {
+            travelerProfile.inventory['observe_card']--; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 10;
+            feedback = "✅ 日誌寫入 (+10 pts)"; success = true;
+        } else { feedback = "❌ 地標只需要【觀測卡】。"; }
+    } else { feedback = "❌ 周遭無目標。"; }
+
+    if (success) {
+        msg.innerText = feedback; msg.className = "text-emerald-400 text-center font-bold text-sm mt-3";
+        updateStatusUI(); renderDisasterAlerts();
+        setTimeout(() => { openInventoryModal(isInCombat); document.getElementById('inventory-message').innerText = feedback; document.getElementById('inventory-message').className="text-emerald-400 text-center font-bold text-sm mt-3"; }, 50);
+        setTimeout(() => { closeInventoryModal(); if(!isInCombat) updatePromptUI(); }, 1500);
+    } else {
+        msg.innerText = feedback; msg.className = "text-red-400 text-center font-bold text-sm mt-3 animate-bounce";
+        setTimeout(() => msg.classList.remove('animate-bounce'), 500);
+    }
+};
+
+window.openInventoryModal = (isUseMode = false) => {
+    const list = document.getElementById('inventory-list'); list.innerHTML = '';
+    document.getElementById('inventory-message').innerText = ''; document.getElementById('inventory-title').innerHTML = isUseMode ? '🎒 選擇道具' : '🎒 旅者行囊';
+    
+    if(travelerProfile && travelerProfile.inventory) {
+        let hasItem = false;
+        for(let[id,c] of Object.entries(travelerProfile.inventory)) if(c>0 && window.ITEM_DICT[id]) {
+            hasItem = true;
+            let div = document.createElement('div'); div.className="bg-slate-800 p-3 rounded flex justify-between items-center";
+            let btnHtml = isUseMode ? `<button onclick="useItem('${id}')" class="ml-3 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded shadow text-sm font-bold interactive-btn">使用</button>` : '';
+            div.innerHTML=`<div class="flex gap-2 items-center"><span class="text-3xl">${window.ITEM_DICT[id].i}</span><div><div class="text-amber-300 font-bold text-sm">${window.ITEM_DICT[id].n}</div><div class="text-slate-400 text-xs">${window.ITEM_DICT[id].d}</div></div></div><div class="flex items-center"><div class="text-white px-3 py-1 bg-slate-700 rounded font-mono">x ${c}</div>${btnHtml}</div>`; 
+            list.appendChild(div);
+        }
+        if(!hasItem) list.innerHTML = '<div class="text-slate-400 italic text-center py-6 bg-slate-800/50 rounded">行囊空空如也。</div>';
+    }
+    document.getElementById('inventory-modal').classList.remove('hidden'); if (uiPrompt) uiPrompt.classList.add('hidden');
+};
+
+window.closeInventoryModal = () => { document.getElementById('inventory-modal').classList.add('hidden'); if(currentEvent && !isInCombat) updatePromptUI(); };
+window.openShopModal = () => { document.getElementById('shop-current-pts').innerText = travelerProfile?travelerProfile.points:0; document.getElementById('shop-modal').classList.remove('hidden'); if (uiPrompt) uiPrompt.classList.add('hidden'); };
+window.closeShopModal = () => { document.getElementById('shop-modal').classList.add('hidden'); if(currentEvent) updatePromptUI(); };
+
+window.openNpcModal = () => { document.getElementById('npc-modal').classList.remove('hidden'); if (uiPrompt) uiPrompt.classList.add('hidden'); };
+window.closeNpcModal = () => { document.getElementById('npc-modal').classList.add('hidden'); if(currentEvent && !isInCombat) updatePromptUI(); };
+
+// 新增：老鷹 NPC 任務面板邏輯
+window.openEagleModal = () => {
+    if(!travelerProfile) return;
+    // 防呆：確保舊帳號也有任務欄位
+    if(!travelerProfile.quests) travelerProfile.quests = { eagle: { state: 'none', count: 0 } };
+    if(!travelerProfile.quests.eagle) travelerProfile.quests.eagle = { state: 'none', count: 0 };
+    
+    const qState = travelerProfile.quests.eagle;
+    const content = document.getElementById('eagle-content');
+    content.innerHTML = '';
+
+    if (qState.state === 'none') {
+        content.innerHTML = `
+            <p class="text-sm text-slate-300 leading-relaxed bg-slate-800 p-3 rounded-lg border border-slate-700">
+                「年輕的旅者啊，這片大地上充滿了無端消耗能源的氣體怪物。<br>若你能證明自己的決心，<strong class="text-red-400">獵殺 10 隻野外怪物</strong>，我將傳授你能效的奧秘。」
+            </p>
+            <button onclick="acceptEagleQuest()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg shadow-lg transition-colors mt-4">接受試煉</button>
+        `;
+    } else if (qState.state === 'active') {
+        if (qState.count < 10) {
+            content.innerHTML = `
+                <p class="text-sm text-slate-300 leading-relaxed bg-slate-800 p-3 rounded-lg border border-slate-700">
+                    「專注你的目標，旅者。野外的威脅尚未清除。」
+                </p>
+                <div class="mt-4">
+                    <div class="flex justify-between text-xs font-bold text-cyan-300 mb-1">
+                        <span>狩獵進度</span><span>${qState.count} / 10</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-3 border border-slate-600 overflow-hidden">
+                        <div class="bg-cyan-500 h-3 rounded-full transition-all duration-300" style="width: ${(qState.count/10)*100}%"></div>
+                    </div>
+                </div>
+                <button onclick="closeEagleModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg shadow transition-colors mt-6">繼續努力</button>
+            `;
+        } else {
+            content.innerHTML = `
+                <p class="text-sm text-emerald-300 font-bold leading-relaxed bg-emerald-900/30 p-3 rounded-lg border border-emerald-500/50">
+                    「你做到了！這片大地暫時恢復了些許寧靜。<br>但在傳授技能之前，請告訴我你對這次行動的體悟：」
+                </p>
+                <div class="mt-4 space-y-2 text-left">
+                    <label class="block text-xs font-bold text-slate-400 mb-1">選擇你的永續心得：</label>
+                    <select id="eagle-reflection" class="w-full bg-slate-800 border-2 border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500">
+                        <option value="A">節約能源必須從日常小事做起，避免無謂消耗。</option>
+                        <option value="B">保護生態棲地，維持生物多樣性至關重要。</option>
+                        <option value="C">提升能源使用效率，能從根源減少溫室氣體排放。</option>
+                    </select>
+                </div>
+                <button onclick="submitEagleQuest()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transition-colors mt-6">交付任務並領取獎勵</button>
+            `;
+        }
+    } else if (qState.state === 'completed') {
+        content.innerHTML = `
+            <p class="text-sm text-slate-300 leading-relaxed bg-slate-800 p-3 rounded-lg border border-slate-700">
+                「願能效的智慧與你同在，精準地打擊那些異常污染吧。」
+            </p>
+            <button onclick="closeEagleModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg shadow-lg transition-colors mt-6">離開</button>
+        `;
+    }
+    
+    document.getElementById('eagle-modal').classList.remove('hidden');
+    if (uiPrompt) uiPrompt.classList.add('hidden');
+};
+
+window.closeEagleModal = () => { document.getElementById('eagle-modal').classList.add('hidden'); if(currentEvent && !isInCombat) updatePromptUI(); };
+
+window.acceptEagleQuest = () => {
+    travelerProfile.quests.eagle = { state: 'active', count: 0 };
+    if (db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), { quests: travelerProfile.quests }, {merge: true}).catch(e=>{});
+    openEagleModal(); // 刷新介面
+};
+
+window.submitEagleQuest = () => {
+    // 任務完成，給予道具並標記為 completed
+    travelerProfile.quests.eagle = { state: 'completed', count: 10 };
+    travelerProfile.inventory['energy_book'] = (travelerProfile.inventory['energy_book'] || 0) + 1;
+    travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 50; // 額外加分
+    
+    if (db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true}).catch(e=>{});
+    
+    closeEagleModal();
+    updateStatusUI();
+    
+    if(uiPrompt) {
+        uiPrompt.classList.remove('hidden');
+        uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-cyan-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100";
+        document.getElementById('prompt-title').innerHTML = `🎁 任務完成`;
+        document.getElementById('prompt-desc').innerHTML = `守望老鷹認同了你的理念！<br><span class="text-emerald-400">獲得【能效專家技能書】x1、勇者指數 +50！</span>`;
+        const btn = document.getElementById('prompt-btn');
+        btn.innerText = "打開行囊查看";
+        btn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; openInventoryModal(); };
+        btn.className = "interactive-btn bg-cyan-600 px-8 py-2 rounded-full text-white font-bold";
+    }
+};
+
+window.openRecordModal = () => { 
+    if(!travelerProfile) return;
+    if(!travelerProfile.stats) travelerProfile.stats = { monstersKilled: 0, disastersResolved: 0 };
+    document.getElementById('record-monsters').innerText = travelerProfile.stats.monstersKilled;
+    document.getElementById('record-disasters').innerText = travelerProfile.stats.disastersResolved;
+    document.getElementById('record-modal').classList.remove('hidden'); 
+    if (uiPrompt) uiPrompt.classList.add('hidden'); 
+};
+window.closeRecordModal = () => { document.getElementById('record-modal').classList.add('hidden'); if(currentEvent && !isInCombat) updatePromptUI(); };
+
+window.openESGTModal = () => { document.getElementById('esgt-iframe').src="https://farmcmd.github.io/ESGT/game.html"; document.getElementById('esgt-modal').classList.remove('hidden'); };
+window.closeESGTModal = () => { document.getElementById('esgt-modal').classList.add('hidden'); document.getElementById('esgt-iframe').src=""; };
+
+window.closePromptUI = () => {
+    if (uiPrompt) uiPrompt.classList.add('hidden');
+};
+
+let panelsExpanded = window.innerWidth >= 640; 
+window.toggleRightPanels = (forceState) => {
+    if (typeof forceState === 'boolean') panelsExpanded = forceState;
+    else panelsExpanded = !panelsExpanded;
+    
+    const group = document.getElementById('right-panel-group');
+    const btnIcon = document.getElementById('panel-toggle-icon');
+    const btnText = document.getElementById('panel-toggle-text');
+    if(!group || !btnIcon || !btnText) return;
+    
+    if (panelsExpanded) {
+        group.classList.remove('translate-x-[120%]', 'opacity-0', 'invisible');
+        btnIcon.innerText = '▶';
+        btnText.innerText = '收納看板';
+    } else {
+        group.classList.add('translate-x-[120%]', 'opacity-0', 'invisible');
+        btnIcon.innerText = '◀';
+        btnText.innerText = '展開任務';
+    }
+};
+
+// ==========================================
+// 4. 戰鬥系統 (半即時自動戰鬥)
+// ==========================================
+function updateCombatUI() {
+    if(!travelerProfile || !currentMonster) return;
+    document.getElementById('player-combat-name').innerText = travelerProfile.name;
+    document.getElementById('player-level').innerText = travelerProfile.level;
+    document.getElementById('player-exp').innerText = `${travelerProfile.exp} / ${travelerProfile.level * 50}`;
+    document.getElementById('player-hp-text').innerText = `${travelerProfile.hp} / ${travelerProfile.maxHp}`;
+    document.getElementById('player-hp-bar').style.width = `${Math.max(0, (travelerProfile.hp / travelerProfile.maxHp) * 100)}%`;
+    document.getElementById('monster-hp-text').innerText = `${currentMonster.hp} / ${currentMonster.maxHp}`;
+    document.getElementById('monster-hp-bar').style.width = `${Math.max(0, (currentMonster.hp / currentMonster.maxHp) * 100)}%`;
+}
+
+function addCombatLog(msg, colorClass = "text-slate-300") {
+    const ul = document.getElementById('combat-log');
+    const li = document.createElement('li'); li.className = colorClass; li.innerText = msg;
+    ul.appendChild(li); ul.parentElement.scrollTop = ul.parentElement.scrollHeight; 
+}
+
+function setCombatButtonsEnabled(enabled) {
+    document.getElementById('btn-attack').disabled = false; 
+    document.getElementById('btn-purify').disabled = !enabled || combatState.purifyUsed;
+    document.getElementById('btn-shield').disabled = !enabled || combatState.shieldUsed;
+    document.getElementById('btn-recycle').disabled = !enabled || combatState.recycleUsed;
+    document.getElementById('btn-charge').disabled = !enabled; 
+    document.getElementById('btn-flee').disabled = !enabled;
+
+    document.getElementById('btn-purify').className = `bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-amber-500 text-xs ${(enabled && !combatState.purifyUsed) ? "opacity-100" : "opacity-40 cursor-not-allowed grayscale"}`;
+    document.getElementById('btn-shield').className = `bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-blue-500 text-xs ${(enabled && !combatState.shieldUsed) ? "opacity-100" : "opacity-40 cursor-not-allowed grayscale"}`;
+    
+    document.getElementById('btn-charge').className = `bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-teal-500 text-xs ${enabled ? "opacity-100" : "opacity-50 cursor-not-allowed"}`;
+
+    let recycleBtn = document.getElementById('btn-recycle');
+    if (!recycleBtn.classList.contains('hidden')) {
+        recycleBtn.className = `col-span-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-fuchsia-500 text-xs ${(enabled && !combatState.recycleUsed) ? "opacity-100" : "opacity-40 cursor-not-allowed grayscale"}`;
+    }
+    
+    document.getElementById('btn-flee').className = `w-full mt-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded shadow transition-all border border-slate-600 text-xs ${enabled ? "opacity-100" : "opacity-50 cursor-not-allowed"}`;
+}
+
+function resetAutoAttackUI() {
+    isAutoAttacking = false; clearTimeout(autoAttackTimer);
+    const btn = document.getElementById('btn-attack');
+    if (btn) { btn.innerHTML = "🗡️ 自動攻擊"; btn.classList.replace('bg-red-600', 'bg-slate-600'); btn.classList.replace('hover:bg-red-500', 'hover:bg-slate-500'); btn.classList.replace('border-red-500', 'border-slate-500'); }
+}
+
+function triggerCombat(forcedMonster = null, isRescue = false, fieldMonsterId = null) {
+    if (!travelerProfile) return; 
+    isInCombat = true; clearPath(); if(uiPrompt) uiPrompt.classList.add('hidden'); currentEvent = null;
+
+    const baseMonster = forcedMonster || GHG_MONSTERS[Math.floor(Math.random() * GHG_MONSTERS.length)];
+    
+    if (fieldMonsterId) {
+        const fm = activeFieldMonsters.find(m => m.id === fieldMonsterId);
+        const scaling = 1 + ((fm.level - 1) * 0.2);
+        currentMonster = { 
+            ...baseMonster, 
+            level: fm.level, 
+            exp: Math.floor(baseMonster.exp * scaling), 
+            maxHp: fm.maxHp, 
+            hp: fm.hp, 
+            attack: Math.floor(baseMonster.attack * scaling), 
+            defense: Math.floor(baseMonster.defense * scaling) 
+        };
+    } else {
+        const scaling = 1 + ((travelerProfile.level - 1) * 0.2); 
+        const nerfRatio = 2 / 3; 
+        
+        currentMonster = { 
+            ...baseMonster, 
+            level: travelerProfile.level, 
+            exp: Math.floor(baseMonster.exp * scaling), 
+            maxHp: Math.max(1, Math.floor(baseMonster.maxHp * scaling * nerfRatio)), 
+            hp: Math.max(1, isRescue ? Math.floor(baseMonster.maxHp * scaling * nerfRatio * 0.8) : Math.floor(baseMonster.maxHp * scaling * nerfRatio)), 
+            attack: Math.max(1, Math.floor(baseMonster.attack * scaling * nerfRatio)), 
+            defense: Math.max(0, Math.floor(baseMonster.defense * scaling * nerfRatio)) 
+        };
+    }
+    
+    combatState = { turn: 1, playerDefending: false, purifyUsed: false, shieldUsed: false, recycleUsed: false, fieldMonsterId: fieldMonsterId };
+    isProcessingTurn = false;
+    resetAutoAttackUI(); 
+    
+    document.getElementById('monster-icon').innerText = currentMonster.icon; document.getElementById('monster-name').innerText = `Lv.${travelerProfile.level} ${currentMonster.name}`;
+    document.getElementById('monster-desc').innerText = currentMonster.desc; document.getElementById('monster-source').innerText = currentMonster.source;
+    document.getElementById('combat-log').innerHTML = ''; 
+    
+    let recycleBtn = document.getElementById('btn-recycle');
+    if ((travelerProfile.recycleSkillLevel || 0) > 0) {
+        let dmgPct = 30 + (travelerProfile.recycleSkillLevel - 1) * 10;
+        recycleBtn.innerText = `♻️ 資源循環 (${dmgPct}%)`;
+        recycleBtn.classList.remove('hidden');
+    } else {
+        recycleBtn.classList.add('hidden');
+    }
+    
+    if (fieldMonsterId) {
+        addCombatLog(`系統：與區域防護怪獸【${currentMonster.name}】展開激戰！`, "text-red-400 font-bold");
+    } else if (isRescue) {
+        addCombatLog(`系統：加入救援行動！怪物血量削弱 20%！`, "text-blue-400 font-bold");
+    } else {
+        addCombatLog(`系統：遭遇了野生的【${currentMonster.name}】！`, "text-amber-400 font-bold");
+    }
+    
+    updateCombatUI(); setCombatButtonsEnabled(true); document.getElementById('combat-modal').classList.remove('hidden');
+}
+
+window.joinBattle = (sosData) => {
+    if (isInCombat) return; if(uiPrompt) uiPrompt.classList.add('hidden');
+    const monsterBase = GHG_MONSTERS.find(m => m.name === sosData.monsterName) || GHG_MONSTERS[0];
+    triggerCombat(monsterBase, true); 
+}
+
+window.toggleAutoAttack = () => {
+    if (!isInCombat || !currentMonster || !travelerProfile) return;
+    isAutoAttacking = !isAutoAttacking; const btn = document.getElementById('btn-attack');
+    if (isAutoAttacking) {
+        btn.innerHTML = "⏸️ 停止自動"; btn.classList.replace('bg-slate-600', 'bg-red-600'); btn.classList.replace('hover:bg-slate-500', 'hover:bg-red-500'); btn.classList.replace('border-slate-500', 'border-red-500');
+        addCombatLog("系統：已啟動自動攻擊模式。", "text-emerald-400 font-bold text-xs");
+        if (!isProcessingTurn) executeCombatAction('basic_attack');
+    } else {
+        btn.innerHTML = "🗡️ 自動攻擊"; btn.classList.replace('bg-red-600', 'bg-slate-600'); btn.classList.replace('hover:bg-red-500', 'hover:bg-slate-500'); btn.classList.replace('border-red-500', 'border-slate-500');
+        clearTimeout(autoAttackTimer); addCombatLog("系統：已中斷自動攻擊。", "text-amber-400 font-bold text-xs");
+    }
+};
+
+window.executeCombatAction = (action) => {
+    if(!isInCombat || !currentMonster || !travelerProfile || isProcessingTurn) return;
+    isProcessingTurn = true; clearTimeout(autoAttackTimer); 
+    setCombatButtonsEnabled(false); combatState.playerDefending = false;
+
+    if (action === 'flee') {
+        resetAutoAttackUI(); addCombatLog(`${travelerProfile.name} 選擇了戰術撤退！`, "text-slate-400");
+        
+        if (combatState.fieldMonsterId && db && currentMonster) {
+            setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'field_monsters', combatState.fieldMonsterId), { hp: currentMonster.hp }, { merge: true }).catch(e => {});
+        }
+
+        setTimeout(() => { document.getElementById('combat-modal').classList.add('hidden'); player.x -= 20; player.y -= 20; isInCombat = false; currentMonster = null; }, 1000); return;
+    }
+
+    if (action === 'basic_attack') {
+        let damage = Math.max(1, Math.floor(currentMonster.maxHp * 0.01)); currentMonster.hp -= damage; addCombatLog(`${travelerProfile.name} 基礎攻擊，造成 ${damage} 傷害！`, "text-slate-300");
+    } else if (action === 'purify_skill') {
+        combatState.purifyUsed = true; let damage = Math.max(1, Math.floor(currentMonster.maxHp * 0.10)); currentMonster.hp -= damage; addCombatLog(`${travelerProfile.name} 施放✨淨化，造成 ${damage} 大量傷害！`, "text-amber-300 font-bold");
+    } else if (action === 'shield_skill') {
+        combatState.shieldUsed = true; combatState.playerDefending = true; let heal = Math.max(1, Math.floor(travelerProfile.maxHp * 0.20)); travelerProfile.hp = Math.min(travelerProfile.maxHp, travelerProfile.hp + heal); addCombatLog(`${travelerProfile.name} 啟動🛡️防護，恢復 ${heal} HP 並準備格擋！`, "text-blue-300 font-bold");
+    } else if (action === 'recycle_skill') {
+        combatState.recycleUsed = true; 
+        let dmgPct = 30 + ((travelerProfile.recycleSkillLevel || 1) - 1) * 10;
+        let damage = Math.max(1, Math.floor(currentMonster.maxHp * (dmgPct / 100)));
+        currentMonster.hp -= damage; 
+        addCombatLog(`${travelerProfile.name} 施放♻️資源循環 Lv.${travelerProfile.recycleSkillLevel}，造成 ${damage} 點毀滅性傷害 (${dmgPct}%)！`, "text-fuchsia-300 font-bold");
+    } else if (action === 'charge_skill') {
+        let usedSkills = [];
+        if (combatState.purifyUsed) usedSkills.push({id: 'purifyUsed', name: '✨數據淨化'});
+        if (combatState.shieldUsed) usedSkills.push({id: 'shieldUsed', name: '🛡️永續防護'});
+        if (combatState.recycleUsed && (travelerProfile.recycleSkillLevel || 0) > 0) usedSkills.push({id: 'recycleUsed', name: '♻️資源循環'});
+
+        if (usedSkills.length === 0) {
+            addCombatLog(`❌ 所有技能皆處於就緒狀態，無需蓄能！`, "text-amber-400 font-bold");
+            isProcessingTurn = false; setCombatButtonsEnabled(true); 
+            if (isAutoAttacking) { autoAttackTimer = setTimeout(() => { if (isAutoAttacking && !isProcessingTurn) executeCombatAction('basic_attack'); }, 1000); }
+            return;
+        }
+        if ((travelerProfile.heroIndex || 0) < 2) {
+            addCombatLog(`❌ 地球勇者指數不足 (-2 🎖️)，無法進行蓄能！`, "text-red-400 font-bold");
+            isProcessingTurn = false; setCombatButtonsEnabled(true); 
+            if (isAutoAttacking) { autoAttackTimer = setTimeout(() => { if (isAutoAttacking && !isProcessingTurn) executeCombatAction('basic_attack'); }, 1000); }
+            return;
+        }
+
+        travelerProfile.heroIndex -= 2;
+        let targetSkill = usedSkills[Math.floor(Math.random() * usedSkills.length)];
+        combatState[targetSkill.id] = false; 
+        
+        updateStatusUI(); 
+        addCombatLog(`${travelerProfile.name} 消耗 2 點指數進行⚡戰術蓄能！`, "text-teal-300 font-bold");
+        addCombatLog(`充能成功！【${targetSkill.name}】再次就緒！`, "text-yellow-300 font-bold text-sm");
+    }
+    
+    updateCombatUI();
+
+    if (currentMonster.hp <= 0) { currentMonster.hp = 0; updateCombatUI(); resetAutoAttackUI(); setTimeout(() => handleVictory(), 800); return; }
+
+    setTimeout(() => {
+        if (!currentMonster || !isInCombat) return;
+
+        let variance = 0.8 + (Math.random() * 0.4); let mDamage = Math.floor(Math.max(1, currentMonster.attack * variance - travelerProfile.defense));
+        if (combatState.playerDefending) mDamage = Math.floor(mDamage / 2);
+        travelerProfile.hp -= mDamage; addCombatLog(`【${currentMonster.name}】反擊，造成 ${mDamage} 傷害！`, "text-red-400"); updateCombatUI();
+        
+        if (travelerProfile.hp <= 0) { travelerProfile.hp = 0; updateCombatUI(); resetAutoAttackUI(); setTimeout(() => handleDefeat(), 800); return; }
+        
+        combatState.turn++; isProcessingTurn = false; setCombatButtonsEnabled(true);
+        if (isAutoAttacking) { autoAttackTimer = setTimeout(() => { if (isAutoAttacking && !isProcessingTurn) executeCombatAction('basic_attack'); }, 1000); }
+    }, 1200); 
+};
+
+function handleVictory() {
+    addCombatLog(`✨ 成功淨化 Lv.${currentMonster.level}【${currentMonster.name}】！`, "text-amber-400 font-bold text-lg");
+    
+    if(!travelerProfile.stats) travelerProfile.stats = { monstersKilled: 0, disastersResolved: 0 };
+    travelerProfile.stats.monstersKilled++;
+
+    let randomBasePts = Math.floor(Math.random() * 10) + 1; 
+    let levelBonus = Math.floor((currentMonster.level - 1) * 1.5); 
+    let finalPts = randomBasePts + levelBonus;
+
+    travelerProfile.exp += currentMonster.exp; 
+    travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + finalPts;
+    
+    addCombatLog(`獲得 ${currentMonster.exp} EXP，勇者指數 +${finalPts} (隨機${randomBasePts}+等級加成)。`, "text-emerald-300");
+    
+    if(Math.random() < 0.3) { travelerProfile.inventory['observe_card'] = (travelerProfile.inventory['observe_card'] || 0) + 1; addCombatLog(`🎁 獲得：【觀測卡】x1！`, "text-fuchsia-300 font-bold"); }
+
+    // 更新：僅限擊敗「野外怪物 (非區域首領)」時，觸發 SDG 飛鏢掉落與老鷹任務進度
+    if(!combatState.fieldMonsterId) {
+        if(Math.random() < 0.4) {
+            let sdgNum = Math.floor(Math.random() * 17) + 1;
+            let sdgId = `sdg_${sdgNum}`;
+            travelerProfile.inventory[sdgId] = (travelerProfile.inventory[sdgId] || 0) + 1;
+            addCombatLog(`🎯 戰利品！野外怪物掉落了：【${window.ITEM_DICT[sdgId].n}】x1！`, "text-yellow-300 font-bold");
+        }
+
+        // 蒼鷹守護者任務進度推進
+        if (!travelerProfile.quests) travelerProfile.quests = { eagle: { state: 'none', count: 0 } };
+        if (travelerProfile.quests.eagle && travelerProfile.quests.eagle.state === 'active') {
+            travelerProfile.quests.eagle.count++;
+            
+            if (travelerProfile.quests.eagle.count >= 10) {
+                addCombatLog(`🦅 守望老鷹委託已達標 (10 / 10)！請回去交付心得。`, "text-cyan-300 font-bold text-md");
+            } else {
+                addCombatLog(`🦅 老鷹委託進度：${travelerProfile.quests.eagle.count} / 10`, "text-cyan-200");
+            }
+            if (db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), {quests: travelerProfile.quests}, {merge: true}).catch(e=>{});
+        }
+    }
+
+    let nextLevelExp = travelerProfile.level * 50;
+    if (travelerProfile.exp >= nextLevelExp) {
+        travelerProfile.level++; travelerProfile.exp -= nextLevelExp; travelerProfile.maxHp += 20; travelerProfile.hp = travelerProfile.maxHp; travelerProfile.attack += 5; travelerProfile.defense += 2;
+        addCombatLog(`🎉 LEVEL UP！Lv.${travelerProfile.level}！能力值全面上升。`, "text-yellow-400 font-bold text-xl");
+    }
+
+    if (combatState.fieldMonsterId && db) {
+        const fm = activeFieldMonsters.find(m => m.id === combatState.fieldMonsterId);
+        const dName = fm ? fm.disasterName : null;
+
+        deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'field_monsters', combatState.fieldMonsterId)).catch(e => console.log(e));
+        addCombatLog(`🌍 區域威脅已解除，防線推進！`, "text-teal-300 font-bold");
+
+        if (dName) {
+            const remaining = activeFieldMonsters.filter(m => m.disasterName === dName && m.id !== combatState.fieldMonsterId);
+            if (remaining.length === 0) {
+                const evt = allEvents.find(e => e.name === dName);
+                if (evt && !evt.resolved) {
+                    evt.resolved = true;
+                    mapData[evt.y][evt.x] = 1; 
+                    travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 150; 
+                    travelerProfile.stats.disastersResolved++;
+
+                    addCombatLog(`🎉 完美淨化！【${dName}】已自動恢復生機！ (+150 🎖️)`, "text-fuchsia-300 font-bold text-lg");
+
+                    addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages'), {
+                        senderName: "系統廣播",
+                        text: `🎉 狂賀！旅者 [${travelerProfile.name}] 擊破了【${dName}】的最後防線，該區域生態已完全恢復正常！`,
+                        timestamp: Date.now()
+                    }).catch(e => console.log(e));
+                }
+            }
+        }
+    }
+
+    updateStatusUI(); setTimeout(() => { document.getElementById('combat-modal').classList.add('hidden'); isInCombat = false; currentMonster = null; }, 2500);
+}
+
+function handleDefeat() {
+    addCombatLog(`☠️ 防護服破損，被迫緊急撤離。`, "text-red-500 font-bold text-lg");
+    travelerProfile.heroIndex = Math.max(0, (travelerProfile.heroIndex || 0) - 10); travelerProfile.hp = travelerProfile.maxHp; player.x = 25 * TILE_SIZE; player.y = 25 * TILE_SIZE; updateStatusUI();
+    
+    if (combatState.fieldMonsterId && db && currentMonster) {
+        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'field_monsters', combatState.fieldMonsterId), { hp: currentMonster.hp }, { merge: true }).catch(e => {});
+    }
+
+    setTimeout(() => { document.getElementById('combat-modal').classList.add('hidden'); isInCombat = false; currentMonster = null; camera.x = player.x + player.width / 2 - CANVAS_WIDTH / 2; camera.y = player.y + player.height / 2 - CANVAS_HEIGHT / 2; }, 2500);
+}
+
+function updatePromptUI() {
+    if (!currentEvent) { if(uiPrompt) uiPrompt.classList.add('hidden'); return; }
+    if(uiPrompt) uiPrompt.classList.remove('hidden');
+    if (currentEvent.type === 'disaster') {
+        if (!currentEvent.observed) {
+            uiTitle.innerHTML = `<span class="text-2xl">❓</span> 未知氣候異常`; uiDesc.innerText = '需使用【觀測卡】調查。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950/95 border-2 border-red-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+            uiBtn.innerText = "打開行囊"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-emerald-600 text-white font-bold py-2 px-8 rounded-full shadow";
+        } else if (!currentEvent.reported) {
+            uiTitle.innerHTML = `<span class="text-2xl">${currentEvent.icon}</span> ${currentEvent.name}`; uiDesc.innerText = `結果：${currentEvent.severityText}。需使用【通報卡】。`; uiPrompt.className = `ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 p-5 rounded-xl text-center shadow-lg opacity-100 ${currentEvent.severity==='anomaly'?'bg-slate-950 border-red-500':'bg-slate-950 border-amber-500'}`; 
+            uiBtn.innerText = "打開行囊"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-red-600 text-white font-bold py-2 px-8 rounded-full shadow";
+        } else {
+            uiTitle.innerHTML = `<span class="text-2xl">${currentEvent.icon}</span> ${currentEvent.name}`; uiDesc.innerText = '已通報，請執行復育(如無人機)。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950/95 border-2 border-blue-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+            uiBtn.innerText = "進行復育 (開行囊)"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-blue-600 text-white font-bold py-2 px-8 rounded-full shadow";
+        }
+    } else if (currentEvent.type === 'shop') {
+        uiTitle.innerHTML = `⛺ 補給站`; uiDesc.innerText = '兌換復育裝備'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-blue-400 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+        uiBtn.innerText = "進入"; uiBtn.setAttribute('onclick', 'openShopModal()'); uiBtn.className = "interactive-btn bg-blue-600 text-white font-bold py-2 px-8 rounded-full shadow";
+    } else if (currentEvent.type === 'npc') {
+        uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '想了解如何拯救地球嗎？'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-green-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+        uiBtn.innerText = "聆聽解說"; uiBtn.setAttribute('onclick', 'openNpcModal()'); uiBtn.className = "interactive-btn bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
+    } else if (currentEvent.type === 'quest_npc_eagle') {
+        // 新增：處理老鷹 NPC 互動提示
+        uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '棲息於此的神祕老鷹正盯著你。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-cyan-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+        uiBtn.innerText = "上前交談"; uiBtn.setAttribute('onclick', 'openEagleModal()'); uiBtn.className = "interactive-btn bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
+    } else {
+        uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '需使用【觀測卡】寫入日誌。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-yellow-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+        uiBtn.innerText = "打開行囊"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-emerald-600 text-white font-bold py-2 px-8 rounded-full shadow";
+    }
+}
+
+window.autoPathTo = (tx, ty) => {
+    const px = Math.floor((player.x + player.width/2)/TILE_SIZE); const py = Math.floor((player.y + player.height/2)/TILE_SIZE);
+    const path = findPath(px, py, tx, ty); if (path.length > 0) { player.path = path; player.target = {x:tx, y:ty}; }
+    closeShopModal(); closeInventoryModal();
+};
+
+function update() {
+    if (!travelerProfile || isInCombat) return; 
+
+    let dx = 0, dy = 0; const isWalkable = (px, py) => { const gx = Math.floor((px+player.width/2)/TILE_SIZE), gy = Math.floor((py+player.height/2)/TILE_SIZE); return gx>=0 && gx<MAP_COLS && gy>=0 && gy<MAP_ROWS && TERRAIN_CONFIG[mapData[gy][gx]].walkable; };
+    if (keys.ArrowUp||keys.w) dy -= player.speed; if (keys.ArrowDown||keys.s) dy += player.speed;
+    if (keys.ArrowLeft||keys.a) dx -= player.speed; if (keys.ArrowRight||keys.d) dx += player.speed;
+    if (dx !== 0 && isWalkable(player.x+dx, player.y)) player.x += dx; if (dy !== 0 && isWalkable(player.x, player.y+dy)) player.y += dy;
+
+    if (player.path.length > 0) {
+        let nN = player.path[0], tPx = nN.x*TILE_SIZE+TILE_SIZE/2-player.width/2, tPy = nN.y*TILE_SIZE+TILE_SIZE/2-player.height/2;
+        let pDx = tPx-player.x, pDy = tPy-player.y, dist = Math.hypot(pDx, pDy);
+        if (dist < player.speed) { player.x = tPx; player.y = tPy; player.path.shift(); if(player.path.length===0) player.target = null; }
+        else { player.x += (pDx/dist)*player.speed; player.y += (pDy/dist)*player.speed; }
+    }
+    camera.x = Math.max(0, Math.min(player.x+player.width/2-CANVAS_WIDTH/2, MAP_COLS*TILE_SIZE-CANVAS_WIDTH)); camera.y = Math.max(0, Math.min(player.y+player.height/2-CANVAS_HEIGHT/2, MAP_ROWS*TILE_SIZE-CANVAS_HEIGHT));
+
+    if (db && currentUser) {
+        const now = Date.now();
+        let moved = (Math.abs(player.x - lastSentX) > 5 || Math.abs(player.y - lastSentY) > 5);
+        if ((moved && now - lastPositionUpdate > 1500) || (now - lastPositionUpdate > 10000)) {
+            lastPositionUpdate = now;
+            lastSentX = player.x; lastSentY = player.y;
+            setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'online_players', currentUser.uid), {
+                x: player.x,
+                y: player.y,
+                name: travelerProfile.name,
+                gender: travelerProfile.gender || 'm',
+                isGuest: travelerProfile.isGuest || false, 
+                timestamp: now
+            }, { merge: true }).catch(e => {});
+        }
+    }
+
+    const gX = Math.floor((player.x+player.width/2)/TILE_SIZE), gY = Math.floor((player.y+player.height/2)/TILE_SIZE);
+    
+    const hitFieldMonster = activeFieldMonsters.find(m => m.x === gX && m.y === gY);
+    if (hitFieldMonster) {
+        player.x -= 20; player.y -= 20; 
+        const baseM = GHG_MONSTERS.find(m => m.name === hitFieldMonster.monsterName) || GHG_MONSTERS[0];
+        triggerCombat(baseM, false, hitFieldMonster.id);
+        return;
+    }
+
+    const nearSOS = activeSOSSignals.find(s => s.x === gX && s.y === gY && s.uid !== currentUser?.uid);
+    if (nearSOS) {
+        currentEvent = null; 
+        if(uiPrompt) {
+            uiPrompt.classList.remove('hidden'); uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-blue-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100";
+            document.getElementById('prompt-title').innerHTML = `🆘 戰鬥支援`; document.getElementById('prompt-desc').innerText = `旅者 [${nearSOS.userName}] 正在對抗 ${nearSOS.monsterName}！`;
+            const btn = document.getElementById('prompt-btn'); btn.innerText = "加入戰鬥"; btn.className = "interactive-btn bg-blue-600 px-8 py-2 rounded-full text-white font-bold"; btn.onclick = () => joinBattle(nearSOS);
+        }
+        return; 
+    }
+
+    if (gX !== lastStepX || gY !== lastStepY) {
+        lastStepX = gX; lastStepY = gY;
+        let isEventPoint = allEvents.some(evt => evt.x === gX && evt.y === gY);
+        if (mapData[gY][gX] !== 5 && !isEventPoint && Math.random() < 0.08) { triggerCombat(); return; }
+    }
+
+    if (gX>=0 && gX<MAP_COLS && gY>=0 && gY<MAP_ROWS) { document.getElementById('location-info').innerText = `目前位置：${TERRAIN_CONFIG[mapData[gY][gX]].name} (${gX}, ${gY})`; }
+
+    let found = allEvents.find(evt => evt.x===gX && evt.y===gY);
+    if (found !== currentEvent) {
+        currentEvent = found; updatePromptUI(); 
+        if (currentEvent) {
+            let needsAction = false;
+            if (currentEvent.type === 'disaster' && !currentEvent.reported) needsAction = true;
+            if (currentEvent.type === 'landmark') needsAction = true;
+            if (needsAction) setTimeout(() => openInventoryModal(true), 150);
+        }
+    }
+}
+
+function generateMap() {
+    for(let y=0; y<MAP_ROWS; y++){ let r=[]; for(let x=0; x<MAP_COLS; x++) r.push(1); mapData.push(r); }
+    const dB = (cx,cy,rd,t) => { for(let y=0; y<MAP_ROWS; y++) for(let x=0; x<MAP_COLS; x++) if(Math.hypot(x-cx,y-cy)<rd+(Math.random()*4-2)) mapData[y][x]=t; };
+    
+    dB(5,10,15,0); dB(42,6,12,0); dB(40,40,18,4); dB(10,42,16,2); dB(10,25,8,3); 
+    
+    allEvents.forEach(evt => {
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                let ty = evt.y + dy;
+                let tx = evt.x + dx;
+                if (ty >= 0 && ty < MAP_ROWS && tx >= 0 && tx < MAP_COLS) {
+                    if (!TERRAIN_CONFIG[mapData[ty][tx]].walkable) {
+                        mapData[ty][tx] = 1;
+                    }
+                }
+            }
+        }
+    });
+
+    const shopP = allEvents.find(e=>e.type==='shop');
+    allEvents.forEach(evt => { 
+        if(evt.type!=='shop'){ let cx=shopP.x, cy=shopP.y; while(cx!==evt.x){mapData[cy][cx]=5; cx+=(evt.x>cx?1:-1);} while(cy!==evt.y){mapData[cy][cx]=5; cy+=(evt.y>cy?1:-1);} }
+        mapData[evt.y][evt.x]=5; 
+    });
+    for(let y=0;y<MAP_ROWS;y++) for(let x=0;x<MAP_COLS;x++) if(x===0||x===MAP_COLS-1||y===0||y===MAP_ROWS-1) mapData[y][x]=0;
+}
+generateMap();
 
 function findPath(startX, startY, endX, endY) {
     if (startX===endX && startY===endY) return []; if (endX<0 || endX>=MAP_COLS || endY<0 || endY>=MAP_ROWS || !TERRAIN_CONFIG[mapData[endY][endX]].walkable) return [];
@@ -487,657 +1829,105 @@ function findPath(startX, startY, endX, endY) {
         [{x:curr.x,y:curr.y-1},{x:curr.x,y:curr.y+1},{x:curr.x-1,y:curr.y},{x:curr.x+1,y:curr.y}].forEach(n=>{
             if (n.x>=0 && n.x<MAP_COLS && n.y>=0 && n.y<MAP_ROWS && TERRAIN_CONFIG[mapData[n.y][n.x]].walkable && !closedSet.has(n.x+','+n.y)) {
                 let tG = curr.g + 1, eNode = openSet.find(nd=>nd.x===n.x && nd.y===n.y);
-                if (!eNode || tG < eNode.g) {
-                    if(!eNode) { eNode = {x:n.x, y:n.y}; openSet.push(eNode); }
-                    eNode.parent = curr; eNode.g = tG; eNode.f = tG + Math.abs(n.x-endX) + Math.abs(n.y-endY);
-                }
+                if (!eNode || tG < eNode.g) { if(!eNode) { eNode = {x:n.x, y:n.y}; openSet.push(eNode); } eNode.parent = curr; eNode.g = tG; eNode.f = tG + Math.abs(n.x-endX) + Math.abs(n.y-endY); }
             }
         });
     } return [];
 }
 
-canvas.addEventListener('pointerdown', (e) => {
-    if (isInCombat) return; // 戰鬥中鎖定點擊移動
-    if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden')) return;
-    const rect = canvas.getBoundingClientRect();
-    const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE);
-    const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE);
-    const path = findPath(pX, pY, tX, tY);
-    if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }
-});
-
-// ==========================================
-// 4. 遊戲主迴圈與 UI 邏輯
-// ==========================================
-const uiLocation = document.getElementById('location-info'), uiPrompt = document.getElementById('interaction-prompt'), uiTitle = document.getElementById('prompt-title'), uiDesc = document.getElementById('prompt-desc'), uiBtn = document.getElementById('prompt-btn');
-let currentEvent = null;
-const isWalkable = (px, py) => { const gx = Math.floor((px+player.width/2)/TILE_SIZE), gy = Math.floor((py+player.height/2)/TILE_SIZE); return gx>=0 && gx<MAP_COLS && gy>=0 && gy<MAP_ROWS && TERRAIN_CONFIG[mapData[gy][gx]].walkable; };
-
-// 溫室氣體怪物資料庫 (擴充 RPG 數值與科普介紹)
-const GHG_MONSTERS = [
-    { name: '二氧化碳巨獸', icon: '👾', maxHp: 80, attack: 15, defense: 5, exp: 20, 
-      desc: '溫室效應的最大元凶，過量吸收地表熱輻射導致全球極端暖化。', 
-      source: '大量燃燒化石燃料（煤、石油、天然氣）、工業排放與過度砍伐森林。', pts: 15 },
-    { name: '甲烷泥怪', icon: '🤢', maxHp: 120, attack: 18, defense: 8, exp: 35, 
-      desc: '暖化潛勢為二氧化碳的數十倍，生命週期較短但破壞力極其猛烈。', 
-      source: '工業化畜牧業（牛羊反芻）、垃圾掩埋場有機物發酵、天然氣開採外洩。', pts: 20 },
-    { name: '氟氯碳惡靈', icon: '🌫️', maxHp: 60, attack: 25, defense: 2, exp: 40, 
-      desc: '極度穩定且具破壞性的人造氣體，能穿透平流層撕裂大氣保護罩。', 
-      source: '未妥善回收的老舊冷氣冷媒、冰箱製冷劑、工業發泡劑與清洗溶劑廢氣。', pts: 25 },
-    { name: '氧化亞氮幽靈', icon: '👻', maxHp: 150, attack: 12, defense: 15, exp: 50, 
-      desc: '俗稱笑氣，暖化能力極高，且會長時間滯留於大氣中難以消散。', 
-      source: '過度施用化學合成肥料、工業硝酸生產過程、未經處理之農業廢棄物燃燒。', pts: 22 }
-];
-let currentMonster = null;
-let combatState = { turn: 0, playerDefending: false, purifyUsed: false, shieldUsed: false };
-
-// 更新戰鬥文字紀錄
-function addCombatLog(msg, colorClass = "text-slate-300") {
-    const ul = document.getElementById('combat-log');
-    const li = document.createElement('li');
-    li.className = colorClass;
-    li.innerText = msg;
-    ul.appendChild(li);
-    ul.parentElement.scrollTop = ul.parentElement.scrollHeight; // 自動捲動到底部
-}
-
-// 更新戰鬥雙方血條與狀態
-function updateCombatUI() {
-    if(!travelerProfile || !currentMonster) return;
-    
-    // 更新玩家狀態
-    document.getElementById('player-combat-name').innerText = travelerProfile.name;
-    document.getElementById('player-level').innerText = travelerProfile.level;
-    document.getElementById('player-exp').innerText = `${travelerProfile.exp} / ${travelerProfile.level * 50}`;
-    
-    document.getElementById('player-hp-text').innerText = `${travelerProfile.hp} / ${travelerProfile.maxHp}`;
-    let pPercent = Math.max(0, (travelerProfile.hp / travelerProfile.maxHp) * 100);
-    document.getElementById('player-hp-bar').style.width = `${pPercent}%`;
-    
-    // 更新怪物狀態
-    document.getElementById('monster-hp-text').innerText = `${currentMonster.hp} / ${currentMonster.maxHp}`;
-    let mPercent = Math.max(0, (currentMonster.hp / currentMonster.maxHp) * 100);
-    document.getElementById('monster-hp-bar').style.width = `${mPercent}%`;
-}
-
-// 開啟/關閉按鈕 (並依據技能是否使用過來判定 Disable)
-function setCombatButtonsEnabled(enabled) {
-    document.getElementById('btn-attack').disabled = !enabled;
-    document.getElementById('btn-purify').disabled = !enabled || combatState.purifyUsed;
-    document.getElementById('btn-shield').disabled = !enabled || combatState.shieldUsed;
-    document.getElementById('btn-flee').disabled = !enabled;
-
-    const baseOpacity = enabled ? "opacity-100" : "opacity-50 cursor-not-allowed";
-    document.getElementById('btn-attack').className = `flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-slate-500 text-xs ${baseOpacity}`;
-    
-    // 若技能已使用，強制套用灰階與禁用樣式
-    const purifyOpacity = (enabled && !combatState.purifyUsed) ? "opacity-100" : "opacity-40 cursor-not-allowed grayscale";
-    document.getElementById('btn-purify').className = `flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-amber-500 text-xs ${purifyOpacity}`;
-    
-    const shieldOpacity = (enabled && !combatState.shieldUsed) ? "opacity-100" : "opacity-40 cursor-not-allowed grayscale";
-    document.getElementById('btn-shield').className = `flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded shadow transition-all active:scale-95 border border-blue-500 text-xs ${shieldOpacity}`;
-    
-    document.getElementById('btn-flee').className = `w-full mt-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded shadow transition-all border border-slate-600 text-xs ${baseOpacity}`;
-}
-
-// 觸發隨機戰鬥 (初始化)
-function triggerCombat() {
-    isInCombat = true;
-    clearPath(); 
-    uiPrompt.classList.add('hidden');
-    currentEvent = null;
-
-    // 複製一隻新的怪物資料，避免修改到資料庫本體
-    const baseMonster = GHG_MONSTERS[Math.floor(Math.random() * GHG_MONSTERS.length)];
-    // 依據玩家等級微調怪物強度
-    const scaling = 1 + ((travelerProfile.level - 1) * 0.2); 
-    currentMonster = {
-        ...baseMonster,
-        maxHp: Math.floor(baseMonster.maxHp * scaling),
-        hp: Math.floor(baseMonster.maxHp * scaling),
-        attack: Math.floor(baseMonster.attack * scaling),
-        defense: Math.floor(baseMonster.defense * scaling)
-    };
-    
-    // 初始化回合與技能狀態
-    combatState = { turn: 1, playerDefending: false, purifyUsed: false, shieldUsed: false };
-    
-    document.getElementById('monster-icon').innerText = currentMonster.icon;
-    document.getElementById('monster-name').innerText = `Lv.${travelerProfile.level} ${currentMonster.name}`;
-    
-    // 將科普知識寫入戰鬥面板
-    document.getElementById('monster-desc').innerText = currentMonster.desc;
-    document.getElementById('monster-source').innerText = currentMonster.source;
-    
-    document.getElementById('combat-log').innerHTML = ''; // 清空對話
-    
-    addCombatLog(`系統：遭遇了野生的【${currentMonster.name}】！`, "text-amber-400 font-bold");
-    
-    updateCombatUI();
-    setCombatButtonsEnabled(true);
-    document.getElementById('combat-modal').classList.remove('hidden');
-}
-
-// 玩家選擇動作，並進入回合制結算
-window.executeCombatAction = (action) => {
-    if(!isInCombat || !currentMonster || !travelerProfile) return;
-    
-    setCombatButtonsEnabled(false); // 鎖定按鈕，等待結算
-    combatState.playerDefending = false;
-
-    if (action === 'flee') {
-        addCombatLog(`${travelerProfile.name} 選擇了戰術撤退！`, "text-slate-400");
-        setTimeout(() => {
-            document.getElementById('combat-modal').classList.add('hidden');
-            player.x -= 20; player.y -= 20; // 稍微彈開
-            isInCombat = false;
-            currentMonster = null;
-        }, 1000);
-        return;
-    }
-
-    // 1. 玩家回合結算 (百分比傷害/恢復邏輯)
-    if (action === 'basic_attack') {
-        // 基礎攻擊：恆定造成怪物最大血量 1% 的傷害 (至少 1 點)
-        let damage = Math.max(1, Math.floor(currentMonster.maxHp * 0.01));
-        currentMonster.hp -= damage;
-        addCombatLog(`${travelerProfile.name} 發動基礎攻擊，造成 ${damage} 點傷害 (1%)！`, "text-slate-300");
-        
-    } else if (action === 'purify_skill') {
-        // 數據淨化：恆定造成怪物最大血量 10% 的傷害，且限用一次
-        combatState.purifyUsed = true;
-        let damage = Math.max(1, Math.floor(currentMonster.maxHp * 0.10));
-        currentMonster.hp -= damage;
-        addCombatLog(`${travelerProfile.name} 施放✨數據淨化，造成 ${damage} 點大量傷害 (10%)！`, "text-amber-300 font-bold");
-        
-    } else if (action === 'shield_skill') {
-        // 永續防護：恢復自身最大血量 20% 的 HP，附帶一回合格擋，且限用一次
-        combatState.shieldUsed = true;
-        combatState.playerDefending = true;
-        let heal = Math.max(1, Math.floor(travelerProfile.maxHp * 0.20));
-        travelerProfile.hp = Math.min(travelerProfile.maxHp, travelerProfile.hp + heal);
-        addCombatLog(`${travelerProfile.name} 啟動🛡️永續防護，恢復 ${heal} 點 HP (20%) 並準備格擋！`, "text-blue-300 font-bold");
-    }
-
-    updateCombatUI();
-
-    // 檢查怪物是否死亡
-    if (currentMonster.hp <= 0) {
-        currentMonster.hp = 0;
-        updateCombatUI();
-        setTimeout(() => handleVictory(), 800);
-        return;
-    }
-
-    // 2. 怪物回合結算 (延遲執行，營造節奏感)
-    setTimeout(() => {
-        let variance = 0.8 + (Math.random() * 0.4);
-        let mDamage = Math.floor(Math.max(1, currentMonster.attack * variance - travelerProfile.defense));
-        
-        // 若玩家防禦，傷害減半
-        if (combatState.playerDefending) mDamage = Math.floor(mDamage / 2);
-        
-        travelerProfile.hp -= mDamage;
-        addCombatLog(`【${currentMonster.name}】發起反擊，對你造成 ${mDamage} 點傷害！`, "text-red-400");
-        
-        updateCombatUI();
-
-        // 檢查玩家是否死亡
-        if (travelerProfile.hp <= 0) {
-            travelerProfile.hp = 0;
-            updateCombatUI();
-            setTimeout(() => handleDefeat(), 800);
-            return;
-        }
-
-        // 回合結束，開放玩家輸入
-        combatState.turn++;
-        setCombatButtonsEnabled(true);
-        
-    }, 1200); // 怪物延遲 1.2 秒後攻擊
-};
-
-// 戰鬥勝利邏輯
-function handleVictory() {
-    addCombatLog(`✨ 成功淨化【${currentMonster.name}】！`, "text-amber-400 font-bold text-lg");
-    
-    // 獲取經驗值與獎勵
-    travelerProfile.exp += currentMonster.exp;
-    travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + currentMonster.pts;
-    addCombatLog(`獲得 ${currentMonster.exp} 點 EXP，地球勇者指數增加 ${currentMonster.pts} 點。`, "text-emerald-300");
-    
-    // 道具掉落邏輯 (30% 機率獲得觀測卡)
-    if(Math.random() < 0.3) {
-        travelerProfile.inventory['observe_card'] = (travelerProfile.inventory['observe_card'] || 0) + 1;
-        addCombatLog(`🎁 怪物掉落了：【基礎觀測卡】x1！`, "text-fuchsia-300 font-bold");
-    }
-
-    // 升級判定
-    let nextLevelExp = travelerProfile.level * 50;
-    if (travelerProfile.exp >= nextLevelExp) {
-        travelerProfile.level++;
-        travelerProfile.exp -= nextLevelExp; // 保留溢出經驗
-        
-        // 升級提升能力值
-        travelerProfile.maxHp += 20;
-        travelerProfile.hp = travelerProfile.maxHp; // 升級回滿血
-        travelerProfile.attack += 5;
-        travelerProfile.defense += 2;
-        
-        addCombatLog(`🎉 LEVEL UP！等級提升至 Lv.${travelerProfile.level}！HP與能力值全面上升。`, "text-yellow-400 font-bold text-xl");
-    }
-
-    // 更新外部 UI
-    if(document.getElementById('ui-hero-index')) document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex;
-    updateCombatUI();
-
-    setTimeout(() => {
-        document.getElementById('combat-modal').classList.add('hidden');
-        isInCombat = false;
-        currentMonster = null;
-    }, 2500); // 留時間給玩家看戰利品
-}
-
-// 戰鬥失敗邏輯
-function handleDefeat() {
-    addCombatLog(`☠️ 探勘失敗... 你的防護服破損，被迫緊急撤離。`, "text-red-500 font-bold text-lg");
-    
-    // 失敗懲罰
-    travelerProfile.heroIndex = Math.max(0, (travelerProfile.heroIndex || 0) - 10);
-    travelerProfile.hp = travelerProfile.maxHp; // 復活時回滿血
-    
-    // 傳送回補給站安全區
-    player.x = 25 * TILE_SIZE;
-    player.y = 25 * TILE_SIZE;
-
-    // 更新外部 UI
-    if(document.getElementById('ui-hero-index')) document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex;
-
-    setTimeout(() => {
-        document.getElementById('combat-modal').classList.add('hidden');
-        isInCombat = false;
-        currentMonster = null;
-        camera.x = player.x + player.width / 2 - CANVAS_WIDTH / 2;
-        camera.y = player.y + player.height / 2 - CANVAS_HEIGHT / 2;
-    }, 2500);
-}
-
-function updatePromptUI() {
-    if (!currentEvent) {
-        uiPrompt.classList.add('hidden');
-        return;
-    }
-    
-    uiPrompt.classList.remove('hidden');
-    if (currentEvent.type === 'disaster') {
-        if (!currentEvent.observed) {
-            uiTitle.innerHTML = `<span class="text-2xl">❓</span> 未知氣候異常區`; uiDesc.innerText = '需使用【基礎觀測卡】調查。';
-            uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950/95 border-2 border-red-500 p-5 rounded-xl text-center transition-all opacity-100"; 
-            uiBtn.innerText = "打開行囊選擇道具"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold py-2 px-8 rounded-full shadow-lg";
-        } else if (!currentEvent.reported) {
-            uiTitle.innerHTML = `<span class="text-2xl">${currentEvent.icon}</span> ${currentEvent.name}`;
-            uiDesc.innerText = `結果：${currentEvent.severityText}。請使用【通報卡】。`;
-            uiPrompt.className = `ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 p-5 rounded-xl text-center transition-all opacity-100 ${currentEvent.severity==='anomaly'?'bg-slate-950 border-red-500':'bg-slate-950 border-amber-500'}`; 
-            uiBtn.innerText = "打開行囊選擇道具"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold py-2 px-8 rounded-full shadow-lg";
-        } else {
-            uiTitle.innerHTML = `<span class="text-2xl">${currentEvent.icon}</span> ${currentEvent.name}`; uiDesc.innerText = currentEvent.desc; 
-            uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950/95 border-2 border-red-500 p-5 rounded-xl text-center transition-all opacity-100"; 
-            uiBtn.innerText = "已通報，等待復育"; uiBtn.onclick = null; uiBtn.className = "interactive-btn bg-slate-700 text-slate-400 font-bold py-2 px-8 rounded-full shadow cursor-not-allowed";
-        }
-    } else if (currentEvent.type === 'shop') {
-        uiTitle.innerHTML = `⛺ 補給站`; uiDesc.innerText = '兌換裝備'; 
-        uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-blue-400 p-5 rounded-xl text-center transition-all opacity-100"; 
-        uiBtn.innerText = "進入"; uiBtn.setAttribute('onclick', 'openShopModal()'); uiBtn.className = "interactive-btn bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold py-2 px-8 rounded-full shadow-lg";
-    } else {
-        uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '寫入日誌'; 
-        uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-yellow-500 p-5 rounded-xl text-center transition-all opacity-100"; 
-        uiBtn.innerText = "打開行囊選擇道具"; uiBtn.setAttribute('onclick', 'openInventoryModal(true)'); uiBtn.className = "interactive-btn bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold py-2 px-8 rounded-full shadow-lg";
+function initAssets(cb) {
+    for (const [key, svg] of Object.entries(svgAssets)) {
+        const img = new Image(); img.onload = () => { imagesLoaded++; if(imagesLoaded===Object.keys(svgAssets).length && cb) cb(); };
+        img.src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })); tileImages[key] = img;
     }
 }
-
-function update() {
-    if (isInCombat) return; // 戰鬥中暫停所有物理移動與事件判定
-
-    let dx = 0, dy = 0;
-    if (keys.ArrowUp||keys.w) dy -= player.speed; if (keys.ArrowDown||keys.s) dy += player.speed;
-    if (keys.ArrowLeft||keys.a) dx -= player.speed; if (keys.ArrowRight||keys.d) dx += player.speed;
-    if (dx !== 0 && isWalkable(player.x+dx, player.y)) player.x += dx; if (dy !== 0 && isWalkable(player.x, player.y+dy)) player.y += dy;
-
-    if (player.path.length > 0) {
-        let nN = player.path[0], tPx = nN.x*TILE_SIZE+TILE_SIZE/2-player.width/2, tPy = nN.y*TILE_SIZE+TILE_SIZE/2-player.height/2;
-        let pDx = tPx-player.x, pDy = tPy-player.y, dist = Math.hypot(pDx, pDy);
-        if (dist < player.speed) { player.x = tPx; player.y = tPy; player.path.shift(); if(player.path.length===0) player.target = null; }
-        else { player.x += (pDx/dist)*player.speed; player.y += (pDy/dist)*player.speed; }
-    }
-    camera.x = Math.max(0, Math.min(player.x+player.width/2-CANVAS_WIDTH/2, MAP_COLS*TILE_SIZE-CANVAS_WIDTH));
-    camera.y = Math.max(0, Math.min(player.y+player.height/2-CANVAS_HEIGHT/2, MAP_ROWS*TILE_SIZE-CANVAS_HEIGHT));
-
-    const gX = Math.floor((player.x+player.width/2)/TILE_SIZE), gY = Math.floor((player.y+player.height/2)/TILE_SIZE);
-    
-    // ==========================================
-    // 踩地雷隨機遇敵系統
-    // ==========================================
-    if (gX !== lastStepX || gY !== lastStepY) {
-        lastStepX = gX;
-        lastStepY = gY;
-        
-        // 判定：若不在道路上 (Tile ID 不為 5) 且沒有在已知事件點上
-        let isEventPoint = allEvents.some(evt => evt.x === gX && evt.y === gY);
-        if (mapData[gY][gX] !== 5 && !isEventPoint) {
-            // 8% 的遇敵機率
-            if (Math.random() < 0.08) {
-                triggerCombat();
-                return; // 立刻中斷 update，進入戰鬥
-            }
-        }
-    }
-
-    if (gX>=0 && gX<MAP_COLS && gY>=0 && gY<MAP_ROWS) {
-        uiLocation.innerText = `目前位置：${TERRAIN_CONFIG[mapData[gY][gX]].name} (${gX}, ${gY})`;
-    }
-
-    let found = allEvents.find(evt => evt.x===gX && evt.y===gY);
-    if (found !== currentEvent) {
-        currentEvent = found;
-        updatePromptUI(); // 更新底部面板
-        
-        if (currentEvent) {
-            // 自動開啟行囊邏輯：當踩到需要使用道具的事件時，自動彈出
-            let needsAction = false;
-            if (currentEvent.type === 'disaster' && !currentEvent.reported) needsAction = true;
-            if (currentEvent.type === 'landmark') needsAction = true;
-            
-            if (needsAction) {
-                // 稍微延遲讓鏡頭定位
-                setTimeout(() => openInventoryModal(true), 150);
-            }
-        }
-    }
-}
-
-window.triggerEvent = () => {
-    if(!currentEvent || !travelerProfile) return; const btn = uiBtn;
-    if (currentEvent.type === 'disaster') {
-        if (!currentEvent.observed) {
-            if (!travelerProfile.inventory['observe_card']) { btn.innerText = "❌ 缺觀測卡"; return; }
-            travelerProfile.inventory['observe_card']--; currentEvent.observed = true;
-            let r = Math.random(); currentEvent.severity = r<0.33?'normal':(r<0.66?'attention':'anomaly'); currentEvent.severityText = r<0.33?'正常':(r<0.66?'需注意':'異常');
-            let pts = r<0.33?5:(r<0.66?15:30); 
-            
-            // 修改：分數不再灌回永續積分，全數累計至地球勇者指數
-            travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + pts;
-            
-            btn.innerText = `🔍 發現【${currentEvent.severityText}】`; renderDisasterAlerts();
-        } else if (!currentEvent.reported) {
-            if (!travelerProfile.inventory['report_card']) { btn.innerText = "❌ 缺通報卡"; return; }
-            travelerProfile.inventory['report_card']--; currentEvent.reported = true; 
-            
-            // 修改：通報的 10 分僅累加至地球勇者指數
-            travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 10;
-            
-            btn.innerText = "🚨 已通報"; renderDisasterAlerts();
-        }
-    } else if (currentEvent.type === 'landmark') {
-        if (!travelerProfile.inventory['observe_card']) { btn.innerText = "❌ 缺觀測卡"; return; }
-        travelerProfile.inventory['observe_card']--; 
-        
-        // 修改：寫入日誌的 10 分僅累加至地球勇者指數
-        travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 10;
-        
-        btn.innerText = "✓ 日誌登錄";
-    }
-    
-    // 更新 UI 顯示 (確保永續積分不會異常跳動，並刷新勇者指數)
-    document.getElementById('ui-pts').innerText = travelerProfile.points; 
-    if(document.getElementById('ui-hero-index')) document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex;
-    
-    setTimeout(()=> { uiPrompt.classList.add('hidden'); currentEvent=null; }, 1000);
-};
-
-// ==========================================
-// 道具庫與背包管理邏輯
-// ==========================================
-window.buyItem = (id, p, n) => {
-    const msg = document.getElementById('shop-message');
-    if (travelerProfile.points >= p) {
-        travelerProfile.points -= p; travelerProfile.inventory[id] = (travelerProfile.inventory[id]||0)+1;
-        document.getElementById('ui-pts').innerText = travelerProfile.points; document.getElementById('shop-current-pts').innerText = travelerProfile.points;
-        msg.innerText = `✅ 兌換【${n}】成功`; msg.className="h-6 mt-4 text-center text-sm font-bold text-emerald-400";
-    } else { msg.innerText = `❌ 缺 ${p-travelerProfile.points} 分`; msg.className="h-6 mt-4 text-center text-sm font-bold text-red-400"; }
-};
-
-// 確保字典檔為全域變數，修復 ReferenceError
-window.ITEM_DICT = {
-    'drone': {n:'無人機', i:'🚁', d:'撲滅大面積森林大火'}, 
-    'filter': {n:'過濾網', i:'💧', d:'清除水域微型垃圾'}, 
-    'sapling': {n:'樹苗', i:'🌱', d:'改善極端旱災區土壤'},
-    'observe_card': {n:'觀測卡', i:'🪪', d:'調查生態異常必備'}, 
-    'report_card': {n:'通報卡', i:'📡', d:'上傳數據至警示網'}
-};
-
-// 統籌道具使用判定邏輯 (含觀測、通報、復育)
-window.useItem = (itemId) => {
-    const msg = document.getElementById('inventory-message');
-    if(!currentEvent) { msg.innerText = "❌ 這裡沒有需要互動的目標。"; msg.className="text-center text-sm font-bold text-red-400 mt-3"; return; }
-    
-    let success = false;
-    let feedback = "";
-    
-    if (currentEvent.type === 'disaster') {
-        if (!currentEvent.observed) {
-            // 階段一：觀測
-            if (itemId === 'observe_card') {
-                travelerProfile.inventory['observe_card']--; currentEvent.observed = true;
-                let r = Math.random(); currentEvent.severity = r<0.33?'normal':(r<0.66?'attention':'anomaly'); currentEvent.severityText = r<0.33?'正常':(r<0.66?'需注意':'異常');
-                let pts = r<0.33?5:(r<0.66?15:30); 
-                travelerProfile.points += pts; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + pts;
-                feedback = `✅ 觀測完成：【${currentEvent.severityText}】 (+${pts} pts)`;
-                success = true;
-            } else { feedback = "❌ 目前階段需要使用【觀測卡】。"; }
-        } else if (!currentEvent.reported) {
-            // 階段二：通報
-            if (itemId === 'report_card') {
-                travelerProfile.inventory['report_card']--; currentEvent.reported = true; 
-                travelerProfile.points += 10; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 10;
-                feedback = "✅ 已上傳至警示網 (+10 pts)";
-                success = true;
-            } else { feedback = "❌ 必須使用【通報卡】上傳數據。"; }
-        } else if (currentEvent.reported && !currentEvent.resolved) {
-            // 階段三：終極復育任務
-            if (currentEvent.severity === 'normal') {
-                feedback = "✅ 此區狀態正常，不需消耗物資，已自動結案！";
-                currentEvent.resolved = true; success = true; 
-                travelerProfile.points += 50; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 50;
-            } else {
-                // 判斷該災區需要的正確道具
-                let requiredItem = '';
-                if (currentEvent.name.includes('林區')) requiredItem = 'drone';
-                else if (currentEvent.name.includes('水災') || currentEvent.name.includes('港口') || currentEvent.name.includes('冰川') || currentEvent.name.includes('群島')) requiredItem = 'filter';
-                else requiredItem = 'sapling'; // 旱災、工業區等預設使用樹苗改善
-
-                if (itemId === requiredItem) {
-                    travelerProfile.inventory[itemId]--; 
-                    currentEvent.resolved = true; // 標記為已復育
-                    travelerProfile.points += 100; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 100;
-                    feedback = `✅ 成功消除災情，大地恢復生機！ (+100 pts)`; 
-                    success = true;
-                    // 將地圖上的該點徹底變回美麗的綠地 (Tile ID: 1)
-                    mapData[currentEvent.y][currentEvent.x] = 1; 
-                } else {
-                    feedback = `❌ 道具不符，此災區需要【${window.ITEM_DICT[requiredItem].n}】`;
-                }
-            }
-        }
-    } else if (currentEvent.type === 'landmark') {
-        if (itemId === 'observe_card') {
-            travelerProfile.inventory['observe_card']--; travelerProfile.points += 10; travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 10;
-            feedback = "✅ 日誌已寫入 (+10 pts)";
-            success = true;
-        } else { feedback = "❌ 此地點只需要【觀測卡】。"; }
-    }
-
-    if (success) {
-        msg.innerText = feedback;
-        msg.className = "text-center text-sm font-bold text-emerald-400 mt-3";
-        document.getElementById('ui-pts').innerText = travelerProfile.points;
-        if(document.getElementById('ui-hero-index')) document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex;
-        
-        renderDisasterAlerts();
-        
-        // 刷新背包畫面扣除數量
-        setTimeout(() => { 
-            openInventoryModal(true); 
-            document.getElementById('inventory-message').innerText = feedback; 
-            document.getElementById('inventory-message').className="text-center text-sm font-bold text-emerald-400 mt-3"; 
-        }, 50);
-
-        // 延遲關閉視窗，並刷新底部提示板的狀態
-        setTimeout(() => {
-            closeInventoryModal();
-            updatePromptUI(); 
-        }, 1500);
-    } else {
-        msg.innerText = feedback;
-        msg.className = "text-center text-sm font-bold text-red-400 mt-3 animate-bounce";
-        setTimeout(() => msg.classList.remove('animate-bounce'), 500);
-    }
-};
-
-window.openInventoryModal = (isUseMode = false) => {
-    const list = document.getElementById('inventory-list'); list.innerHTML = '';
-    document.getElementById('inventory-message').innerText = ''; 
-    document.getElementById('inventory-title').innerHTML = isUseMode ? '🎒 選擇要使用的道具' : '🎒 旅者行囊';
-    
-    if(travelerProfile && travelerProfile.inventory) {
-        let hasItem = false;
-        for(let[id,c] of Object.entries(travelerProfile.inventory)) if(c>0 && window.ITEM_DICT[id]) {
-            hasItem = true;
-            let div = document.createElement('div'); div.className="bg-slate-800 p-3 rounded flex justify-between items-center";
-            let btnHtml = isUseMode ? `<button onclick="useItem('${id}')" class="ml-3 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded shadow text-sm font-bold shrink-0 transition-colors">使用</button>` : '';
-            div.innerHTML=`
-                <div class="flex gap-2 items-center">
-                    <span class="text-3xl">${window.ITEM_DICT[id].i}</span>
-                    <div>
-                        <div class="text-amber-300 font-bold text-sm">${window.ITEM_DICT[id].n}</div>
-                        <div class="text-slate-400 text-xs">${window.ITEM_DICT[id].d}</div>
-                    </div>
-                </div>
-                <div class="flex items-center">
-                    <div class="text-white px-3 py-1 bg-slate-700 rounded border border-slate-600 font-mono">x ${c}</div>
-                    ${btnHtml}
-                </div>`; 
-            list.appendChild(div);
-        }
-        if(!hasItem) list.innerHTML = '<div class="text-slate-400 italic text-center py-6 bg-slate-800/50 rounded-lg">行囊空空如也，請至補給站兌換。</div>';
-    }
-    document.getElementById('inventory-modal').classList.remove('hidden'); 
-    if (uiPrompt) uiPrompt.classList.add('hidden');
-};
-
-window.closeInventoryModal = () => { document.getElementById('inventory-modal').classList.add('hidden'); if(currentEvent) updatePromptUI(); };
-window.openShopModal = () => { document.getElementById('shop-current-pts').innerText = travelerProfile?travelerProfile.points:0; document.getElementById('shop-modal').classList.remove('hidden'); uiPrompt.classList.add('hidden'); };
-window.closeShopModal = () => { document.getElementById('shop-modal').classList.add('hidden'); if(currentEvent) updatePromptUI(); };
-window.openESGTModal = () => { document.getElementById('esgt-iframe').src="https://farmcmd.github.io/ESGT/game.html"; document.getElementById('esgt-modal').classList.remove('hidden'); };
-window.closeESGTModal = () => { document.getElementById('esgt-modal').classList.add('hidden'); document.getElementById('esgt-iframe').src=""; };
 
 function draw() {
-    ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    if(imagesLoaded<totalImages) return;
+    ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); if(imagesLoaded<totalImages) return;
     const sc = Math.floor(camera.x/TILE_SIZE), ec = sc+(CANVAS_WIDTH/TILE_SIZE)+1, sr = Math.floor(camera.y/TILE_SIZE), er = sr+(CANVAS_HEIGHT/TILE_SIZE)+1;
     for(let y=sr; y<=er; y++) for(let x=sc; x<=ec; x++) if(x>=0&&x<MAP_COLS&&y>=0&&y<MAP_ROWS) if(tileImages[mapData[y][x]]) ctx.drawImage(tileImages[mapData[y][x]], x*TILE_SIZE-camera.x, y*TILE_SIZE-camera.y, TILE_SIZE, TILE_SIZE);
-    
     if(player.target) { ctx.fillStyle='rgba(52,211,153,0.4)'; ctx.beginPath(); ctx.arc(player.target.x*TILE_SIZE-camera.x+TILE_SIZE/2, player.target.y*TILE_SIZE-camera.y+TILE_SIZE/2, TILE_SIZE/4+Math.sin(Date.now()/200)*8, 0, Math.PI*2); ctx.fill(); }
     
     allEvents.forEach(evt => {
-        if(evt.x>=sc && evt.x<=ec && evt.y>=sr && evt.y<=er) {
+        if(evt.x>=sc && evt.x<=ec && evt.y>=sr && evt.y<=er && !evt.resolved) {
             let px = evt.x*TILE_SIZE-camera.x+TILE_SIZE/2, py = evt.y*TILE_SIZE-camera.y+TILE_SIZE/2;
-            ctx.fillStyle = evt.type==='disaster'?'rgba(239,68,68,0.4)':(evt.type==='shop'?'rgba(96,165,250,0.4)':'rgba(250,204,21,0.4)');
-            ctx.beginPath(); ctx.arc(px, py, TILE_SIZE/2, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = evt.type==='disaster'?'rgba(239,68,68,0.4)':(evt.type==='shop'?'rgba(96,165,250,0.4)':'rgba(250,204,21,0.4)'); ctx.beginPath(); ctx.arc(px, py, TILE_SIZE/2, 0, Math.PI*2); ctx.fill();
             ctx.font='32px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(evt.icon, px, py-5);
             ctx.font='bold 14px sans-serif'; ctx.fillStyle=evt.type==='disaster'?'#fca5a5':'#fde047'; ctx.lineWidth=3; ctx.strokeStyle='#000'; ctx.strokeText(evt.name, px, py-35); ctx.fillText(evt.name, px, py-35);
         }
     });
 
+    activeFieldMonsters.forEach(fm => {
+        const dx = fm.x * TILE_SIZE - camera.x + TILE_SIZE/2, dy = fm.y * TILE_SIZE - camera.y + TILE_SIZE/2;
+        if (dx > 0 && dx < CANVAS_WIDTH && dy > 0 && dy < CANVAS_HEIGHT) {
+            ctx.fillStyle = 'rgba(220, 38, 38, 0.5)'; ctx.beginPath(); ctx.arc(dx, dy, TILE_SIZE/3, 0, Math.PI*2); ctx.fill();
+            ctx.font = '32px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText('👾', dx, dy + Math.sin(Date.now()/200)*5 - 10);
+            
+            ctx.font='bold 10px sans-serif'; ctx.fillStyle='#fca5a5'; ctx.fillText(`Lv.${fm.level || '?'} 區域威脅`, dx, dy + 15);
+            
+            if (fm.maxHp && fm.hp !== undefined) {
+                let hpPct = Math.max(0, fm.hp / fm.maxHp);
+                ctx.fillStyle = '#333'; ctx.fillRect(dx - 15, dy + 24, 30, 4); 
+                ctx.fillStyle = hpPct > 0.5 ? '#22c55e' : (hpPct > 0.2 ? '#eab308' : '#ef4444'); 
+                ctx.fillRect(dx - 15, dy + 24, 30 * hpPct, 4); 
+                ctx.strokeStyle = '#000'; ctx.strokeRect(dx - 15, dy + 24, 30, 4); 
+            }
+        }
+    });
+
+    activeSOSSignals.forEach(sos => {
+        const dx = sos.x * TILE_SIZE - camera.x + TILE_SIZE/2, dy = sos.y * TILE_SIZE - camera.y + TILE_SIZE/2;
+        if (dx > 0 && dx < CANVAS_WIDTH && dy > 0 && dy < CANVAS_HEIGHT) {
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath(); ctx.arc(dx, dy, TILE_SIZE/2 + Math.sin(Date.now()/150)*10, 0, Math.PI*2); ctx.fill();
+            ctx.font = '24px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🆘', dx, dy + 8);
+        }
+    });
+
+    Object.values(activePlayers).forEach(p => {
+        const opX = p.x - camera.x;
+        const opY = p.y - camera.y;
+        if (opX > -TILE_SIZE && opX < CANVAS_WIDTH && opY > -TILE_SIZE && opY < CANVAS_HEIGHT) {
+            let sprite = p.gender === 'f' ? 'player_f' : 'player_m';
+            if (tileImages[sprite]) {
+                ctx.globalAlpha = 0.7; 
+                ctx.drawImage(tileImages[sprite], opX, opY, player.width, player.height);
+                ctx.globalAlpha = 1.0;
+                
+                ctx.font='bold 12px sans-serif'; ctx.lineWidth=2; ctx.strokeStyle='#0f172a';
+                ctx.strokeText(p.name, opX + player.width/2, opY - 5);
+                ctx.fillStyle='#cbd5e1'; 
+                ctx.fillText(p.name, opX + player.width/2, opY - 5);
+            }
+        }
+    });
+
     let pX = player.x-camera.x, pY = player.y-camera.y;
-    if(tileImages['player']) ctx.drawImage(tileImages['player'], pX, pY, player.width, player.height);
+    let playerSprite = (travelerProfile && travelerProfile.gender === 'f') ? 'player_f' : 'player_m';
+    if(tileImages[playerSprite]) ctx.drawImage(tileImages[playerSprite], pX, pY, player.width, player.height);
+    
     let n = travelerProfile?travelerProfile.name:'未認證'; ctx.font='bold 14px sans-serif'; ctx.lineWidth=3; ctx.strokeStyle='#0f172a'; ctx.strokeText(n, pX+player.width/2, pY+player.height+16); ctx.fillStyle='#6ee7b7'; ctx.fillText(n, pX+player.width/2, pY+player.height+16);
 }
 
+const clearPath = () => { player.path = []; player.target = null; };
+window.addEventListener('keydown', (e) => { if(isInCombat) return; if (keys.hasOwnProperty(e.key)) { keys[e.key] = true; clearPath(); }});
+window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+const setupBtn = (id, k) => { const btn = document.getElementById(id); if(!btn) return; const p = (e)=>{e.preventDefault(); if(isInCombat) return; keys[k]=true; clearPath();}; const r = (e)=>{e.preventDefault(); keys[k]=false;}; btn.addEventListener('touchstart', p); btn.addEventListener('touchend', r); btn.addEventListener('mousedown', p); btn.addEventListener('mouseup', r); btn.addEventListener('mouseleave', r); };
+setupBtn('btn-up', 'ArrowUp'); setupBtn('btn-down', 'ArrowDown'); setupBtn('btn-left', 'ArrowLeft'); setupBtn('btn-right', 'ArrowRight');
+canvas.addEventListener('pointerdown', (e) => { if (isInCombat) return; if (!document.getElementById('certification-modal').classList.contains('hidden') || !document.getElementById('shop-modal').classList.contains('hidden') || !document.getElementById('inventory-modal').classList.contains('hidden') || !document.getElementById('eagle-modal').classList.contains('hidden')) return; const rect = canvas.getBoundingClientRect(); const tX = Math.floor((e.clientX - rect.left + camera.x) / TILE_SIZE), tY = Math.floor((e.clientY - rect.top + camera.y) / TILE_SIZE); const pX = Math.floor((player.x + player.width/2) / TILE_SIZE), pY = Math.floor((player.y + player.height/2) / TILE_SIZE); const path = findPath(pX, pY, tX, tY); if (path.length > 0) { player.path = path; player.target = {x:tX, y:tY}; }});
+
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
-checkExternalLoginData();
-initAssets(() => gameLoop());
 
-// ==========================================
-// 5. Firebase 登入控制
-// ==========================================
-let db, auth, currentUser, currentLoginMode = 'comp';
-window.setLoginMode = (m) => {
-    currentLoginMode = m; document.getElementById('email-field-group').classList.toggle('hidden', m==='guest'); document.getElementById('guest-warning').classList.toggle('hidden', m==='comp');
-    document.getElementById('tab-comp').className = m==='comp'?"flex-1 bg-emerald-600 text-white font-bold py-2 rounded text-sm":"flex-1 bg-transparent text-slate-400 font-bold py-2 rounded text-sm";
-    document.getElementById('tab-guest').className = m==='guest'?"flex-1 bg-teal-600 text-white font-bold py-2 rounded text-sm":"flex-1 bg-transparent text-slate-400 font-bold py-2 rounded text-sm";
-    document.getElementById('btn-certify').innerText = m==='comp'?"綁定信箱並開始探索":"以訪客身分開始";
-};
-
-async function initFirebase() {
-    if(typeof __firebase_config !== 'undefined') {
-        const app = initializeApp(JSON.parse(__firebase_config)); auth = getAuth(app); db = getFirestore(app);
-        try { if(typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } catch(e){}
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user; document.getElementById('auth-status').innerText = user?'🟢 已連線':'🔴 未連線';
-            if(user) {
-                if(!travelerProfile || !travelerProfile.isExternal) {
-                    const snap = await getDoc(doc(db, 'artifacts', typeof __app_id !== 'undefined'?__app_id:'default', 'users', user.uid, 'profile', 'main'));
-                    if(snap.exists()) { travelerProfile = snap.data(); applyCertificationSuccess(); } else document.getElementById('certification-modal').classList.remove('hidden');
-                } else await setDoc(doc(db, 'artifacts', typeof __app_id !== 'undefined'?__app_id:'default', 'users', user.uid, 'profile', 'main'), travelerProfile, {merge:true});
-                const chatRef = collection(db, 'artifacts', typeof __app_id !== 'undefined'?__app_id:'default', 'public', 'data', 'chat_messages');
-                onSnapshot(chatRef, (sp) => {
-                    let msgs=[]; sp.forEach(d=>msgs.push(d.data())); msgs.sort((a,b)=>a.timestamp-b.timestamp);
-                    const c = document.getElementById('chat-messages'); c.innerHTML='';
-                    msgs.slice(-30).forEach(m=>{ c.innerHTML+=`<div><span class="text-amber-400">[${m.senderName}]</span> <span class="text-slate-200">${m.text}</span></div>`; }); c.scrollTop = c.scrollHeight;
-                }, (e)=>{});
-            }
-        });
-    } else { if(!travelerProfile) document.getElementById('certification-modal').classList.remove('hidden'); }
-}
-
-window.submitCertification = async () => {
-    let email = document.getElementById('traveler-email-input').value, name = document.getElementById('traveler-name-input').value;
-    if(currentLoginMode==='comp' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("Email格式錯誤"); if(!name) return alert("請輸入暱稱");
-    const tD = window.tempExtData || {dist:0, carb:0, pts:0};
-    
-    // 更新註冊時的初始化參數，加入 RPG 屬性
-    let newP = { 
-        email: currentLoginMode==='comp'?email:'guest', 
-        name: currentLoginMode==='guest'?name+'(訪客)':name, 
-        points: tD.pts, 
-        heroIndex: 0, 
-        level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10,
-        distance: tD.dist, carbon: tD.carb, 
-        inventory: {observe_card:3, report_card:2}, 
-        certifiedAt: Date.now(), isCertified: true, isGuest: currentLoginMode==='guest', isExternal: !!window.tempExtData 
-    };
-    
-    if(db && currentUser && currentLoginMode==='comp') await setDoc(doc(db, 'artifacts', typeof __app_id !== 'undefined'?__app_id:'default', 'users', currentUser.uid, 'profile', 'main'), newP);
-    travelerProfile = newP; applyCertificationSuccess();
-};
-
-function applyCertificationSuccess() {
-    document.getElementById('certification-modal').classList.add('hidden');
-    document.getElementById('traveler-name-display').innerText = `旅者代碼：${travelerProfile.name}`; document.getElementById('traveler-name-display').classList.remove('hidden');
-    document.getElementById('ui-pts').innerText = travelerProfile.points; 
-    if(document.getElementById('ui-hero-index')) document.getElementById('ui-hero-index').innerText = travelerProfile.heroIndex || 0;
-    document.getElementById('ui-carbon').innerText = travelerProfile.carbon; document.getElementById('ui-dist').innerText = travelerProfile.distance;
-    document.getElementById('btn-mini-game').classList.remove('hidden');
-}
-
-document.getElementById('chat-send').addEventListener('click', async () => {
-    let v = document.getElementById('chat-input').value; if(!v || !db || !currentUser) return; document.getElementById('chat-input').value='';
-    await addDoc(collection(db, 'artifacts', typeof __app_id !== 'undefined'?__app_id:'default', 'public', 'data', 'chat_messages'), {text:v, uid:currentUser.uid, senderName:travelerProfile.name, timestamp:Date.now()});
-});
+document.getElementById('chat-send').addEventListener('click', async () => { let v = document.getElementById('chat-input').value; if(!v || !db || !currentUser) return; document.getElementById('chat-input').value=''; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat_messages'), {text:v, uid:currentUser.uid, senderName:travelerProfile.name, timestamp:Date.now()}); });
 document.getElementById('chat-input').addEventListener('keypress', (e) => { if(e.key==='Enter') document.getElementById('chat-send').click(); });
-initFirebase();
 window.addEventListener('resize', () => { CANVAS_WIDTH = window.innerWidth; CANVAS_HEIGHT = window.innerHeight; canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT; ctx.imageSmoothingEnabled = false; });
 canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT; ctx.imageSmoothingEnabled = false;
+
+setTimeout(() => toggleRightPanels(panelsExpanded), 100);
+
+checkExternalLoginData();
+initFirebase();
+initAssets(() => gameLoop());
 </script>
 </body>
 </html>
