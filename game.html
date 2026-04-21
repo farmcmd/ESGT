@@ -323,7 +323,6 @@
                     <span class="text-xs sm:text-sm font-bold text-red-300">🚨 全球災情 & 🆘 求救</span>
                     <span class="text-[10px] sm:text-xs text-red-400 animate-pulse font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 inline-block"></span> 監控中</span>
                 </div>
-                <!-- 更新：加入讀取中的文字，修復截圖中空白的問題 -->
                 <div class="flex-1 overflow-y-auto p-1.5 sm:p-2 space-y-2 text-xs sm:text-sm" id="alert-list">
                     <div class="text-slate-400 italic text-center">正在同步紀錄...</div>
                 </div>
@@ -757,8 +756,21 @@ function checkExternalLoginData() {
         }
     } catch(e) {}
 
+    // 🌟 智慧名稱組合：精準抓取 name 與 code，避免遺漏
+    let qName = urlParams.get('name') || urlParams.get('user') || urlParams.get('username') || '';
+    let qCode = urlParams.get('code') || urlParams.get('id') || '';
+    
+    if (sharedData) {
+        if (!qName) qName = sharedData.name || '';
+        if (!qCode) qCode = sharedData.code || '';
+    }
+
+    let extId = qName;
+    if (qCode && !extId.includes(qCode)) {
+        extId += (extId ? '_' : '') + qCode;
+    }
+    
     const extEmail = urlParams.get('email') || (sharedData ? sharedData.email : null);
-    const extId = urlParams.get('name') || urlParams.get('id') || urlParams.get('code') || (sharedData ? (sharedData.name || sharedData.code) : null);
     
     // 移除測試用的假數據 (114, 57.4, 1127)，改為真實預設值 0。確保沒抓到資料時不會顯示奇怪的數字。
     const extDist = parseFloat(urlParams.get('dist')) || (sharedData ? parseFloat(sharedData.dist) : 0);
@@ -830,7 +842,7 @@ function checkExternalLoginData() {
         if (nameInput && finalExtId) {
             nameInput.value = finalExtId;
             nameInput.classList.add('border-emerald-400', 'bg-emerald-900/20');
-            console.log("✅ 成功從外部帶入名稱：", finalExtId);
+            console.log("✅ 成功從外部帶入合併名稱：", finalExtId);
         }
         return;
     }
@@ -864,7 +876,15 @@ window.addEventListener('message', async (event) => {
         // 接收主網頁傳來的直接廣播 (身分同步)
         if (data && data.type === 'SYNC_USER_DATA') {
             console.log("🎮 遊戲端接收到旅者身分：", data.name, data.code);
-            const incomingName = data.name || data.code || '未命名旅者';
+            
+            // 🌟 智慧組合接收到的名字與代碼
+            let n = data.name || '';
+            let c = data.code || data.id || '';
+            let incomingName = n;
+            if (c && !incomingName.includes(c)) {
+                incomingName += (incomingName ? '_' : '') + c;
+            }
+            if (!incomingName) incomingName = '未命名旅者';
             
             if (travelerProfile) {
                 // 若已登入，動態更新名字，並保留訪客標籤
