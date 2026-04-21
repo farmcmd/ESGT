@@ -411,7 +411,8 @@
             </div>
 
             <button id="btn-certify" onclick="submitCertification()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95">進入世界</button>
-            <div id="guest-warning" class="text-xs text-amber-500/80 mt-3 text-center hidden">⚠️ 一般體驗模式關閉網頁後，進度不會保留。</div>
+            <!-- 更新：修改訪客模式的提示文字，因為現在已經支援本地存檔了 -->
+            <div id="guest-warning" class="text-xs text-emerald-500/90 mt-3 text-center hidden font-bold">✅ 一般體驗進度將自動存於本機端，下次開啟可無縫接軌。</div>
         </div>
     </div>
 
@@ -585,6 +586,19 @@ let activePlayers = {};
 let lastPositionUpdate = 0;
 let lastSentX = -1, lastSentY = -1;
 
+// 新增：全局統一的雙軌存檔函式 (Local JSON + Firebase)
+window.saveProgress = async () => {
+    if (!travelerProfile) return;
+    try {
+        // 1. 將物件轉為 JSON 字串並自動存入本地端瀏覽器
+        localStorage.setItem('earth_log_save_v1', JSON.stringify(travelerProfile));
+        // 2. 同步存入雲端資料庫
+        if (db && currentUser) {
+            await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true}).catch(e=>{});
+        }
+    } catch(e) { console.error("存檔失敗", e); }
+};
+
 // SVG 資源物件
 const svgAssets = {
     0: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#0284c7"/><path d="M 10 20 Q 18 12 26 20 T 42 20 T 58 20" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/><path d="M 5 45 Q 13 37 21 45 T 37 45 T 53 45" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/></svg>`,
@@ -646,28 +660,43 @@ const totalImages = Object.keys(svgAssets).length;
 function checkExternalLoginData() {
     const urlParams = new URLSearchParams(window.location.search);
     const extEmail = urlParams.get('email');
-    const extId = urlParams.get('id') || 'SZ2C2';
+    const extId = urlParams.get('id'); // 移除預設值，以利判斷是否為真實外部跳轉
     const extDist = parseFloat(urlParams.get('dist')) || 57.4;
     const extCarb = parseInt(urlParams.get('carb')) || 1127;
     const extPts = parseInt(urlParams.get('pts')) || 114;
 
-    window.tempExtData = { dist: extDist, carb: extCarb, pts: extPts, name: extId };
+    // 更新：無縫接軌！如果沒有外部參數，優先讀取本機的 JSON 存檔
+    if (!extEmail && !extId) {
+        const localSaveJSON = localStorage.getItem('earth_log_save_v1');
+        if (localSaveJSON) {
+            try {
+                travelerProfile = JSON.parse(localSaveJSON);
+                console.log("讀取到本地 JSON 存檔，自動登入！");
+                applyCertificationSuccess(); // 直接跳過登入畫面進入遊戲
+                return;
+            } catch (e) { console.error("本地存檔解析失敗", e); }
+        }
+    }
+
+    const finalExtId = extId || 'SZ2C2'; // 若無外部ID也無存檔，給予預設值
+    window.tempExtData = { dist: extDist, carb: extCarb, pts: extPts, name: finalExtId };
 
     if (!extEmail) {
         const nameInput = document.getElementById('traveler-name-input');
-        if (nameInput) nameInput.value = extId;
+        if (nameInput) nameInput.value = finalExtId;
         return;
     }
     
     travelerProfile = {
-        email: extEmail, name: extId, points: extPts, 
+        email: extEmail, name: finalExtId, points: extPts, 
         heroIndex: 0, level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10, 
-        recycleSkillLevel: 0, energySkillLevel: 0, // 新增：能效專家技能等級
+        recycleSkillLevel: 0, energySkillLevel: 0, 
         distance: extDist, carbon: extCarb, gender: 'm',
         inventory: { observe_card: 3, report_card: 2 }, isExternal: true, certifiedAt: Date.now(), isGuest: false,
         stats: { monstersKilled: 0, disastersResolved: 0 },
-        quests: { eagle: { state: 'none', count: 0 } } // 新增：老鷹任務狀態與計數器
+        quests: { eagle: { state: 'none', count: 0 } } 
     };
+    window.saveProgress(); // 新增：初始化成功後存檔
     applyCertificationSuccess();
 }
 
@@ -694,9 +723,8 @@ window.addEventListener('message', async (event) => {
                 updateStatusUI();
                 closeESGTModal();
                 
-                if (db && currentUser) {
-                    await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true});
-                }
+                // 更新：改用統一存檔函式
+                await window.saveProgress();
 
                 if(uiPrompt) {
                     uiPrompt.classList.remove('hidden');
@@ -743,11 +771,18 @@ async function initFirebase() {
             if (!travelerProfile || !travelerProfile.isExternal) {
                 try {
                     const snap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'));
-                    if (snap.exists()) { travelerProfile = snap.data(); applyCertificationSuccess(); } 
-                    else { document.getElementById('certification-modal').classList.remove('hidden'); }
-                } catch (e) { document.getElementById('certification-modal').classList.remove('hidden'); }
+                    if (snap.exists()) { 
+                        travelerProfile = snap.data(); 
+                        window.saveProgress(); // 將雲端資料備份到本地
+                        applyCertificationSuccess(); 
+                    } 
+                    else if (!travelerProfile) { // 若本地也沒資料，才顯示登入畫面
+                        document.getElementById('certification-modal').classList.remove('hidden'); 
+                    }
+                } catch (e) { if(!travelerProfile) document.getElementById('certification-modal').classList.remove('hidden'); }
             } else {
-                try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main'), travelerProfile, {merge: true}); } catch(e){}
+                // 更新：改用統一存檔函式
+                await window.saveProgress();
             }
             setupSOSListener();
             setupChatListener();
@@ -909,17 +944,16 @@ window.submitCertification = async () => {
     let newP = { 
         email: currentLoginMode==='comp'?email:'guest', name: currentLoginMode==='guest'?name+'(訪客)':name, points: tD.pts, heroIndex: 0, 
         level: 1, exp: 0, maxHp: 100, hp: 100, attack: 25, defense: 10, 
-        recycleSkillLevel: 0, energySkillLevel: 0, // 新增
+        recycleSkillLevel: 0, energySkillLevel: 0, 
         distance: tD.dist, carbon: tD.carb, gender: selectedGender,
         inventory: {observe_card:3, report_card:2}, certifiedAt: Date.now(), isCertified: true, isGuest: currentLoginMode==='guest', isExternal: !!window.tempExtData,
         stats: { monstersKilled: 0, disastersResolved: 0 },
-        quests: { eagle: { state: 'none', count: 0 } } // 新增
+        quests: { eagle: { state: 'none', count: 0 } } 
     };
     
-    if(db && currentUser && currentLoginMode==='comp') {
-        await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), newP);
-    }
-    travelerProfile = newP; applyCertificationSuccess();
+    travelerProfile = newP; 
+    await window.saveProgress(); // 更新：新註冊完畢立刻存檔 (雙軌寫入)
+    applyCertificationSuccess();
 };
 
 function applyCertificationSuccess() {
@@ -1041,7 +1075,7 @@ window.buyItem = (id, cost, name) => {
     document.getElementById('shop-current-pts').innerText = travelerProfile.points;
     const msg = document.getElementById('shop-message'); msg.innerText = `✅ 成功兌換 ${name}`; msg.className = "h-6 mt-4 text-center text-emerald-400 text-sm font-bold";
     updateStatusUI();
-    if(db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true}).catch(e=>{});
+    window.saveProgress(); // 更新：買完東西立即存檔
 };
 
 window.customConfirm = (title, desc, onConfirm) => {
@@ -1126,7 +1160,7 @@ window.useItem = async (itemId) => {
             const successMsg = `✨ 研讀完成！【資源循環】技能提升至 Lv.${nextLv}！`;
             
             updateStatusUI();
-            if (db && currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true});
+            await window.saveProgress(); // 更新：技能學習完畢存檔
             
             if(uiPrompt) {
                 uiPrompt.classList.remove('hidden');
@@ -1153,7 +1187,7 @@ window.useItem = async (itemId) => {
             
             const successMsg = `✨ 研讀完成！【能效專家】技能提升至 Lv.${nextLv}！基礎防禦力永久 +5！`;
             updateStatusUI();
-            if (db && currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true});
+            await window.saveProgress(); // 更新：技能學習完畢存檔
             
             if(uiPrompt) {
                 uiPrompt.classList.remove('hidden');
@@ -1256,6 +1290,7 @@ window.useItem = async (itemId) => {
     if (success) {
         msg.innerText = feedback; msg.className = "text-emerald-400 text-center font-bold text-sm mt-3";
         updateStatusUI(); renderDisasterAlerts();
+        window.saveProgress(); // 更新：使用道具成功後存檔
         setTimeout(() => { openInventoryModal(isInCombat); document.getElementById('inventory-message').innerText = feedback; document.getElementById('inventory-message').className="text-emerald-400 text-center font-bold text-sm mt-3"; }, 50);
         setTimeout(() => { closeInventoryModal(); if(!isInCombat) updatePromptUI(); }, 1500);
     } else {
@@ -1356,7 +1391,7 @@ window.closeEagleModal = () => { document.getElementById('eagle-modal').classLis
 
 window.acceptEagleQuest = () => {
     travelerProfile.quests.eagle = { state: 'active', count: 0 };
-    if (db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), { quests: travelerProfile.quests }, {merge: true}).catch(e=>{});
+    window.saveProgress(); // 更新：接取任務存檔
     openEagleModal(); // 刷新介面
 };
 
@@ -1366,7 +1401,7 @@ window.submitEagleQuest = () => {
     travelerProfile.inventory['energy_book'] = (travelerProfile.inventory['energy_book'] || 0) + 1;
     travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + 50; // 額外加分
     
-    if (db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), travelerProfile, {merge: true}).catch(e=>{});
+    window.saveProgress(); // 更新：完成任務存檔
     
     closeEagleModal();
     updateStatusUI();
@@ -1659,7 +1694,6 @@ function handleVictory() {
             } else {
                 addCombatLog(`🦅 老鷹委託進度：${travelerProfile.quests.eagle.count} / 10`, "text-cyan-200");
             }
-            if (db && currentUser) setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main'), {quests: travelerProfile.quests}, {merge: true}).catch(e=>{});
         }
     }
 
@@ -1668,6 +1702,8 @@ function handleVictory() {
         travelerProfile.level++; travelerProfile.exp -= nextLevelExp; travelerProfile.maxHp += 20; travelerProfile.hp = travelerProfile.maxHp; travelerProfile.attack += 5; travelerProfile.defense += 2;
         addCombatLog(`🎉 LEVEL UP！Lv.${travelerProfile.level}！能力值全面上升。`, "text-yellow-400 font-bold text-xl");
     }
+
+    window.saveProgress(); // 更新：戰鬥結算完畢後統一存檔 (取代原本分散的 setDoc)
 
     if (combatState.fieldMonsterId && db) {
         const fm = activeFieldMonsters.find(m => m.id === combatState.fieldMonsterId);
