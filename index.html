@@ -1345,6 +1345,41 @@
         window.openModal = function(modalId) { document.getElementById(modalId)?.classList.remove('hidden'); };
         window.closeModal = function(modalId) { document.getElementById(modalId)?.classList.add('hidden'); };
 
+        // 🚀 遊戲子頁新規格實裝：地球日誌啟動引擎 (準備交接抽屜)
+        window.launchEarthLogGame = function() {
+            // 1. 抓取旅者名稱與代碼 (從系統核心 state 抓取最精準)
+            let travelerName = state.playerName || document.getElementById('player-name')?.value.trim() || '';
+            let travelerCode = state.playerCode || document.getElementById('player-code')?.textContent.trim() || '';
+
+            // 將姓名與代碼合併 (例如：王大明_A123)
+            let finalName = travelerName;
+            if (travelerCode && travelerCode !== '...') finalName += (finalName ? '_' : '') + travelerCode;
+            if (!finalName) finalName = '未命名旅者';
+
+            // 2. 抓取玩家目前的永續成就真實數值
+            let currentDist = (state.totalMileage || 0) / 1000; // 轉換為 km
+            let currentCarb = Math.round(state.totalCarbon || 0); // 取整數
+            let currentPts = state.totalScore || 0;
+            let currentHeroIndex = state.heroIndex || 0;
+
+            // 3. 打包放入同網域共用的 LocalStorage (交接抽屜)
+            try {
+                localStorage.setItem('esgt_init_data', JSON.stringify({
+                    name: finalName,
+                    dist: currentDist,
+                    carb: currentCarb,
+                    pts: currentPts,
+                    heroIndex: currentHeroIndex
+                }));
+                console.log("🌍 [系統連動] 已準備好初始資料交接抽屜:", JSON.parse(localStorage.getItem('esgt_init_data')));
+            } catch (e) {
+                console.warn("⚠️ 寫入交接抽屜失敗:", e);
+            }
+
+            // 4. 開啟地球日誌遊戲 (維持高品質沉浸式 Iframe Modal，防彈出視窗被瀏覽器阻擋)
+            window.openModal('game-modal');
+        };
+
         window.customPrompt = function(message, defaultValue, callback) {
             const modal = document.getElementById('custom-prompt-modal');
             const titleEl = document.getElementById('custom-prompt-title');
