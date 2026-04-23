@@ -3089,7 +3089,7 @@
                 });
             });
 
-            // 🚀 升級：地圖自由點選試算模式 (防呆沙盒) + 智慧限時鎖引擎
+            // 🚀 升級：地圖自由點選試算模式 + 智慧限時鎖引擎 (支援 Firebase 雲端全網廣播)
             let calcRefMode = false;
             let calcStartMarker = null;
             let calcEndMarker = null;
@@ -3101,8 +3101,13 @@
                 if (calcRefMode) document.getElementById('enable-calc-ref-btn')?.click();
             };
 
-            const checkTrialLockStatus = () => {
-                const expiry = localStorage.getItem('mori_trial_expiry');
+            // 將函式掛載至 window 供 Firebase 全域監聽器呼叫
+            window.checkTrialLockStatus = () => {
+                // 🚀 核心升級：優先讀取 Firebase 雲端大盤的解鎖時間，達成全網同步。若無雲端數據則降級讀取 localStorage
+                const cloudExpiry = globalAbsolute?.trial_expiry;
+                const localExpiry = localStorage.getItem('mori_trial_expiry');
+                const expiry = cloudExpiry || localExpiry;
+
                 const now = Date.now();
                 const overlay = document.getElementById('trial-locked-overlay');
                 const lockBtn = document.getElementById('trial-lock-btn');
@@ -3121,10 +3126,10 @@
                         expiryText.querySelector('span').textContent = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                     }
                     
-                    // 設定自動上鎖計時器
+                    // 設定自動上鎖計時器 (每台設備各自倒數，時間到自動蓋上遮罩)
                     trialAutoLockTimer = setTimeout(() => {
                         window.showToast('🔒 試算模式時效已過，自動上鎖');
-                        checkTrialLockStatus();
+                        window.checkTrialLockStatus();
                     }, parseInt(expiry) - now);
                 } else {
                     // 🔒 狀態：已上鎖
@@ -3137,14 +3142,23 @@
             };
 
             // 🚀 核心升級：統一解鎖觸發器 (同時支援右上角小鎖頭與中央大遮罩)
-            const triggerTrialUnlock = () => {
-                const expiry = localStorage.getItem('mori_trial_expiry');
+            const triggerTrialUnlock = async () => {
+                const cloudExpiry = globalAbsolute?.trial_expiry;
+                const localExpiry = localStorage.getItem('mori_trial_expiry');
+                const expiry = cloudExpiry || localExpiry;
+
                 if (expiry && Date.now() < parseInt(expiry)) {
-                    // 如果目前是解鎖狀態，點擊鎖頭可提前「手動上鎖」
-                    if (confirm('確定要立即關閉 (上鎖) 地圖試算功能嗎？')) {
+                    // 🛡️ 防呆強化：既然改為全網解鎖，提早上鎖也必須輸入密碼，防止一般玩家誤觸關閉
+                    const pwd = prompt('🔒 確定要為全網域關閉 (上鎖) 地圖試算功能嗎？\n請輸入管理員密碼：');
+                    if (pwd === '545366') {
+                        if (db && !isOfflineMode) {
+                            await setDoc(doc(db, 'system_stats', 'global_absolute'), { trial_expiry: 0 }, { merge: true });
+                        }
                         localStorage.removeItem('mori_trial_expiry');
-                        if (typeof checkTrialLockStatus === 'function') checkTrialLockStatus();
-                        window.showToast('🔒 已手動上鎖');
+                        if (typeof window.checkTrialLockStatus === 'function') window.checkTrialLockStatus();
+                        window.showToast('🔒 已為全網手動上鎖');
+                    } else if (pwd !== null) {
+                        window.showToast('❌ 密碼錯誤');
                     }
                 } else {
                     // 開啟輸入密碼視窗
@@ -3159,21 +3173,39 @@
             document.getElementById('trial-locked-overlay')?.addEventListener('click', triggerTrialUnlock);
 
             // 綁定：密碼驗證與設定時間事件
-            document.getElementById('trial-unlock-confirm-btn')?.addEventListener('click', () => {
+            document.getElementById('trial-unlock-confirm-btn')?.addEventListener('click', async () => {
                 const pwdInput = document.getElementById('trial-unlock-pwd');
                 const pwd = pwdInput ? pwdInput.value : '';
                 if (pwd === '545366') {
                     const mins = parseInt(document.getElementById('trial-unlock-duration')?.value) || 30;
                     const expiryTime = Date.now() + (mins * 60 * 1000);
                     
-                    localStorage.setItem('mori_trial_expiry', expiryTime.toString());
+                    const timeStr = mins >= 1440 ? (mins/60/24)+' 天' : (mins >= 60 ? (mins/60)+' 小時' : mins+' 分鐘');
+                    
+                    // 🚀 核心升級：將解鎖狀態寫入 Firebase 雲端，達成全網域瞬間同步解鎖！
+                    if (db && !isOfflineMode) {
+                        try {
+                            const btn = document.getElementById('trial-unlock-confirm-btn');
+                            const origHtml = btn.innerHTML;
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 廣播中...';
+                            
+                            await setDoc(doc(db, 'system_stats', 'global_absolute'), { trial_expiry: expiryTime }, { merge: true });
+                            
+                            btn.innerHTML = origHtml;
+                            window.showToast(`✅ 雲端廣播成功！全網同步開啟 ${timeStr}`);
+                        } catch (e) {
+                            console.warn("寫入雲端解鎖狀態失敗，轉為本地解鎖", e);
+                            localStorage.setItem('mori_trial_expiry', expiryTime.toString());
+                            window.showToast(`✅ 本地解鎖成功！此功能將開啟 ${timeStr}`);
+                        }
+                    } else {
+                        localStorage.setItem('mori_trial_expiry', expiryTime.toString());
+                        window.showToast(`✅ (離線) 本地解鎖成功！此功能將開啟 ${timeStr}`);
+                    }
                     
                     if (pwdInput) pwdInput.value = ''; // 🛡️ 防禦性清空
                     window.closeModal('trial-unlock-modal');
-                    if (typeof checkTrialLockStatus === 'function') checkTrialLockStatus();
-                    
-                    const timeStr = mins >= 1440 ? (mins/60/24)+' 天' : (mins >= 60 ? (mins/60)+' 小時' : mins+' 分鐘');
-                    window.showToast(`✅ 解鎖成功！此功能將開啟 ${timeStr}`);
+                    if (typeof window.checkTrialLockStatus === 'function') window.checkTrialLockStatus();
                 } else {
                     window.showToast('❌ 密碼錯誤，請重新輸入');
                     if (pwdInput) pwdInput.value = ''; // 🛡️ 防禦性清空
@@ -3181,7 +3213,7 @@
             });
 
             // 初始化時檢查一次狀態
-            checkTrialLockStatus();
+            window.checkTrialLockStatus();
 
             document.getElementById('enable-calc-ref-btn')?.addEventListener('click', () => {
                 if (!state.currentTransport) return window.showToast('請先在上方「交通方式」選擇移動載具');
