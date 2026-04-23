@@ -3103,10 +3103,11 @@
 
             // 將函式掛載至 window 供 Firebase 全域監聽器呼叫
             window.checkTrialLockStatus = () => {
-                // 🚀 核心升級：優先讀取 Firebase 雲端大盤的解鎖時間，達成全網同步。若無雲端數據則降級讀取 localStorage
-                const cloudExpiry = globalAbsolute?.trial_expiry;
-                const localExpiry = localStorage.getItem('mori_trial_expiry');
-                const expiry = cloudExpiry || localExpiry;
+                // 🚀 核心升級 2：修復 0 || null 的邏輯陷阱，絕對優先採用雲端狀態 (即使雲端是 0，也必須覆蓋本地)
+                let expiry = localStorage.getItem('mori_trial_expiry');
+                if (globalAbsolute && globalAbsolute.trial_expiry !== undefined) {
+                    expiry = globalAbsolute.trial_expiry; // 精準抓取雲端狀態
+                }
 
                 const now = Date.now();
                 const overlay = document.getElementById('trial-locked-overlay');
@@ -3115,7 +3116,8 @@
 
                 if (trialAutoLockTimer) clearTimeout(trialAutoLockTimer);
 
-                if (expiry && now < parseInt(expiry)) {
+                // 只有 expiry 存在、大於 0，且尚未過期，才判定為全網解鎖
+                if (expiry && parseInt(expiry) > 0 && now < parseInt(expiry)) {
                     // ✅ 狀態：已解鎖
                     if (overlay) overlay.classList.add('hidden');
                     if (lockBtn) lockBtn.innerHTML = '<i class="fas fa-unlock text-emerald-500 text-base"></i>';
@@ -3143,11 +3145,12 @@
 
             // 🚀 核心升級：統一解鎖觸發器 (同時支援右上角小鎖頭與中央大遮罩)
             const triggerTrialUnlock = async () => {
-                const cloudExpiry = globalAbsolute?.trial_expiry;
-                const localExpiry = localStorage.getItem('mori_trial_expiry');
-                const expiry = cloudExpiry || localExpiry;
+                let expiry = localStorage.getItem('mori_trial_expiry');
+                if (globalAbsolute && globalAbsolute.trial_expiry !== undefined) {
+                    expiry = globalAbsolute.trial_expiry;
+                }
 
-                if (expiry && Date.now() < parseInt(expiry)) {
+                if (expiry && parseInt(expiry) > 0 && Date.now() < parseInt(expiry)) {
                     // 🛡️ 防呆強化：既然改為全網解鎖，提早上鎖也必須輸入密碼，防止一般玩家誤觸關閉
                     const pwd = prompt('🔒 確定要為全網域關閉 (上鎖) 地圖試算功能嗎？\n請輸入管理員密碼：');
                     if (pwd === '545366') {
