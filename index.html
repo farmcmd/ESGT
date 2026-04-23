@@ -550,7 +550,33 @@
                                 <button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="15">15KM</button>
                             </div>
                             <div id="short-dist-result" class="text-xs font-bold text-mori-wood mb-2 text-center min-h-[1.5em]"></div>
-                            <button id="confirm-short-dist-btn" class="hidden w-full py-2 bg-yellow-500 text-white rounded-lg font-bold text-sm shadow animate-bounce">確認並獲取積分</button>
+                            <!-- 🚀 核心修復：為按鈕加上 mb-3，並補回下方的試算模式 UI 區塊 -->
+                            <button id="confirm-short-dist-btn" class="hidden w-full py-2 bg-yellow-500 text-white rounded-lg font-bold text-sm shadow animate-bounce mb-3">確認並獲取積分</button>
+                            
+                            <!-- 🚀 升級補回：計算參考模式 (附帶限時鎖定遮罩機制) -->
+                            <div class="mt-2 pt-4 border-t border-emerald-200/60 relative">
+                                <div class="flex justify-between items-center mb-2.5">
+                                    <p class="text-xs font-bold text-emerald-800 flex items-center tracking-wide"><i class="fas fa-calculator mr-1.5 text-emerald-600"></i>地圖自由試算 <span class="bg-emerald-100 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded ml-1.5">不計分</span></p>
+                                    <!-- 鎖頭按鈕 (呼叫背景已寫好的引擎) -->
+                                    <button id="trial-lock-btn" class="text-gray-400 hover:text-emerald-600 transition p-1 outline-none"><i class="fas fa-lock text-sm"></i></button>
+                                </div>
+                                
+                                <!-- 🔒 鎖定狀態磨砂遮罩 -->
+                                <div id="trial-locked-overlay" class="absolute inset-x-0 bottom-0 top-10 bg-white/80 backdrop-blur-[1.5px] z-10 flex flex-col items-center justify-center rounded-lg border border-gray-100 transition-opacity duration-300">
+                                    <i class="fas fa-lock text-3xl text-gray-300 mb-2"></i>
+                                    <p class="text-[11px] font-bold text-gray-500">管理員限定功能</p>
+                                </div>
+
+                                <!-- 解鎖後可見內容 -->
+                                <div id="trial-unlocked-content">
+                                    <p id="trial-expiry-text" class="text-[10px] text-emerald-600 font-bold mb-2 text-right hidden"><i class="fas fa-clock mr-1 animate-pulse"></i>解鎖至：<span></span></p>
+                                    <button id="enable-calc-ref-btn" class="w-full py-2.5 bg-white border border-emerald-300 text-emerald-700 rounded-lg font-bold text-xs hover:bg-emerald-50 transition shadow-sm flex justify-center items-center group outline-none">
+                                        <i class="fas fa-map-marked-alt mr-2 group-hover:scale-110 transition-transform"></i> 開啟地圖點選模式
+                                    </button>
+                                    <div id="calc-ref-status" class="text-[11px] text-emerald-700 font-bold mt-3 text-center hidden bg-emerald-100/50 py-2 rounded-lg border border-emerald-200 shadow-inner animate-pulse"></div>
+                                    <div id="calc-ref-result" class="text-[13px] font-black text-emerald-800 mt-3 text-center hidden bg-[#E8F8EE] py-2.5 rounded-lg border-2 border-emerald-300 shadow-sm leading-relaxed"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -2884,13 +2910,15 @@
                 if(select && select.value) {
                     pendingGovEvalSubmission = select.value;
                     const proj = globalGovData.projects.find(p => p.id === select.value);
-                    document.getElementById('gov-eval-target-name').textContent = proj ? proj.name : '';
-                    document.getElementById('gov-eval-target-carbon').textContent = Math.round(state.totalCarbon);
-                    document.getElementById('gov-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
+                    if(document.getElementById('gov-eval-target-name')) document.getElementById('gov-eval-target-name').textContent = proj ? proj.name : '';
+                    if(document.getElementById('gov-eval-target-carbon')) document.getElementById('gov-eval-target-carbon').textContent = Math.round(state.totalCarbon);
+                    if(document.getElementById('gov-eval-target-green')) document.getElementById('gov-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
                     
                     // 開啟視窗前：清空表單舊狀態與留言
                     document.querySelectorAll('.gov-eval-q .number-rating i').forEach(i => { i.classList.remove('text-yellow-400'); i.classList.add('text-gray-300'); });
-                    document.getElementById('gov-eval-feedback').value = '';
+                    
+                    const fbInput = document.getElementById('gov-eval-feedback');
+                    if (fbInput) fbInput.value = ''; // 🛡️ 防禦性清空
                     
                     window.closeModal('gov-modal'); window.openModal('gov-eval-modal');
                 } else { window.showToast('請先選擇要歸戶的計畫'); }
@@ -2898,18 +2926,20 @@
             
             // 🚀 核心救援：補回建立新政府計畫儀表板的功能邏輯
             document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
-                const name = document.getElementById('host-proj-name').value.trim();
+                const nameInput = document.getElementById('host-proj-name');
+                const eventInput = document.getElementById('host-proj-event');
+                const name = nameInput ? nameInput.value.trim() : '';
                 if (!name) return window.showToast('請填寫計畫名稱');
 
                 // 👇 新增：在建立計畫的當下，為其配發一組固定的 5 碼代碼，並打包寫入資料庫
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
                 const newProj = {
-                    name: name, event: document.getElementById('host-proj-event').value.trim(), date: document.getElementById('host-proj-date').value,
-                    desc: document.getElementById('host-proj-desc').value.trim(), supervisor: document.getElementById('host-proj-supervisor').value.trim(),
-                    organizer: document.getElementById('host-proj-organizer').value.trim(), executor: document.getElementById('host-proj-executor').value.trim(),
-                    coOrganizer: document.getElementById('host-proj-coorganizer').value.trim(), budget: parseFloat(document.getElementById('host-proj-budget').value) || 0,
-                    sroi: parseFloat(document.getElementById('host-proj-sroi').value) || 1.0, deadline: document.getElementById('host-proj-deadline').value || null,
+                    name: name, event: eventInput ? eventInput.value.trim() : '', date: document.getElementById('host-proj-date')?.value || '',
+                    desc: document.getElementById('host-proj-desc')?.value.trim() || '', supervisor: document.getElementById('host-proj-supervisor')?.value.trim() || '',
+                    organizer: document.getElementById('host-proj-organizer')?.value.trim() || '', executor: document.getElementById('host-proj-executor')?.value.trim() || '',
+                    coOrganizer: document.getElementById('host-proj-coorganizer')?.value.trim() || '', budget: parseFloat(document.getElementById('host-proj-budget')?.value) || 0,
+                    sroi: parseFloat(document.getElementById('host-proj-sroi')?.value) || 1.0, deadline: document.getElementById('host-proj-deadline')?.value || null,
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [],
                     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true, cardCode: newCardCode
                 };
@@ -2919,11 +2949,15 @@
                     catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
                 } else {
                     newProj.id = 'mock_gov_' + Date.now(); globalGovData.projects.push(newProj);
-                    renderGovDashboard(); updateProjectDropdown(); renderAuthList(); window.showToast('✅ (離線) 政府儀表板建立成功！');
+                    if(typeof renderGovDashboard === 'function') renderGovDashboard(); 
+                    if(typeof updateProjectDropdown === 'function') updateProjectDropdown(); 
+                    if(typeof renderAuthList === 'function') renderAuthList(); 
+                    window.showToast('✅ (離線) 政府儀表板建立成功！');
                 }
                 
-                // 清空輸入框
-                document.getElementById('host-proj-name').value = ''; document.getElementById('host-proj-event').value = '';
+                // 🛡️ 防禦性清空輸入框
+                if (nameInput) nameInput.value = ''; 
+                if (eventInput) eventInput.value = ''; 
             });
 
             document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async () => {
@@ -2980,15 +3014,26 @@
 
         function bindMapAndActions() {
             document.getElementById('confirm-trip-button')?.addEventListener('click', () => {
-                if(pendingTrip.isValid) { window.openModal('reward-verification-modal'); document.getElementById('confirm-trip-button').classList.add('hidden'); }
+                if(pendingTrip.isValid) { 
+                    const codeInput = document.getElementById('reward-verify-code');
+                    if (codeInput) codeInput.value = ''; // 🛡️ 防禦性清空
+                    window.openModal('reward-verification-modal'); 
+                    document.getElementById('confirm-trip-button').classList.add('hidden'); 
+                }
             });
             document.getElementById('reward-verify-full-btn')?.addEventListener('click', () => {
-                const code = document.getElementById('reward-verify-code').value;
-                if(code.length > 0) { processTripCompletion(pendingTrip.distKm, pendingTrip.reduction); window.closeModal('reward-verification-modal'); } 
+                const codeInput = document.getElementById('reward-verify-code');
+                const code = codeInput ? codeInput.value : '';
+                if(code.length > 0) { 
+                    processTripCompletion(pendingTrip.distKm, pendingTrip.reduction); 
+                    if (codeInput) codeInput.value = ''; // 🛡️ 防禦性清空
+                    window.closeModal('reward-verification-modal'); 
+                } 
                 else { window.showToast('請輸入密碼'); }
             });
             document.getElementById('reward-verify-tenth-btn')?.addEventListener('click', () => {
-                processTripCompletion(pendingTrip.distKm, Math.round(pendingTrip.reduction / 10)); window.closeModal('reward-verification-modal');
+                processTripCompletion(pendingTrip.distKm, Math.round(pendingTrip.reduction / 10)); 
+                window.closeModal('reward-verification-modal');
             });
 
             // Directions API 真實道路計算與預覽
@@ -3018,6 +3063,186 @@
                         if(confirmBtn) confirmBtn.classList.remove('hidden'); document.getElementById('preview-trip-button')?.classList.add('hidden');
                     }
                 });
+            });
+
+            // 🚀 升級：地圖自由點選試算模式 (防呆沙盒) + 智慧限時鎖引擎
+            let calcRefMode = false;
+            let calcStartMarker = null;
+            let calcEndMarker = null;
+            let mapClickListener = null;
+            let trialAutoLockTimer = null; // 用於計時自動上鎖
+
+            // 供時間到時，強制關閉正在使用中的點選模式
+            window.forceDisableTrialMode = () => {
+                if (calcRefMode) document.getElementById('enable-calc-ref-btn')?.click();
+            };
+
+            const checkTrialLockStatus = () => {
+                const expiry = localStorage.getItem('mori_trial_expiry');
+                const now = Date.now();
+                const overlay = document.getElementById('trial-locked-overlay');
+                const lockBtn = document.getElementById('trial-lock-btn');
+                const expiryText = document.getElementById('trial-expiry-text');
+
+                if (trialAutoLockTimer) clearTimeout(trialAutoLockTimer);
+
+                if (expiry && now < parseInt(expiry)) {
+                    // ✅ 狀態：已解鎖
+                    if (overlay) overlay.classList.add('hidden');
+                    if (lockBtn) lockBtn.innerHTML = '<i class="fas fa-unlock text-emerald-500 text-base"></i>';
+                    
+                    const d = new Date(parseInt(expiry));
+                    if (expiryText) {
+                        expiryText.classList.remove('hidden');
+                        expiryText.querySelector('span').textContent = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    }
+                    
+                    // 設定自動上鎖計時器
+                    trialAutoLockTimer = setTimeout(() => {
+                        window.showToast('🔒 試算模式時效已過，自動上鎖');
+                        checkTrialLockStatus();
+                    }, parseInt(expiry) - now);
+                } else {
+                    // 🔒 狀態：已上鎖
+                    if (overlay) overlay.classList.remove('hidden');
+                    if (lockBtn) lockBtn.innerHTML = '<i class="fas fa-lock text-gray-400 text-base hover:text-emerald-500 transition"></i>';
+                    if (expiryText) expiryText.classList.add('hidden');
+                    // 強制切斷可能正在使用中的功能
+                    window.forceDisableTrialMode();
+                }
+            };
+
+            // 🚀 核心升級：統一解鎖觸發器 (同時支援右上角小鎖頭與中央大遮罩)
+            const triggerTrialUnlock = () => {
+                const expiry = localStorage.getItem('mori_trial_expiry');
+                if (expiry && Date.now() < parseInt(expiry)) {
+                    // 如果目前是解鎖狀態，點擊鎖頭可提前「手動上鎖」
+                    if (confirm('確定要立即關閉 (上鎖) 地圖試算功能嗎？')) {
+                        localStorage.removeItem('mori_trial_expiry');
+                        if (typeof checkTrialLockStatus === 'function') checkTrialLockStatus();
+                        window.showToast('🔒 已手動上鎖');
+                    }
+                } else {
+                    // 開啟輸入密碼視窗
+                    const pwdInput = document.getElementById('trial-unlock-pwd');
+                    if (pwdInput) pwdInput.value = ''; // 🛡️ 防禦性清空
+                    window.openModal('trial-unlock-modal');
+                }
+            };
+
+            // 雙重綁定：無論點哪裡都能順利觸發！
+            document.getElementById('trial-lock-btn')?.addEventListener('click', triggerTrialUnlock);
+            document.getElementById('trial-locked-overlay')?.addEventListener('click', triggerTrialUnlock);
+
+            // 綁定：密碼驗證與設定時間事件
+            document.getElementById('trial-unlock-confirm-btn')?.addEventListener('click', () => {
+                const pwdInput = document.getElementById('trial-unlock-pwd');
+                const pwd = pwdInput ? pwdInput.value : '';
+                if (pwd === '545366') {
+                    const mins = parseInt(document.getElementById('trial-unlock-duration')?.value) || 30;
+                    const expiryTime = Date.now() + (mins * 60 * 1000);
+                    
+                    localStorage.setItem('mori_trial_expiry', expiryTime.toString());
+                    
+                    if (pwdInput) pwdInput.value = ''; // 🛡️ 防禦性清空
+                    window.closeModal('trial-unlock-modal');
+                    if (typeof checkTrialLockStatus === 'function') checkTrialLockStatus();
+                    
+                    const timeStr = mins >= 1440 ? (mins/60/24)+' 天' : (mins >= 60 ? (mins/60)+' 小時' : mins+' 分鐘');
+                    window.showToast(`✅ 解鎖成功！此功能將開啟 ${timeStr}`);
+                } else {
+                    window.showToast('❌ 密碼錯誤，請重新輸入');
+                    if (pwdInput) pwdInput.value = ''; // 🛡️ 防禦性清空
+                }
+            });
+
+            // 初始化時檢查一次狀態
+            checkTrialLockStatus();
+
+            document.getElementById('enable-calc-ref-btn')?.addEventListener('click', () => {
+                if (!state.currentTransport) return window.showToast('請先在上方「交通方式」選擇移動載具');
+                if (!window.mapInstance) return window.showToast('地圖尚未載入，請稍候');
+
+                calcRefMode = !calcRefMode;
+                const btn = document.getElementById('enable-calc-ref-btn');
+                const status = document.getElementById('calc-ref-status');
+                const result = document.getElementById('calc-ref-result');
+
+                const resetCalcState = () => {
+                    if (calcStartMarker) calcStartMarker.setMap(null);
+                    if (calcEndMarker) calcEndMarker.setMap(null);
+                    calcStartMarker = null; calcEndMarker = null;
+                    if(window.directionsRenderer) window.directionsRenderer.setMap(null);
+                    if(window.fallbackPolyline) window.fallbackPolyline.setMap(null);
+                };
+
+                if (calcRefMode) {
+                    btn.innerHTML = '<i class="fas fa-times mr-1.5"></i> 關閉點選模式';
+                    btn.classList.replace('bg-white', 'bg-emerald-100');
+                    btn.classList.add('border-emerald-400');
+                    status.classList.remove('hidden');
+                    status.innerHTML = '<i class="fas fa-mouse-pointer mr-1"></i> 步驟 1：請在地圖上點擊選擇「起點」';
+                    result.classList.add('hidden');
+                    
+                    // 進入試算模式時，自動將畫面捲動至地圖
+                    document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    resetCalcState();
+
+                    // 綁定地圖點擊事件
+                    mapClickListener = window.mapInstance.addListener('click', (e) => {
+                        if (!calcStartMarker) {
+                            // 標記起點
+                            calcStartMarker = new google.maps.Marker({ position: e.latLng, map: window.mapInstance, label: { text: '起', color: 'white', fontWeight: 'bold' }, icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' });
+                            status.innerHTML = '<i class="fas fa-mouse-pointer mr-1"></i> 步驟 2：請在地圖上點擊選擇「終點」';
+                        } else if (!calcEndMarker) {
+                            // 標記終點並開始計算
+                            calcEndMarker = new google.maps.Marker({ position: e.latLng, map: window.mapInstance, label: { text: '終', color: 'white', fontWeight: 'bold' }, icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' });
+                            status.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 路線規劃計算中...';
+
+                            const tData = transportData[state.currentTransport];
+                            window.directionsRenderer.setMap(window.mapInstance);
+
+                            window.directionsService.route({
+                                origin: calcStartMarker.getPosition(),
+                                destination: calcEndMarker.getPosition(),
+                                travelMode: google.maps.TravelMode[tData.mode] || 'DRIVING'
+                            }, (res, stat) => {
+                                status.classList.add('hidden');
+                                result.classList.remove('hidden');
+                                if (stat === 'OK') {
+                                    window.directionsRenderer.setDirections(res);
+                                    const distKm = res.routes[0].legs[0].distance.value / 1000;
+                                    const reduction = Math.round(distKm * (tData.reduction / 10));
+                                    result.innerHTML = `規劃距離: <span class="text-emerald-600">${distKm.toFixed(1)}km</span><br>試算減碳: <span class="text-emerald-600">${reduction}g</span>`;
+                                } else {
+                                    window.directionsRenderer.setMap(null);
+                                    const distMeters = google.maps.geometry.spherical.computeDistanceBetween(calcStartMarker.getPosition(), calcEndMarker.getPosition());
+                                    const distKm = distMeters / 1000;
+                                    const reduction = Math.round(distKm * (tData.reduction / 10));
+                                    window.fallbackPolyline = new google.maps.Polyline({ path: [calcStartMarker.getPosition(), calcEndMarker.getPosition()], geodesic: true, strokeColor: '#10B981', strokeOpacity: 0.8, strokeWeight: 4, map: window.mapInstance });
+                                    result.innerHTML = `<span class="text-[11px] text-emerald-600/80 mb-1 block"><i class="fas fa-info-circle mr-1"></i>無法規劃道路，改採直線估算</span>直線距離: <span class="text-emerald-600">${distKm.toFixed(1)}km</span><br>試算減碳: <span class="text-emerald-600">${reduction}g</span>`;
+                                }
+                            });
+                        } else {
+                            // 點第三下：自動重置並設定為新起點，體驗流暢不斷線
+                            resetCalcState();
+                            result.classList.add('hidden');
+                            status.classList.remove('hidden');
+                            calcStartMarker = new google.maps.Marker({ position: e.latLng, map: window.mapInstance, label: { text: '起', color: 'white', fontWeight: 'bold' }, icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' });
+                            status.innerHTML = '<i class="fas fa-mouse-pointer mr-1"></i> 步驟 2：請在地圖上點擊選擇「終點」';
+                        }
+                    });
+                    
+                    window.showToast('📍 試算模式已開啟！請直接點擊上方地圖。');
+                } else {
+                    btn.innerHTML = '<i class="fas fa-map-marked-alt mr-1.5"></i> 開啟地圖點選模式';
+                    btn.classList.replace('bg-emerald-100', 'bg-white');
+                    btn.classList.remove('border-emerald-400');
+                    status.classList.add('hidden');
+                    result.classList.add('hidden');
+                    if (mapClickListener) google.maps.event.removeListener(mapClickListener);
+                    resetCalcState();
+                }
             });
         }
 
