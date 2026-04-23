@@ -3113,6 +3113,10 @@
                 const overlay = document.getElementById('trial-locked-overlay');
                 const lockBtn = document.getElementById('trial-lock-btn');
                 const expiryText = document.getElementById('trial-expiry-text');
+                
+                // 🚀 獲取後台管理面板的 UI 節點
+                const adminStatus = document.getElementById('admin-panel-trial-status');
+                const adminToggle = document.getElementById('admin-panel-trial-toggle');
 
                 if (trialAutoLockTimer) clearTimeout(trialAutoLockTimer);
 
@@ -3123,9 +3127,21 @@
                     if (lockBtn) lockBtn.innerHTML = '<i class="fas fa-unlock text-emerald-500 text-base"></i>';
                     
                     const d = new Date(parseInt(expiry));
+                    const timeStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    
                     if (expiryText) {
                         expiryText.classList.remove('hidden');
-                        expiryText.querySelector('span').textContent = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                        expiryText.querySelector('span').textContent = timeStr;
+                    }
+                    
+                    // 動態更新後台管理面板 UI (解鎖狀態)
+                    if (adminStatus) {
+                        adminStatus.innerHTML = `<i class="fas fa-unlock text-emerald-500 mr-1"></i>目前狀態：已全網解鎖 (至 ${timeStr})`;
+                        adminStatus.className = "text-xs font-bold text-emerald-600 mt-2";
+                    }
+                    if (adminToggle) {
+                        adminToggle.innerHTML = '<i class="fas fa-lock mr-2"></i>強制全網上鎖';
+                        adminToggle.className = "w-full sm:w-auto px-5 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-sm shadow-md transition flex items-center justify-center shrink-0 outline-none tracking-wide";
                     }
                     
                     // 設定自動上鎖計時器 (每台設備各自倒數，時間到自動蓋上遮罩)
@@ -3136,14 +3152,25 @@
                 } else {
                     // 🔒 狀態：已上鎖
                     if (overlay) overlay.classList.remove('hidden');
-                    if (lockBtn) lockBtn.innerHTML = '<i class="fas fa-lock text-gray-400 text-base hover:text-emerald-500 transition"></i>';
+                    if (lockBtn) lockBtn.innerHTML = '<i class="fas fa-lock text-gray-400 text-base"></i>';
                     if (expiryText) expiryText.classList.add('hidden');
+                    
+                    // 動態更新後台管理面板 UI (上鎖狀態)
+                    if (adminStatus) {
+                        adminStatus.innerHTML = '<i class="fas fa-lock mr-1"></i>目前狀態：已上鎖';
+                        adminStatus.className = "text-xs font-bold text-gray-400 mt-2";
+                    }
+                    if (adminToggle) {
+                        adminToggle.innerHTML = '<i class="fas fa-key mr-2"></i>管理員解鎖';
+                        adminToggle.className = "w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold text-sm shadow-md transition flex items-center justify-center shrink-0 outline-none tracking-wide";
+                    }
+
                     // 強制切斷可能正在使用中的功能
                     window.forceDisableTrialMode();
                 }
             };
 
-            // 🚀 核心升級：統一解鎖觸發器 (同時支援右上角小鎖頭與中央大遮罩)
+            // 🚀 核心升級：統一解鎖觸發器 (現在專屬於管理員面板)
             const triggerTrialUnlock = async () => {
                 let expiry = localStorage.getItem('mori_trial_expiry');
                 if (globalAbsolute && globalAbsolute.trial_expiry !== undefined) {
@@ -3151,7 +3178,7 @@
                 }
 
                 if (expiry && parseInt(expiry) > 0 && Date.now() < parseInt(expiry)) {
-                    // 🛡️ 防呆強化：既然改為全網解鎖，提早上鎖也必須輸入密碼，防止一般玩家誤觸關閉
+                    // 🛡️ 防呆強化：既然改為全網解鎖，提早上鎖也必須輸入密碼
                     const pwd = prompt('🔒 確定要為全網域關閉 (上鎖) 地圖試算功能嗎？\n請輸入管理員密碼：');
                     if (pwd === '545366') {
                         if (db && !isOfflineMode) {
@@ -3167,13 +3194,15 @@
                     // 開啟輸入密碼視窗
                     const pwdInput = document.getElementById('trial-unlock-pwd');
                     if (pwdInput) pwdInput.value = ''; // 🛡️ 防禦性清空
+                    
+                    // 因為我們在別的 modal 裡，先關閉目前的 modal
+                    window.closeModal('training-cert-modal');
                     window.openModal('trial-unlock-modal');
                 }
             };
 
-            // 雙重綁定：無論點哪裡都能順利觸發！
-            document.getElementById('trial-lock-btn')?.addEventListener('click', triggerTrialUnlock);
-            document.getElementById('trial-locked-overlay')?.addEventListener('click', triggerTrialUnlock);
+            // 🚀 將解鎖權限徹底收束至管理員面板按鈕，拔除舊的綁定
+            document.getElementById('admin-panel-trial-toggle')?.addEventListener('click', triggerTrialUnlock);
 
             // 綁定：密碼驗證與設定時間事件
             document.getElementById('trial-unlock-confirm-btn')?.addEventListener('click', async () => {
