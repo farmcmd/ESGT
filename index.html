@@ -2084,10 +2084,9 @@
                             if (docSnap.exists()) { 
                                 globalAbsolute = docSnap.data(); 
                             } else { 
-                                // 🗑️ 核心修復：拔除「自動覆寫機制 (Auto-fix)」，避免 Race Condition 導致數據回滾
-                                // 若資料庫遺失或尚未建立，僅在前端「顯示」預設值，絕不主動發送指令覆寫後台！
+                                // 🗑️ 核心修復：拔除假數字防呆！就算資料庫遺失，也只給 0，讓前端的「種子渲染引擎」來接手處理，保證資料庫絕對純淨
                                 const todayStr = getTodayKey(); 
-                                globalAbsolute = { carbon: 50000, green: 186500, visitor_count: 1250 }; 
+                                globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; 
                                 globalAbsolute[`daily_${todayStr}_carbon`] = 0; 
                             }
                             absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
@@ -3470,14 +3469,13 @@
                 if(isOfflineMode) { 
                     isOfflineMode = false; 
                     initFirebase(); 
-                    window.showToast('📶 網路連線已恢復...'); 
-                    // 延遲 3 秒等待 Firebase 初始化完畢，再執行背景同步
-                    setTimeout(() => { if(typeof window.syncOfflineData === 'function') window.syncOfflineData(); }, 3000);
+                    window.showToast('📶 網路連線已恢復，您可以繼續登錄永續成就。'); 
                 } 
             });
             window.addEventListener('offline', () => { 
                 isOfflineMode = true; 
-                window.showToast('⚠️ 網路不穩定，系統已切換為「離線保護模式」。您的新數據將會暫存於手機中，請安心使用，網路恢復時將自動為您上傳。'); 
+                // 🎯 核心微調：對齊目前的「嚴格阻斷與原子性交易」架構，給予最精準的防呆提示
+                window.showToast('⚠️ 網路連線中斷。為確保您的數據準確寫入雲端，系統已開啟嚴格保護機制，請於網路恢復後再行登錄成就。'); 
                 loadMockData(); 
             });
         });
