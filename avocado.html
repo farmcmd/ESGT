@@ -175,6 +175,14 @@ body {
     margin-bottom: 0.5rem;
 }
 
+/* 提升手機觸控靈敏度與防止預設滾動 */
+button, .open-ppt-btn, [id^="btn-"], .farm-btn, .ans-btn {
+    touch-action: manipulation;
+}
+[id$="-game-area"], #blender {
+    touch-action: none;
+}
+
 /* Game Containers */
 .game-container {
     width: 100%;
@@ -936,7 +944,7 @@ function initGame1() {
 
     const handleMove = (e) => {
         if(isCompleted || !gameActive) return; 
-        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        if(e.cancelable) e.preventDefault(); // 強制攔截手機預設滑動，確保拖曳順暢
         
         const rect = gameArea.getBoundingClientRect();
         let clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1229,7 +1237,7 @@ function initGame3() {
 
     const handleMove = (e) => {
         if(isCompleted || !selectedType) return; 
-        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        if(e.cancelable) e.preventDefault(); // 強制攔截手機預設滑動，確保拖曳順暢
         const rect = gameArea.getBoundingClientRect();
         let clientX = e.touches ? e.touches[0].clientX : e.clientX;
         if(clientX === undefined) return;
@@ -1507,7 +1515,8 @@ function initGame6() {
         el.style.left = Math.max(0, Math.random() * maxX) + 'px';
         el.style.top = Math.max(0, Math.random() * maxY) + 'px';
         
-        el.addEventListener('mousedown', () => {
+        const hitHandler = (e) => {
+            if(e.cancelable) e.preventDefault();
             if(isCompleted) return;
             if(isGood) {
                 score = Math.min(100, score + 15);
@@ -1518,7 +1527,10 @@ function initGame6() {
             }
             pctSpan.textContent = score;
             el.remove();
-        });
+        };
+        
+        el.addEventListener('mousedown', hitHandler);
+        el.addEventListener('touchstart', hitHandler, {passive: false}); // 補齊手機觸控事件
         
         area.appendChild(el);
         setTimeout(() => { if(el.parentElement) el.remove(); }, 1200);
