@@ -1421,7 +1421,9 @@ function initGame5() {
     let blendPct = 0; let isBlending = false; let isCompleted = false; let blendInterval;
 
     const startBlend = (e) => {
-        if(isCompleted) return; e.preventDefault(); isBlending = true;
+        if(isCompleted) return; 
+        if(e.cancelable) e.preventDefault(); // 安全的局部攔截
+        isBlending = true;
         btn.style.transform = 'scale(0.95)'; btn.style.background = '#F9A825';
         blender.style.animation = 'shake 0.1s infinite';
         if(!document.getElementById('shake-style')) {
@@ -1446,14 +1448,18 @@ function initGame5() {
     };
 
     const stopBlend = (e) => {
-        if(isCompleted) return; isBlending = false; e.preventDefault();
+        if(isCompleted) return; 
+        isBlending = false; 
+        // 【修復核心】：移除原本的 e.preventDefault()，避免全域攔截手機正常點擊！
         btn.style.transform = 'scale(1)'; btn.style.background = '#FBC02D';
         blender.style.animation = 'none';
         clearInterval(blendInterval);
     };
 
-    btn.addEventListener('mousedown', startBlend); btn.addEventListener('touchstart', startBlend, {passive: false});
-    window.addEventListener('mouseup', stopBlend); window.addEventListener('touchend', stopBlend);
+    btn.addEventListener('mousedown', startBlend); 
+    btn.addEventListener('touchstart', startBlend, {passive: false});
+    window.addEventListener('mouseup', stopBlend); 
+    window.addEventListener('touchend', stopBlend);
 
     function completeGame() {
         if(isCompleted) return; isCompleted = true; clearInterval(blendInterval);
