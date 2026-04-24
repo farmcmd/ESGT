@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="台灣國產檸檬食農教育互動學習網頁">
+    <title>青檸台灣 | Taiwan Lemon Education</title>
+    <style>
+:root {
+    --color-s1: #4CAF50; /* 認識：綠皮檸檬 */
+    --color-s2: #8BC34A; /* 草生：草地綠 */
+    --color-s3: #CDDC39; /* 農法：生態淺綠 */
+    --color-s4: #FFEB3B; /* 採收：陽光黃 */
+    --color-s5: #FFC107; /* 風味：酸甜橙黃 */
+    --color-s6: #FF9800; /* 加工：果乾橘 */
+    --color-agri: #00BCD4; /* 永續：水資源藍 */
+    
+    --bg-dark: #f0f4f0; /* 背景改為清爽淺綠 */
+    --text-light: #2e3b32; /* 文字改為深墨綠 */
+    --accent: #1B5E20; /* 按鈕與強調色：深森林綠 */
+
+    /* PPT Variables */
+    --ppt-text-main: #ecf0f1;
+    --ppt-text-accent: #fbc02d;
+    --ppt-slide-bg: #1e392a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    overflow: hidden; 
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Hero Section */
+.hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #A5D6A7 0%, #1B5E20 100%);
+    color: white;
+}
+
+.hero h1 {
+    font-size: 4.5rem;
+    margin-bottom: 1rem;
+    color: #FFF59D;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+}
+
+.hero p {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    max-width: 650px;
+    line-height: 1.6;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+#start-btn, .open-ppt-btn {
+    padding: 1rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #FFF;
+    background-color: var(--accent);
+    border: 2px solid #FFF59D;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.3s, background-color 0.3s;
+    box-shadow: 0 4px 15px rgba(27, 94, 32, 0.4);
+}
+
+#start-btn:hover, .open-ppt-btn:hover {
+    transform: scale(1.05);
+    background-color: #2E7D32;
+}
+
+.open-ppt-btn {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    background-color: #FBC02D;
+    color: #1B5E20;
+    border: none;
+    box-shadow: 0 4px 15px rgba(251, 192, 45, 0.4);
+    margin-left: 15px;
+    vertical-align: middle;
+}
+
+.open-ppt-btn:hover {
+    background-color: #FFF176;
+}
+
+/* Main Layers Container */
+#soil-layers {
+    height: 100vh;
+    width: 100vw;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+}
+
+/* Individual Layer */
+.soil-layer {
+    height: 100vh;
+    width: 100vw;
+    scroll-snap-align: start;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 2rem;
+}
+
+.layer-1 { background-color: var(--color-s1); }
+.layer-2 { background-color: var(--color-s2); }
+.layer-3 { background-color: var(--color-s3); }
+.layer-4 { background-color: var(--color-s4); }
+.layer-5 { background-color: var(--color-s5); }
+.layer-6 { background-color: var(--color-s6); }
+.layer-7 { background-color: var(--color-agri); }
+
+.layer-content {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2rem;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.layer-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.layer-content h2 {
+    font-size: 2.2rem;
+    color: var(--accent);
+    margin: 0;
+}
+
+.info-card {
+    background: rgba(139, 195, 74, 0.1);
+    border-left: 5px solid var(--accent);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    border-radius: 0 10px 10px 0;
+}
+
+.info-card strong {
+    color: var(--accent);
+    font-size: 1.3rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+/* Game Containers */
+.game-container {
+    width: 100%;
+    height: 380px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 2px dashed rgba(27, 94, 32, 0.3);
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Navigation */
+#layer-nav {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+#layer-nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#layer-nav li {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.8);
+    color: var(--accent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 2px solid var(--accent);
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#layer-nav li:hover, #layer-nav li.active {
+    background: var(--accent);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* Fullscreen Button */
+.fullscreen-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s;
+}
+.fullscreen-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* Lemonade Glass Container */
+#test-tube-container {
+    position: fixed;
+    right: 90px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 90px;
+    height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 90;
+    pointer-events: none;
+}
+.tube-glass {
+    width: 90px;
+    height: 270px;
+    background: rgba(255, 255, 255, 0.4);
+    border: 4px solid rgba(255, 255, 255, 0.9);
+    border-top: none;
+    border-radius: 5px 5px 30px 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(255,255,255,0.5), 0 10px 20px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+/* 玻璃杯反光 */
+.tube-glass::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 5px; right: 60px; bottom: 10px;
+    background: linear-gradient(to right, rgba(255,255,255,0.7), transparent);
+    border-radius: 20px;
+    z-index: 10;
+}
+/* 檸檬片裝飾 */
+.tube-glass::before {
+    content: '🍋';
+    position: absolute;
+    top: -5px; right: -5px;
+    font-size: 30px;
+    z-index: 20;
+    transform: rotate(15deg);
+}
+#tube-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.tube-layer {
+    width: 100%;
+    transition: height 1s ease-out;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+.tube-label {
+    margin-top: 10px;
+    font-weight: bold;
+    color: var(--accent);
+    background: rgba(255,255,255,0.8);
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-shadow: none;
+}
+
+/* PPT Modal Styles */
+#ppt-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 4000; 
+    display: flex;
+    flex-direction: column;
+}
+
+.ppt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: #1e392a;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+.ppt-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--ppt-text-accent);
+}
+
+.ppt-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 30px;
+    background: #1e392a;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+.ppt-footer button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.ppt-footer button:hover { background-color: #2ecc71; }
+.ppt-footer button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+
+#ppt-page-wrapper {
+    color: white; 
+    font-size: 1.1rem; 
+    background: rgba(255,255,255,0.2); 
+    padding: 8px 20px; 
+    border-radius: 25px;
+    font-weight: bold;
+}
+
+#close-ppt-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.ppt-tool-btn {
+    background-color: #34495e;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.ppt-tool-btn.active { background-color: #e67e22; box-shadow: 0 0 10px rgba(230, 126, 34, 0.8); }
+
+#draw-canvas {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 50; 
+    pointer-events: none; 
+    cursor: crosshair;
+}
+#draw-canvas.active { pointer-events: auto; }
+
+.ppt-main {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden; 
+}
+
+.slide-container {
+    width: 100%; max-width: 960px; aspect-ratio: 16 / 9;
+    background-color: var(--ppt-slide-bg);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative; overflow: hidden;
+}
+
+.slide {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    padding: 60px; opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateX(20px);
+    pointer-events: none;
+    display: flex; flex-direction: column; justify-content: center;
+    overflow-y: auto; 
+}
+
+.slide.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+
+.slide.title-slide {
+    align-items: center; text-align: center;
+    background: linear-gradient(135deg, #1B5E20 0%, #FBC02D 100%);
+}
+
+.slide.title-slide h1 { font-size: 3.5rem; margin-bottom: 20px; color: #fff; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+.slide.title-slide h2 { font-size: 1.8rem; color: #fff; font-weight: normal; }
+
+.slide-header { border-bottom: 3px solid var(--ppt-text-accent); margin-bottom: 30px; padding-bottom: 15px; flex-shrink: 0; }
+.slide-header h2 { font-size: 2.5rem; color: var(--ppt-text-accent); margin:0; }
+
+.slide-content { font-size: 1.5rem; line-height: 1.8; text-align: left; color: var(--ppt-text-main); }
+.slide-content ul { margin-left: 40px; }
+.slide-content li { margin-bottom: 15px; }
+.slide-content .highlight { color: var(--ppt-text-accent); font-weight: bold; }
+
+.unit-1 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #144517); }
+.unit-2 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #2e4d36); }
+.unit-3 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #3c5225); }
+.unit-4 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #5e5a20); }
+.unit-5 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #634f19); }
+.unit-6 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #593910); }
+.unit-7 { background: linear-gradient(to bottom right, var(--ppt-slide-bg), #1a4a52); }
+
+.progress-bar {
+    position: absolute; bottom: 0; left: 0; height: 5px;
+    background-color: var(--ppt-text-accent); transition: width 0.3s ease;
+    z-index: 10;
+}
+
+.ppt-play-btn {
+    display: inline-block; margin-top: 25px; padding: 12px 30px;
+    font-size: 1.3rem; font-weight: bold; color: #1B5E20;
+    background: #FFF176; border: none; border-radius: 50px;
+    cursor: pointer; box-shadow: 0 4px 15px rgba(255, 241, 118, 0.5);
+    transition: transform 0.2s, background 0.2s; text-align: center;
+}
+.ppt-play-btn:hover { background: #FFEE58; transform: scale(1.05); }
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .fullscreen-btn { top: 10px; right: 10px; width: 35px; height: 35px; font-size: 1.2rem; }
+    #test-tube-container { right: 55px; width: 50px; height: 220px; }
+    .tube-glass { width: 50px; height: 180px; }
+    .tube-glass::before { font-size: 20px; top: -2px; right: -2px; }
+    .hero h1 { font-size: 3rem; }
+    .hero p { font-size: 1.1rem; padding: 0 15px; }
+    .soil-layer { padding: 0.5rem; display: flex; align-items: stretch; }
+    .layer-content { padding: 0.8rem; margin: auto; max-width: 98%; max-height: 98vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .layer-content h2 { font-size: 1.4rem; }
+    .info-card { padding: 0.8rem; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; }
+    .info-card strong { font-size: 1.1rem; margin-bottom: 0.2rem; }
+    .game-container { height: auto; min-height: 280px; flex-grow: 1; display: flex; flex-direction: column; }
+    
+    #layer-nav { right: 5px; }
+    #layer-nav li { width: 35px; height: 35px; font-size: 0.8rem; gap: 5px; }
+    
+    .open-ppt-btn { padding: 0.4rem 1rem; font-size: 0.85rem; margin-left: 0; width: 100%; }
+    .layer-header { flex-direction: column; margin-bottom: 5px; }
+
+    #ppt-modal { height: 100dvh; } 
+    .ppt-header { padding: 12px 15px; }
+    .ppt-title { font-size: 1rem; width: 65%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ppt-footer { padding: 10px; gap: 8px; justify-content: space-between; }
+    .ppt-footer button { padding: 12px 10px; font-size: 1rem; flex-grow: 1; }
+    .ppt-main { padding: 10px; display: block; height: calc(100% - 110px); } 
+    .slide-container { aspect-ratio: auto; height: 100%; border-radius: 8px; }
+    .slide { padding: 25px 15px 40px 15px; display: block; overflow-y: auto; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <button id="fullscreen-toggle" class="fullscreen-btn" title="切換全螢幕">⛶</button>
+
+        <header class="hero">
+            <h1>青檸台灣</h1>
+            <p>點擊開始，跟著我們從果園栽培、風味解構到全果加工，體驗台灣綠檸檬的永續旅程。</p>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <button id="start-btn">開始體驗</button>
+                <button class="open-ppt-btn" data-ppt-start="0" id="hero-ppt-btn">📖 完整課程簡報</button>
+            </div>
+        </header>
+
+        <main id="soil-layers" class="hidden">
+            <!-- Chapter 1 -->
+            <section id="layer-1" class="soil-layer layer-1">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>第一章：檸檬基本認識</h2>
+                        <button class="open-ppt-btn" data-ppt-start="4">📖 關於品種 (簡報 5-9)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>台灣綠檸檬：優利卡 (Eureka)</strong><br>
+                        台灣檸檬以「綠色」為主要特色。主要品種為優利卡，四季皆可開花結果，且果皮富含強烈柑橘精油香氣。
+                    </div>
+                    <div class="game-container" id="game-1"></div>
+                </div>
+            </section>
+            
+            <!-- Chapter 2 -->
+            <section id="layer-2" class="soil-layer layer-2">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>第二章：檸檬園的草生栽培</h2>
+                        <button class="open-ppt-btn" data-ppt-start="9">📖 關於護草 (簡報 10-14)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>涵養水土的天然地毯</strong><br>
+                        果園保留草相（如蔓花生）取代除草劑，能緩衝雨水沖刷、減少水分蒸散，並增加土壤有機質，活化果樹根系！
+                    </div>
+                    <div class="game-container" id="game-2"></div>
+                </div>
+            </section>
+            
+            <!-- Chapter 3 -->
+            <section id="layer-3" class="soil-layer layer-3">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>第三章：慣行與友善農法</h2>
+                        <button class="open-ppt-btn" data-ppt-start="14">📖 關於生態 (簡報 15-18)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>建立微型生態系</strong><br>
+                        友善農法不使用化學農藥與速效肥，改用<span style="color:#1B5E20; font-weight:bold;">生物防治(如天敵瓢蟲)</span>與有機肥，吸引蜜蜂授粉，維持生態多樣性。
+                    </div>
+                    <div class="game-container" id="game-3"></div>
+                </div>
+            </section>
+            
+            <!-- Chapter 4 -->
+            <section id="layer-4" class="soil-layer layer-4">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>第四章：檸檬的黃金採收</h2>
+                        <button class="open-ppt-btn" data-ppt-start="18">📖 關於採收 (簡報 19-22)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>精準判斷適採期</strong><br>
+                        果皮呈深綠至黃綠色、果實飽滿具光澤時最佳。採收需用專用果剪平貼果蒂，避免刺傷其他果實。
+                    </div>
+                    <div class="game-container" id="game-4"></div>
+                </div>
+            </section>
+
+            <!-- Chapter 5 -->
+            <section id="layer-5" class="soil-layer layer-5">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>第五章：檸檬的風味解構</h2>
+                        <button class="open-ppt-btn" data-ppt-start="22">📖 關於風味 (簡報 23-26)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>酸、香、苦的完美交織</strong><br>
+                        果皮富含提神的<span style="color:#1B5E20;font-weight:bold;">揮發性精油</span>；果肉提供清爽的<span style="color:#1B5E20;font-weight:bold;">檸檬酸</span>；而種子與白絡若過度擠壓則會釋放<span style="color:#1B5E20;font-weight:bold;">檸檬苦素</span>。
+                    </div>
+                    <div class="game-container" id="game-5"></div>
+                </div>
+            </section>
+
+            <!-- Chapter 6 -->
+            <section id="layer-6" class="soil-layer layer-6">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>第六章：檸檬加工與應用</h2>
+                        <button class="open-ppt-btn" data-ppt-start="26">📖 關於加工 (簡報 27-30)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>農產零廢棄</strong><br>
+                        除了鮮榨果汁外，外觀不佳的「格外品」可做成低溫烘焙果乾，果皮還能冷壓萃取出高價值的天然精油。
+                    </div>
+                    <div class="game-container" id="game-6"></div>
+                </div>
+            </section>
+
+            <!-- Chapter 7 -->
+            <section id="layer-7" class="soil-layer layer-7">
+                <div class="layer-content">
+                    <div class="layer-header">
+                        <h2>最終章：永續循環行動</h2>
+                        <button class="open-ppt-btn" data-ppt-start="30">📖 關於永續 (簡報 31-34)</button>
+                    </div>
+                    <div class="info-card">
+                        <strong>SROI 社會投資報酬率</strong><br>
+                        支持友善栽培的國產檸檬，不僅喝得健康，更能活化農村經濟、保護台灣土地水資源。
+                    </div>
+                    <div class="game-container" id="game-7"></div>
+                </div>
+            </section>
+        </main>
+        
+        <nav id="layer-nav" class="hidden">
+            <ul>
+                <li data-target="layer-1" class="active">認識</li>
+                <li data-target="layer-2">草生</li>
+                <li data-target="layer-3">農法</li>
+                <li data-target="layer-4">採收</li>
+                <li data-target="layer-5">風味</li>
+                <li data-target="layer-6">加工</li>
+                <li data-target="layer-7">永續</li>
+            </ul>
+        </nav>
+        
+        <div id="test-tube-container" class="hidden">
+            <div class="tube-glass">
+                <div id="tube-content"></div>
+            </div>
+            <div class="tube-label">青檸特調杯</div>
+        </div>
+    </div>
+
+    <!-- PPT Modal -->
+    <div id="ppt-modal" class="hidden">
+        <div class="ppt-header">
+            <div class="ppt-title">青檸台灣：檸檬食農教育簡報</div>
+            <div style="display:flex; gap:10px;">
+                <button id="ppt-pen-btn" class="ppt-tool-btn">🖍️ 畫筆 (關)</button>
+                <button id="ppt-clear-btn" class="ppt-tool-btn hidden" style="background-color: #95a5a6;">🗑️ 清除</button>
+                <button id="close-ppt-btn">✖ 關閉</button>
+            </div>
+        </div>
+        
+        <div class="ppt-main">
+            <div class="slide-container" id="ppt-slide-container">
+                <canvas id="draw-canvas"></canvas>
+                <div class="progress-bar" id="ppt-progress-bar" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <div class="ppt-footer">
+            <button id="ppt-prev">◄ 上一頁</button>
+            <div id="ppt-page-wrapper">
+                <span id="ppt-current-page">1</span> / <span id="ppt-total-page"></span>
+            </div>
+            <button id="ppt-next">下一頁 ►</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+/* =========================================
+   全域狀態與 PPT 邏輯
+   ========================================= */
+window.globalScores = { s1: 0, s2: 0, s3: 0, s4: 0, s5: 0, s6: 0 };
+window.layerCompletionOrder = [];
+window.isFullCourseMode = false; 
+
+window.triggerNextCourseStep = function(nextLayerId, nextPPTIndex) {
+    const container = document.getElementById('soil-layers');
+    const targetEl = document.getElementById(nextLayerId);
+    
+    if (targetEl && container) {
+        container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+    }
+    
+    if (window.isFullCourseMode && nextPPTIndex !== null) {
+        setTimeout(() => {
+            pptCurrentPage = nextPPTIndex;
+            updatePPT();
+            pptModal.classList.remove('hidden');
+        }, 800);
+    }
+};
+
+window.addLayerToJar = function(layerId, colorHex, score) {
+    if(!window.layerCompletionOrder.includes(layerId)) {
+        window.layerCompletionOrder.push(layerId);
+    }
+    
+    document.getElementById('test-tube-container').classList.remove('hidden');
+
+    const labelMap = { 's1': '識', 's2': '草', 's3': '法', 's4': '收', 's5': '味', 's6': '工', 'agri': '續' };
+
+    const tubeContent = document.getElementById('tube-content');
+    const layerDiv = document.createElement('div');
+    layerDiv.className = 'tube-layer';
+    layerDiv.style.backgroundColor = colorHex;
+    layerDiv.style.display = 'flex';
+    layerDiv.style.justifyContent = 'center';
+    layerDiv.style.alignItems = 'center';
+    layerDiv.style.color = 'rgba(255,255,255,0.9)';
+    layerDiv.style.fontWeight = 'bold';
+    layerDiv.style.fontSize = '12px';
+    layerDiv.style.textShadow = '1px 1px 2px rgba(0,0,0,0.5)';
+    layerDiv.textContent = labelMap[layerId] || '';
+    
+    const finalHeight = 4 + (score / 100 * 10.2); // Total 7 layers, max ~14% each
+    layerDiv.style.height = '0%';
+    tubeContent.insertBefore(layerDiv, tubeContent.firstChild);
+    setTimeout(() => { layerDiv.style.height = finalHeight + '%'; }, 50);
+};
+
+const slidesData = [
+    // --- 前導 (頁 1-4) (Index 0-3) ---
+    { title: "青檸台灣", content: "台灣綠檸檬食農教育之旅<br><br><span style='font-size:1.2rem; color:#A5D6A7;'>從友善農法到果香四溢的永續應用</span>", type: "title-slide" },
+    { title: "課程動機", content: "<ul><li>台灣著名的「綠金」檸檬有何獨特魅力？</li><li>從傳統農法轉向<span class='highlight'>草生栽培與友善農法</span>的挑戰是什麼？</li><li>透過課程認識這顆富含維他命C的綠色寶石。</li></ul>" },
+    { title: "青檸七部曲", content: "<ul><li>1. <span class='highlight'>認識</span>：台灣綠檸檬品種與特性</li><li>2. <span class='highlight'>草生</span>：果園的地毯—草生栽培</li><li>3. <span class='highlight'>農法</span>：慣行農法 vs 友善農法</li><li>4. <span class='highlight'>採收</span>：判斷黃金採收期</li><li>5. <span class='highlight'>風味</span>：解構酸、香、苦的化學密碼</li><li>6. <span class='highlight'>加工</span>：鮮榨、果乾與精油的全果應用</li><li>7. <span class='highlight'>永續</span>：SROI 與循環農業</li></ul>" },
+    { title: "台灣檸檬概況", content: "<ul><li>台灣氣候高溫日照足，非常適合檸檬生長。</li><li>主要產區集中在中南部，如<span class='highlight'>屏東九如、鹽埔</span>。</li><li>台灣人偏愛帶有濃郁果皮香氣的「綠皮檸檬」。</li></ul>" },
+    
+    // --- 第一章：認識 (頁 5-9) (Index 4-8) ---
+    { title: "【第一章】基本認識", content: "<ul><li>台灣栽培最廣的品種為<span class='highlight'>優利卡 (Eureka)</span>。</li><li>因為氣候關係，在台灣採收時果皮仍保持綠色。</li><li>富含維生素C、檸檬酸及膳食纖維。</li></ul>", class: "unit-1" },
+    { title: "生長特性", content: "<ul><li>優利卡檸檬又被稱為<span class='highlight'>四季檸檬</span>，全年皆可開花結果。</li><li>夏季產量最高，冬季產量較少且價格較高。</li></ul>", class: "unit-1" },
+    { title: "外觀辨識", content: "<ul><li>果皮呈現深綠色或黃綠色。</li><li>表面有明顯的<span class='highlight'>油胞</span>，輕搓即可聞到強烈柑橘香氣。</li><li>形狀多為橢圓形，果頂有明顯乳突。</li></ul>", class: "unit-1" },
+    { title: "營養與保健價值", content: "<ul><li>天然抗氧化劑來源。</li><li>檸檬酸有助於促進新陳代謝、幫助消化。</li></ul>", class: "unit-1" },
+    { title: "互動環節：果園接接樂", content: "<ul><li>在互動遊戲中：</li><li>左右移動籃子，接住掉落的<span class='highlight'>新鮮綠檸檬</span>。</li><li>避開果蠅與石頭，展現你的敏捷身手！</li></ul>", class: "unit-1", gameTarget: "layer-1" },
+
+    // --- 第二章：草生 (頁 10-14) (Index 9-13) ---
+    { title: "【第二章】草生栽培", content: "<ul><li>草生栽培是現代果園管理的<span class='highlight'>永續趨勢</span>。</li><li>在果樹下保留雜草或種植特定草種，取代噴灑除草劑。</li></ul>", class: "unit-2" },
+    { title: "水土保持與保濕", content: "<ul><li>草冠層能緩衝雨水，防止土壤流失。</li><li>乾旱季節時，草根系覆蓋地表能<span class='highlight'>減少水分蒸散</span>。</li><li>有效調節果園微氣候、穩定溫溼度。</li></ul>", class: "unit-2" },
+    { title: "常見的護草植物", content: "<ul><li><span class='highlight'>蔓花生：</span>生長低矮，開黃花，能美化果園。</li><li><span class='highlight'>百喜草：</span>耐踐踏，根系深，水土保持效果極佳。</li></ul>", class: "unit-2" },
+    { title: "活化土壤生態", content: "<ul><li>草的枯落物能增加土壤有機質。</li><li>促進<span class='highlight'>蚯蚓及有益微生物</span>繁殖，提升果樹根系吸收力。</li></ul>", class: "unit-2" },
+    { title: "互動環節：護地除草任務", content: "<ul><li>在互動遊戲中：</li><li>人工除草需要精準眼力！</li><li>點擊拔除<span class='highlight'>惡性雜草</span>，保護護地好草（如蔓花生）。</li></ul>", class: "unit-2", gameTarget: "layer-2" },
+
+    // --- 第三章：農法 (頁 15-18) (Index 14-17) ---
+    { title: "【第三章】農法差異", content: "<ul><li>傳統的<span class='highlight'>慣行農法</span>依賴化學肥料與農藥。</li><li>現代提倡的<span class='highlight'>友善農法</span>則著重於生態多樣性。</li></ul>", class: "unit-3" },
+    { title: "病蟲害防治的差異", content: "<ul><li>慣行：定期噴灑化學藥劑，易造成殘留並殺死益蟲。</li><li>友善：利用<span class='highlight'>天敵（如瓢蟲吃蚜蟲）</span>、非農藥資材進行防治。</li></ul>", class: "unit-3" },
+    { title: "土壤與肥料", content: "<ul><li>慣行：長期使用速效化肥，易導致土壤酸化、硬化。</li><li>友善：施用<span class='highlight'>有機肥、自製液肥</span>，培植健康地力。</li></ul>", class: "unit-3" },
+    { title: "互動環節：友善資材大作戰", content: "<ul><li>在互動遊戲中：</li><li>收集對果園有益的<span class='highlight'>瓢蟲(天敵)與有機肥</span>。</li><li>避開破壞生態的化學農藥！</li></ul>", class: "unit-3", gameTarget: "layer-3" },
+
+    // --- 第四章：採收 (頁 19-22) (Index 18-21) ---
+    { title: "【第四章】檸檬的採收", content: "<ul><li>檸檬的採收時機，決定了果汁的酸度與果皮香氣。</li><li>過早採收汁少味淡，過晚採收則果皮發黃、易腐壞。</li></ul>", class: "unit-4" },
+    { title: "黃金採收指標", content: "<ul><li><span class='highlight'>外觀：</span>果皮呈深綠色至黃綠色，果實飽滿。</li><li><span class='highlight'>油胞：</span>果皮表面的油胞充實且具光澤。</li></ul>", class: "unit-4" },
+    { title: "採收技巧", content: "<ul><li>必須使用專用果剪，<span class='highlight'>平貼果蒂剪下</span>。</li><li>絕對不可硬拔，以免果梗刺傷其他果實或破壞果皮。</li></ul>", class: "unit-4" },
+    { title: "互動環節：黃金採收期", content: "<ul><li>在互動遊戲中：</li><li>展現你的好眼力，在樹上尋找熟度完美的<span class='highlight'>深綠色檸檬</span>。</li><li>小心別剪到黃色過熟或發育不良的果實！</li></ul>", class: "unit-4", gameTarget: "layer-4" },
+
+    // --- 第五章：風味 (頁 23-26) (Index 22-25) ---
+    { title: "【第五章】風味解構", content: "<ul><li>檸檬的迷人風味，其實是一場複雜的化學感官饗宴。</li><li>主要由<span class='highlight'>酸、香、苦</span>三種元素組成。</li></ul>", class: "unit-5" },
+    { title: "天然酸度與揮發性香氣", content: "<ul><li><span class='highlight'>酸味 (果肉)：</span>來自高濃度的檸檬酸與維生素C。</li><li><span class='highlight'>香氣 (果皮)：</span>油胞中富含精油（如檸檬烯 Limonene），帶來提神芳香。</li></ul>", class: "unit-5" },
+    { title: "微甘苦韻的秘密", content: "<ul><li>檸檬的白絡（果皮內側白色部分）及種子含有<span class='highlight'>檸檬苦素</span>。</li><li>榨汁時若過度擠壓，會將苦味大量釋放到果汁中。</li></ul>", class: "unit-5" },
+    { title: "互動環節：完美榨汁比例", content: "<ul><li>在互動遊戲中：</li><li>快速點擊榨汁，收集香甜果汁。</li><li><span class='highlight'>請注意刻度！</span>擠壓過度會把苦味擠出來，適可而止才是完美。</li></ul>", class: "unit-5", gameTarget: "layer-5" },
+
+    // --- 第六章：加工 (頁 27-30) (Index 26-29) ---
+    { title: "【第六章】加工與應用", content: "<ul><li>外表不完美的「格外品」檸檬該怎麼辦？</li><li>透過加工技術，能達成<span class='highlight'>農產零廢棄</span>的目標。</li></ul>", class: "unit-6" },
+    { title: "常見的加工方式", content: "<ul><li><span class='highlight'>鮮榨原汁：</span>供應手搖飲與餐飲業，是最龐大的需求。</li><li><span class='highlight'>烘焙果乾：</span>低溫烘焙保留營養，延長保存期限。</li></ul>", class: "unit-6" },
+    { title: "高價值萃取", content: "<ul><li>果皮可透過冷壓技術萃取<span class='highlight'>純天然檸檬精油</span>。</li><li>廣泛應用於芳療、化妝品及天然清潔劑，經濟價值高。</li></ul>", class: "unit-6" },
+    { title: "互動環節：全果加工防線", content: "<ul><li>在互動遊戲中：</li><li>將輸送帶上的檸檬，準確分類為<span class='highlight'>果汁、果乾、精油</span>。</li><li>避免將它們當作垃圾丟棄！</li></ul>", class: "unit-6", gameTarget: "layer-6" },
+
+    // --- 第七章：永續 (頁 31-35) (Index 30-34) ---
+    { title: "【第七章】循環農業與社會價值", content: "<ul><li>購買友善耕作的國產檸檬，不只是一筆交易。</li><li>它產生了巨大的<span class='highlight'>SROI (社會投資報酬率)</span>。</li></ul>", class: "unit-7" },
+    { title: "SROI 社會影響力", content: "<ul><li>支持農民 ＝ 增加農村穩定收入。</li><li>友善農法 ＝ 保護台灣土地水資源與生態多樣性。</li><li>全果加工 ＝ 減少食物浪費，推動循環經濟。</li></ul>", class: "unit-7" },
+    { title: "你的選擇，改變未來", content: "<ul><li>我們每一次的消費，都在為我們想要的世界投票。</li><li>支持台灣在地青農與綠色檸檬產業。</li></ul>", class: "unit-7" },
+    { title: "互動環節：永續行動宣言", content: "<ul><li>回顧從果園到加工的學習歷程。</li><li>選擇一項你願意支持的永續行動。</li><li>看看你的知識考核成果！</li></ul>", class: "unit-7", gameTarget: "layer-7" },
+
+    // --- 總結 (頁 36) (Index 35) ---
+    { title: "Q&A 與交流", content: "<div style='text-align:center; font-size:2rem; margin-top:50px; color:#FBC02D;'>感謝您的聆聽與參與！</div><br><div style='text-align:center;'>大家今天學到了哪些檸檬的小知識呢？</div>", type: "title-slide" }
+];
+
+let pptCurrentPage = 0;
+const pptTotalPages = slidesData.length;
+const pptContainer = document.getElementById('ppt-slide-container');
+const pptProgressBar = document.getElementById('ppt-progress-bar');
+const pptBtnPrev = document.getElementById('ppt-prev');
+const pptBtnNext = document.getElementById('ppt-next');
+const pptModal = document.getElementById('ppt-modal');
+
+document.getElementById('ppt-total-page').textContent = pptTotalPages;
+
+function initPPT() {
+    slidesData.forEach((data, index) => {
+        const slideDiv = document.createElement('div');
+        slideDiv.className = `slide ${data.type === 'title-slide' ? 'title-slide' : ''} ${data.class || ''}`;
+        slideDiv.id = `slide-${index}`;
+
+        let innerHTMLStr = '';
+        if (data.type === 'title-slide') {
+            innerHTMLStr = `<h1>${data.title}</h1><h2>${data.content}</h2>`;
+        } else {
+            innerHTMLStr = `<div class="slide-header"><h2>${data.title}</h2></div><div class="slide-content">${data.content}`;
+            if (data.gameTarget) {
+                innerHTMLStr += `<br><div style="text-align:center;"><button class="ppt-play-btn" data-target="${data.gameTarget}">🎮 進入互動關卡</button></div>`;
+            }
+            innerHTMLStr += `</div>`;
+        }
+        slideDiv.innerHTML = innerHTMLStr;
+        pptContainer.appendChild(slideDiv);
+    });
+}
+
+function updatePPT() {
+    document.querySelectorAll('#ppt-slide-container .slide').forEach((slide, index) => {
+        if (index === pptCurrentPage) {
+            slide.classList.add('active');
+            slide.scrollTop = 0;
+        } else {
+            slide.classList.remove('active');
+        }
+    });
+    document.getElementById('ppt-current-page').textContent = pptCurrentPage + 1;
+    pptProgressBar.style.width = `${((pptCurrentPage + 1) / pptTotalPages) * 100}%`;
+    pptBtnPrev.disabled = pptCurrentPage === 0;
+    pptBtnNext.disabled = pptCurrentPage === pptTotalPages - 1;
+    
+    const cvs = document.getElementById('draw-canvas');
+    if (cvs && cvs.getContext) {
+        cvs.getContext('2d').clearRect(0, 0, cvs.width, cvs.height);
+    }
+}
+
+pptBtnNext.addEventListener('click', () => { if (pptCurrentPage < pptTotalPages - 1) { pptCurrentPage++; updatePPT(); }});
+pptBtnPrev.addEventListener('click', () => { if (pptCurrentPage > 0) { pptCurrentPage--; updatePPT(); }});
+
+document.addEventListener('keydown', (e) => {
+    if (!pptModal.classList.contains('hidden')) {
+        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { 
+            e.preventDefault(); pptBtnNext.click(); 
+        }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { 
+            e.preventDefault(); pptBtnPrev.click(); 
+        }
+        else if (e.key === 'Escape') {
+            document.getElementById('close-ppt-btn').click();
+        }
+    }
+});
+
+document.querySelectorAll('.open-ppt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const startIdx = parseInt(btn.getAttribute('data-ppt-start') || 0);
+        pptCurrentPage = startIdx;
+        updatePPT();
+        pptModal.classList.remove('hidden');
+    });
+});
+
+document.getElementById('close-ppt-btn').addEventListener('click', () => {
+    pptModal.classList.add('hidden');
+});
+
+document.addEventListener('click', function(e) {
+    if(e.target && e.target.classList.contains('ppt-play-btn')){
+        const targetSectionId = e.target.getAttribute('data-target');
+        pptModal.classList.add('hidden');
+        if(document.getElementById('soil-layers').classList.contains('hidden')) {
+            document.querySelector('.hero').classList.add('hidden');
+            document.getElementById('soil-layers').classList.remove('hidden');
+            document.getElementById('layer-nav').classList.remove('hidden');
+        }
+        setTimeout(() => {
+            const container = document.getElementById('soil-layers');
+            const targetEl = document.getElementById(targetSectionId);
+            if (targetEl && container) {
+                container.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }
+        }, 100);
+    }
+});
+
+initPPT();
+
+/* =========================================
+   互動遊戲邏輯 (檸檬版 7 關)
+   ========================================= */
+
+// --- Game 1: 果園接接樂 (接檸檬避害蟲) ---
+function initGame1() {
+    const container = document.getElementById('game-1');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;">採收進度: <span id="g1-pct">0</span>%</div>
+            <div style="width:80%; height:12px; background:rgba(255,255,255,0.8); border-radius:10px; overflow:hidden; border:2px solid #1B5E20; z-index:10; margin-bottom:5px;">
+                <div id="g1-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #4CAF50, #8BC34A); transition:width 0.2s;"></div>
+            </div>
+            <p id="g1-hint" style="font-size:0.9rem;color:#fff;background:rgba(27, 94, 32, 0.8);padding:3px 10px;border-radius:10px; z-index:10;">💡 左右滑動籃子，接住綠檸檬，避開果蠅！</p>
+            
+            <div id="g1-game-area" style="position:relative;width:100%;flex-grow:1;min-height:200px;overflow:hidden;border-radius:10px;cursor:pointer;margin-top:5px;">
+                <!-- 背景果樹點綴 -->
+                <div style="position:absolute;bottom:0;left:0;width:100%;height:60px;background:#8BC34A;opacity:0.3;"></div>
+                
+                <div id="basket-avatar-g1" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:2.5rem;user-select:none;touch-action:none; z-index:20;">🧺</div>
+            </div>
+        </div>
+        
+        <div id="g1-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:100;border-radius:10px;">
+            <p style="color:#1B5E20;font-size:1.1rem;font-weight:bold;margin-bottom:15px;text-align:center;">認識優利卡檸檬<br>請接住【🍋綠檸檬】避開【🪰果蠅】</p>
+            <button id="btn-g1-start" style="padding:10px 20px;border-radius:8px;border:none;background:#4CAF50;color:white;font-size:1.1rem;cursor:pointer;font-weight:bold;box-shadow:0 4px 6px rgba(0,0,0,0.3);">🚀 開始採收</button>
+        </div>
+
+        <div id="g1-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(27, 94, 32, 0.9);color:#FFF59D;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:110;text-align:center;width:80%;box-shadow:0 10px 20px rgba(0,0,0,0.6);">大豐收！<br>完成基本認識。</div>
+    `;
+
+    const gameArea = document.getElementById('g1-game-area');
+    const basket = document.getElementById('basket-avatar-g1');
+    const pctSpan = document.getElementById('g1-pct');
+    const progressBar = document.getElementById('g1-progress-bar');
+    const msg = document.getElementById('g1-message');
+    const overlay = document.getElementById('g1-overlay');
+    const btnStart = document.getElementById('btn-g1-start');
+
+    let strengthPct = 0; let isCompleted = false; let gameLoop; let items = [];
+    let gameActive = false; let basketX = gameArea.clientWidth / 2;
+    let catchRadius = 35; 
+
+    const hazardTypes = ['🍋', '🍋', '🍋', '🪰']; // 75% 檸檬, 25% 果蠅
+
+    btnStart.addEventListener('click', () => {
+        overlay.style.display = 'none';
+        startGameLogic();
+    });
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
+        basket.style.left = basketX + 'px';
+        spawnItem();
+        updateGame();
+    }
+
+    const handleMove = (e) => {
+        if(isCompleted || !gameActive) return; 
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        
+        const rect = gameArea.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        if(clientX === undefined) return;
+        
+        let x = clientX - rect.left;
+        if(x < catchRadius) x = catchRadius;
+        if(x > gameArea.clientWidth - catchRadius) x = gameArea.clientWidth - catchRadius;
+        basketX = x; basket.style.left = basketX + 'px';
+    };
+
+    gameArea.addEventListener('mousedown', handleMove); gameArea.addEventListener('touchstart', handleMove, {passive: false});
+    gameArea.addEventListener('mousemove', handleMove); gameArea.addEventListener('touchmove', handleMove, {passive: false});
+
+    function spawnItem() {
+        if(isCompleted) return;
+        
+        const el = document.createElement('div');
+        el.style.position='absolute'; el.style.fontSize='1.8rem'; el.style.userSelect='none';
+        
+        const type = hazardTypes[Math.floor(Math.random() * hazardTypes.length)];
+        el.textContent = type;
+        const isGood = type === '🍋';
+
+        const x = Math.random() * (gameArea.clientWidth - 40) + 20;
+        el.style.left = x + 'px'; el.style.top = '-30px'; 
+        el.style.transform = 'translateX(-50%)';
+        gameArea.appendChild(el);
+
+        let baseSpeed = 2 + (strengthPct / 100) * 2;
+        items.push({ el, x, y: -30, speed: Math.random() * 1.5 + baseSpeed, active: true, isGood });
+        
+        let spawnRate = Math.max(300, 800 - (strengthPct * 4));
+        if(!isCompleted) setTimeout(spawnItem, Math.random() * 200 + spawnRate);
+    }
+
+    function showEffect(text, x, y, color) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = (x - 20) + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.2rem'; f.style.color = color; f.style.fontWeight = 'bold'; f.style.zIndex = '30';
+        f.style.transition = 'all 0.4s ease-out';
+        gameArea.appendChild(f);
+        setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 450);
+    }
+
+    function updateGame() {
+        if(isCompleted) return;
+        
+        const basketTop = basket.offsetTop; const areaRect = gameArea.getBoundingClientRect();
+        
+        items.forEach(h => {
+            if(!h.active) return;
+            h.y += h.speed; h.el.style.top = h.y + 'px';
+            
+            let distY = Math.abs(h.y - basketTop);
+            let distX = Math.abs(h.x - basketX);
+            
+            if(distY < 30 && distX < 40) {
+                h.active = false; h.el.remove();
+                if(h.isGood) {
+                    strengthPct = Math.min(100, strengthPct + 10);
+                    showEffect('+10', h.x, basketTop, '#2e7d32');
+                } else {
+                    strengthPct = Math.max(0, strengthPct - 15); 
+                    showEffect('⚠️-15', h.x, basketTop, '#d32f2f');
+                    basket.style.transform = 'translateX(-50%) rotate(15deg)';
+                    setTimeout(()=>basket.style.transform = 'translateX(-50%) rotate(0deg)', 150);
+                }
+            } else if(h.y > areaRect.height) { 
+                h.active = false; h.el.remove(); 
+            }
+        });
+        
+        items = items.filter(h => h.active);
+        
+        let displayPct = Math.min(Math.floor(strengthPct), 100);
+        pctSpan.textContent = displayPct;
+        progressBar.style.width = displayPct + '%';
+
+        if(strengthPct >= 100) {
+            completeGame();
+        } else {
+            gameLoop = requestAnimationFrame(updateGame);
+        }
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true; 
+        msg.classList.remove('hidden'); 
+        items.forEach(h => h.el.remove());
+        
+        pctSpan.textContent = 100;
+        progressBar.style.width = '100%';
+        window.globalScores.s1 = 100; window.addLayerToJar('s1', '#4CAF50', 100);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-2', 9); }, 2500); 
+    }
+}
+
+// --- Game 2: 護地除草任務 (點擊惡性雜草) ---
+function initGame2() {
+    const container = document.getElementById('game-2');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px; color:#1B5E20;">果園健康度: <span id="g2-pct">0</span>%</div>
+            <div style="font-size: 1.2rem; color: #d32f2f; margin-bottom: 5px;">剩餘時間: <span id="g2-timer">15</span>秒</div>
+            <p style="font-size:0.9rem;color:#fff;background:rgba(27, 94, 32, 0.8);padding:3px 10px;border-radius:10px;">點擊拔除【🌾惡性雜草】，保留護地的【🍀蔓花生】！</p>
+            
+            <div id="g2-game-area" style="position:relative;width:100%;flex-grow:1;min-height:200px;overflow:hidden;background:rgba(139, 195, 74, 0.2);border-radius:10px;margin-top:10px;cursor:crosshair; border:2px solid #8BC34A;">
+            </div>
+        </div>
+        <button id="start-g2-btn" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:10px 20px;font-size:1.1rem;background:var(--accent);color:#fff;font-weight:bold;border:none;border-radius:5px;cursor:pointer;z-index:20;">開始除草</button>
+        <div id="g2-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(27, 94, 32, 0.9);color:#FFF59D;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:30;text-align:center;">草相管理完成！<br>水土保持100分。</div>
+    `;
+
+    const gameArea = document.getElementById('g2-game-area');
+    const pctSpan = document.getElementById('g2-pct');
+    const timerSpan = document.getElementById('g2-timer');
+    const msg = document.getElementById('g2-message');
+    const startBtn = document.getElementById('start-g2-btn');
+
+    let catchPct = 0; let isCompleted = false; let weeds = [];
+    let timeLeft = 15; let timerInterval = null; let gameActive = false;
+
+    startBtn.addEventListener('click', () => {
+        startBtn.classList.add('hidden');
+        startGameLogic();
+    });
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        
+        spawnWeed();
+    }
+
+    function showScoreEffect(text, x, y, color) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = x + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.2rem'; f.style.color = color; f.style.fontWeight = 'bold'; f.style.textShadow = '1px 1px 2px white';
+        f.style.transition = 'all 0.4s ease-out'; f.style.zIndex = '30'; f.style.pointerEvents = 'none';
+        gameArea.appendChild(f);
+        setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 450);
+    }
+
+    function spawnWeed() {
+        if(isCompleted) return;
+        const isBadWeed = Math.random() > 0.4; 
+        
+        const el = document.createElement('div');
+        el.style.position = 'absolute'; 
+        el.style.fontSize = '2.5rem'; 
+        el.style.userSelect = 'none';
+        el.style.cursor = 'crosshair';
+        el.textContent = isBadWeed ? '🌾' : '🍀';
+        
+        const areaWidth = gameArea.clientWidth;
+        const areaHeight = gameArea.clientHeight;
+        
+        const xPos = Math.random() * (areaWidth - 40);
+        const yPos = Math.random() * (areaHeight - 40);
+        
+        el.style.top = yPos + 'px';
+        el.style.left = xPos + 'px';
+        el.style.transform = 'scale(0)';
+        el.style.transition = 'transform 0.3s';
+        
+        gameArea.appendChild(el);
+        setTimeout(()=>el.style.transform='scale(1)', 50);
+
+        el.addEventListener('mousedown', (e) => handleWeedClick(e, isBadWeed, el));
+        el.addEventListener('touchstart', (e) => handleWeedClick(e, isBadWeed, el), {passive: false});
+
+        weeds.push(el);
+        
+        // Auto remove if not clicked
+        setTimeout(() => {
+            if(el.parentElement && !isCompleted) {
+                el.style.transform = 'scale(0)';
+                setTimeout(()=> el.remove(), 300);
+            }
+        }, 1500 + Math.random()*1000);
+        
+        const spawnDelay = Math.random() * 500 + 300;
+        if(!isCompleted) setTimeout(spawnWeed, spawnDelay);
+    }
+
+    function handleWeedClick(e, isBadWeed, el) {
+        if (isCompleted) return;
+        if(e.type === 'touchstart') e.preventDefault();
+
+        const rect = el.getBoundingClientRect();
+        const areaRect = gameArea.getBoundingClientRect();
+        const x = rect.left - areaRect.left;
+        const y = rect.top - areaRect.top;
+
+        if (isBadWeed) {
+            catchPct = Math.min(100, catchPct + 10);
+            showScoreEffect('✨+10', x, y, '#2e7d32');
+            el.style.transform = 'scale(0) rotate(90deg)';
+        } else {
+            catchPct = Math.max(0, catchPct - 15);
+            showScoreEffect('❌誤拔好草', x, y, '#d32f2f');
+            el.style.filter = 'grayscale(100%)';
+        }
+
+        setTimeout(() => el.remove(), 300);
+        pctSpan.textContent = catchPct;
+        if (catchPct >= 100) completeGame();
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true; 
+        clearInterval(timerInterval);
+        msg.classList.remove('hidden'); 
+        
+        weeds.forEach(b => { if(b.parentElement) b.remove(); });
+        
+        const score = Math.min(Math.round(catchPct), 100); 
+        pctSpan.textContent = score;
+        window.globalScores.s2 = score; 
+        window.addLayerToJar('s2', '#8BC34A', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-3', 14); }, 2000); 
+    }
+}
+
+// --- Game 3: 友善資材大作戰 (選擇友善資材) ---
+function initGame3() {
+    const container = document.getElementById('game-3');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:5px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;z-index:10;color:#1B5E20;">生態分數: <span id="g3-pct">0</span></div>
+            <div style="font-size:1.2rem;color:#d32f2f;margin-bottom:5px;">剩餘時間: <span id="g3-timer">15</span>秒</div>
+            <p id="g3-hint" style="font-size:0.9rem;color:#fff;background:rgba(27, 94, 32, 0.8);padding:3px 10px;border-radius:10px;">💡 收集【🐞天敵瓢蟲】與【💩有機肥】，避開【☠️化學農藥】！</p>
+            
+            <div id="g3-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(0,0,0,0.05);border-radius:10px;cursor:pointer;">
+                <div id="tree-avatar" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:3rem;user-select:none;touch-action:none;transition: transform 0.1s;">🌳</div>
+            </div>
+        </div>
+        <div id="g3-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(27, 94, 32, 0.9);color:#FFF59D;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">生態多樣性建立！<br>友善果園達成。</div>
+        <button id="start-g3-btn" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:10px 20px;font-size:1.1rem;background:var(--accent);color:#fff;font-weight:bold;border:none;border-radius:5px;cursor:pointer;z-index:20;">建立微生態</button>
+    `;
+
+    const gameArea = document.getElementById('g3-game-area');
+    const tree = document.getElementById('tree-avatar');
+    const pctSpan = document.getElementById('g3-pct');
+    const msg = document.getElementById('g3-message');
+    const startBtn = document.getElementById('start-g3-btn');
+
+    let catchPct = 0; let isCompleted = false; let gameLoop; let targets = [];
+    let timeLeft = 15; const timerSpan = document.getElementById('g3-timer');
+    let timerInterval = null; let gameActive = false;
+
+    startBtn.addEventListener('click', (e) => {
+        startBtn.style.display = 'none'; startGameLogic();
+    });
+
+    function startGameLogic() {
+        if(gameActive || isCompleted) return;
+        gameActive = true;
+        
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        
+        spawnTarget();
+        updateGame();
+    }
+
+    let treeX = gameArea.clientWidth / 2;
+    tree.style.left = treeX + 'px';
+    let catchRadius = 40;
+
+    const handleMove = (e) => {
+        if(isCompleted || !gameActive) return; 
+        if(e.type === 'touchmove' && e.cancelable) e.preventDefault();
+        
+        const rect = gameArea.getBoundingClientRect();
+        let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        if(clientX === undefined) return;
+        
+        let x = clientX - rect.left;
+        if(x < catchRadius) x = catchRadius;
+        if(x > gameArea.clientWidth - catchRadius) x = gameArea.clientWidth - catchRadius;
+        treeX = x; tree.style.left = treeX + 'px';
+    };
+
+    gameArea.addEventListener('mousedown', handleMove); gameArea.addEventListener('touchstart', handleMove, {passive: false});
+    gameArea.addEventListener('mousemove', handleMove); gameArea.addEventListener('touchmove', handleMove, {passive: false});
+
+    function showFloatingText(text, x, y, color) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = (x - 10) + 'px'; f.style.top = y + 'px';
+        f.style.fontSize = '1.5rem'; f.style.color = color; f.style.transition = 'all 0.4s ease-out'; f.style.zIndex = '30';
+        gameArea.appendChild(f);
+        setTimeout(() => { f.style.top = (y - 30) + 'px'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 450);
+    }
+
+    const goodItems = ['🐞', '💩', '🐝'];
+    const badItems = ['☠️', '🧪'];
+
+    function spawnTarget() {
+        if(isCompleted) return;
+        const isGood = Math.random() > 0.3; 
+        const text = isGood ? goodItems[Math.floor(Math.random()*goodItems.length)] : badItems[Math.floor(Math.random()*badItems.length)];
+        
+        const el = document.createElement('div');
+        el.style.position='absolute'; el.style.fontSize='1.8rem'; el.style.userSelect='none';
+        el.textContent = text;
+
+        const x = Math.random() * (gameArea.clientWidth - 40) + 20;
+        el.style.left = x + 'px'; el.style.top = '-30px'; 
+        el.style.transform = 'translateX(-50%)';
+        gameArea.appendChild(el);
+
+        targets.push({ el, x, y: -30, speed: Math.random() * 2 + 1.5, active: true, isGood });
+        
+        if(!isCompleted) setTimeout(spawnTarget, Math.random() * 400 + 400);
+    }
+
+    function updateGame() {
+        if(isCompleted) return;
+        const treeTop = tree.offsetTop; const areaRect = gameArea.getBoundingClientRect();
+        targets.forEach(t => {
+            if(!t.active) return;
+            t.y += t.speed; t.el.style.top = t.y + 'px';
+            if(t.y > treeTop - 20 && t.y < treeTop + 40 && t.x > treeX - catchRadius && t.x < treeX + catchRadius) {
+                t.active = false; t.el.remove();
+                
+                if (t.isGood) {
+                    catchPct = Math.min(100, catchPct + 10); showFloatingText('+10', t.x, treeTop, '#2e7d32'); 
+                } else {
+                    catchPct = Math.max(0, catchPct - 15); showFloatingText('⚠️', t.x, treeTop, '#d32f2f'); 
+                    tree.style.filter = 'sepia(100%)'; setTimeout(()=>tree.style.filter='none', 200);
+                }
+
+                pctSpan.textContent = catchPct; 
+            } else if(t.y > areaRect.height) { t.active = false; t.el.remove(); }
+        });
+        targets = targets.filter(t => t.active);
+        if(!isCompleted) gameLoop = requestAnimationFrame(updateGame);
+    }
+
+    function completeGame() {
+        if(isCompleted) return;
+        isCompleted = true; clearInterval(timerInterval);
+        msg.classList.remove('hidden'); targets.forEach(t => t.el.remove());
+        const score = Math.min(Math.round(catchPct), 100); 
+        pctSpan.textContent = score;
+        window.globalScores.s3 = score; window.addLayerToJar('s3', '#CDDC39', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-4', 18); }, 2000); 
+    }
+}
+
+// --- Game 4: 黃金採收期 (點擊深綠色完美檸檬) ---
+function initGame4() {
+    const container = document.getElementById('game-4');
+    container.innerHTML = `
+        <div style="font-size:1.2rem;font-weight:bold;margin-top:10px; color:#1B5E20;">優質採收數量: <span id="g4-score" style="color:#2e7d32;">0</span>/10</div>
+        <div style="font-size: 1.2rem; color: #d32f2f; margin-top: 5px;">剩餘時間: <span id="g4-timer">15</span>秒</div>
+        <p style="font-size:0.9rem;color:#fff;background:rgba(27, 94, 32, 0.8);padding:3px 10px;border-radius:10px;margin-bottom:10px;">請點擊飽滿的【🟢深綠色檸檬】，避開黃色過熟與咖啡色瑕疵果！</p>
+        
+        <div id="g4-game-area" style="position:relative;height:200px;width:100%;background:#8BC34A;border-radius:10px;overflow:hidden;border:2px solid #33691E;">
+            <!-- Tree branches background -->
+            <div style="position:absolute;top:20px;width:100%;height:10px;background:#5D4037;"></div>
+            <div style="position:absolute;top:100px;width:100%;height:10px;background:#5D4037;"></div>
+        </div>
+        
+        <button id="start-g4-btn" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:10px 20px;font-size:1.1rem;background:var(--accent);color:#fff;font-weight:bold;border:none;border-radius:5px;cursor:pointer;z-index:20;">開始採剪</button>
+        <div id="g4-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(27, 94, 32, 0.9);color:#FFF59D;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:10;text-align:center;">採收完成！<br>果皮完整無損。</div>
+    `;
+
+    const area = document.getElementById('g4-game-area');
+    let harvestCount = 0; let isCompleted = false; let timeLeft = 15;
+    const scoreSpan = document.getElementById('g4-score');
+    const timerSpan = document.getElementById('g4-timer');
+    const msg = document.getElementById('g4-message');
+    const startBtn = document.getElementById('start-g4-btn');
+    let timerInterval = null;
+
+    startBtn.addEventListener('click', () => {
+        startBtn.style.display = 'none';
+        startGame();
+    });
+
+    function startGame() {
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        spawnLemon();
+    }
+
+    function spawnLemon() {
+        if(isCompleted) return;
+        
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        el.style.fontSize = '2.5rem';
+        el.style.cursor = 'crosshair';
+        el.style.userSelect = 'none';
+        
+        // 隨機決定檸檬類型
+        const rand = Math.random();
+        let type = 'perfect'; // 深綠
+        if (rand < 0.3) type = 'overripe'; // 黃色
+        else if (rand < 0.5) type = 'bad'; // 咖啡色
+
+        if (type === 'perfect') {
+            el.textContent = '🍋';
+            el.style.filter = 'hue-rotate(60deg) saturate(150%) brightness(0.8)'; // 調成深綠色
+        } else if (type === 'overripe') {
+            el.textContent = '🍋'; // 原本的黃色
+        } else {
+            el.textContent = '🍋';
+            el.style.filter = 'sepia(100%) hue-rotate(330deg) saturate(100%) brightness(0.5)'; // 咖啡色瑕疵
+        }
+
+        const maxX = area.clientWidth - 40;
+        const yPos = Math.random() > 0.5 ? 5 : 85; // 掛在樹枝上
+        el.style.left = Math.max(0, Math.random() * maxX) + 'px';
+        el.style.top = yPos + 'px';
+        
+        el.addEventListener('mousedown', (e) => {
+            if(isCompleted) return;
+            e.preventDefault();
+            if(type === 'perfect') {
+                harvestCount++;
+                scoreSpan.textContent = harvestCount;
+                showEffect('✂️', el.style.left, el.style.top);
+                el.style.transform = 'translateY(100px)';
+                el.style.opacity = '0';
+                if(harvestCount >= 10) completeGame();
+            } else {
+                showEffect('❌', el.style.left, el.style.top);
+                harvestCount = Math.max(0, harvestCount - 1);
+                scoreSpan.textContent = harvestCount;
+            }
+            setTimeout(()=>el.remove(), 200);
+        });
+        el.addEventListener('touchstart', (e) => { el.dispatchEvent(new Event('mousedown')); }, {passive: false});
+        
+        area.appendChild(el);
+        
+        // 檸檬出現一段時間後消失
+        setTimeout(() => { if(el.parentElement) el.remove(); }, Math.random()*1000 + 1000);
+        if(!isCompleted) setTimeout(spawnLemon, 600);
+    }
+
+    function showEffect(text, x, y) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = x; f.style.top = y;
+        f.style.fontSize = '1.5rem'; f.style.zIndex = '30';
+        area.appendChild(f);
+        setTimeout(() => { f.style.transform = 'translateY(-20px)'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 400);
+    }
+
+    function completeGame() {
+        if(isCompleted) return; isCompleted = true; clearInterval(timerInterval); 
+        msg.classList.remove('hidden');
+        let finalScore = Math.min(100, harvestCount * 10);
+        window.globalScores.s4 = finalScore;
+        window.addLayerToJar('s4', '#FFEB3B', finalScore);
+        setTimeout(() => { window.triggerNextCourseStep('layer-5', 22); }, 2000);
+    }
+}
+
+// --- Game 5: 完美榨汁比例 (快速點擊) ---
+function initGame5() {
+    const container = document.getElementById('game-5');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px; color:#1B5E20;">榨汁進度: <span id="g5-pct">0</span>%</div>
+            <p style="font-size:0.9rem;color:#fff;background:rgba(27, 94, 32, 0.8);padding:5px 10px;border-radius:10px;text-align:center;">
+                💡 快速點擊按鈕榨取果汁。<br>最佳酸香比例落在 <span style="color:#FFF59D;font-weight:bold;">80%~90%</span> 之間，超過會釋放苦味！
+            </p>
+            
+            <div style="position:relative;width:60px;height:180px;background:rgba(255,255,255,0.8);border:4px solid #1B5E20;border-radius:0 0 20px 20px;margin-top:10px;overflow:hidden;">
+                <!-- 目標區間標示線 -->
+                <div style="position:absolute;bottom:80%;width:100%;height:2px;background:#e74c3c;z-index:20;"></div>
+                <div style="position:absolute;bottom:90%;width:100%;height:2px;background:#e74c3c;z-index:20;"></div>
+                <div style="position:absolute;bottom:80%;width:100%;height:10%;background:rgba(46, 204, 113, 0.3);z-index:10;"></div>
+                
+                <div id="juice-fill" style="position:absolute;bottom:0;width:100%;height:0%;background:linear-gradient(#FBC02D, #FFEB3B);transition:height 0.1s;"></div>
+            </div>
+            
+            <div style="display:flex; gap:15px; margin-top:15px;">
+                <button id="btn-squeeze" style="padding:10px 25px;font-size:1.2rem;background:#FBC02D;color:#1B5E20;border:none;border-radius:8px;cursor:pointer;font-weight:bold;box-shadow:0 4px 6px rgba(0,0,0,0.3);">🍋 擠壓</button>
+                <button id="btn-stop" style="padding:10px 25px;font-size:1.2rem;background:#4CAF50;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;box-shadow:0 4px 6px rgba(0,0,0,0.3);">✋ 停止</button>
+            </div>
+        </div>
+
+        <div id="g5-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(27, 94, 32, 0.9);color:#FFF59D;padding:20px;border-radius:10px;font-size:1.2rem;font-weight:bold;z-index:110;text-align:center;width:80%;box-shadow:0 10px 20px rgba(0,0,0,0.6);"></div>
+    `;
+
+    const btnSqueeze = document.getElementById('btn-squeeze');
+    const btnStop = document.getElementById('btn-stop');
+    const juiceFill = document.getElementById('juice-fill');
+    const pctSpan = document.getElementById('g5-pct');
+    const msg = document.getElementById('g5-message');
+    
+    let juiceAmount = 0;
+    let isCompleted = false;
+
+    btnSqueeze.addEventListener('click', () => {
+        if(isCompleted) return;
+        juiceAmount += Math.random() * 4 + 3; // 每次擠壓 3~7%
+        if(juiceAmount > 100) juiceAmount = 100;
+        
+        juiceFill.style.height = juiceAmount + '%';
+        pctSpan.textContent = Math.floor(juiceAmount);
+        
+        // 擠過頭視覺提示 (變混濁/苦味)
+        if(juiceAmount > 90) {
+            juiceFill.style.background = 'linear-gradient(#9E9D24, #C0CA33)';
+        }
+    });
+
+    btnStop.addEventListener('click', () => {
+        if(isCompleted) return;
+        isCompleted = true;
+        
+        let score = 0;
+        if (juiceAmount >= 80 && juiceAmount <= 90) {
+            score = 100;
+            msg.innerHTML = "完美萃取！🌟<br>保留了明亮酸度與清香。";
+        } else if (juiceAmount > 90) {
+            score = 60;
+            msg.innerHTML = "擠壓過度...<br>檸檬苦素釋放，帶有苦澀味。";
+            msg.style.color = "#FFCDD2";
+        } else {
+            score = Math.floor(juiceAmount); // 榨太少
+            msg.innerHTML = "萃取不足...<br>尚未發揮檸檬的完整風味。";
+        }
+        
+        msg.classList.remove('hidden');
+        window.globalScores.s5 = score;
+        window.addLayerToJar('s5', '#FFC107', score);
+        
+        setTimeout(() => { window.triggerNextCourseStep('layer-6', 26); }, 2500);
+    });
+}
+
+// --- Game 6: 全果加工防線 (分類遊戲) ---
+function initGame6() {
+    const container = document.getElementById('game-6');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;color:#1B5E20;">農產價值: <span id="g6-pct">0</span></div>
+            <div style="font-size:1.2rem;color:#d32f2f;margin-bottom:5px;">剩餘時間: <span id="g6-timer">15</span>秒</div>
+            <p style="font-size:0.9rem;color:#fff;background:rgba(27, 94, 32, 0.8);padding:3px 10px;border-radius:10px;text-align:center;">
+                點擊收集加工應用【🍹鮮榨】【🍋果乾】【💧精油】<br>絕對不要選【🗑️丟棄浪費】
+            </p>
+            <div id="g6-game-area" style="position:relative;width:100%;flex-grow:1;min-height:180px;overflow:hidden;background:rgba(0,0,0,0.05);border-radius:10px;cursor:crosshair;margin-top:5px;border:2px solid #8BC34A;">
+            </div>
+        </div>
+        <button id="start-g6-btn" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:10px 20px;font-size:1.1rem;background:var(--accent);color:#fff;font-weight:bold;border:none;border-radius:5px;cursor:pointer;z-index:20;">啟動生產線</button>
+        <div id="g6-message" class="hidden" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(27, 94, 32, 0.9);color:#FFF59D;padding:20px;border-radius:10px;font-size:1.5rem;font-weight:bold;z-index:30;text-align:center;">全果利用完成！<br>零廢棄達成。</div>
+    `;
+
+    const area = document.getElementById('g6-game-area');
+    const pctSpan = document.getElementById('g6-pct');
+    const msg = document.getElementById('g6-message');
+    const startBtn = document.getElementById('start-g6-btn');
+    let score = 0; let isCompleted = false; let timeLeft = 15;
+    const timerSpan = document.getElementById('g6-timer');
+    let timerInterval = null;
+
+    startBtn.addEventListener('click', () => {
+        startBtn.style.display = 'none';
+        startGame();
+    });
+
+    function startGame() {
+        timerInterval = setInterval(() => {
+            timeLeft--; timerSpan.textContent = timeLeft;
+            if(timeLeft <= 0) { clearInterval(timerInterval); completeGame(); }
+        }, 1000);
+        spawnTarget();
+    }
+
+    function spawnTarget() {
+        if(isCompleted) return;
+        const isGood = Math.random() > 0.3;
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        el.style.padding = '8px 12px';
+        el.style.borderRadius = '20px';
+        el.style.fontWeight = 'bold';
+        el.style.cursor = 'pointer';
+        el.style.userSelect = 'none';
+        el.style.boxShadow = '0 4px 6px rgba(0,0,0,0.2)';
+        el.style.color = 'white';
+        
+        if (isGood) {
+            const goodOptions = ['🍹鮮榨', '🍋果乾', '💧精油'];
+            el.textContent = goodOptions[Math.floor(Math.random() * goodOptions.length)];
+            el.style.background = '#F57F17';
+        } else {
+            el.textContent = '🗑️丟棄浪費';
+            el.style.background = '#7f8c8d';
+        }
+
+        const maxX = area.clientWidth - 100;
+        const maxY = area.clientHeight - 40;
+        el.style.left = Math.max(0, Math.random() * maxX) + 'px';
+        el.style.top = Math.max(0, Math.random() * maxY) + 'px';
+        
+        el.addEventListener('mousedown', (e) => {
+            if(isCompleted) return;
+            e.preventDefault();
+            if(isGood) {
+                score = Math.min(100, score + 15);
+                showFloatingText('✨+15', el.style.left, el.style.top, '#2ecc71');
+            } else {
+                score = Math.max(0, score - 10);
+                showFloatingText('⚠️浪費', el.style.left, el.style.top, '#e74c3c');
+            }
+            pctSpan.textContent = score;
+            el.remove();
+        });
+        el.addEventListener('touchstart', (e) => { el.dispatchEvent(new Event('mousedown')); }, {passive: false});
+        
+        area.appendChild(el);
+        setTimeout(() => { if(el.parentElement) el.remove(); }, 1200);
+        if(!isCompleted) setTimeout(spawnTarget, 600);
+    }
+
+    function showFloatingText(text, x, y, color) {
+        const f = document.createElement('div');
+        f.textContent = text; f.style.position = 'absolute'; f.style.left = x; f.style.top = y;
+        f.style.fontSize = '1.2rem'; f.style.color = color; f.style.fontWeight = 'bold'; f.style.textShadow = '1px 1px 2px white';
+        f.style.transition = 'all 0.5s ease-out'; f.style.zIndex = '30'; f.style.pointerEvents = 'none';
+        area.appendChild(f);
+        setTimeout(() => { f.style.transform = 'translateY(-30px)'; f.style.opacity = '0'; }, 50);
+        setTimeout(() => f.remove(), 550);
+    }
+
+    function completeGame() {
+        if(isCompleted) return; isCompleted = true; clearInterval(timerInterval); msg.classList.remove('hidden');
+        window.globalScores.s6 = score; window.addLayerToJar('s6', '#FF9800', score);
+        setTimeout(() => { window.triggerNextCourseStep('layer-7', 30); }, 2000);
+    }
+}
+
+// --- Game 7: 永續行動 (最終結算) ---
+function initGame7() {
+    const container = document.getElementById('game-7');
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;height:100%;padding-top:10px;">
+            <div style="font-size:1.2rem;font-weight:bold;margin-bottom:5px;color:#1B5E20;">你的永續承諾: <span id="product-name" style="color:#F57F17;">尚未選擇</span></div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin:10px 0;z-index:10;padding:0 10px;width:100%;">
+                <button class="farm-btn" id="btn-buy" style="padding:10px;font-size:1rem;border-radius:8px;border:2px solid #8BC34A;cursor:pointer;color:#1B5E20;background:rgba(255,255,255,0.9);font-weight:bold;">🤝 支持草生栽培青農</button>
+                <button class="farm-btn" id="btn-eco" style="padding:10px;font-size:1rem;border-radius:8px;border:2px solid #8BC34A;cursor:pointer;color:#1B5E20;background:rgba(255,255,255,0.9);font-weight:bold;">🍋 購買格外品加工果乾</button>
+                <button class="farm-btn" id="btn-share" style="padding:10px;font-size:1rem;border-radius:8px;border:2px solid #8BC34A;cursor:pointer;color:#1B5E20;background:rgba(255,255,255,0.9);font-weight:bold;">🗣️ 分享檸檬風味與知識</button>
+            </div>
+            
+            <button id="calc-harvest-btn" class="hidden" style="margin-top:15px;padding:12px 25px;font-size:1.2rem;background:#FBC02D;color:#1B5E20;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 6px rgba(0,0,0,0.2);">✨ 結算學習成果</button>
+        </div>
+        
+        <div id="final-scorecard-overlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(27, 94, 32, 0.95);z-index:5000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;padding:20px;overflow-y:auto;">
+            <h1 style="color:#FFF59D;margin-bottom:20px;font-size:2.5rem;">🎉 青檸台灣 大結算 🎉</h1>
+            <div id="scorecard-text" style="font-size:1.1rem;line-height:1.8;margin-bottom:20px;background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;text-align:left;max-width:400px;width:100%;"></div>
+            <div id="star-reward" style="font-size:2.5rem;margin-bottom:20px;color:#FFF59D;letter-spacing:5px;"></div>
+            <button id="overlay-restart-btn" style="padding:12px 25px;font-size:1.2rem;background:#FBC02D;color:#1B5E20;border:none;border-radius:30px;cursor:pointer;font-weight:bold;">🔄 重新體驗</button>
+        </div>
+    `;
+
+    const btns = [document.getElementById('btn-buy'), document.getElementById('btn-eco'), document.getElementById('btn-share')];
+    const calcBtn = document.getElementById('calc-harvest-btn');
+    const nameSpan = document.getElementById('product-name');
+    
+    let isCalculated = false; let selectedMethod = "";
+
+    function setChoice(btn, name) {
+        if(isCalculated) return;
+        btns.forEach(b => { b.style.boxShadow = 'none'; b.style.background = 'rgba(255,255,255,0.9)'; b.style.color = '#1B5E20'; });
+        btn.style.boxShadow = '0 0 10px #4CAF50'; btn.style.background = '#8BC34A'; btn.style.color = 'white';
+        selectedMethod = name;
+        nameSpan.textContent = name;
+        calcBtn.classList.remove('hidden');
+    }
+
+    btns[0].addEventListener('click', () => setChoice(btns[0], "支持草生栽培"));
+    btns[1].addEventListener('click', () => setChoice(btns[1], "購買加工產品"));
+    btns[2].addEventListener('click', () => setChoice(btns[2], "分享食農知識"));
+
+    calcBtn.addEventListener('click', () => {
+        if(isCalculated) return; isCalculated = true;
+        window.addLayerToJar('agri', '#00BCD4', 100);
+        
+        const s = window.globalScores;
+        const total = s.s1 + s.s2 + s.s3 + s.s4 + s.s5 + s.s6;
+        
+        let stars = "";
+        if(total >= 500) stars = "🍋🍋🍋🍋🍋"; else if(total >= 400) stars = "🍋🍋🍋🍋"; else if(total >= 300) stars = "🍋🍋🍋"; else if(total >= 200) stars = "🍋🍋"; else stars = "🍋";
+
+        document.getElementById('scorecard-text').innerHTML = `
+            🌱 認識優利卡：${s.s1}分<br>
+            🌿 護地草生：${s.s2}分<br>
+            🐞 友善生態：${s.s3}分<br>
+            ✂️ 黃金採收：${s.s4}分<br>
+            🍹 風味調配：${s.s5}分<br>
+            💧 全果利用：${s.s6}分<br>
+            <hr style="margin:10px 0;border-color:rgba(255,255,255,0.3);">
+            永續行動：<strong>${selectedMethod}</strong><br>
+            <div style="font-size:1.3rem;text-align:center;margin-top:10px;">總合分數: <strong style="color:#FFF59D;">${total}</strong> / 600</div>
+        `;
+        document.getElementById('star-reward').innerHTML = stars;
+        document.getElementById('final-scorecard-overlay').classList.remove('hidden');
+
+        if (window.isFullCourseMode) {
+            setTimeout(() => {
+                pptCurrentPage = 35; // Q&A slide
+                updatePPT();
+                pptModal.classList.remove('hidden');
+            }, 3500);
+        }
+    });
+
+    document.getElementById('overlay-restart-btn').addEventListener('click', () => { location.reload(); });
+}
+
+function initAllSystems() {
+    const startBtn = document.getElementById('start-btn');
+    const heroPPTBtn = document.getElementById('hero-ppt-btn'); 
+    const hero = document.querySelector('.hero');
+    const mainContent = document.getElementById('soil-layers');
+    const nav = document.getElementById('layer-nav');
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            window.isFullCourseMode = false;
+            hero.classList.add('hidden'); 
+            mainContent.classList.remove('hidden'); 
+            nav.classList.remove('hidden');
+            setTimeout(() => {
+                const targetEl = document.getElementById('layer-1');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+
+    if (heroPPTBtn) {
+        heroPPTBtn.addEventListener('click', () => {
+            window.isFullCourseMode = true; 
+            hero.classList.add('hidden'); 
+            mainContent.classList.remove('hidden'); 
+            nav.classList.remove('hidden');
+            setTimeout(() => {
+                const targetEl = document.getElementById('layer-1');
+                if(targetEl && mainContent) mainContent.scrollTo({ top: targetEl.offsetTop, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+
+    const navItems = document.querySelectorAll('#layer-nav li');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const target = document.getElementById(item.getAttribute('data-target'));
+            if(target && mainContent) mainContent.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+        });
+    });
+
+    if (mainContent) {
+        mainContent.addEventListener('scroll', () => {
+            let current = '';
+            document.querySelectorAll('.soil-layer').forEach(section => {
+                if (mainContent.scrollTop >= (section.offsetTop - section.clientHeight / 3)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navItems.forEach(li => {
+                li.classList.remove('active');
+                if (li.getAttribute('data-target') === current) li.classList.add('active');
+            });
+        });
+    }
+
+    const fsBtn = document.getElementById('fullscreen-toggle');
+    if (fsBtn) {
+        fsBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.warn(`無法進入全螢幕模式: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            fsBtn.innerHTML = document.fullscreenElement ? '✖' : '⛶';
+        });
+    }
+    
+    const canvas = document.getElementById('draw-canvas');
+    const ctx = canvas.getContext('2d');
+    const penBtn = document.getElementById('ppt-pen-btn');
+    const clearBtn = document.getElementById('ppt-clear-btn');
+    let isDrawingMode = false;
+    let isDrawing = false;
+    let lastX = 0; let lastY = 0;
+
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        ctx.strokeStyle = '#e74c3c'; 
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    penBtn.addEventListener('click', () => {
+        isDrawingMode = !isDrawingMode;
+        if (isDrawingMode) {
+            resizeCanvas();
+            canvas.classList.add('active');
+            penBtn.classList.add('active');
+            penBtn.innerHTML = '🖍️ 畫筆 (開)';
+            clearBtn.classList.remove('hidden');
+        } else {
+            canvas.classList.remove('active');
+            penBtn.classList.remove('active');
+            penBtn.innerHTML = '🖍️ 畫筆 (關)';
+            clearBtn.classList.add('hidden');
+        }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    function getCanvasPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    const startDraw = (e) => {
+        if (!isDrawingMode) return;
+        e.preventDefault();
+        isDrawing = true;
+        const pos = getCanvasPos(e);
+        lastX = pos.x; lastY = pos.y;
+    };
+
+    const draw = (e) => {
+        if (!isDrawing || !isDrawingMode) return;
+        e.preventDefault();
+        const pos = getCanvasPos(e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        lastX = pos.x; lastY = pos.y;
+    };
+
+    const stopDraw = () => { isDrawing = false; };
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    window.addEventListener('touchend', stopDraw);
+    
+    initGame1(); initGame2(); initGame3(); initGame4(); initGame5(); initGame6(); initGame7();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAllSystems);
+} else {
+    initAllSystems();
+}
+
+</script>
+</body>
+</html>
