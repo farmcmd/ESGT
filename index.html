@@ -1977,6 +1977,32 @@
                         } else { const ta = document.createElement("textarea"); ta.value = traceUrl; ta.style.position = "fixed"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); window.showToast('🔗 專屬計畫連結已複製！'); } catch(err) { window.prompt('請複製此連結:', traceUrl); } document.body.removeChild(ta); }
                     };
 
+                    // 🚀 核心救援：補回政府計畫遺失的編輯按鈕點擊事件 (JavaScript 綁定)
+                    card.querySelector('.edit-btn').onclick = (e) => {
+                        e.stopPropagation(); 
+                        const pwd = prompt(`⚠️ 準備修改計畫「${proj.name}」。請輸入密碼：`); 
+                        if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
+                        
+                        window.editingGovId = proj.id;
+                        try {
+                            document.getElementById('gov-edit-serial').value = proj.serialNumber || '';
+                            document.getElementById('gov-edit-name').value = proj.name || '';
+                            document.getElementById('gov-edit-event').value = proj.event || '';
+                            document.getElementById('gov-edit-date').value = proj.date || '';
+                            document.getElementById('gov-edit-desc').value = proj.desc || '';
+                            document.getElementById('gov-edit-supervisor').value = proj.supervisor || '';
+                            document.getElementById('gov-edit-organizer').value = proj.organizer || '';
+                            document.getElementById('gov-edit-executor').value = proj.executor || '';
+                            document.getElementById('gov-edit-coorganizer').value = proj.coOrganizer || '';
+                            document.getElementById('gov-edit-budget').value = proj.budget || '';
+                            document.getElementById('gov-edit-sroi').value = proj.sroi || '';
+                            document.getElementById('gov-edit-deadline').value = proj.deadline || '';
+                            window.openModal('gov-edit-modal');
+                        } catch (err) {
+                            alert(`開啟編輯視窗失敗: ${err.message} (請確認 HTML 結構)`);
+                        }
+                    };
+
                     card.querySelector('.delete-btn').onclick = async (e) => {
                         e.stopPropagation(); 
                         const pwd = prompt(`⚠️ 準備刪除計畫「${proj.name}」。請輸入密碼：`); 
