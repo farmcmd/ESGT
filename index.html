@@ -2136,28 +2136,31 @@
                         } else { const ta = document.createElement("textarea"); ta.value = traceUrl; ta.style.position = "fixed"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); window.showToast('🔗 專屬企業連結已複製！'); } catch(err) { window.prompt('請複製此連結:', traceUrl); } document.body.removeChild(ta); }
                     };
 
-                    // 🚀 新增：卡片編輯按鈕點擊事件 (填入現有資料並打開編輯視窗)
+                    // 🚀 核心升級：加入強制報錯防護網的編輯按鈕
                     card.querySelector('.edit-btn').onclick = (e) => {
                         e.stopPropagation(); 
                         const pwd = prompt(`⚠️ 準備修改企業卡片「${proj.orgName}」。請輸入密碼：`); 
                         if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
                         
                         window.editingEntId = proj.id;
-                        document.getElementById('ent-edit-serial').value = proj.serialNumber || '';
-                        document.getElementById('ent-edit-org').value = proj.orgName || '';
-                        document.getElementById('ent-edit-event').value = proj.event || '';
-                        document.getElementById('ent-edit-website').value = proj.websiteUrl || '';
-                        document.getElementById('ent-edit-year').value = proj.year || '';
-                        document.getElementById('ent-edit-remark').value = proj.remark || '';
-                        document.getElementById('ent-edit-deadline').value = proj.deadline || '';
-                        
-                        if (proj.linkedProject) {
-                            document.getElementById('ent-edit-proj-type').value = proj.linkedProject.type || '其他';
-                            document.getElementById('ent-edit-proj-amount').value = proj.linkedProject.amount || '';
-                            document.getElementById('ent-edit-proj-sroi').value = proj.linkedProject.sroiWeight || '1.0';
+                        try {
+                            document.getElementById('ent-edit-serial').value = proj.serialNumber || '';
+                            document.getElementById('ent-edit-org').value = proj.orgName || '';
+                            document.getElementById('ent-edit-event').value = proj.event || '';
+                            document.getElementById('ent-edit-website').value = proj.websiteUrl || '';
+                            document.getElementById('ent-edit-year').value = proj.year || '';
+                            document.getElementById('ent-edit-remark').value = proj.remark || '';
+                            document.getElementById('ent-edit-deadline').value = proj.deadline || '';
+                            
+                            if (proj.linkedProject) {
+                                document.getElementById('ent-edit-proj-type').value = proj.linkedProject.type || '其他';
+                                document.getElementById('ent-edit-proj-amount').value = proj.linkedProject.amount || '';
+                                document.getElementById('ent-edit-proj-sroi').value = proj.linkedProject.sroiWeight || '1.0';
+                            }
+                            window.openModal('ent-edit-modal');
+                        } catch (err) {
+                            alert(`開啟編輯視窗失敗: ${err.message} (請確認您的 HTML 結構是否完整)`);
                         }
-                        
-                        window.openModal('ent-edit-modal');
                     };
 
                     card.querySelector('.delete-btn').onclick = async (e) => {
@@ -3102,52 +3105,61 @@
                 document.getElementById('ent-create-org').value = ''; document.getElementById('ent-create-event').value = '';
             });
 
-            // 🚀 新增：儲存企業卡片修改邏輯
-            document.getElementById('save-ent-edit-btn')?.addEventListener('click', async () => {
-                const id = window.editingEntId;
-                if (!id) return;
-                const orgName = document.getElementById('ent-edit-org').value.trim();
-                const eventName = document.getElementById('ent-edit-event').value.trim();
-                if (!orgName || !eventName) return window.showToast('企業名稱與活動名稱不得為空');
+            // 🚀 核心升級：導入「樂觀 UI 引擎」，不等待雲端，瞬間強制重繪畫面
+            document.getElementById('save-ent-edit-btn')?.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    const id = window.editingEntId;
+                    if (!id) { alert("無法獲取卡片 ID，請重新開啟編輯視窗"); return; }
+                    const orgName = document.getElementById('ent-edit-org').value.trim();
+                    const eventName = document.getElementById('ent-edit-event').value.trim();
+                    if (!orgName || !eventName) return window.showToast('企業名稱與活動名稱不得為空');
 
-                const updates = {
-                    serialNumber: document.getElementById('ent-edit-serial').value.trim().toUpperCase(),
-                    orgName: orgName,
-                    event: eventName,
-                    websiteUrl: document.getElementById('ent-edit-website').value.trim(),
-                    year: document.getElementById('ent-edit-year').value.trim(),
-                    remark: document.getElementById('ent-edit-remark').value.trim(),
-                    deadline: document.getElementById('ent-edit-deadline').value || null,
-                    linkedProject: {
-                        type: document.getElementById('ent-edit-proj-type').value,
-                        amount: parseFloat(document.getElementById('ent-edit-proj-amount').value) || 0,
-                        sroiWeight: parseFloat(document.getElementById('ent-edit-proj-sroi').value) || 1.0
-                    },
-                    updatedAt: new Date().toISOString()
-                };
+                    const updates = {
+                        serialNumber: document.getElementById('ent-edit-serial').value.trim().toUpperCase(),
+                        orgName: orgName,
+                        event: eventName,
+                        websiteUrl: document.getElementById('ent-edit-website').value.trim(),
+                        year: document.getElementById('ent-edit-year').value.trim(),
+                        remark: document.getElementById('ent-edit-remark').value.trim(),
+                        deadline: document.getElementById('ent-edit-deadline').value || null,
+                        linkedProject: {
+                            type: document.getElementById('ent-edit-proj-type').value,
+                            amount: parseFloat(document.getElementById('ent-edit-proj-amount').value) || 0,
+                            sroiWeight: parseFloat(document.getElementById('ent-edit-proj-sroi').value) || 1.0
+                        },
+                        updatedAt: new Date().toISOString()
+                    };
 
-                const btn = document.getElementById('save-ent-edit-btn');
-                const origHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...';
+                    const btn = document.getElementById('save-ent-edit-btn');
+                    const origHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...';
+                    btn.disabled = true;
 
-                if (db && !isOfflineMode && !id.startsWith('mock_')) {
-                    try {
-                        await setDoc(doc(db, 'ent_projects', id), updates, { merge: true });
-                        window.showToast('✅ 企業卡片更新成功！');
-                    } catch(e) {
-                        window.showToast('❌ 更新失敗，請檢查連線');
-                    }
-                } else {
+                    // 🌟 樂觀 UI 更新：強制瞬間更新記憶體資料並重繪畫面
                     const p = globalEntData.projects.find(x => x.id === id);
                     if (p) Object.assign(p, updates);
                     if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard(); 
                     if(typeof updateEntProjectDropdown === 'function') updateEntProjectDropdown(); 
-                    window.showToast('✅ (離線) 企業卡片更新成功！');
+
+                    // 背景默默寫入雲端
+                    if (db && !isOfflineMode && !id.startsWith('mock_')) {
+                        await setDoc(doc(db, 'ent_projects', id), updates, { merge: true });
+                        window.showToast('✅ 企業卡片更新成功！');
+                    } else {
+                        window.showToast('✅ (離線) 企業卡片更新成功！');
+                    }
+                    
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                    window.closeModal('ent-edit-modal');
+                    window.editingEntId = null;
+
+                } catch (err) {
+                    alert(`儲存發生錯誤: ${err.message}`);
+                    const btn = document.getElementById('save-ent-edit-btn');
+                    if (btn) { btn.innerHTML = '<i class="fas fa-save mr-2"></i>儲存修改'; btn.disabled = false; }
                 }
-                
-                btn.innerHTML = origHtml;
-                window.closeModal('ent-edit-modal');
-                window.editingEntId = null;
             });
 
             document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async () => {
