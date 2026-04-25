@@ -3265,6 +3265,53 @@
                 if (eventInput) eventInput.value = ''; 
             });
 
+            // 🚀 核心修復：補回遺失的「儲存政府卡片修改」寫入邏輯
+            document.getElementById('save-gov-edit-btn')?.addEventListener('click', async () => {
+                const id = window.editingGovId;
+                if (!id) return;
+                const name = document.getElementById('gov-edit-name').value.trim();
+                if (!name) return window.showToast('計畫名稱不得為空');
+
+                const updates = {
+                    serialNumber: document.getElementById('gov-edit-serial').value.trim().toUpperCase(),
+                    name: name,
+                    event: document.getElementById('gov-edit-event').value.trim(),
+                    date: document.getElementById('gov-edit-date').value || '',
+                    desc: document.getElementById('gov-edit-desc').value.trim(),
+                    supervisor: document.getElementById('gov-edit-supervisor').value.trim(),
+                    organizer: document.getElementById('gov-edit-organizer').value.trim(),
+                    executor: document.getElementById('gov-edit-executor').value.trim(),
+                    coOrganizer: document.getElementById('gov-edit-coorganizer').value.trim(),
+                    budget: parseFloat(document.getElementById('gov-edit-budget').value) || 0,
+                    sroi: parseFloat(document.getElementById('gov-edit-sroi').value) || 1.0,
+                    deadline: document.getElementById('gov-edit-deadline').value || null,
+                    updatedAt: new Date().toISOString()
+                };
+
+                const btn = document.getElementById('save-gov-edit-btn');
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...';
+
+                if (db && !isOfflineMode && !id.startsWith('mock_')) {
+                    try {
+                        await setDoc(doc(db, 'gov_projects', id), updates, { merge: true });
+                        window.showToast('✅ 計畫更新成功！');
+                    } catch(e) {
+                        window.showToast('❌ 更新失敗，請檢查連線');
+                    }
+                } else {
+                    const p = globalGovData.projects.find(x => x.id === id);
+                    if (p) Object.assign(p, updates);
+                    if(typeof renderGovDashboard === 'function') renderGovDashboard(); 
+                    if(typeof updateProjectDropdown === 'function') updateProjectDropdown(); 
+                    window.showToast('✅ (離線) 計畫更新成功！');
+                }
+                
+                btn.innerHTML = origHtml;
+                window.closeModal('gov-edit-modal');
+                window.editingGovId = null;
+            });
+
             document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async () => {
                 if(!pendingGovEvalSubmission) return;
                 
