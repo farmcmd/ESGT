@@ -995,8 +995,8 @@
                 <h3 id="poi-modal-title" class="text-xl font-bold text-mori-dark mb-2"></h3>
                 <div id="poi-modal-description" class="text-sm text-gray-600 leading-relaxed mb-4"></div>
                 
-                <div id="poi-modal-fb-container" class="hidden mb-2 w-full flex justify-center overflow-hidden rounded-lg border border-gray-100"><iframe id="poi-modal-fb-iframe" src="" width="340" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe></div>
-                <div id="poi-modal-website-container" class="hidden mb-2 w-full flex justify-center overflow-hidden rounded-lg border border-gray-200 shadow-inner h-[400px]"><iframe id="poi-modal-website-iframe" src="" width="100%" height="100%" style="border:none;" title="官方網站"></iframe></div>
+                <!-- 🚀 核心修復：建立統一且 ID 正確的 iframe 容器，取代舊的特定容器 -->
+                <div id="poi-iframe-container" class="hidden mb-2 w-full flex justify-center overflow-hidden rounded-lg border border-gray-200 shadow-inner relative"></div>
             </div>
         </div>
     </div>
@@ -2145,27 +2145,36 @@
                     }
                 };
 
+                // 🚀 核心修復：補回遺失的資料就緒判定引擎
                 const checkBackendReady = () => {
-                    if (govLoaded && entLoaded && !absoluteLoaded) {
-                        absoluteLoaded = 'pending';
-                        
-                        onSnapshot(doc(db, 'system_stats', 'global_absolute'), { includeMetadataChanges: true }, (docSnap) => {
-                            
-                            // 🛑 拒絕本地記憶體假象：強制等待伺服器真實確認
-                            if (docSnap.metadata.hasPendingWrites) return; 
-
-                            if (docSnap.exists()) { 
-                                globalAbsolute = docSnap.data(); 
-                            } else { 
-                                // 🗑️ 核心修復：拔除假數字防呆！就算資料庫遺失，也只給 0，讓前端的「種子渲染引擎」來接手處理，保證資料庫絕對純淨
-                                const todayStr = getTodayKey(); 
-                                globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; 
-                                globalAbsolute[`daily_${todayStr}_carbon`] = 0; 
-                            }
-                            absoluteLoaded = true; isBackendReady = true; updateGlobalSummary();
-                        }, handleFirebaseError); 
+                    if (govLoaded && entLoaded && absoluteLoaded) {
+                        isBackendReady = true; 
+                        updateGlobalSummary();
                     }
                 };
+
+                // 🚀 核心升級 1：將大盤與鎖頭監聽器獨立拔出，不等待其他名單載入，確保全網廣播「瞬間抵達」
+                onSnapshot(doc(db, 'system_stats', 'global_absolute'), { includeMetadataChanges: true }, (docSnap) => {
+                    // 🛑 拒絕本地記憶體假象：強制等待伺服器真實確認
+                    if (docSnap.metadata.hasPendingWrites) return; 
+
+                    if (docSnap.exists()) { 
+                        globalAbsolute = docSnap.data(); 
+                    } else { 
+                        // 🗑️ 核心修復：拔除假數字防呆！就算資料庫遺失，也只給 0，讓前端的「種子渲染引擎」來接手處理，保證資料庫絕對純淨
+                        const todayStr = getTodayKey(); 
+                        globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; 
+                        globalAbsolute[`daily_${todayStr}_carbon`] = 0; 
+                    }
+                    absoluteLoaded = true; 
+                    checkBackendReady(); 
+                    updateGlobalSummary();
+                    
+                    // 🎯 收到大盤數據後，立刻執行解鎖狀態檢查 (零延遲同步)
+                    if (typeof window.checkTrialLockStatus === 'function') window.checkTrialLockStatus();
+                }, handleFirebaseError); 
+
+                // 👇 核心修復：移除了這裡原本多餘的 } 與 }; 讓下方的代碼回到正常的 try 區塊內
 
                 onSnapshot(collection(db, 'gov_projects'), (snapshot) => {
                     globalGovData.projects = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -2212,6 +2221,7 @@
                             description: data.description || '',
                             websiteUrl: data.websiteUrl || null,
                             fbUrl: data.fbUrl || null,
+                            iframeUrl: data.iframeUrl || null, // 🚀 核心升級：抓取 Python 傳來的 iframeUrl
                             esgEligible: data.esgEligible !== false
                         });
                     });
@@ -2223,7 +2233,11 @@
                     }
                 }, (err) => { console.warn('動態地標讀取阻擋:', err); });
 
-            } catch(e) { console.error("Firebase init error:", e); isOfflineMode = true; loadMockData(); }
+            } catch(e) { 
+                console.error("Firebase init error:", e); 
+                isOfflineMode = true; 
+                loadMockData(); 
+            }
         }
 
         function initFirebase() {
@@ -2356,48 +2370,62 @@
             container.innerHTML = html;
         }
 
+        // 🚀 核心修復：全面重構地標視窗引擎，加入極致防呆與正確的變數宣告
         window.openPoi = function(poi) {
-            currentModalPoi = poi; 
-            document.getElementById('poi-modal-title').innerHTML = poi.name.replace('SROI (✓)', '<span class="text-green-600 font-bold">SROI (✓)</span>');
-            document.getElementById('poi-modal-description').innerHTML = poi.description || '';
+            currentModalPoi = poi;
             
-            const fbContainer = document.getElementById('poi-modal-fb-container'), fbIframe = document.getElementById('poi-modal-fb-iframe');
-            if (poi.fbUrl) { 
-                const encodedFbUrl = encodeURIComponent(poi.fbUrl); 
-                fbIframe.src = `https://www.facebook.com/plugins/page.php?href=${encodedFbUrl}&tabs=timeline&width=340&height=300&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=false`; 
-                fbContainer.classList.remove('hidden'); 
-            } else { 
-                fbIframe.src = ''; fbContainer.classList.add('hidden'); 
-            }
+            // 1. 設定標題
+            const titleEl = document.getElementById('poi-modal-title');
+            if (titleEl) titleEl.innerHTML = `<i class="fas fa-map-marker-alt text-mori-sage mr-2"></i>${poi.name || '未命名地標'}`;
             
-            const webContainer = document.getElementById('poi-modal-website-container'), webIframe = document.getElementById('poi-modal-website-iframe');
-            if (poi.websiteUrl) { 
-                webIframe.src = poi.websiteUrl; webContainer.classList.remove('hidden'); 
-            } else { 
-                webIframe.src = ''; webContainer.classList.add('hidden'); 
-            }
+            // 2. 設定描述
+            const descEl = document.getElementById('poi-modal-description');
+            if (descEl) descEl.innerHTML = poi.description || '暫無說明';
             
-            const dynamicBtns = document.getElementById('poi-modal-dynamic-buttons'); let btnsHtml = '';
+            // 3. 設定動態按鈕 (FB, 官網, ESG)
+            let btnsHtml = '';
+            let hasSocialLinks = false;
+            let socialHtml = '<div class="flex flex-wrap gap-2 mb-2">';
             
-            // 🛡️ 統整導流：優先判定是否為「里山餐桌團隊(categoryId: 1)」，若是則強制覆蓋為 JOY 平台
-            let targetUrl = poi.websiteUrl || poi.fbUrl;
-            if (poi.categoryId === 1) {
-                targetUrl = 'https://farmcmd.github.io/JOY/';
-            }
+            if (poi.websiteUrl) { socialHtml += `<a href="${poi.websiteUrl}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100 transition inline-block shadow-sm"><i class="fas fa-globe mr-1"></i>官方網站</a>`; hasSocialLinks = true; }
+            if (poi.fbUrl) { socialHtml += `<a href="${poi.fbUrl}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100 transition inline-block shadow-sm"><i class="fab fa-facebook mr-1"></i>Facebook</a>`; hasSocialLinks = true; }
+            if (poi.lineUrl) { socialHtml += `<a href="${poi.lineUrl}" target="_blank" class="px-4 py-2 bg-[#06C755]/10 text-[#06C755] rounded-lg text-sm font-bold hover:bg-[#06C755]/20 transition inline-block shadow-sm"><i class="fab fa-line mr-1"></i>LINE</a>`; hasSocialLinks = true; }
+            socialHtml += '</div>';
+            if (hasSocialLinks) btnsHtml += socialHtml;
 
+            let targetUrl = '';
+            if (poi.categoryId === 1) targetUrl = 'https://farmcmd.github.io/JOY/';
+            
             if (targetUrl) { 
                 btnsHtml += `<a href="${targetUrl}" target="_blank" class="block w-full py-2 bg-gray-50 border border-gray-200 text-mori-forest text-center font-bold rounded-lg text-sm shadow-sm transition hover:bg-mori-light hover:text-mori-dark"><i class="fas fa-external-link-alt mr-2"></i>前往官方連結 / 報名活動</a>`; 
             }
             if (poi.esgEligible) { 
                 btnsHtml += `<div class="p-3 bg-green-50 rounded-lg border border-green-200"><p class="text-[11px] text-green-800 mb-2 leading-relaxed font-medium"><i class="fas fa-leaf mr-1 text-mori-forest"></i>請自主辨識標章或詢問店家符合ESG評鑑的商品或<span class="text-green-600 font-bold">SROI (✓)</span>價值活動商品。</p><button id="open-esg-calc-from-poi" class="w-full py-2 bg-gradient-to-r from-mori-forest to-mori-sage text-white text-sm font-bold rounded-lg shadow hover:opacity-90 transition flex justify-center items-center"><i class="fas fa-calculator mr-2"></i>開啟綠消計算機</button></div>`; 
             }
-            dynamicBtns.innerHTML = btnsHtml;
+            
+            const dynamicBtns = document.getElementById('poi-modal-dynamic-buttons');
+            if (dynamicBtns) dynamicBtns.innerHTML = btnsHtml;
+            
+            // 4. 處理嵌入式視窗 (iframe)
+            const iframeContainer = document.getElementById('poi-iframe-container');
+            if (iframeContainer) {
+                if (poi.iframeUrl) {
+                    iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[50vh] border-0 rounded-lg" allowfullscreen loading="lazy"></iframe>`;
+                    iframeContainer.classList.remove('hidden');
+                } else {
+                    iframeContainer.innerHTML = '';
+                    iframeContainer.classList.add('hidden');
+                }
+            }
+
+            // 5. 綁定動態產生的綠消按鈕事件
             setTimeout(() => { 
                 const esgBtn = document.getElementById('open-esg-calc-from-poi'); 
                 if(esgBtn) { 
                     esgBtn.addEventListener('click', () => { window.closeModal('poi-modal'); window.openModal('green-consumption-modal'); }); 
                 } 
             }, 0);
+            
             window.openModal('poi-modal');
         };
 
