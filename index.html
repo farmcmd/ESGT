@@ -2382,10 +2382,17 @@
             const descEl = document.getElementById('poi-modal-description');
             if (descEl) descEl.innerHTML = poi.description || '暫無說明';
             
-            // 3. 設定動態按鈕 (FB, 官網, ESG)
+            // 3. 設定動態按鈕 (導航, FB, 官網, ESG)
             let btnsHtml = '';
             let hasSocialLinks = false;
             let socialHtml = '<div class="flex flex-wrap gap-2 mb-2">';
+            
+            // 🚀 核心新增：Google Maps 一鍵導航按鈕 (所有具備座標的景點預設顯示)
+            if (poi.coords && poi.coords.lat && poi.coords.lng) {
+                const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${poi.coords.lat},${poi.coords.lng}`;
+                socialHtml += `<a href="${navUrl}" target="_blank" class="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-bold hover:bg-red-100 transition inline-block shadow-sm"><i class="fas fa-location-arrow mr-1.5"></i>前往導航</a>`;
+                hasSocialLinks = true;
+            }
             
             if (poi.websiteUrl) { socialHtml += `<a href="${poi.websiteUrl}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100 transition inline-block shadow-sm"><i class="fas fa-globe mr-1"></i>官方網站</a>`; hasSocialLinks = true; }
             if (poi.fbUrl) { socialHtml += `<a href="${poi.fbUrl}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100 transition inline-block shadow-sm"><i class="fab fa-facebook mr-1"></i>Facebook</a>`; hasSocialLinks = true; }
@@ -2409,8 +2416,17 @@
             // 4. 處理嵌入式視窗 (iframe)
             const iframeContainer = document.getElementById('poi-iframe-container');
             if (iframeContainer) {
-                if (poi.iframeUrl) {
-                    iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[50vh] border-0 rounded-lg" allowfullscreen loading="lazy"></iframe>`;
+                // 🚀 核心升級：Facebook 粉絲專頁智慧轉換引擎
+                // 優先使用 Python 動態地標可能傳入的特定 iframeUrl
+                let finalIframeUrl = poi.iframeUrl; 
+                
+                // 如果沒有特定 iframeUrl，但有填寫合法的 Facebook 網址，系統自動將其轉為 Facebook 官方的 Page Plugin 嵌入格式！
+                if (!finalIframeUrl && poi.fbUrl && poi.fbUrl.length > 25 && !poi.fbUrl.endsWith('facebook.com/')) {
+                    finalIframeUrl = `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(poi.fbUrl)}&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false`;
+                }
+
+                if (finalIframeUrl) {
+                    iframeContainer.innerHTML = `<iframe src="${finalIframeUrl}" class="w-full h-[50vh] border-0 rounded-lg bg-gray-50 shadow-sm" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy"></iframe>`;
                     iframeContainer.classList.remove('hidden');
                 } else {
                     iframeContainer.innerHTML = '';
