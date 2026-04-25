@@ -3104,30 +3104,18 @@
                 } else { window.showToast('請先選擇要歸戶的企業'); }
             });
             
-            // 🚀 核心救援：補回建立新企業儀表板的功能邏輯
+            // 🚀 核心升級：回歸原始設計，新建儀表板免密碼，預設全面上鎖 (isAuthorized: false)
             document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
                 const org = document.getElementById('ent-create-org').value.trim();
                 const event = document.getElementById('ent-create-event').value.trim();
                 if (!org || !event) return window.showToast('請填寫企業名稱與活動名稱');
 
-                // 👇 新增：抓取活動序號與配發固定的 5 碼代碼
                 const serialNum = document.getElementById('ent-create-serial')?.value.trim().toUpperCase() || '';
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
-                // 🌟 新增修復：歸戶權限密碼核可機制
-                let isAuth = false;
-                const pwd = prompt('🔒 是否立即為此新看板開啟「歸戶許可」？\n請輸入管理員密碼以核可 (若無密碼請直接按取消)：');
-                if (pwd === '772059') {
-                    isAuth = true;
-                    window.showToast('✅ 密碼正確，新看板將預設開啟歸戶權限！');
-                } else if (pwd !== null && pwd.trim() !== '') {
-                    window.showToast('❌ 密碼錯誤，將以「等待授權」狀態建立看板。');
-                } else {
-                    window.showToast('ℹ️ 將以「等待授權」狀態建立看板，稍後可於管理面板開啟。');
-                }
-
+                // 移除密碼彈窗，直接組合資料包，並強制鎖定權限
                 const newProj = {
-                    serialNumber: serialNum, // 🚀 寫入活動序號
+                    serialNumber: serialNum, 
                     orgName: org, event: event, year: document.getElementById('ent-create-year').value.trim() || new Date().getFullYear().toString(),
                     websiteUrl: document.getElementById('ent-create-website').value.trim(), remark: document.getElementById('ent-create-remark').value.trim(),
                     deadline: document.getElementById('ent-create-deadline').value || null,
@@ -3137,15 +3125,21 @@
                         sroiWeight: parseFloat(document.getElementById('ent-create-proj-sroi').value) || 1.0
                     },
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, feedbacks: [],
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: isAuth, cardCode: newCardCode
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), 
+                    isAuthorized: false, // 🔒 預設未授權
+                    cardCode: newCardCode
                 };
 
                 if (db && !isOfflineMode) {
-                    try { await addDoc(collection(db, 'ent_projects'), newProj); window.showToast('✅ 企業儀表板建立成功！'); } 
+                    try { 
+                        await addDoc(collection(db, 'ent_projects'), newProj); 
+                        window.showToast('✅ 企業儀表板建立成功！(請通知管理員開啟歸戶權限)'); 
+                    } 
                     catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
                 } else {
                     newProj.id = 'mock_ent_' + Date.now(); globalEntData.projects.push(newProj);
-                    renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList(); window.showToast('✅ (離線) 企業儀表板建立成功！');
+                    renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList(); 
+                    window.showToast('✅ (離線) 企業儀表板建立成功！(狀態：等待授權)');
                 }
                 
                 // 清空輸入框
@@ -3286,49 +3280,42 @@
                 } else { window.showToast('請先選擇要歸戶的計畫'); }
             });
             
-            // 🚀 核心救援：補回建立新政府計畫儀表板的功能邏輯
+            // 🚀 核心升級：回歸原始設計，新建儀表板免密碼，預設全面上鎖 (isAuthorized: false)
             document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
                 const nameInput = document.getElementById('host-proj-name');
                 const eventInput = document.getElementById('host-proj-event');
                 const name = nameInput ? nameInput.value.trim() : '';
                 if (!name) return window.showToast('請填寫計畫名稱');
 
-                // 👇 新增：抓取活動序號與配發固定的 5 碼代碼
                 const serialNum = document.getElementById('host-proj-serial')?.value.trim().toUpperCase() || '';
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
-                // 🌟 新增修復：歸戶權限密碼核可機制
-                let isAuth = false;
-                const pwd = prompt('🔒 是否立即為此新看板開啟「歸戶許可」？\n請輸入管理員密碼以核可 (若無密碼請直接按取消)：');
-                if (pwd === '772059') {
-                    isAuth = true;
-                    window.showToast('✅ 密碼正確，新看板將預設開啟歸戶權限！');
-                } else if (pwd !== null && pwd.trim() !== '') {
-                    window.showToast('❌ 密碼錯誤，將以「等待授權」狀態建立看板。');
-                } else {
-                    window.showToast('ℹ️ 將以「等待授權」狀態建立看板，稍後可於管理面板開啟。');
-                }
-
+                // 移除密碼彈窗，直接組合資料包，並強制鎖定權限
                 const newProj = {
-                    serialNumber: serialNum, // 🚀 寫入活動序號
+                    serialNumber: serialNum, 
                     name: name, event: eventInput ? eventInput.value.trim() : '', date: document.getElementById('host-proj-date')?.value || '',
                     desc: document.getElementById('host-proj-desc')?.value.trim() || '', supervisor: document.getElementById('host-proj-supervisor')?.value.trim() || '',
                     organizer: document.getElementById('host-proj-organizer')?.value.trim() || '', executor: document.getElementById('host-proj-executor')?.value.trim() || '',
                     coOrganizer: document.getElementById('host-proj-coorganizer')?.value.trim() || '', budget: parseFloat(document.getElementById('host-proj-budget')?.value) || 0,
                     sroi: parseFloat(document.getElementById('host-proj-sroi')?.value) || 1.0, deadline: document.getElementById('host-proj-deadline')?.value || null,
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [],
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: isAuth, cardCode: newCardCode
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), 
+                    isAuthorized: false, // 🔒 預設未授權
+                    cardCode: newCardCode
                 };
 
                 if (db && !isOfflineMode) {
-                    try { await addDoc(collection(db, 'gov_projects'), newProj); window.showToast('✅ 政府儀表板建立成功！'); } 
+                    try { 
+                        await addDoc(collection(db, 'gov_projects'), newProj); 
+                        window.showToast('✅ 政府計畫建立成功！(請通知管理員開啟歸戶權限)'); 
+                    } 
                     catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
                 } else {
                     newProj.id = 'mock_gov_' + Date.now(); globalGovData.projects.push(newProj);
                     if(typeof renderGovDashboard === 'function') renderGovDashboard(); 
                     if(typeof updateProjectDropdown === 'function') updateProjectDropdown(); 
                     if(typeof renderAuthList === 'function') renderAuthList(); 
-                    window.showToast('✅ (離線) 政府儀表板建立成功！');
+                    window.showToast('✅ (離線) 政府計畫建立成功！(狀態：等待授權)');
                 }
                 
                 // 🛡️ 防禦性清空輸入框
