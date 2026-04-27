@@ -427,7 +427,7 @@
                      <div class="pt-6 border-t border-gray-200 text-xs text-gray-500 space-y-2 text-center">
                          <p>© 2026 水里永續共好聯盟。版權所有。</p>
                          <p>開發者信箱: <a href="mailto:farmcmd@gmail.com" class="hover:text-mori-forest font-bold transition text-gray-600">farmcmd@gmail.com</a></p>
-                         <p>V2.3 (敏捷開發模式就緒)，歡迎至 FACEBOOK 粉專 <a href="https://www.facebook.com/Satoyamadining" target="_blank" class="text-blue-500 hover:text-blue-700 font-bold transition">「里山餐桌」</a> 提出建議。</p>
+                         <p>V2.2，歡迎至 FACEBOOK 粉專 <a href="https://www.facebook.com/Satoyamadining" target="_blank" class="text-blue-500 hover:text-blue-700 font-bold transition">「里山餐桌」</a> 提出建議。</p>
                          <p class="text-gray-400 mt-4 tracking-widest text-[10px]"><i class="fas fa-eye mr-1"></i>瀏覽人次: <span id="visitor-count" class="font-mono text-gray-600 font-bold">...</span></p>
                      </div>
                  </div>
@@ -787,13 +787,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- 🚀 核心升級：新增企業專屬的「我的抽獎憑證」展示區 -->
-            <div class="mt-2 bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-2xl border border-orange-200 shadow-inner relative overflow-hidden">
-                <i class="fas fa-gift absolute -right-4 -bottom-4 text-7xl text-orange-500/10"></i>
-                <h4 class="font-black text-orange-800 mb-4 border-b border-orange-200/60 pb-2 flex items-center relative z-10"><i class="fas fa-ticket-alt mr-2 text-orange-500 animate-pulse"></i>我的永續行動抽獎憑證 <span class="ml-2 text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md border border-orange-200">每滿 100 積分自動兌換 1 張</span></h4>
-                <div id="ent-lottery-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-56 overflow-y-auto custom-scrollbar relative z-10 pr-1"></div>
-            </div>
         </div>
     </div>
 
@@ -865,13 +858,6 @@
                         <button id="create-proj-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm shadow transition hover:bg-blue-700">建立新儀表板</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- 🚀 核心升級：新增政府專屬的「我的抽獎憑證」展示區 -->
-            <div class="mt-2 bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-2xl border border-orange-200 shadow-inner relative overflow-hidden">
-                <i class="fas fa-gift absolute -right-4 -bottom-4 text-7xl text-orange-500/10"></i>
-                <h4 class="font-black text-orange-800 mb-4 border-b border-orange-200/60 pb-2 flex items-center relative z-10"><i class="fas fa-ticket-alt mr-2 text-orange-500 animate-pulse"></i>我的永續行動抽獎憑證 <span class="ml-2 text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md border border-orange-200">每滿 100 積分自動兌換 1 張</span></h4>
-                <div id="gov-lottery-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-56 overflow-y-auto custom-scrollbar relative z-10 pr-1"></div>
             </div>
         </div>
     </div>
@@ -1462,10 +1448,6 @@
         
         let globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 }; 
         let summaryState = { entMode: false, entSelected: new Set(), govMode: false, govSelected: new Set() };
-        
-        // 🚀 核心升級修復：補回抽獎系統總開關與動態配置接收器 (預設為關閉)
-        window.isLotterySystemEnabled = false;
-        let globalLotteryConfig = { isActive: false, title: '永續行動抽獎', desc: '本期抽獎活動準備中', startDate: '', endDate: '', requiredScore: 100, targetCategory: 'all', targetBoard: '全站適用' };
 
         // ==========================================
         // 3. 核心工具函數 (Core Utils)
@@ -1613,8 +1595,7 @@
         function loadLocalData() {
             try { const raw = localStorage.getItem(LOCAL_STORAGE_KEY); if(raw) { state = { ...state, ...JSON.parse(raw) }; } } catch(e) { }
             state.greenProcure = state.greenProcure || 0; state.sroiProcure = state.sroiProcure || 0; state.projectProcure = state.projectProcure || 0;
-            // 🚀 核心升級：初始化防呆，加入 lotteryTickets 用來永久記憶抽獎序號
-            state.totalCarbon = state.totalCarbon || 0; state.totalScore = state.totalScore || 0; state.activityLogs = state.activityLogs || []; state.checkoutHistory = state.checkoutHistory || []; state.lotteryTickets = state.lotteryTickets || [];
+            state.totalCarbon = state.totalCarbon || 0; state.totalScore = state.totalScore || 0; state.activityLogs = state.activityLogs || []; state.checkoutHistory = state.checkoutHistory || [];
             if (!state.playerCode) state.playerCode = Math.random().toString(36).substring(2, 7).toUpperCase();
             if(document.getElementById('player-name')) document.getElementById('player-name').value = state.playerName || '';
             if(document.getElementById('player-code')) document.getElementById('player-code').textContent = state.playerCode;
@@ -1625,133 +1606,6 @@
         function resetPlayerStats() {
             state.totalMileage = 0; state.totalCarbon = 0; state.greenProcure = 0; state.sroiProcure = 0; state.projectProcure = 0;
             updateDisplays(); saveData();
-        }
-
-        // 🚀 核心升級：獨立的「抽獎憑證配發與渲染引擎」 (支援動態關閉與規則判斷)
-        function updateLotteryTickets() {
-            const entSec = document.getElementById('ent-lottery-section');
-            const govSec = document.getElementById('gov-lottery-section');
-            
-            // 讀取全域抽獎設定，提取出最新寫入的 targetCategory 判斷欄位
-            const isActive = globalLotteryConfig && globalLotteryConfig.isActive === true;
-            const requiredPts = globalLotteryConfig ? (globalLotteryConfig.requiredScore || 100) : 100;
-            const eventTitle = globalLotteryConfig ? (globalLotteryConfig.title || '永續抽獎活動') : '永續抽獎活動';
-            const eventDesc = globalLotteryConfig ? (globalLotteryConfig.desc || '') : '';
-            const eventStart = globalLotteryConfig ? (globalLotteryConfig.startDate || '') : '';
-            const eventEnd = globalLotteryConfig ? (globalLotteryConfig.endDate || '未定') : '未定';
-            const targetBoard = globalLotteryConfig ? (globalLotteryConfig.targetBoard || '') : '';
-            
-            // 🎯 核心防呆：若活動未開放，強制將目標類別設為 'all'，確保兩邊儀表板都能看見「目前沒有抽獎活動」的提示
-            const targetCategory = isActive ? (globalLotteryConfig ? (globalLotteryConfig.targetCategory || 'all') : 'all') : 'all';
-            
-            // 🛑 系統開關防護：若系統未開啟，強制隱藏兩邊區塊並中斷發放
-            if (!window.isLotterySystemEnabled) {
-                if (entSec) entSec.classList.add('hidden');
-                if (govSec) govSec.classList.add('hidden');
-                return; 
-            } else {
-                // 🚀 核心升級：依據後台指定的目標類別，動態關閉非目標的儀表板抽獎區塊
-                if (entSec) {
-                    if (targetCategory === 'all' || targetCategory === 'ent') entSec.classList.remove('hidden');
-                    else entSec.classList.add('hidden');
-                }
-                if (govSec) {
-                    if (targetCategory === 'all' || targetCategory === 'gov') govSec.classList.remove('hidden');
-                    else govSec.classList.add('hidden');
-                }
-            }
-
-            state.lotteryTickets = state.lotteryTickets || [];
-            
-            const expectedTickets = Math.floor((state.totalScore || 0) / requiredPts);
-            let hasNewTicket = false;
-            
-            // 🛑 資安與流程控管：只有在「活動開啟」且「應得張數大於目前張數」時，才允許產生新序號
-            if (isActive && state.lotteryTickets.length < expectedTickets) {
-                const today = new Date();
-                const dateStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
-                
-                for(let i = state.lotteryTickets.length; i < expectedTickets; i++) {
-                    const randomDigits = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
-                    const randomEnd = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-                    const serial = `A01${randomDigits}A${randomEnd}`;
-                    // 將活動的最終截止日綁定到序號上
-                    state.lotteryTickets.push({ serial, date: dateStr, deadline: eventEnd, eventName: eventTitle });
-                    hasNewTicket = true;
-                }
-            }
-            if (hasNewTicket) saveData(); // 若有新序號產生，立刻永久存檔防遺失
-            
-            // 渲染至兩大儀表板底部
-            const entList = document.getElementById('ent-lottery-list');
-            const govList = document.getElementById('gov-lottery-list');
-            const tickets = state.lotteryTickets || [];
-
-            // 🎯 核心升級：動態活動看板 HTML (將 Python 後台輸入的資訊精美排版)
-            let boardHtml = '';
-            if (isActive) {
-                boardHtml = `
-                    <div class="col-span-full mb-4 bg-white/80 p-4 rounded-xl border border-orange-300 shadow-sm relative z-10 backdrop-blur-sm">
-                        <div class="flex justify-between items-start mb-2">
-                            <h5 class="text-[15px] font-black text-orange-900"><i class="fas fa-bullhorn text-orange-500 mr-1.5 animate-pulse"></i>${eventTitle}</h5>
-                            ${targetBoard && targetBoard !== '全站適用' ? `<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-100 text-[10px] font-bold shadow-sm flex items-center shrink-0 max-w-[55%] leading-tight text-right"><i class="fas fa-crosshairs mr-1 mt-0.5"></i>限定: ${targetBoard}</span>` : `<span class="bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-200 text-[10px] font-bold shadow-sm flex items-center shrink-0"><i class="fas fa-globe mr-1"></i>全站適用</span>`}
-                        </div>
-                        ${eventDesc ? `<p class="text-[12px] text-orange-800/90 mb-3 leading-relaxed font-bold bg-orange-50/50 p-2 rounded-lg border border-orange-100">${eventDesc}</p>` : ''}
-                        <div class="flex flex-wrap gap-3 text-[11px] font-bold text-orange-700 border-t border-orange-200/60 pt-2.5">
-                            <span class="flex items-center"><i class="far fa-calendar-alt mr-1.5 opacity-80"></i>期間：${eventStart || '即日起'} ~ ${eventEnd}</span>
-                            <span class="flex items-center"><i class="fas fa-star mr-1.5 opacity-80"></i>門檻：滿 ${requiredPts} 積分兌換 1 張</span>
-                        </div>
-                    </div>
-                `;
-            }
-
-            let html = '';
-            
-            // 情況 1：無任何舊紀錄，且活動關閉中 (精準更新為：目前沒有抽獎活動)
-            if (tickets.length === 0 && !isActive) {
-                html = '<div class="col-span-full py-8 text-center text-gray-500/60 text-sm border-2 border-dashed border-gray-300/50 rounded-xl font-bold bg-white/50"><i class="fas fa-lock mb-2 text-3xl opacity-40 block"></i>目前沒有抽獎活動<br><span class="text-xs opacity-70 mt-1 inline-block">敬請期待未來的永續行銷活動</span></div>';
-            } 
-            // 情況 2：無舊紀錄，活動開放中
-            else if (tickets.length === 0 && isActive) {
-                html = boardHtml + `<div class="col-span-full py-6 text-center text-orange-600/60 text-sm border-2 border-dashed border-orange-300/50 rounded-xl font-bold bg-white/50"><i class="fas fa-box-open mb-2 text-3xl opacity-40 block"></i>尚未累積抽獎卷<br><span class="text-[11px] opacity-70 mt-1 inline-block">永續積分達 ${requiredPts} pts 即可自動解鎖第一張憑證</span></div>`;
-            } 
-            // 情況 3：有紀錄 (不管開啟或關閉，皆顯示舊資產)
-            else {
-                let noticeHtml = '';
-                if (!isActive) {
-                    noticeHtml = '<div class="col-span-full mb-3 bg-gray-100 text-gray-600 text-xs font-bold p-3 rounded-xl border border-gray-200 text-center shadow-inner"><i class="fas fa-info-circle mr-1"></i> 目前沒有抽獎活動，已停止配發新卷。您的歷史憑證已安全保留於下方。</div>';
-                } else {
-                    noticeHtml = boardHtml;
-                }
-                
-                const listHtml = tickets.map((t, idx) => `
-                    <div class="bg-white p-4 rounded-xl border border-orange-300 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-orange-400 hover:shadow-md transition-all">
-                        <div class="absolute -right-3 -bottom-3 text-6xl text-orange-500/5 group-hover:scale-110 transition-transform"><i class="fas fa-gift"></i></div>
-                        <div class="flex justify-between items-start mb-2.5 relative z-10">
-                            <span class="text-[11px] font-black text-white bg-gradient-to-r from-orange-400 to-orange-500 px-2 py-0.5 rounded shadow-sm tracking-wider">TICKET #${idx + 1}</span>
-                            <span class="text-[10px] text-orange-600 font-mono font-bold bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100"><i class="far fa-calendar-check mr-1"></i>${t.date}</span>
-                        </div>
-                        <p class="text-[16px] font-black text-orange-600 font-mono tracking-widest text-center my-1.5 relative z-10 select-all border-y border-dashed border-orange-100 py-2">${t.serial}</p>
-                        <p class="text-[10px] text-orange-400/90 font-bold text-right mt-1 relative z-10"><i class="fas fa-hourglass-end mr-1"></i>截止日: ${t.deadline}</p>
-                    </div>
-                `).join('');
-                
-                html = noticeHtml + listHtml;
-            }
-
-            if (entList) entList.innerHTML = html;
-            if (govList) govList.innerHTML = html;
-            
-            // 動態更新橫幅上的規則文字 (精準更新為：目前沒有抽獎活動)
-            document.querySelectorAll('.lottery-rule-text').forEach(el => {
-                if (isActive) {
-                    el.textContent = `滿 ${requiredPts} 積分兌換 1 張`;
-                    el.className = "lottery-rule-text ml-2 text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md border border-orange-200";
-                } else {
-                    el.textContent = `目前沒有抽獎活動`;
-                    el.className = "lottery-rule-text ml-2 text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200";
-                }
-            });
         }
 
         function updateDisplays() {
@@ -1771,9 +1625,6 @@
             if (typeof window.syncToGame === 'function') {
                 window.syncToGame({ name: state.playerName, code: state.playerCode });
             }
-            
-            // 🚀 核心升級：確保畫面上任何分數變動時，皆自動檢查並渲染最新抽獎憑證
-            updateLotteryTickets();
         }
         
         /**
@@ -3050,8 +2901,8 @@
                     if (success) {
                         state.greenProcure += total; 
                         
-                        // 🎯 核心升級：綠消的永續積分換算 (新制：每消費 30 元 = 1 積分，採無條件捨去)
-                        const earnedPts = Math.floor(total / 30);
+                        // 🎯 核心修復：補回綠消的永續積分換算 (標準：100元 = 1積分)
+                        const earnedPts = Math.round(total / 100);
                         state.totalScore += earnedPts;
 
                         saveData();
@@ -3099,8 +2950,8 @@
                     if (success) {
                         state.sroiProcure += total; 
                         
-                        // 🎯 核心升級：SROI 價值的永續積分換算 (新制：含 SROI 加成後，每價值 30 元 = 1 積分)
-                        const earnedPts = Math.floor(total / 30);
+                        // 🎯 核心修復：補回 SROI 價值的永續積分換算 (標準：100元 = 1積分)
+                        const earnedPts = Math.round(total / 100);
                         state.totalScore += earnedPts;
 
                         saveData();
@@ -3223,8 +3074,7 @@
             // 👇 補回：下載空白重置檔邏輯
             document.getElementById('download-blank-btn')?.addEventListener('click', () => {
                 try {
-                    // 🚀 核心升級：空白檔支援 lotteryTickets 陣列清空
-                    const blankState = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], currentTransport: null };
+                    const blankState = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], currentTransport: null };
                     const dataStr = JSON.stringify(blankState, null, 2);
                     const blob = new Blob([dataStr], { type: "application/json" });
                     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
@@ -3254,18 +3104,18 @@
                 } else { window.showToast('請先選擇要歸戶的企業'); }
             });
             
-            // 🚀 核心升級：回歸原始設計，新建儀表板免密碼，預設全面上鎖 (isAuthorized: false)
+            // 🚀 核心救援：補回建立新企業儀表板的功能邏輯
             document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
                 const org = document.getElementById('ent-create-org').value.trim();
                 const event = document.getElementById('ent-create-event').value.trim();
                 if (!org || !event) return window.showToast('請填寫企業名稱與活動名稱');
 
+                // 👇 新增：抓取活動序號與配發固定的 5 碼代碼
                 const serialNum = document.getElementById('ent-create-serial')?.value.trim().toUpperCase() || '';
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
-                // 移除密碼彈窗，直接組合資料包，並強制鎖定權限
                 const newProj = {
-                    serialNumber: serialNum, 
+                    serialNumber: serialNum, // 🚀 寫入活動序號
                     orgName: org, event: event, year: document.getElementById('ent-create-year').value.trim() || new Date().getFullYear().toString(),
                     websiteUrl: document.getElementById('ent-create-website').value.trim(), remark: document.getElementById('ent-create-remark').value.trim(),
                     deadline: document.getElementById('ent-create-deadline').value || null,
@@ -3275,21 +3125,15 @@
                         sroiWeight: parseFloat(document.getElementById('ent-create-proj-sroi').value) || 1.0
                     },
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, feedbacks: [],
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), 
-                    isAuthorized: false, // 🔒 預設未授權
-                    cardCode: newCardCode
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true, cardCode: newCardCode
                 };
 
                 if (db && !isOfflineMode) {
-                    try { 
-                        await addDoc(collection(db, 'ent_projects'), newProj); 
-                        window.showToast('✅ 企業儀表板建立成功！(請通知管理員開啟歸戶權限)'); 
-                    } 
+                    try { await addDoc(collection(db, 'ent_projects'), newProj); window.showToast('✅ 企業儀表板建立成功！'); } 
                     catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
                 } else {
                     newProj.id = 'mock_ent_' + Date.now(); globalEntData.projects.push(newProj);
-                    renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList(); 
-                    window.showToast('✅ (離線) 企業儀表板建立成功！(狀態：等待授權)');
+                    renderEntProjectsDashboard(); updateEntProjectDropdown(); renderAuthList(); window.showToast('✅ (離線) 企業儀表板建立成功！');
                 }
                 
                 // 清空輸入框
@@ -3430,42 +3274,37 @@
                 } else { window.showToast('請先選擇要歸戶的計畫'); }
             });
             
-            // 🚀 核心升級：回歸原始設計，新建儀表板免密碼，預設全面上鎖 (isAuthorized: false)
+            // 🚀 核心救援：補回建立新政府計畫儀表板的功能邏輯
             document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
                 const nameInput = document.getElementById('host-proj-name');
                 const eventInput = document.getElementById('host-proj-event');
                 const name = nameInput ? nameInput.value.trim() : '';
                 if (!name) return window.showToast('請填寫計畫名稱');
 
+                // 👇 新增：抓取活動序號與配發固定的 5 碼代碼
                 const serialNum = document.getElementById('host-proj-serial')?.value.trim().toUpperCase() || '';
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
-                // 移除密碼彈窗，直接組合資料包，並強制鎖定權限
                 const newProj = {
-                    serialNumber: serialNum, 
+                    serialNumber: serialNum, // 🚀 寫入活動序號
                     name: name, event: eventInput ? eventInput.value.trim() : '', date: document.getElementById('host-proj-date')?.value || '',
                     desc: document.getElementById('host-proj-desc')?.value.trim() || '', supervisor: document.getElementById('host-proj-supervisor')?.value.trim() || '',
                     organizer: document.getElementById('host-proj-organizer')?.value.trim() || '', executor: document.getElementById('host-proj-executor')?.value.trim() || '',
                     coOrganizer: document.getElementById('host-proj-coorganizer')?.value.trim() || '', budget: parseFloat(document.getElementById('host-proj-budget')?.value) || 0,
                     sroi: parseFloat(document.getElementById('host-proj-sroi')?.value) || 1.0, deadline: document.getElementById('host-proj-deadline')?.value || null,
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [],
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), 
-                    isAuthorized: false, // 🔒 預設未授權
-                    cardCode: newCardCode
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true, cardCode: newCardCode
                 };
 
                 if (db && !isOfflineMode) {
-                    try { 
-                        await addDoc(collection(db, 'gov_projects'), newProj); 
-                        window.showToast('✅ 政府計畫建立成功！(請通知管理員開啟歸戶權限)'); 
-                    } 
+                    try { await addDoc(collection(db, 'gov_projects'), newProj); window.showToast('✅ 政府儀表板建立成功！'); } 
                     catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
                 } else {
                     newProj.id = 'mock_gov_' + Date.now(); globalGovData.projects.push(newProj);
                     if(typeof renderGovDashboard === 'function') renderGovDashboard(); 
                     if(typeof updateProjectDropdown === 'function') updateProjectDropdown(); 
                     if(typeof renderAuthList === 'function') renderAuthList(); 
-                    window.showToast('✅ (離線) 政府計畫建立成功！(狀態：等待授權)');
+                    window.showToast('✅ (離線) 政府儀表板建立成功！');
                 }
                 
                 // 🛡️ 防禦性清空輸入框
@@ -3896,60 +3735,6 @@
                 let attributionHtml = '';
                 if (attributionTarget) { attributionHtml = `<div class="mt-4 bg-[#F0FDF4] p-4 rounded-xl border-2 border-[#86EFAC] block shadow-sm"><p class="text-[13px] font-bold text-[#166534] mb-1"><i class="fas fa-check-circle mr-1.5 text-[#059669]"></i>本次行動數據已正式貢獻歸戶至：</p><p class="text-xl font-black text-[#14532D] tracking-wide">${attributionTarget}</p></div>`; }
 
-                let lotteryHtml = '';
-                
-                // 🛑 系統開關防護：若系統開啟，才渲染抽獎憑證於證書上
-                if (window.isLotterySystemEnabled) {
-                    state.lotteryTickets = state.lotteryTickets || [];
-                    
-                    if (state.lotteryTickets.length > 0) {
-                        const ticketsCount = state.lotteryTickets.length;
-                        const latestTicket = state.lotteryTickets[ticketsCount - 1]; 
-                        
-                        // 🎯 核心升級：在證書中也加上活動看板資訊
-                        const isActive = globalLotteryConfig && globalLotteryConfig.isActive === true;
-                        const eventTitle = globalLotteryConfig ? (globalLotteryConfig.title || '永續抽獎活動') : '永續抽獎活動';
-                        const eventStart = globalLotteryConfig ? (globalLotteryConfig.startDate || '即日起') : '即日起';
-                        const eventEnd = globalLotteryConfig ? (globalLotteryConfig.endDate || '未定') : '未定';
-                        
-                        let boardCertHtml = '';
-                        if (isActive) {
-                            boardCertHtml = `
-                                <div class="mb-3 bg-white/80 p-2.5 rounded-xl border border-orange-200 shadow-sm text-left">
-                                    <p class="text-[13px] font-black text-orange-900 mb-1"><i class="fas fa-bullhorn text-orange-500 mr-1.5"></i>${eventTitle}</p>
-                                    <div class="flex justify-between items-center text-[10px] font-bold text-orange-700 border-t border-orange-100 pt-1.5 mt-1.5">
-                                        <span>活動期間: ${eventStart} ~ ${eventEnd}</span>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        
-                        const ticketsListHtml = state.lotteryTickets.map(t => `
-                            <div class="bg-white px-3 py-2 rounded-lg border border-orange-200 shadow-sm flex items-center justify-between">
-                                <span class="text-[12px] font-bold text-orange-800 flex items-center"><i class="fas fa-ticket-alt mr-1.5 text-orange-400"></i>序號</span>
-                                <span class="text-[14px] font-mono font-black text-orange-600 tracking-widest">${t.serial}</span>
-                            </div>
-                        `).join('');
-
-                        lotteryHtml = `
-                        <div class="mt-5 mb-5 bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-2xl border-2 border-orange-300 shadow-md relative overflow-hidden">
-                            <i class="fas fa-gift absolute -right-4 -bottom-4 text-7xl text-orange-500/10 data-html2canvas-ignore"></i>
-                            <div class="relative z-10">
-                                <h4 class="text-[15px] font-black text-orange-800 mb-3 flex items-center"><i class="fas fa-award mr-2 text-orange-500"></i>探探里山 永續行動抽獎憑證</h4>
-                                ${boardCertHtml}
-                                <p class="text-[12px] text-orange-700 font-bold mb-3 tracking-wide">歸戶永續總積分 <span class="text-orange-600 text-[15px] mx-1">${score}</span> pts = 累計 <span class="text-orange-600 text-[15px] mx-1">${ticketsCount}</span> 張 抽獎卷</p>
-                                <div class="mb-3 space-y-2 pr-1">
-                                    ${ticketsListHtml}
-                                </div>
-                                <div class="flex justify-between text-[11px] text-orange-700 font-bold border-t border-orange-200/80 pt-3 mt-1">
-                                    <span>最新兌換日期：${latestTicket.date}</span>
-                                    <span>活動截止日：${latestTicket.deadline}</span>
-                                </div>
-                            </div>
-                        </div>`;
-                    }
-                }
-
                 const tempContainer = document.createElement('div');
                 tempContainer.style.cssText = 'position: fixed; top: 0px; left: 0px; width: 800px; z-index: -9999; padding: 32px; background-color: #F7F4EF; pointer-events: none; font-family: "Noto Sans TC", sans-serif;';
                 tempContainer.innerHTML = `
@@ -3964,7 +3749,6 @@
                                 <p class="text-lg text-gray-700 flex items-baseline"><span>茲證明 旅者：</span><span class="text-2xl font-bold text-mori-forest border-b-2 border-mori-forest pb-1 px-3 mx-2">${name}</span><span>(代碼：<span class="font-mono text-mori-wood">${code}</span>)</span></p>
                                 <p class="text-sm text-gray-600 mt-3 leading-relaxed">在本次探探里山永續旅遊中，積極實踐低碳與綠色消費，達成以下卓越成就，特頒此證以資鼓勵。</p>${attributionHtml}
                             </div>
-                            ${lotteryHtml}
                             <div class="grid grid-cols-4 gap-2 mb-6 text-center bg-[#F0F7F4] p-4 rounded-xl border border-mori-light">
                                 <div><p class="text-[11px] text-gray-500 mb-1">🌱 累積里程</p><p class="text-lg font-bold text-mori-forest">${mileage} <span class="text-[10px]">km</span></p></div>
                                 <div><p class="text-[11px] text-gray-500 mb-1">🌳 減碳總量</p><p class="text-lg font-bold text-mori-forest">${carbon} <span class="text-[10px]">g</span></p></div>
