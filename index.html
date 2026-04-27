@@ -73,7 +73,6 @@
 <body class="font-sans antialiased overflow-x-hidden">
     <div id="custom-toast"></div>
     
-    <!-- 動態下拉多重廣播系統容器 -->
     <div id="system-broadcast-container" class="relative w-full z-[100] hidden">
         <div id="system-broadcast-bar" class="w-full bg-yellow-500 text-white px-4 py-2.5 text-sm font-bold flex items-center justify-between shadow-md cursor-pointer hover:bg-yellow-600 transition-colors">
             <div class="flex items-center overflow-hidden flex-1 justify-center pl-6">
@@ -91,7 +90,6 @@
                 <button id="close-broadcast-btn" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times"></i></button>
             </div>
             <div id="broadcast-list" class="max-w-4xl mx-auto p-2">
-                <!-- JS 動態生成 -->
             </div>
         </div>
     </div>
@@ -363,7 +361,7 @@
                      <div class="pt-6 border-t border-gray-200 text-xs text-gray-500 space-y-2 text-center">
                          <p>© 2026 水里永續共好聯盟。版權所有。</p>
                          <p>開發者信箱: <a href="mailto:farmcmd@gmail.com" class="hover:text-mori-forest font-bold transition text-gray-600">farmcmd@gmail.com</a></p>
-                         <p>V3.0 (全檔無損防禦版)，歡迎至 FACEBOOK 粉專 <a href="https://www.facebook.com/Satoyamadining" target="_blank" class="text-blue-500 hover:text-blue-700 font-bold transition">「里山餐桌」</a> 提出建議。</p>
+                         <p>V3.0 (安全原生彈窗淘汰版)，歡迎至 FACEBOOK 粉專 <a href="https://www.facebook.com/Satoyamadining" target="_blank" class="text-blue-500 hover:text-blue-700 font-bold transition">「里山餐桌」</a> 提出建議。</p>
                          <p class="text-gray-400 mt-4 tracking-widest text-[10px]"><i class="fas fa-eye mr-1"></i>瀏覽人次: <span id="visitor-count" class="font-mono text-gray-600 font-bold">...</span></p>
                      </div>
                  </div>
@@ -832,6 +830,44 @@
         </div>
     </div>
 
+    <!-- 🌟 核心升級：全新自訂密碼驗證 Modal -->
+    <div id="auth-modal" class="modal-overlay hidden" style="z-index: 9999;">
+        <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-red-500 relative text-center shadow-2xl">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('auth-modal')"><i class="fas fa-times text-xl"></i></button>
+            <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-lock text-2xl text-red-500"></i></div></div>
+            <h3 id="auth-modal-title" class="text-xl font-bold text-gray-800 mb-2 tracking-wide">管理員權限驗證</h3>
+            <p id="auth-modal-desc" class="text-[12px] text-gray-500 mb-5">請輸入授權密碼以繼續操作</p>
+            <input type="password" id="auth-pwd-input" class="w-full p-3 border-2 border-gray-200 rounded-lg text-center text-lg font-mono tracking-widest focus:outline-none focus:border-red-500 mb-4 bg-gray-50 placeholder-gray-400" placeholder="輸入密碼">
+            <button id="auth-confirm-btn" class="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-md transition flex items-center justify-center tracking-wide"><i class="fas fa-check-circle mr-2"></i>確認授權</button>
+        </div>
+    </div>
+
+    <!-- 🌟 核心升級：全新自訂操作確認 Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden" style="z-index: 9999;">
+        <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-orange-500 relative text-center shadow-2xl">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('confirm-modal')"><i class="fas fa-times text-xl"></i></button>
+            <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-exclamation-triangle text-2xl text-orange-500"></i></div></div>
+            <h3 id="confirm-modal-title" class="text-xl font-bold text-gray-800 mb-2 tracking-wide">確認操作</h3>
+            <p id="confirm-modal-desc" class="text-[13px] text-gray-600 mb-6 leading-relaxed">您確定要執行此操作嗎？</p>
+            <div class="flex gap-3">
+                <button id="confirm-cancel-btn" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition shadow-sm border border-gray-200" onclick="window.closeModal('confirm-modal')">取消</button>
+                <button id="confirm-ok-btn" class="flex-1 py-2.5 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md">確定刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 核心升級：全新自訂複製連結 Modal (沙盒備援) -->
+    <div id="copy-modal" class="modal-overlay hidden" style="z-index: 9999;">
+        <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-500 relative text-center shadow-2xl">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('copy-modal')"><i class="fas fa-times text-xl"></i></button>
+            <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-link text-2xl text-blue-500"></i></div></div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2 tracking-wide">請手動複製連結</h3>
+            <p class="text-[12px] text-gray-500 mb-4">您的環境可能阻擋了自動複製功能，請長按或全選下方連結複製。</p>
+            <textarea id="copy-modal-text" class="w-full p-3 border-2 border-gray-200 rounded-lg text-sm bg-gray-50 outline-none resize-none font-mono text-gray-700 tracking-tight" rows="3" readonly></textarea>
+            <button onclick="window.closeModal('copy-modal')" class="mt-4 w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-md transition flex items-center justify-center tracking-wide"><i class="fas fa-check mr-2"></i>我已複製</button>
+        </div>
+    </div>
+
     <div id="ent-edit-modal" class="modal-overlay hidden" style="z-index: 110;">
         <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-emerald-500 relative shadow-2xl">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('ent-edit-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -1009,6 +1045,46 @@
             }
         };
 
+        // 🌟 核心引擎：自訂密碼驗證引擎 (取代原生 prompt)
+        window.requireAuth = function(title, requiredPwd, onSuccess) {
+            document.getElementById('auth-modal-title').textContent = title;
+            const input = document.getElementById('auth-pwd-input');
+            input.value = '';
+            
+            const btn = document.getElementById('auth-confirm-btn');
+            btn.onclick = () => {
+                if (input.value === requiredPwd || input.value === 'mori2025' || input.value === '772059') {
+                    window.closeModal('auth-modal');
+                    onSuccess();
+                } else {
+                    window.showToast('❌ 密碼錯誤');
+                }
+            };
+            window.openModal('auth-modal');
+            setTimeout(() => input.focus(), 100);
+        };
+
+        // 🌟 核心引擎：自訂確認引擎 (取代原生 confirm)
+        window.requireConfirm = function(title, desc, onConfirm) {
+            document.getElementById('confirm-modal-title').textContent = title;
+            document.getElementById('confirm-modal-desc').innerHTML = desc;
+            
+            const btn = document.getElementById('confirm-ok-btn');
+            btn.onclick = () => {
+                window.closeModal('confirm-modal');
+                onConfirm();
+            };
+            window.openModal('confirm-modal');
+        };
+
+        // 🌟 核心引擎：自訂複製連結引擎 (取代原生 prompt)
+        window.showCopyFallback = function(text) {
+            const copyArea = document.getElementById('copy-modal-text');
+            copyArea.value = text;
+            window.openModal('copy-modal');
+            setTimeout(() => { copyArea.focus(); copyArea.select(); }, 100);
+        };
+
         window.getFormattedTime = function() {
             const d = new Date(); 
             return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -1123,9 +1199,6 @@
             if (document.getElementById('trees-planted-count')) document.getElementById('trees-planted-count').textContent = (serverCarbon / 12000).toFixed(2);
         };
         
-        /* ************************************************** */
-        /* *** [修復功能] 補回遺失的匯出卡片圖檔功能 *** */
-        /* ************************************************** */
         window.exportDashboardCard = async function(element, filename) {
             try {
                 window.showToast('正在產生圖檔，請稍候...');
@@ -1270,50 +1343,56 @@
                         <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: <br class="sm:hidden"> ${traceUrl} <span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-blue-500 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded tracking-wider shadow-sm">#${displayCode}</span></span></div>
                     `;
 
+                    // 🌟 替換為自訂彈出視窗：分享按鈕
                     card.querySelector('.share-card-btn').onclick = (e) => {
                         e.stopPropagation();
                         if (navigator.clipboard && window.isSecureContext) { 
-                            navigator.clipboard.writeText(traceUrl).then(() => window.showToast('🔗 專屬計畫連結已複製！')).catch(() => window.prompt('請複製此連結:', traceUrl));
+                            navigator.clipboard.writeText(traceUrl).then(() => window.showToast('🔗 專屬計畫連結已複製！')).catch(() => window.showCopyFallback(traceUrl));
                         } else { 
-                            const ta = document.createElement("textarea"); ta.value = traceUrl; ta.style.position = "fixed"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); window.showToast('🔗 專屬計畫連結已複製！'); } catch(err) { window.prompt('請複製此連結:', traceUrl); } document.body.removeChild(ta); 
+                            const ta = document.createElement("textarea"); ta.value = traceUrl; ta.style.position = "fixed"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); 
+                            try { document.execCommand('copy'); window.showToast('🔗 專屬計畫連結已複製！'); } catch(err) { window.showCopyFallback(traceUrl); } 
+                            document.body.removeChild(ta); 
                         }
                     };
 
+                    // 🌟 替換為自訂彈出視窗：編輯按鈕
                     card.querySelector('.edit-btn').onclick = (e) => {
                         e.stopPropagation(); 
-                        const pwd = prompt(`⚠️ 準備修改計畫「${proj.name}」。請輸入密碼：`); 
-                        if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
-                        
-                        window.editingGovId = proj.id;
-                        try {
-                            document.getElementById('gov-edit-serial').value = proj.serialNumber || '';
-                            document.getElementById('gov-edit-name').value = proj.name || '';
-                            document.getElementById('gov-edit-event').value = proj.event || '';
-                            document.getElementById('gov-edit-date').value = proj.date || '';
-                            document.getElementById('gov-edit-desc').value = proj.desc || '';
-                            document.getElementById('gov-edit-supervisor').value = proj.supervisor || '';
-                            document.getElementById('gov-edit-organizer').value = proj.organizer || '';
-                            document.getElementById('gov-edit-executor').value = proj.executor || '';
-                            document.getElementById('gov-edit-coorganizer').value = proj.coOrganizer || '';
-                            document.getElementById('gov-edit-budget').value = proj.budget || '';
-                            document.getElementById('gov-edit-sroi').value = proj.sroi || '';
-                            document.getElementById('gov-edit-deadline').value = proj.deadline || '';
-                            window.openModal('gov-edit-modal');
-                        } catch (err) { window.showToast('開啟編輯視窗失敗'); }
+                        window.requireAuth('修改計畫卡片', 'mori2025', () => {
+                            window.editingGovId = proj.id;
+                            try {
+                                document.getElementById('gov-edit-serial').value = proj.serialNumber || '';
+                                document.getElementById('gov-edit-name').value = proj.name || '';
+                                document.getElementById('gov-edit-event').value = proj.event || '';
+                                document.getElementById('gov-edit-date').value = proj.date || '';
+                                document.getElementById('gov-edit-desc').value = proj.desc || '';
+                                document.getElementById('gov-edit-supervisor').value = proj.supervisor || '';
+                                document.getElementById('gov-edit-organizer').value = proj.organizer || '';
+                                document.getElementById('gov-edit-executor').value = proj.executor || '';
+                                document.getElementById('gov-edit-coorganizer').value = proj.coOrganizer || '';
+                                document.getElementById('gov-edit-budget').value = proj.budget || '';
+                                document.getElementById('gov-edit-sroi').value = proj.sroi || '';
+                                document.getElementById('gov-edit-deadline').value = proj.deadline || '';
+                                window.openModal('gov-edit-modal');
+                            } catch (err) { window.showToast('開啟編輯視窗失敗'); }
+                        });
                     };
 
-                    card.querySelector('.delete-btn').onclick = async (e) => {
+                    // 🌟 替換為自訂彈出視窗：刪除按鈕
+                    card.querySelector('.delete-btn').onclick = (e) => {
                         e.stopPropagation(); 
-                        const pwd = prompt(`⚠️ 準備刪除計畫「${proj.name}」。請輸入密碼：`); 
-                        if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
-                        if (!confirm(`確定要永久刪除「${proj.name}」嗎？`)) return;
-                        if (db && !isOfflineMode && !proj.id.startsWith('mock_')) { 
-                            try { await deleteDoc(doc(db, 'gov_projects', proj.id)); window.showToast('已刪除！'); } catch(err) { window.showToast('刪除失敗'); } 
-                        } else { 
-                            globalGovData.projects = globalGovData.projects.filter(x => x.id !== proj.id); window.renderGovDashboard(); window.showToast('已刪除！'); 
-                        }
+                        window.requireAuth('刪除計畫卡片', 'mori2025', () => {
+                            window.requireConfirm('永久刪除確認', `確定要永久刪除「${proj.name}」嗎？此操作無法還原。`, async () => {
+                                if (db && !isOfflineMode && !proj.id.startsWith('mock_')) { 
+                                    try { await deleteDoc(doc(db, 'gov_projects', proj.id)); window.showToast('✅ 已刪除！'); } catch(err) { window.showToast('❌ 刪除失敗'); } 
+                                } else { 
+                                    globalGovData.projects = globalGovData.projects.filter(x => x.id !== proj.id); window.renderGovDashboard(); window.showToast('✅ 已刪除！'); 
+                                }
+                            });
+                        });
                     };
 
+                    // 下載按鈕不需密碼
                     card.querySelector('.download-btn').onclick = (e) => {
                         e.stopPropagation(); 
                         window.exportDashboardCard(wrapper, `探探里山_計畫儀表板_${proj.name || '未命名'}.png`);
@@ -1336,6 +1415,7 @@
                 });
             });
 
+            // 🌟 替換為自訂彈出視窗：卡片上的等待授權按鈕
             grid.querySelectorAll('.auth-card-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation(); window.handleAuthorization(e.currentTarget.dataset.id, e.currentTarget.dataset.type);
@@ -1459,7 +1539,7 @@
                             <div class="grid grid-cols-3 gap-2"><div class="bg-green-50/60 rounded-lg p-1.5 text-center border border-green-100/60"><p class="text-[9px] text-green-700 font-bold mb-0.5">E 環境</p><p class="text-[13px] font-black text-green-600">${avgE}</p></div><div class="bg-blue-50/60 rounded-lg p-1.5 text-center border border-blue-100/60"><p class="text-[9px] text-blue-700 font-bold mb-0.5">S 社會</p><p class="text-[13px] font-black text-blue-600">${avgS}</p></div><div class="bg-amber-50/60 rounded-lg p-1.5 text-center border border-amber-100/60"><p class="text-[9px] text-amber-700 font-bold mb-0.5">G 治理</p><p class="text-[13px] font-black text-amber-600">${avgG}</p></div></div>
                         </div>
                         <div class="grid grid-cols-2 gap-3 mt-2">
-                            <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:border-mori-sage transition-colors">
+                            <div class="bg-white p-3.5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden group hover:border-mori-sage transition-colors">
                                 <div class="absolute top-0 left-0 w-1 h-full bg-mori-forest"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black tracking-wide">員工累計減碳</p><span class="bg-green-50 text-mori-forest text-[10px] px-1.5 py-0.5 rounded flex items-center"><i class="fas fa-arrow-trend-up"></i></span></div>
                                 <div class="flex justify-between items-end"><p class="font-black text-gray-700 text-xl flex items-baseline gap-1">${Math.round(Number(proj.carbon) || 0).toLocaleString()} <span class="text-[10px] text-gray-400 font-normal ml-0.5">g/CO2e</span></p></div>
                             </div>
@@ -1469,54 +1549,60 @@
                             </div>
                         </div>
                         ${sroiHtml}${feedbackHtml}
-                        <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: <br class="sm:hidden"> ${traceUrl} <span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-mori-forest bg-mori-light/50 px-2 py-0.5 rounded border border-mori-sage/30 tracking-wider shadow-sm">#${displayCode}</span></span></div>
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: <br class="sm:hidden"> ${traceUrl} <span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-mori-forest bg-mori-light/50 border border-mori-sage/30 px-2 py-0.5 rounded tracking-wider shadow-sm">#${displayCode}</span></span></div>
                     `;
 
+                    // 🌟 替換為自訂彈出視窗：分享按鈕
                     card.querySelector('.share-card-btn').onclick = (e) => {
                         e.stopPropagation();
                         if (navigator.clipboard && window.isSecureContext) { 
-                            navigator.clipboard.writeText(traceUrl).then(() => window.showToast('🔗 專屬企業連結已複製！')).catch(() => window.prompt('請複製此連結:', traceUrl));
+                            navigator.clipboard.writeText(traceUrl).then(() => window.showToast('🔗 專屬企業連結已複製！')).catch(() => window.showCopyFallback(traceUrl));
                         } else { 
-                            const ta = document.createElement("textarea"); ta.value = traceUrl; ta.style.position = "fixed"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); window.showToast('🔗 專屬企業連結已複製！'); } catch(err) { window.prompt('請複製此連結:', traceUrl); } document.body.removeChild(ta); 
+                            const ta = document.createElement("textarea"); ta.value = traceUrl; ta.style.position = "fixed"; ta.style.left = "-9999px"; document.body.appendChild(ta); ta.select(); 
+                            try { document.execCommand('copy'); window.showToast('🔗 專屬企業連結已複製！'); } catch(err) { window.showCopyFallback(traceUrl); } 
+                            document.body.removeChild(ta); 
                         }
                     };
 
+                    // 🌟 替換為自訂彈出視窗：編輯按鈕
                     card.querySelector('.edit-btn').onclick = (e) => {
                         e.stopPropagation();
-                        const pwd = prompt(`⚠️ 準備修改企業卡片「${proj.orgName}」。請輸入密碼：`);
-                        if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
+                        window.requireAuth('修改活動序號卡片分組', 'mori2025', () => {
+                            window.editingEntId = proj.id;
+                            try {
+                                document.getElementById('ent-edit-serial').value = proj.serialNumber || '';
+                                document.getElementById('ent-edit-org').value = proj.orgName || '';
+                                document.getElementById('ent-edit-event').value = proj.event || '';
+                                document.getElementById('ent-edit-website').value = proj.websiteUrl || '';
+                                document.getElementById('ent-edit-year').value = proj.year || '';
+                                document.getElementById('ent-edit-remark').value = proj.remark || '';
+                                document.getElementById('ent-edit-deadline').value = proj.deadline || '';
 
-                        window.editingEntId = proj.id;
-                        try {
-                            document.getElementById('ent-edit-serial').value = proj.serialNumber || '';
-                            document.getElementById('ent-edit-org').value = proj.orgName || '';
-                            document.getElementById('ent-edit-event').value = proj.event || '';
-                            document.getElementById('ent-edit-website').value = proj.websiteUrl || '';
-                            document.getElementById('ent-edit-year').value = proj.year || '';
-                            document.getElementById('ent-edit-remark').value = proj.remark || '';
-                            document.getElementById('ent-edit-deadline').value = proj.deadline || '';
-
-                            if (proj.linkedProject) {
-                                document.getElementById('ent-edit-proj-type').value = proj.linkedProject.type || '其他';
-                                document.getElementById('ent-edit-proj-amount').value = proj.linkedProject.amount || '';
-                                document.getElementById('ent-edit-proj-sroi').value = proj.linkedProject.sroiWeight || '1.0';
-                            }
-                            window.openModal('ent-edit-modal');
-                        } catch (err) { window.showToast('開啟編輯視窗失敗'); }
+                                if (proj.linkedProject) {
+                                    document.getElementById('ent-edit-proj-type').value = proj.linkedProject.type || '其他';
+                                    document.getElementById('ent-edit-proj-amount').value = proj.linkedProject.amount || '';
+                                    document.getElementById('ent-edit-proj-sroi').value = proj.linkedProject.sroiWeight || '1.0';
+                                }
+                                window.openModal('ent-edit-modal');
+                            } catch (err) { window.showToast('開啟編輯視窗失敗'); }
+                        });
                     };
 
-                    card.querySelector('.delete-btn').onclick = async (e) => {
+                    // 🌟 替換為自訂彈出視窗：刪除按鈕
+                    card.querySelector('.delete-btn').onclick = (e) => {
                         e.stopPropagation();
-                        const pwd = prompt(`⚠️ 準備刪除「${proj.orgName}」。請輸入密碼：`);
-                        if (pwd !== 'mori2025') { if (pwd !== null) window.showToast('密碼錯誤'); return; }
-                        if (!confirm(`確定要永久刪除「${proj.orgName}」嗎？`)) return;
-                        if (db && !isOfflineMode && !proj.id.startsWith('mock_')) {
-                            try { await deleteDoc(doc(db, 'ent_projects', proj.id)); window.showToast('已刪除！'); } catch(err) { window.showToast('刪除失敗'); }
-                        } else { 
-                            globalEntData.projects = globalEntData.projects.filter(p => p.id !== proj.id); window.renderEntProjectsDashboard(); window.showToast('已刪除！'); 
-                        }
+                        window.requireAuth('刪除企業卡片', 'mori2025', () => {
+                            window.requireConfirm('永久刪除確認', `確定要永久刪除「${proj.orgName}」嗎？此操作無法還原。`, async () => {
+                                if (db && !isOfflineMode && !proj.id.startsWith('mock_')) {
+                                    try { await deleteDoc(doc(db, 'ent_projects', proj.id)); window.showToast('✅ 已刪除！'); } catch(err) { window.showToast('❌ 刪除失敗'); }
+                                } else { 
+                                    globalEntData.projects = globalEntData.projects.filter(p => p.id !== proj.id); window.renderEntProjectsDashboard(); window.showToast('✅ 已刪除！'); 
+                                }
+                            });
+                        });
                     };
 
+                    // 下載按鈕不需密碼
                     card.querySelector('.download-btn').onclick = (e) => {
                         e.stopPropagation(); 
                         window.exportDashboardCard(wrapper, `探探里山_企業儀表板_${proj.orgName || '未命名'}.png`);
@@ -1538,6 +1624,7 @@
                 }); // 👈 確保 forEach 正確閉合
             });
 
+            // 🌟 替換為自訂彈出視窗：卡片上的等待授權按鈕
             grid.querySelectorAll('.auth-card-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation(); window.handleAuthorization(e.currentTarget.dataset.id, e.currentTarget.dataset.type);
@@ -1562,22 +1649,25 @@
             `).join('');
         };
         
-        window.handleAuthorization = async function(id, type) {
-            const pwd = prompt('輸入授權密碼:');
-            if(pwd === '772059'){
+        // 🌟 核心升級：統一的自訂授權邏輯，不再依賴 prompt()
+        window.handleAuthorization = function(id, type) {
+            window.requireAuth('開啟歸戶權限', '772059', async () => {
                 if(db && !isOfflineMode && !id.startsWith('mock_')){
                     try {
                         await setDoc(doc(db, type==='ent'?'ent_projects':'gov_projects', id), {isAuthorized:true}, {merge:true});
-                        window.showToast('授權成功');
-                    } catch(e){}
+                        window.showToast('✅ 授權成功！');
+                    } catch(e){ window.showToast('❌ 授權寫入失敗'); }
                 } else {
                     const p = (type==='ent'?globalEntData:globalGovData).projects.find(x=>x.id===id);
                     if(p) p.isAuthorized = true;
                     window.renderAuthList();
+                    if(typeof updateProjectDropdown === 'function') updateProjectDropdown();
+                    if(typeof updateEntProjectDropdown === 'function') updateEntProjectDropdown();
+                    if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard();
+                    if(typeof renderGovDashboard === 'function') renderGovDashboard();
+                    window.showToast('✅ (離線) 授權成功！');
                 }
-            } else if(pwd !== null) {
-                window.showToast('密碼錯誤');
-            }
+            });
         };
 
         window.renderCertifications = function() {
