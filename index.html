@@ -3114,6 +3114,18 @@
                 const serialNum = document.getElementById('ent-create-serial')?.value.trim().toUpperCase() || '';
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
+                // 🌟 新增修復：歸戶權限密碼核可機制
+                let isAuth = false;
+                const pwd = prompt('🔒 是否立即為此新看板開啟「歸戶許可」？\n請輸入管理員密碼以核可 (若無密碼請直接按取消)：');
+                if (pwd === '772059') {
+                    isAuth = true;
+                    window.showToast('✅ 密碼正確，新看板將預設開啟歸戶權限！');
+                } else if (pwd !== null && pwd.trim() !== '') {
+                    window.showToast('❌ 密碼錯誤，將以「等待授權」狀態建立看板。');
+                } else {
+                    window.showToast('ℹ️ 將以「等待授權」狀態建立看板，稍後可於管理面板開啟。');
+                }
+
                 const newProj = {
                     serialNumber: serialNum, // 🚀 寫入活動序號
                     orgName: org, event: event, year: document.getElementById('ent-create-year').value.trim() || new Date().getFullYear().toString(),
@@ -3125,7 +3137,7 @@
                         sroiWeight: parseFloat(document.getElementById('ent-create-proj-sroi').value) || 1.0
                     },
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, feedbacks: [],
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true, cardCode: newCardCode
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: isAuth, cardCode: newCardCode
                 };
 
                 if (db && !isOfflineMode) {
@@ -3285,6 +3297,18 @@
                 const serialNum = document.getElementById('host-proj-serial')?.value.trim().toUpperCase() || '';
                 const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
 
+                // 🌟 新增修復：歸戶權限密碼核可機制
+                let isAuth = false;
+                const pwd = prompt('🔒 是否立即為此新看板開啟「歸戶許可」？\n請輸入管理員密碼以核可 (若無密碼請直接按取消)：');
+                if (pwd === '772059') {
+                    isAuth = true;
+                    window.showToast('✅ 密碼正確，新看板將預設開啟歸戶權限！');
+                } else if (pwd !== null && pwd.trim() !== '') {
+                    window.showToast('❌ 密碼錯誤，將以「等待授權」狀態建立看板。');
+                } else {
+                    window.showToast('ℹ️ 將以「等待授權」狀態建立看板，稍後可於管理面板開啟。');
+                }
+
                 const newProj = {
                     serialNumber: serialNum, // 🚀 寫入活動序號
                     name: name, event: eventInput ? eventInput.value.trim() : '', date: document.getElementById('host-proj-date')?.value || '',
@@ -3293,7 +3317,7 @@
                     coOrganizer: document.getElementById('host-proj-coorganizer')?.value.trim() || '', budget: parseFloat(document.getElementById('host-proj-budget')?.value) || 0,
                     sroi: parseFloat(document.getElementById('host-proj-sroi')?.value) || 1.0, deadline: document.getElementById('host-proj-deadline')?.value || null,
                     carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [],
-                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: true, cardCode: newCardCode
+                    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: isAuth, cardCode: newCardCode
                 };
 
                 if (db && !isOfflineMode) {
