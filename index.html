@@ -1595,7 +1595,8 @@
         function loadLocalData() {
             try { const raw = localStorage.getItem(LOCAL_STORAGE_KEY); if(raw) { state = { ...state, ...JSON.parse(raw) }; } } catch(e) { }
             state.greenProcure = state.greenProcure || 0; state.sroiProcure = state.sroiProcure || 0; state.projectProcure = state.projectProcure || 0;
-            state.totalCarbon = state.totalCarbon || 0; state.totalScore = state.totalScore || 0; state.activityLogs = state.activityLogs || []; state.checkoutHistory = state.checkoutHistory || [];
+            // 🚀 核心升級：初始化防呆，加入 lotteryTickets 用來永久記憶抽獎序號
+            state.totalCarbon = state.totalCarbon || 0; state.totalScore = state.totalScore || 0; state.activityLogs = state.activityLogs || []; state.checkoutHistory = state.checkoutHistory || []; state.lotteryTickets = state.lotteryTickets || [];
             if (!state.playerCode) state.playerCode = Math.random().toString(36).substring(2, 7).toUpperCase();
             if(document.getElementById('player-name')) document.getElementById('player-name').value = state.playerName || '';
             if(document.getElementById('player-code')) document.getElementById('player-code').textContent = state.playerCode;
@@ -3074,7 +3075,8 @@
             // 👇 補回：下載空白重置檔邏輯
             document.getElementById('download-blank-btn')?.addEventListener('click', () => {
                 try {
-                    const blankState = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], currentTransport: null };
+                    // 🚀 核心升級：空白檔支援 lotteryTickets 陣列清空
+                    const blankState = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], currentTransport: null };
                     const dataStr = JSON.stringify(blankState, null, 2);
                     const blob = new Blob([dataStr], { type: "application/json" });
                     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
@@ -3746,6 +3748,55 @@
                 let attributionHtml = '';
                 if (attributionTarget) { attributionHtml = `<div class="mt-4 bg-[#F0FDF4] p-4 rounded-xl border-2 border-[#86EFAC] block shadow-sm"><p class="text-[13px] font-bold text-[#166534] mb-1"><i class="fas fa-check-circle mr-1.5 text-[#059669]"></i>本次行動數據已正式貢獻歸戶至：</p><p class="text-xl font-black text-[#14532D] tracking-wide">${attributionTarget}</p></div>`; }
 
+                // 🚀 核心升級：動態抽獎序號演算引擎 (每 100 積分 = 1 張抽獎卷)
+                state.lotteryTickets = state.lotteryTickets || [];
+                const expectedTickets = Math.floor(score / 100);
+                
+                // 如果應得的張數大於目前記錄的張數，則自動發配新的專屬序號
+                if (state.lotteryTickets.length < expectedTickets) {
+                    const today = new Date();
+                    const dateStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+                    const deadlineStr = `${today.getFullYear()}/12/31`; // 預設年底截止
+
+                    for(let i = state.lotteryTickets.length; i < expectedTickets; i++) {
+                        // 產生高熵抽獎序號 (例如: A01 + 10碼亂數 + A + 3碼亂數 = A01001000100A001)
+                        const randomDigits = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
+                        const randomEnd = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                        const serial = `A01${randomDigits}A${randomEnd}`;
+                        state.lotteryTickets.push({ serial, date: dateStr, deadline: deadlineStr });
+                    }
+                    saveData(); // 永久保存序號，保證下載不變
+                }
+
+                let lotteryHtml = '';
+                if (state.lotteryTickets.length > 0) {
+                    const ticketsCount = state.lotteryTickets.length;
+                    const latestTicket = state.lotteryTickets[ticketsCount - 1]; // 抓取最後一次兌換的日期
+                    
+                    const ticketsListHtml = state.lotteryTickets.map(t => `
+                        <div class="bg-white px-3 py-2 rounded-lg border border-orange-200 shadow-sm flex items-center justify-between">
+                            <span class="text-[12px] font-bold text-orange-800 flex items-center"><i class="fas fa-ticket-alt mr-1.5 text-orange-400"></i>序號</span>
+                            <span class="text-[14px] font-mono font-black text-orange-600 tracking-widest">${t.serial}</span>
+                        </div>
+                    `).join('');
+
+                    lotteryHtml = `
+                    <div class="mt-5 mb-5 bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-2xl border-2 border-orange-300 shadow-md relative overflow-hidden">
+                        <i class="fas fa-gift absolute -right-4 -bottom-4 text-7xl text-orange-500/10 data-html2canvas-ignore"></i>
+                        <div class="relative z-10">
+                            <h4 class="text-[15px] font-black text-orange-800 mb-2 flex items-center"><i class="fas fa-award mr-2 text-orange-500"></i>探探里山 永續行動抽獎憑證</h4>
+                            <p class="text-[13px] text-orange-700 font-bold mb-3 tracking-wide">歸戶永續積分 <span class="text-orange-600 text-[16px] mx-1">${score}</span> pts = <span class="text-orange-600 text-[16px] mx-1">${ticketsCount}</span> 張 抽獎卷</p>
+                            <div class="mb-3 space-y-2 pr-1">
+                                ${ticketsListHtml}
+                            </div>
+                            <div class="flex justify-between text-[11px] text-orange-700 font-bold border-t border-orange-200/80 pt-3 mt-1">
+                                <span>兌換日期：${latestTicket.date}</span>
+                                <span>活動截止日：${latestTicket.deadline}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
                 const tempContainer = document.createElement('div');
                 tempContainer.style.cssText = 'position: fixed; top: 0px; left: 0px; width: 800px; z-index: -9999; padding: 32px; background-color: #F7F4EF; pointer-events: none; font-family: "Noto Sans TC", sans-serif;';
                 tempContainer.innerHTML = `
@@ -3760,6 +3811,7 @@
                                 <p class="text-lg text-gray-700 flex items-baseline"><span>茲證明 旅者：</span><span class="text-2xl font-bold text-mori-forest border-b-2 border-mori-forest pb-1 px-3 mx-2">${name}</span><span>(代碼：<span class="font-mono text-mori-wood">${code}</span>)</span></p>
                                 <p class="text-sm text-gray-600 mt-3 leading-relaxed">在本次探探里山永續旅遊中，積極實踐低碳與綠色消費，達成以下卓越成就，特頒此證以資鼓勵。</p>${attributionHtml}
                             </div>
+                            ${lotteryHtml}
                             <div class="grid grid-cols-4 gap-2 mb-6 text-center bg-[#F0F7F4] p-4 rounded-xl border border-mori-light">
                                 <div><p class="text-[11px] text-gray-500 mb-1">🌱 累積里程</p><p class="text-lg font-bold text-mori-forest">${mileage} <span class="text-[10px]">km</span></p></div>
                                 <div><p class="text-[11px] text-gray-500 mb-1">🌳 減碳總量</p><p class="text-lg font-bold text-mori-forest">${carbon} <span class="text-[10px]">g</span></p></div>
