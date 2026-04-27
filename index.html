@@ -2233,20 +2233,20 @@
             });
         }
 
-        // 👇 核心救援 2：補回遺失的「政府計畫下拉選單更新引擎」
+        /* 👇 核心救援 2：補回遺失的「政府計畫下拉選單更新引擎」 */
         function updateProjectDropdown() {
             const select = document.getElementById('user-proj-select');
             if(select) {
                 select.innerHTML = '<option value="">-- 請選擇參與計畫 --</option>' + globalGovData.projects.map(p => {
                     const isExpired = p.deadline && new Date() > new Date(p.deadline);
-                    // 🚀 核心優化：燈號狀態升級，若已截止則強制顯示紅燈
-                    const statusIndicator = !p.isAuthorized ? '🔴 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 ');
+                    /* 🚀 視覺優化：等待授權改為黃燈 🟡，已截止維持紅燈 🔴 */
+                    const statusIndicator = !p.isAuthorized ? '🟡 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 ');
                     return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${statusIndicator}${p.name} ${isExpired ? '(已截止)' : ''}</option>`;
                 }).join('');
             }
         }
         
-        // 👇 核心救援 3：補回遺失的「企業下拉選單更新引擎」
+        /* 👇 核心救援 3：補回遺失的「企業下拉選單更新引擎」 */
         function updateEntProjectDropdown() {
             const select = document.getElementById('ent-proj-select');
             if(select) {
@@ -2261,8 +2261,8 @@
                 }
                 select.innerHTML = '<option value="">-- 選擇企業 --</option>' + displayProjects.map(p => {
                     const isExpired = p.deadline && new Date() > new Date(p.deadline);
-                    // 🚀 核心優化：燈號狀態升級，若已截止則強制顯示紅燈
-                    const statusIndicator = !p.isAuthorized ? '🔴 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 ');
+                    /* 🚀 視覺優化：等待授權改為黃燈 🟡，已截止維持紅燈 🔴 */
+                    const statusIndicator = !p.isAuthorized ? '🟡 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 ');
                     return `<option value="${p.id}" ${isExpired ? 'disabled' : ''}>${statusIndicator}${p.orgName} ${isExpired ? '(已截止)' : ''}</option>`;
                 }).join('');
             }
