@@ -787,13 +787,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- 🚀 核心升級：新增企業專屬的「我的抽獎憑證」展示區 -->
-            <div class="mt-2 bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-2xl border border-orange-200 shadow-inner relative overflow-hidden">
-                <i class="fas fa-gift absolute -right-4 -bottom-4 text-7xl text-orange-500/10"></i>
-                <h4 class="font-black text-orange-800 mb-4 border-b border-orange-200/60 pb-2 flex items-center relative z-10"><i class="fas fa-ticket-alt mr-2 text-orange-500 animate-pulse"></i>我的永續行動抽獎憑證 <span class="ml-2 text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md border border-orange-200">每滿 100 積分自動兌換 1 張</span></h4>
-                <div id="ent-lottery-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-56 overflow-y-auto custom-scrollbar relative z-10 pr-1"></div>
-            </div>
         </div>
     </div>
 
@@ -865,13 +858,6 @@
                         <button id="create-proj-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm shadow transition hover:bg-blue-700">建立新儀表板</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- 🚀 核心升級：新增政府專屬的「我的抽獎憑證」展示區 -->
-            <div class="mt-2 bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-2xl border border-orange-200 shadow-inner relative overflow-hidden">
-                <i class="fas fa-gift absolute -right-4 -bottom-4 text-7xl text-orange-500/10"></i>
-                <h4 class="font-black text-orange-800 mb-4 border-b border-orange-200/60 pb-2 flex items-center relative z-10"><i class="fas fa-ticket-alt mr-2 text-orange-500 animate-pulse"></i>我的永續行動抽獎憑證 <span class="ml-2 text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md border border-orange-200">每滿 100 積分自動兌換 1 張</span></h4>
-                <div id="gov-lottery-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-56 overflow-y-auto custom-scrollbar relative z-10 pr-1"></div>
             </div>
         </div>
     </div>
@@ -1623,54 +1609,6 @@
             updateDisplays(); saveData();
         }
 
-        // 🚀 核心升級：獨立的「抽獎憑證配發與渲染引擎」
-        function updateLotteryTickets() {
-            state.lotteryTickets = state.lotteryTickets || [];
-            const expectedTickets = Math.floor((state.totalScore || 0) / 100);
-            let hasNewTicket = false;
-            
-            // 演算邏輯：若應得張數大於目前張數，自動配發新序號
-            if (state.lotteryTickets.length < expectedTickets) {
-                const today = new Date();
-                const dateStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
-                const deadlineStr = `${today.getFullYear()}/12/31`;
-
-                for(let i = state.lotteryTickets.length; i < expectedTickets; i++) {
-                    const randomDigits = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
-                    const randomEnd = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-                    const serial = `A01${randomDigits}A${randomEnd}`;
-                    state.lotteryTickets.push({ serial, date: dateStr, deadline: deadlineStr });
-                    hasNewTicket = true;
-                }
-            }
-            if (hasNewTicket) saveData(); // 若有新序號產生，立刻永久存檔防遺失
-            
-            // 渲染至兩大儀表板底部
-            const entList = document.getElementById('ent-lottery-list');
-            const govList = document.getElementById('gov-lottery-list');
-            const tickets = state.lotteryTickets || [];
-
-            let html = '';
-            if (tickets.length === 0) {
-                html = '<div class="col-span-full py-8 text-center text-orange-600/60 text-sm border-2 border-dashed border-orange-300/50 rounded-xl font-bold bg-white/50"><i class="fas fa-box-open mb-2 text-3xl opacity-40 block"></i>尚無兌換紀錄<br><span class="text-xs opacity-70 mt-1 inline-block">永續積分達 100 pts 即可自動解鎖第一張憑證</span></div>';
-            } else {
-                html = tickets.map((t, idx) => `
-                    <div class="bg-white p-4 rounded-xl border border-orange-300 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-orange-400 hover:shadow-md transition-all">
-                        <div class="absolute -right-3 -bottom-3 text-6xl text-orange-500/5 group-hover:scale-110 transition-transform"><i class="fas fa-gift"></i></div>
-                        <div class="flex justify-between items-start mb-2.5 relative z-10">
-                            <span class="text-[11px] font-black text-white bg-gradient-to-r from-orange-400 to-orange-500 px-2 py-0.5 rounded shadow-sm tracking-wider">TICKET #${idx + 1}</span>
-                            <span class="text-[10px] text-orange-600 font-mono font-bold bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100"><i class="far fa-calendar-check mr-1"></i>${t.date}</span>
-                        </div>
-                        <p class="text-[16px] font-black text-orange-600 font-mono tracking-widest text-center my-1.5 relative z-10 select-all border-y border-dashed border-orange-100 py-2">${t.serial}</p>
-                        <p class="text-[10px] text-orange-400/90 font-bold text-right mt-1 relative z-10"><i class="fas fa-hourglass-end mr-1"></i>活動截止日: ${t.deadline}</p>
-                    </div>
-                `).join('');
-            }
-
-            if (entList) entList.innerHTML = html;
-            if (govList) govList.innerHTML = html;
-        }
-
         function updateDisplays() {
             if(document.getElementById('display-mileage')) document.getElementById('display-mileage').textContent = ((state.totalMileage || 0) / 1000).toFixed(1);
             if(document.getElementById('display-carbon')) document.getElementById('display-carbon').textContent = (state.totalCarbon || 0).toFixed(0);
@@ -1688,9 +1626,6 @@
             if (typeof window.syncToGame === 'function') {
                 window.syncToGame({ name: state.playerName, code: state.playerCode });
             }
-            
-            // 🚀 核心升級：確保畫面上任何分數變動時，皆自動檢查並渲染最新抽獎憑證
-            updateLotteryTickets();
         }
         
         /**
@@ -3813,13 +3748,30 @@
                 let attributionHtml = '';
                 if (attributionTarget) { attributionHtml = `<div class="mt-4 bg-[#F0FDF4] p-4 rounded-xl border-2 border-[#86EFAC] block shadow-sm"><p class="text-[13px] font-bold text-[#166534] mb-1"><i class="fas fa-check-circle mr-1.5 text-[#059669]"></i>本次行動數據已正式貢獻歸戶至：</p><p class="text-xl font-black text-[#14532D] tracking-wide">${attributionTarget}</p></div>`; }
 
-                // 🚀 核心升級：直接抓取已經由全域系統演算好的抽獎序號庫，進行證書渲染
+                // 🚀 核心升級：動態抽獎序號演算引擎 (每 100 積分 = 1 張抽獎卷)
                 state.lotteryTickets = state.lotteryTickets || [];
+                const expectedTickets = Math.floor(score / 100);
                 
+                // 如果應得的張數大於目前記錄的張數，則自動發配新的專屬序號
+                if (state.lotteryTickets.length < expectedTickets) {
+                    const today = new Date();
+                    const dateStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+                    const deadlineStr = `${today.getFullYear()}/12/31`; // 預設年底截止
+
+                    for(let i = state.lotteryTickets.length; i < expectedTickets; i++) {
+                        // 產生高熵抽獎序號 (例如: A01 + 10碼亂數 + A + 3碼亂數 = A01001000100A001)
+                        const randomDigits = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');
+                        const randomEnd = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                        const serial = `A01${randomDigits}A${randomEnd}`;
+                        state.lotteryTickets.push({ serial, date: dateStr, deadline: deadlineStr });
+                    }
+                    saveData(); // 永久保存序號，保證下載不變
+                }
+
                 let lotteryHtml = '';
                 if (state.lotteryTickets.length > 0) {
                     const ticketsCount = state.lotteryTickets.length;
-                    const latestTicket = state.lotteryTickets[ticketsCount - 1]; 
+                    const latestTicket = state.lotteryTickets[ticketsCount - 1]; // 抓取最後一次兌換的日期
                     
                     const ticketsListHtml = state.lotteryTickets.map(t => `
                         <div class="bg-white px-3 py-2 rounded-lg border border-orange-200 shadow-sm flex items-center justify-between">
@@ -3833,12 +3785,12 @@
                         <i class="fas fa-gift absolute -right-4 -bottom-4 text-7xl text-orange-500/10 data-html2canvas-ignore"></i>
                         <div class="relative z-10">
                             <h4 class="text-[15px] font-black text-orange-800 mb-2 flex items-center"><i class="fas fa-award mr-2 text-orange-500"></i>探探里山 永續行動抽獎憑證</h4>
-                            <p class="text-[13px] text-orange-700 font-bold mb-3 tracking-wide">歸戶永續總積分 <span class="text-orange-600 text-[16px] mx-1">${score}</span> pts = 累計 <span class="text-orange-600 text-[16px] mx-1">${ticketsCount}</span> 張 抽獎卷</p>
+                            <p class="text-[13px] text-orange-700 font-bold mb-3 tracking-wide">歸戶永續積分 <span class="text-orange-600 text-[16px] mx-1">${score}</span> pts = <span class="text-orange-600 text-[16px] mx-1">${ticketsCount}</span> 張 抽獎卷</p>
                             <div class="mb-3 space-y-2 pr-1">
                                 ${ticketsListHtml}
                             </div>
                             <div class="flex justify-between text-[11px] text-orange-700 font-bold border-t border-orange-200/80 pt-3 mt-1">
-                                <span>最新兌換日期：${latestTicket.date}</span>
+                                <span>兌換日期：${latestTicket.date}</span>
                                 <span>活動截止日：${latestTicket.deadline}</span>
                             </div>
                         </div>
