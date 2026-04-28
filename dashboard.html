@@ -1415,17 +1415,29 @@
             `;
 
             try {
-                // 🛡️ 核心修復：移除 setTimeout 延遲，改用 offsetHeight 強制瀏覽器立刻重繪，避免被瀏覽器的「非使用者操作」安全機制阻擋
-                container.offsetHeight; 
+                // 🛡️ 核心修復：先將畫面渲染成圖片，並彈出專屬視窗讓使用者實體點擊下載，完美繞過瀏覽器的非同步安全阻擋
+                await new Promise(r => setTimeout(r, 100)); // 確保 DOM 渲染完畢
                 const canvas = await html2canvas(container.firstElementChild, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
-                const link = document.createElement('a'); 
-                link.download = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; 
-                link.href = canvas.toDataURL('image/png'); 
-                link.click(); 
-                window.showToast('✅ 證書自動下載成功！');
+                const imgDataUrl = canvas.toDataURL('image/png'); 
+                
+                // 1. 將圖片推入預覽 Modal
+                document.getElementById('cert-preview-img').src = imgDataUrl;
+                window.openModal('cert-preview-modal');
+                
+                // 2. 綁定實體按鈕下載動作 (使用者親自點擊，保證 100% 成功)
+                const dlBtn = document.getElementById('download-cert-btn');
+                dlBtn.onclick = () => {
+                    const link = document.createElement('a'); 
+                    link.download = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; 
+                    link.href = imgDataUrl; 
+                    link.click(); 
+                    window.showToast('✅ 證書下載成功！');
+                };
+                
+                window.showToast('✅ 證書產出完成！');
             } catch(err) { 
                 console.error('Certificate Generation Error:', err); 
-                window.showToast('❌ 證書自動產出失敗'); 
+                window.showToast('❌ 證書產出失敗'); 
             }
         };
 
