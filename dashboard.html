@@ -1398,13 +1398,49 @@
         // ==========================================
         window.autoDownloadCert = async function(targetState) {
             window.showToast('🔄 歸戶完成！正在為您自動產出永續證書...');
-            const container = document.getElementById('certificate-dom-container');
-            if (!container) return;
+            
+            // 🛡️ 終極防呆 1：動態生成 Modal，保證 UI 視窗絕對不會遺失
+            let modal = document.getElementById('cert-preview-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'cert-preview-modal';
+                modal.className = 'modal-overlay hidden';
+                modal.style.zIndex = '9999';
+                modal.innerHTML = `
+                    <div class="modal-content max-w-lg p-6 bg-white border-t-4 border-mori-forest rounded-2xl shadow-2xl relative">
+                        <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('cert-preview-modal')"><i class="fas fa-times text-xl"></i></button>
+                        <h3 class="text-xl font-bold text-gray-800 mb-4 text-center"><i class="fas fa-award text-yellow-500 mr-2"></i>歸戶成功！您的永續證書</h3>
+                        <div class="bg-gray-50 p-2 rounded-xl shadow-inner max-h-[60vh] overflow-y-auto no-scrollbar flex justify-center items-center relative min-h-[200px]">
+                            <div id="cert-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/90 z-10 rounded-xl">
+                                <i class="fas fa-spinner fa-spin text-3xl text-mori-sage mb-3"></i>
+                                <span class="text-sm font-bold text-gray-500">系統正在繪製專屬證書...</span>
+                            </div>
+                            <img id="cert-preview-img" src="" alt="永續證書" class="w-full h-auto rounded shadow-sm opacity-0 transition-opacity duration-500">
+                        </div>
+                        <div class="mt-4 flex flex-col md:flex-row justify-between items-center gap-3">
+                            <p class="text-[11px] text-gray-500 hidden md:block"><i class="fas fa-info-circle mr-1"></i>手機用戶可直接長按圖片儲存</p>
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <button class="flex-1 md:flex-none px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-200 transition" onclick="window.closeModal('cert-preview-modal')">關閉</button>
+                                <button id="download-cert-btn" disabled class="flex-1 md:flex-none px-5 py-2.5 bg-gray-300 text-gray-500 rounded-lg text-sm font-bold shadow-sm cursor-not-allowed flex items-center justify-center transition-all"><i class="fas fa-spinner fa-spin mr-2"></i> 繪製中...</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            // 🛡️ 終極防呆 2：動態生成繪圖容器，保證絕對找得到 DOM 畫板
+            let container = document.getElementById('certificate-dom-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'certificate-dom-container';
+                container.className = 'p-8 w-[800px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans';
+                document.body.appendChild(container);
+            }
 
             const d = new Date();
             const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
             
-            // 🛡️ 防呆強化：確保紀錄陣列存在且格式正確，防止當機
             const safeLogs = Array.isArray(targetState.activityLogs) ? targetState.activityLogs : [];
             const recentLogs = safeLogs.slice(0, 5).map(l => {
                 const timeStr = (l.time && l.time.split(' ')[0]) ? l.time.split(' ')[0] : dateStr;
@@ -1432,7 +1468,7 @@
                 </div>
             `;
 
-            // 🌟 核心防呆升級：立刻彈出 Modal 顯示「繪製中」，解決「看起來沒反應」的錯覺
+            // UI 狀態初始化
             const previewImg = document.getElementById('cert-preview-img');
             const dlBtn = document.getElementById('download-cert-btn');
             const loadingOverlay = document.getElementById('cert-loading');
@@ -1441,10 +1477,11 @@
             if (dlBtn) { dlBtn.disabled = true; dlBtn.className = 'flex-1 md:flex-none px-5 py-2.5 bg-gray-300 text-gray-500 rounded-lg text-sm font-bold shadow-sm cursor-not-allowed flex items-center justify-center transition-all'; dlBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 繪製中...'; }
             if (loadingOverlay) loadingOverlay.classList.remove('hidden');
             
+            // 立刻彈出預覽視窗，消除沒反應的錯覺
             window.openModal('cert-preview-modal');
 
             try {
-                // 強制將 DOM 定位在畫面上方但不可見處，防止因 viewport 外或壓縮導致 html2canvas 卡死
+                // 強制將 DOM 定位在畫面上方但不可見處，防止因 viewport 外導致 html2canvas 卡死
                 container.style.position = 'fixed';
                 container.style.top = '0';
                 container.style.left = '0';
@@ -1452,25 +1489,27 @@
                 container.style.opacity = '1';
                 container.style.display = 'block';
                 
-                await new Promise(r => setTimeout(r, 400)); // 給予充分時間讓字型與 DOM 重繪
+                await new Promise(r => setTimeout(r, 400)); // 給予時間讓字型重繪
                 
-                const canvas = await html2canvas(container.firstElementChild, { 
-                    scale: 2, 
-                    backgroundColor: null, 
-                    logging: false, 
-                    useCORS: true,
-                    allowTaint: true
+                // 執行繪製，並加入 6 秒逾時保護防卡死
+                const canvasPromise = html2canvas(container.firstElementChild, { 
+                    scale: 2, backgroundColor: null, logging: false, useCORS: true, allowTaint: true 
                 });
+                
+                const canvas = await Promise.race([
+                    canvasPromise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('繪製超時')), 6000))
+                ]);
                 
                 const imgDataUrl = canvas.toDataURL('image/png'); 
                 
+                // 替換影像並解鎖下載按鈕
                 if (previewImg) { 
                     previewImg.src = imgDataUrl; 
                     previewImg.onload = () => { previewImg.style.opacity = '1'; };
                 }
                 if (loadingOverlay) loadingOverlay.classList.add('hidden');
                 
-                // 綁定實體下載按鈕，讓使用者自己點擊，保證繞過瀏覽器封鎖
                 if (dlBtn) {
                     dlBtn.disabled = false;
                     dlBtn.className = 'flex-1 md:flex-none px-5 py-2.5 bg-gradient-to-r from-mori-sage to-mori-forest text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center';
@@ -1484,13 +1523,12 @@
                     };
                 }
                 
-                // 復原 container 狀態，避免干擾版面
+                // 復原 DOM 位置避免干擾版面
                 container.style.zIndex = '0';
                 container.style.left = '-9999px';
             } catch(err) { 
                 console.error('Certificate Generation Error:', err); 
-                if (loadingOverlay) loadingOverlay.innerHTML = '<div class="text-red-500 font-bold flex flex-col items-center"><i class="fas fa-exclamation-triangle text-3xl mb-2"></i><span>產出失敗，請重試</span></div>';
-                window.showToast('❌ 證書產出失敗', true);
+                if (loadingOverlay) loadingOverlay.innerHTML = '<div class="text-red-500 font-bold flex flex-col items-center text-center p-4"><i class="fas fa-exclamation-triangle text-3xl mb-2"></i><span>產圖超時或受阻<br><span class="text-xs text-gray-500 font-normal">您的歸戶已成功寫入雲端</span></span></div>';
             }
         };
 
