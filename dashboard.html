@@ -301,6 +301,24 @@
     <!-- 總承預覽 Modal -->
     <div id="summary-preview-modal" class="modal-overlay hidden"><div class="modal-content max-w-lg p-6 bg-white border-t-4 border-yellow-500 rounded-2xl shadow-2xl relative"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('summary-preview-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-xl font-bold text-gray-800 mb-4 text-center"><i class="fas fa-gem text-yellow-500 mr-2"></i>總承結算卡片預覽</h3><div class="bg-gray-50 p-4 rounded-xl shadow-inner max-h-[60vh] overflow-y-auto no-scrollbar flex justify-center items-start"><div id="summary-card-container" class="w-full max-w-[400px]"></div></div><div class="mt-4 flex justify-end gap-3"><button class="px-5 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-200 transition" onclick="window.closeModal('summary-preview-modal')">關閉</button><button id="download-summary-btn" class="px-5 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center"><i class="fas fa-download mr-2"></i> 匯出圖檔</button></div></div></div>
     
+    <!-- 🌟 新增：證書預覽與下載 Modal (突破瀏覽器阻擋機制) -->
+    <div id="cert-preview-modal" class="modal-overlay hidden" style="z-index: 9999;">
+        <div class="modal-content max-w-lg p-6 bg-white border-t-4 border-mori-forest rounded-2xl shadow-2xl relative">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('cert-preview-modal')"><i class="fas fa-times text-xl"></i></button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center"><i class="fas fa-award text-yellow-500 mr-2"></i>歸戶成功！您的永續證書</h3>
+            <div class="bg-gray-50 p-2 rounded-xl shadow-inner max-h-[60vh] overflow-y-auto no-scrollbar flex justify-center items-center">
+                <img id="cert-preview-img" src="" alt="永續證書" class="w-full h-auto rounded shadow-sm">
+            </div>
+            <div class="mt-4 flex flex-col md:flex-row justify-between items-center gap-3">
+                <p class="text-[11px] text-gray-500 hidden md:block"><i class="fas fa-info-circle mr-1"></i>手機用戶可直接長按圖片儲存</p>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button class="flex-1 md:flex-none px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-200 transition" onclick="window.closeModal('cert-preview-modal')">關閉</button>
+                    <button id="download-cert-btn" class="flex-1 md:flex-none px-5 py-2.5 bg-gradient-to-r from-mori-sage to-mori-forest text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center"><i class="fas fa-download mr-2"></i> 儲存證書檔</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 🌟 企業編輯 Modal (補齊起訖日期與 SROI 欄位) -->
     <div id="ent-edit-modal" class="modal-overlay hidden" style="z-index: 110;">
         <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-emerald-500 relative shadow-2xl">
@@ -1415,24 +1433,27 @@
             `;
 
             try {
-                // 🛡️ 核心修復：先將畫面渲染成圖片，並彈出專屬視窗讓使用者實體點擊下載，完美繞過瀏覽器的非同步安全阻擋
-                await new Promise(r => setTimeout(r, 100)); // 確保 DOM 渲染完畢
+                // 🛡️ 核心修復：渲染為圖片並推入預覽 Modal，讓使用者主動點擊下載，突破瀏覽器安全阻擋
+                await new Promise(r => setTimeout(r, 100)); // 短暫等待 DOM 就緒
                 const canvas = await html2canvas(container.firstElementChild, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
                 const imgDataUrl = canvas.toDataURL('image/png'); 
                 
                 // 1. 將圖片推入預覽 Modal
-                document.getElementById('cert-preview-img').src = imgDataUrl;
+                const previewImg = document.getElementById('cert-preview-img');
+                if (previewImg) previewImg.src = imgDataUrl;
                 window.openModal('cert-preview-modal');
                 
                 // 2. 綁定實體按鈕下載動作 (使用者親自點擊，保證 100% 成功)
                 const dlBtn = document.getElementById('download-cert-btn');
-                dlBtn.onclick = () => {
-                    const link = document.createElement('a'); 
-                    link.download = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; 
-                    link.href = imgDataUrl; 
-                    link.click(); 
-                    window.showToast('✅ 證書下載成功！');
-                };
+                if (dlBtn) {
+                    dlBtn.onclick = () => {
+                        const link = document.createElement('a'); 
+                        link.download = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; 
+                        link.href = imgDataUrl; 
+                        link.click(); 
+                        window.showToast('✅ 證書下載成功！');
+                    };
+                }
                 
                 window.showToast('✅ 證書產出完成！');
             } catch(err) { 
