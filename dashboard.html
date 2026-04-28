@@ -1432,20 +1432,49 @@
                 </div>
             `;
 
+            // 🌟 核心防呆升級：立刻彈出 Modal 顯示「繪製中」，解決「看起來沒反應」的錯覺
+            const previewImg = document.getElementById('cert-preview-img');
+            const dlBtn = document.getElementById('download-cert-btn');
+            const loadingOverlay = document.getElementById('cert-loading');
+            
+            if (previewImg) { previewImg.style.opacity = '0'; previewImg.src = ''; }
+            if (dlBtn) { dlBtn.disabled = true; dlBtn.className = 'flex-1 md:flex-none px-5 py-2.5 bg-gray-300 text-gray-500 rounded-lg text-sm font-bold shadow-sm cursor-not-allowed flex items-center justify-center transition-all'; dlBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 繪製中...'; }
+            if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+            
+            window.openModal('cert-preview-modal');
+
             try {
-                // 🛡️ 核心修復：渲染為圖片並推入預覽 Modal，讓使用者主動點擊下載，突破瀏覽器安全阻擋
-                await new Promise(r => setTimeout(r, 100)); // 短暫等待 DOM 就緒
-                const canvas = await html2canvas(container.firstElementChild, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+                // 強制將 DOM 定位在畫面上方但不可見處，防止因 viewport 外或壓縮導致 html2canvas 卡死
+                container.style.position = 'fixed';
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.zIndex = '-1000';
+                container.style.opacity = '1';
+                container.style.display = 'block';
+                
+                await new Promise(r => setTimeout(r, 400)); // 給予充分時間讓字型與 DOM 重繪
+                
+                const canvas = await html2canvas(container.firstElementChild, { 
+                    scale: 2, 
+                    backgroundColor: null, 
+                    logging: false, 
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
                 const imgDataUrl = canvas.toDataURL('image/png'); 
                 
-                // 1. 將圖片推入預覽 Modal
-                const previewImg = document.getElementById('cert-preview-img');
-                if (previewImg) previewImg.src = imgDataUrl;
-                window.openModal('cert-preview-modal');
+                if (previewImg) { 
+                    previewImg.src = imgDataUrl; 
+                    previewImg.onload = () => { previewImg.style.opacity = '1'; };
+                }
+                if (loadingOverlay) loadingOverlay.classList.add('hidden');
                 
-                // 2. 綁定實體按鈕下載動作 (使用者親自點擊，保證 100% 成功)
-                const dlBtn = document.getElementById('download-cert-btn');
+                // 綁定實體下載按鈕，讓使用者自己點擊，保證繞過瀏覽器封鎖
                 if (dlBtn) {
+                    dlBtn.disabled = false;
+                    dlBtn.className = 'flex-1 md:flex-none px-5 py-2.5 bg-gradient-to-r from-mori-sage to-mori-forest text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center';
+                    dlBtn.innerHTML = '<i class="fas fa-download mr-2"></i> 儲存證書檔';
                     dlBtn.onclick = () => {
                         const link = document.createElement('a'); 
                         link.download = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; 
@@ -1455,10 +1484,13 @@
                     };
                 }
                 
-                window.showToast('✅ 證書產出完成！');
+                // 復原 container 狀態，避免干擾版面
+                container.style.zIndex = '0';
+                container.style.left = '-9999px';
             } catch(err) { 
                 console.error('Certificate Generation Error:', err); 
-                window.showToast('❌ 證書產出失敗'); 
+                if (loadingOverlay) loadingOverlay.innerHTML = '<div class="text-red-500 font-bold flex flex-col items-center"><i class="fas fa-exclamation-triangle text-3xl mb-2"></i><span>產出失敗，請重試</span></div>';
+                window.showToast('❌ 證書產出失敗', true);
             }
         };
 
