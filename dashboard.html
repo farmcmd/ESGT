@@ -44,7 +44,7 @@
 <body class="font-sans antialiased overflow-x-hidden">
     <div id="custom-toast"></div>
 
-    <!-- 頂部導覽與狀態列 (移除關閉按鈕，數據靠左，強化手機版顯示) -->
+    <!-- 頂部導覽與狀態列 -->
     <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
             <div class="flex justify-start items-center h-16 w-full gap-2 sm:gap-4 overflow-hidden">
@@ -52,8 +52,9 @@
                 <!-- 標題 (手機版空間留給數據，平板以上顯示) -->
                 <h1 class="text-lg font-black text-gray-800 tracking-wide shrink-0 hidden md:block">永續數據歸戶中心</h1>
                 
-                <!-- 旅者即時狀態 (已往左移並擴展以適應手機版滿版寬度) -->
+                <!-- 旅者即時狀態 (包含企業徽章與數據) -->
                 <div class="flex-1 flex items-center bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 shadow-inner overflow-hidden w-full">
+                    <!-- 基本姓名 -->
                     <div class="flex items-center mr-2 sm:mr-3 pr-2 sm:pr-3 border-r border-gray-300 shrink-0">
                         <i class="fas fa-user-circle text-blue-500 text-xl sm:text-2xl mr-1.5 sm:mr-2"></i>
                         <div class="flex flex-col">
@@ -61,6 +62,17 @@
                             <span id="dash-player-code" class="text-[9px] sm:text-[10px] font-mono text-gray-500 tracking-widest leading-none">...</span>
                         </div>
                     </div>
+                    
+                    <!-- 🌟 企業綁定資訊顯示 Badge -->
+                    <div id="dash-enterprise-badge" class="hidden items-center mr-2 sm:mr-3 pr-2 sm:pr-3 border-r border-gray-300 shrink-0 animate-fade-in-down">
+                        <i class="fas fa-building text-mori-forest text-lg sm:text-xl mr-1.5 sm:mr-2"></i>
+                        <div class="flex flex-col justify-center">
+                            <span id="dash-enterprise-name" class="text-[11px] sm:text-[12px] font-black text-mori-forest leading-tight whitespace-nowrap truncate max-w-[80px] sm:max-w-[120px]"></span>
+                            <span id="dash-enterprise-emp-id" class="text-[9px] sm:text-[10px] font-mono text-gray-500 tracking-widest leading-none mt-[1px]"></span>
+                        </div>
+                    </div>
+
+                    <!-- 數值區 -->
                     <div class="flex gap-4 sm:gap-5 text-center overflow-x-auto custom-scrollbar pb-1 sm:pb-0 items-center flex-1">
                         <div class="flex flex-col items-center shrink-0">
                             <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">減碳量</span>
@@ -93,7 +105,7 @@
     </header>
 
     <main class="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
-        <!-- 說明橫幅 -->
+        <!-- 🌟 說明橫幅 (已優化手機版並排顯示與縮小圖示) -->
         <div class="bg-gradient-to-r from-blue-50 to-green-50 p-4 md:p-5 rounded-2xl shadow-sm border border-blue-100 flex items-start md:items-center gap-3">
             <div class="w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0 mt-0.5 md:mt-0">
                 <i class="fas fa-server text-[13px] md:text-base text-blue-500"></i>
@@ -104,12 +116,12 @@
             </div>
         </div>
 
-        <!-- 切換面板 -->
-        <div class="flex flex-wrap gap-4 border-b border-gray-200 pb-4">
-            <button id="tab-btn-ent" class="px-6 py-3 bg-mori-wood text-white rounded-xl font-black shadow-md transition-all text-sm flex items-center">
+        <!-- 🌟 切換面板 (已優化為精緻小尺寸) -->
+        <div class="flex flex-wrap gap-3 border-b border-gray-200 pb-4">
+            <button id="tab-btn-ent" class="px-4 py-2 bg-mori-wood text-white rounded-lg font-black shadow-sm transition-all text-sm flex items-center">
                 <i class="fas fa-building mr-2"></i> 企業永續儀表板
             </button>
-            <button id="tab-btn-gov" class="px-6 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm flex items-center shadow-sm">
+            <button id="tab-btn-gov" class="px-4 py-2 bg-white text-gray-600 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-all text-sm flex items-center shadow-sm">
                 <i class="fas fa-landmark mr-2"></i> 永續政府計畫儀表板
             </button>
         </div>
@@ -267,7 +279,7 @@
                                 <input type="text" id="host-proj-executor" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="執行單位">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
-                                <input type="number" id="host-proj-budget" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="投入預算 ($)">
+                                <input type="number" id="host-proj-budget" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="預算 ($)">
                                 <input type="number" step="0.01" id="host-proj-sroi" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="SROI值 (例: 1.95)">
                             </div>
                             <div>
@@ -419,7 +431,7 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
-        let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], heroIndex: 0 };
+        let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', enterpriseName: '', entEmpId: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], heroIndex: 0 };
         let globalGovData = { projects: [] }, globalEntData = { projects: [] };
         window.globalLotteryEvents = [];
         let db = null, isOfflineMode = false;
@@ -459,6 +471,16 @@
             
             if(document.getElementById('dash-green-procure')) document.getElementById('dash-green-procure').textContent = '$' + (state.greenProcure || 0).toLocaleString();
             if(document.getElementById('dash-sroi')) document.getElementById('dash-sroi').textContent = '$' + (state.sroiProcure || 0).toLocaleString();
+
+            // 🌟 核心新增：自動偵測並同步顯示企業與員工編號
+            const entBadge = document.getElementById('dash-enterprise-badge');
+            if (state.enterpriseName) {
+                if (entBadge) { entBadge.classList.remove('hidden'); entBadge.classList.add('flex'); }
+                if (document.getElementById('dash-enterprise-name')) document.getElementById('dash-enterprise-name').textContent = state.enterpriseName;
+                if (document.getElementById('dash-enterprise-emp-id')) document.getElementById('dash-enterprise-emp-id').textContent = state.entEmpId || '無編號';
+            } else {
+                if (entBadge) { entBadge.classList.add('hidden'); entBadge.classList.remove('flex'); }
+            }
         };
 
         window.resetPlayerStats = function() {
