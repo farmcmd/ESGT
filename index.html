@@ -848,34 +848,28 @@
             }
         };
 
-        // 🌟 升級：渲染 10 宮格企業按鈕 (強制加入 USI Group 並補足版位)
+        // 🌟 升級：渲染 10 宮格企業按鈕 (純依賴 Firebase 真實資料)
         window.renderPartnerSelect = function() {
             const container = document.getElementById('player-enterprise-buttons');
             if (!container) return;
             
             let html = '';
+            let count = 0;
             
-            // 💡 1. 強制預先植入 USI Group 按鈕
-            const hasUsi = window.partnerEnterprises.find(p => p.name.includes('USI') || p.name.includes('台聚'));
-            if (!hasUsi) {
-                html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition-all shadow-sm truncate" data-val="mock_usi" data-name="USI Group" data-scope="全集團" data-gscope="在地農產 / 低碳旅宿" data-sust="2026 企業年度永續專案" data-wel="員工旅遊/差旅核銷專用">USI Group</button>`;
-            }
-            
-            // 💡 2. 渲染從 Firebase 後台抓來的企業
-            let count = hasUsi ? 0 : 1;
+            // 💡 1. 渲染從 Firebase 後台抓來的企業
             window.partnerEnterprises.forEach(p => {
                 if(count >= 9) return; // 保留第 10 個位子給「自行輸入」
                 html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition-all shadow-sm truncate" data-val="${p.id}" data-name="${p.name}">${p.name}</button>`;
                 count++;
             });
 
-            // 💡 3. 如果不到 9 家企業，以虛線按鈕補足空格
+            // 💡 2. 如果不到 9 家企業，以虛線按鈕補足空格
             while(count < 9) {
                 html += `<button type="button" disabled class="w-full px-2 py-2.5 border-2 border-dashed border-gray-200 rounded-lg text-[12px] font-bold text-gray-400 bg-gray-50/50 cursor-not-allowed truncate">尚未進駐</button>`;
                 count++;
             }
             
-            // 💡 4. 第 10 顆常駐按鈕
+            // 💡 3. 第 10 顆常駐按鈕
             html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition-all shadow-sm truncate" data-val="other">自行輸入</button>`;
             
             container.innerHTML = html;
@@ -889,7 +883,7 @@
             
             // 嘗試恢復之前的選項狀態並設定按鈕高亮
             if (state.enterpriseName) {
-                const matched = window.partnerEnterprises.find(p => p.name === state.enterpriseName) || (state.enterpriseName === 'USI Group' ? {id: 'mock_usi', name: 'USI Group'} : null);
+                const matched = window.partnerEnterprises.find(p => p.name === state.enterpriseName);
                 let targetBtn = null;
                 if (matched) { 
                     targetBtn = container.querySelector(`button[data-val="${matched.id}"]`);
