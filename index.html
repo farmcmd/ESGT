@@ -1242,10 +1242,14 @@
             const elScore = document.getElementById('display-score'); if (elScore) elScore.textContent = state.totalScore || 0;
             const elGreen = document.getElementById('display-green-procurement'); if (elGreen) elGreen.textContent = `$${state.greenProcure || 0}`;
             const elSroi = document.getElementById('display-sroi-procurement'); if (elSroi) elSroi.textContent = `$${state.sroiProcure || 0}`;
-            const elHero = document.getElementById('display-hero-index'); if (elHero) elHero.textContent = (state.totalScore || 0) + Math.floor((state.totalCarbon || 0) / 100);
+            
+            // 🌟 核心修復：拔除主網頁的自我計算邏輯，完全依賴遊戲端傳回的 heroIndex
+            const elHero = document.getElementById('display-hero-index'); 
+            if (elHero) elHero.textContent = state.heroIndex || 0;
             
             const updateCircle = (id, val, max) => { const el = document.getElementById(id); if (el) el.setAttribute('stroke-dasharray', `${Math.min(100, (val/max)*100)}, 100`); };
             updateCircle('circle-mileage', (state.totalMileage || 0) / 1000, 100); updateCircle('circle-carbon', state.totalCarbon || 0, 5000); updateCircle('circle-score', state.totalScore || 0, 1000);
+            updateCircle('circle-hero', state.heroIndex || 0, 2000);
         };
 
         window.updateGlobalSummary = function() { 
