@@ -198,7 +198,6 @@
             <div id="transport-section" class="mb-8 scroll-mt-4 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-mori-light relative overflow-hidden">
                 <div class="text-center mb-6">
                     <h2 class="text-xl md:text-2xl lg:text-3xl font-bold text-mori-forest flex flex-wrap items-center justify-center gap-2 mb-3">
-                        <!-- 🌟 核心修復：修正 AI 幻覺產生的烏爾都語亂碼，恢復為正常的「啟動任務」 -->
                         <span><i class="fas fa-hand-point-down mr-2 text-yellow-500 animate-bounce"></i> 請選擇交通方式，啟動任務</span>
                         <button onclick="document.getElementById('transport-info-text').classList.toggle('hidden')" class="w-7 h-7 rounded-full bg-red-500 border-2 border-white text-white hover:bg-red-600 hover:scale-110 transition-all duration-300 flex items-center justify-center text-sm shadow-md outline-none relative -top-0.5 animate-pulse">
                             <i class="fas fa-question font-black"></i>
@@ -334,7 +333,6 @@
                                  <li>水里里山基地 <span class="text-mori-sage font-bold ml-1">#里山餐桌團隊</span></li>
                                  <li>Farm指令教育農場</li>
                              </ul>
-                             <!-- 🌟 修改：移除密碼驗證機制，改為直接點擊展開管理面板 -->
                              <div class="mt-5 flex justify-center md:justify-end">
                                  <button onclick="window.openModal('training-cert-modal')" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-xs font-bold shadow-sm flex items-center group">
                                      <i class="fas fa-user-shield text-blue-500 mr-2 group-hover:scale-110 transition-transform"></i> 網站操作員認證 及 儀表板管理
@@ -1250,6 +1248,12 @@
             const updateCircle = (id, val, max) => { const el = document.getElementById(id); if (el) el.setAttribute('stroke-dasharray', `${Math.min(100, (val/max)*100)}, 100`); };
             updateCircle('circle-mileage', (state.totalMileage || 0) / 1000, 100); updateCircle('circle-carbon', state.totalCarbon || 0, 5000); updateCircle('circle-score', state.totalScore || 0, 1000);
             updateCircle('circle-hero', state.heroIndex || 0, 2000);
+
+            // 🚀 強制推播：將最新狀態即時同步給內嵌的儀表板 iframe
+            const iframe = document.getElementById('dashboard-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state }, '*');
+            }
         };
 
         window.updateGlobalSummary = function() { 
@@ -1495,6 +1499,7 @@
             const success = await window.addToGlobalTotal(carbon, 0);
             if (success) {
                 state.totalMileage += (distKm * 1000); state.totalCarbon += carbon; const pts = Math.round(carbon / 10); state.totalScore += pts;
+                if(typeof window.syncToGame === 'function') window.syncToGame(carbon, pts, distKm);
                 window.updateDisplays(); window.saveData(); window.addLog(`完成旅程: ${distKm.toFixed(1)}km, 獲得減碳 ${carbon}g`); window.showToast('✅ 積分已記錄！');
             }
         };
@@ -1517,8 +1522,8 @@
                 qmSubmit.addEventListener('click', () => { if(pendingTrip.isValid) { const codeInput = document.getElementById('reward-verify-code'); if (codeInput) codeInput.value = ''; window.openModal('reward-verification-modal'); qmInput.value = ''; qmResult.textContent = '減碳 0 g'; qmSubmit.disabled = true; qmSubmit.classList.add('opacity-50', 'cursor-not-allowed'); } });
             }
 
-            document.getElementById('submit-activity-log')?.addEventListener('click', () => { const code = document.getElementById('verification-code-input')?.value; if (!code) return window.showToast('請輸入通關代碼', true); window.addLog(`完成實體任務驗證 (代碼: ${code})`); state.totalScore += 50; window.updateDisplays(); window.saveData(); window.showToast('✅ 驗證成功！獲得 50 積分'); document.getElementById('verification-code-input').value = ''; });
-            document.getElementById('log-action-button')?.addEventListener('click', () => { const logInput = document.getElementById('sustainable-action-log'); if (!logInput || !logInput.value.trim()) return window.showToast('請輸入心得內容', true); window.addLog(`記錄心得: ${logInput.value.substring(0, 15)}...`); state.totalScore += 10; window.updateDisplays(); window.saveData(); window.showToast('✅ 心得已記錄！獲得 10 積分'); logInput.value = ''; });
+            document.getElementById('submit-activity-log')?.addEventListener('click', () => { const code = document.getElementById('verification-code-input')?.value; if (!code) return window.showToast('請輸入通關代碼', true); window.addLog(`完成實體任務驗證 (代碼: ${code})`); state.totalScore += 50; if(typeof window.syncToGame === 'function') window.syncToGame(0, 50, 0); window.updateDisplays(); window.saveData(); window.showToast('✅ 驗證成功！獲得 50 積分'); document.getElementById('verification-code-input').value = ''; });
+            document.getElementById('log-action-button')?.addEventListener('click', () => { const logInput = document.getElementById('sustainable-action-log'); if (!logInput || !logInput.value.trim()) return window.showToast('請輸入心得內容', true); window.addLog(`記錄心得: ${logInput.value.substring(0, 15)}...`); state.totalScore += 10; if(typeof window.syncToGame === 'function') window.syncToGame(0, 10, 0); window.updateDisplays(); window.saveData(); window.showToast('✅ 心得已記錄！獲得 10 積分'); logInput.value = ''; });
 
             document.getElementById('reward-verify-full-btn')?.addEventListener('click', async () => { const codeInput = document.getElementById('reward-verify-code'); if(codeInput && codeInput.value.length > 0) { await window.processTripCompletion(pendingTrip.distKm, pendingTrip.reduction); if(codeInput) codeInput.value = ''; window.closeModal('reward-verification-modal'); } else { window.showToast('請輸入密碼', true); } });
             document.getElementById('reward-verify-tenth-btn')?.addEventListener('click', async () => { await window.processTripCompletion(pendingTrip.distKm, Math.round(pendingTrip.reduction / 10)); window.closeModal('reward-verification-modal'); });
@@ -1626,6 +1631,7 @@
                         state.greenProcure += total; 
                         const earnedPts = Math.floor(total / 30); 
                         state.totalScore += earnedPts; 
+                        if(typeof window.syncToGame === 'function') window.syncToGame(0, earnedPts, 0);
                         window.saveData(); 
                         window.addLog(`綠消登錄 (${labelName}): $${total} (獲得 ${earnedPts} 積分)`); 
                         window.updateDisplays(); 
@@ -1659,6 +1665,7 @@
                         state.sroiProcure += total; 
                         const earnedPts = Math.floor(total / 30); 
                         state.totalScore += earnedPts; 
+                        if(typeof window.syncToGame === 'function') window.syncToGame(0, earnedPts, 0);
                         window.saveData(); 
                         window.addLog(`SROI 登錄 (${farmName}): $${total.toFixed(0)} (獲得 ${earnedPts} 積分)`); 
                         window.updateDisplays(); 
@@ -1777,12 +1784,12 @@
                 } else { if(container) container.classList.add('hidden'); }
             });
 
-            // 🌟 儀表板資料庫監聽 (加入 typeof 防呆鎖，並啟動 renderAdminLists)
+            // 🌟 儀表板資料庫監聽
             onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderGovDashboard === 'function') window.renderGovDashboard(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
             onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderEntProjectsDashboard === 'function') window.renderEntProjectsDashboard(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
             onSnapshot(collection(db, 'lottery_events'), (snapshot) => { window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); });
 
-            // 🌟 監聽操作員與講師名單，並觸發畫面渲染
+            // 🌟 監聽操作員與講師名單
             onSnapshot(doc(db, 'system_messages', 'certifications'), (docSnap) => {
                 if (docSnap.exists()) {
                     globalCerts = docSnap.data();
@@ -1841,6 +1848,12 @@
                 if (event.data && event.data.type === 'SYNC_HERO_INDEX') {
                     if (typeof event.data.heroIndex !== 'undefined') {
                         state.heroIndex = parseInt(event.data.heroIndex) || 0;
+                        
+                        // 🌟 核心修復：同時接收並更新遊戲傳來的永續積分，避免被主網頁舊資料覆蓋
+                        if (typeof event.data.totalScore !== 'undefined') {
+                            state.totalScore = parseInt(event.data.totalScore) || 0;
+                        }
+                        
                         window.saveData(); window.updateDisplays(); 
                         window.showToast(`🌍 收到來自地球日誌的同步！勇者指數已更新為 ${state.heroIndex}`);
                     }
