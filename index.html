@@ -1012,57 +1012,132 @@
                 window.showToast('🔄 繪製中，請勿關閉視窗...');
                 const container = document.getElementById('certificate-dom-container');
                 const dateStr = new Date().toLocaleDateString('zh-TW');
+
+                // --- 擷取近期紀錄 (供明細表使用) ---
+                const safeLogs = Array.isArray(state.activityLogs) ? state.activityLogs : [];
+                const recentLogs = safeLogs.slice(0, 3).map(l => {
+                    const timeStr = (l.time && l.time.split(' ')[0]) ? l.time.split(' ')[0] : dateStr;
+                    return `<div style="margin-bottom:6px; font-size:11px; color:#000000; line-height:1.4;"><span style="color:#000000; font-weight:bold; font-family:monospace; margin-right:6px;">${timeStr}</span> ${l.text || '永續行動'}</div>`;
+                }).join('') || '<div style="font-size:11px; color:#000000; font-style:italic;">尚無行動紀錄</div>';
                 
-                // 🛡️ 重構：徹底放棄 Grid，使用純 Table/Block 概念佈局以確保 html2canvas 讀取正確高度
+                const safeHistory = Array.isArray(state.checkoutHistory) ? state.checkoutHistory : [];
+                const recentCheckouts = safeHistory.slice(0, 3).map(c => {
+                    const timeStr = (c.time && c.time.split(' ')[0]) ? c.time.split(' ')[0] : dateStr;
+                    return `<div style="margin-bottom:6px; font-size:11px; color:#000000; line-height:1.4;"><span style="color:#000000; font-weight:bold; font-family:monospace; margin-right:6px;">${timeStr}</span> 歸戶至: ${c.target || '未知'} <span style="color:#000000; font-weight:bold; margin-left:4px;">(${c.carbon || 0}g)</span></div>`;
+                }).join('') || '<div style="font-size:11px; color:#000000; font-style:italic;">尚無歸戶紀錄</div>';
+                
+                // 🛡️ 畫板重建：採用雙層邊框、純 div 彈性排版，杜絕跑版
+                // 🌟 核心修復：全面拔除 900 字重防白框，徹底移除背景浮水印防殘影！
                 container.innerHTML = `
-                    <div style="background-color:#F7F4EF; padding:40px; width:800px; font-family:'Noto Sans TC',sans-serif;">
-                        <div style="border:10px solid #4A6741; padding:2px; border-radius:8px;">
-                            <div style="background-color:white; border:2px solid #8B9D77; padding:40px; text-align:center; position:relative;">
-                                <h1 style="font-size:42px; font-weight:900; color:#2C3E28; margin:0; letter-spacing:8px;">永續旅遊證書</h1>
-                                <p style="font-size:12px; font-weight:bold; color:#8B9D77; margin-top:5px; text-transform:uppercase;">Certificate of Sustainable Tourism</p>
+                    <div style="width: 800px; background-color: #F7F4EF; padding: 40px; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; position: relative;">
+                        <!-- 雙層邊框設計 -->
+                        <div style="border: 4px solid #4A6741; padding: 6px; background-color: #F7F4EF; position: relative; z-index: 10;">
+                            <div style="border: 1px dashed #8B9D77; background-color: #FFFFFF; padding: 50px 40px; position: relative; min-height: 750px;">
                                 
-                                <div style="margin:50px 0;">
-                                    <div style="font-size:20px; font-weight:bold; color:#666; margin-bottom:15px;">特此證明</div>
-                                    <div style="font-size:36px; font-weight:900; color:#4A6741; border-bottom:3px solid #8B9D77; display:inline-block; padding:0 40px 10px 40px; min-width:300px;">${state.playerName || '匿名旅者'}</div>
-                                </div>
-
-                                <table style="width:100%; border-collapse:collapse; margin-bottom:40px;">
-                                    <tr>
-                                        <td style="width:25%; padding:10px;">
-                                            <div style="background:#F9FAFB; padding:20px; border-radius:12px; border:1px solid #EEE;">
-                                                <div style="font-size:12px; color:#666; font-weight:bold;">減碳里程</div>
-                                                <div style="font-size:22px; font-weight:900; color:#2C3E28;">${((state.totalMileage || 0)/1000).toFixed(1)}km</div>
-                                            </div>
-                                        </td>
-                                        <td style="width:25%; padding:10px;">
-                                            <div style="background:#F0F7F4; padding:20px; border-radius:12px; border:1px solid #D1E7DD;">
-                                                <div style="font-size:12px; color:#666; font-weight:bold;">減少碳排</div>
-                                                <div style="font-size:22px; font-weight:900; color:#2C3E28;">${Math.round(state.totalCarbon || 0)}g</div>
-                                            </div>
-                                        </td>
-                                        <td style="width:25%; padding:10px;">
-                                            <div style="background:#F8F9FA; padding:20px; border-radius:12px; border:1px solid #EEE;">
-                                                <div style="font-size:12px; color:#666; font-weight:bold;">綠色消費</div>
-                                                <div style="font-size:22px; font-weight:900; color:#2C3E28;">$${(state.greenProcure || 0).toLocaleString()}</div>
-                                            </div>
-                                        </td>
-                                        <td style="width:25%; padding:10px;">
-                                            <div style="background:#FFFDF0; padding:20px; border-radius:12px; border:1px solid #FFE69C;">
-                                                <div style="font-size:12px; color:#666; font-weight:bold;">SROI價值</div>
-                                                <div style="font-size:22px; font-weight:900; color:#2C3E28;">$${(state.sroiProcure || 0).toLocaleString()}</div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
-
-                                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid #EEE; padding-top:20px; text-align:left;">
-                                    <div style="font-size:12px; color:#999; font-family:monospace;">
-                                        發證日期: ${dateStr}<br>旅者代碼: ${state.playerCode}
+                                <div style="position: relative; z-index: 10;">
+                                    <!-- 標題 -->
+                                    <div style="text-align: center; margin-bottom: 40px;">
+                                        <h1 style="font-size: 46px; font-weight: bold; color: #000000; margin: 0 0 10px 0; letter-spacing: 12px;">永續旅遊證書</h1>
+                                        <div style="font-size: 13px; font-weight: bold; color: #000000; letter-spacing: 5px;">CERTIFICATE OF SUSTAINABLE TOURISM</div>
                                     </div>
-                                    <div style="text-align:right;">
-                                        <div style="font-weight:900; color:#2C3E28; font-size:16px;">水里永續共好聯盟</div>
-                                        <div style="font-size:10px; color:#666;">探探里山行動平台 授權核發</div>
+
+                                    <!-- 內文 -->
+                                    <div style="text-align: center; margin-bottom: 40px;">
+                                        <div style="font-size: 18px; font-weight: bold; color: #000000; margin-bottom: 20px; letter-spacing: 6px;">特 此 證 明</div>
+                                        <div style="display: inline-block; font-size: 40px; font-weight: bold; color: #000000; border-bottom: 3px solid #000000; padding: 0 60px 10px 60px; min-width: 250px; letter-spacing: 4px; margin-bottom: 25px;">
+                                            ${state.playerName || '匿名旅者'}
+                                        </div>
+                                        <div style="font-size: 16px; color: #000000; line-height: 2.2; font-weight: bold; letter-spacing: 2px;">
+                                            參與 探探里山 永續旅遊行動，<br>
+                                            透過實踐低碳交通與支持在地綠色消費，<br>
+                                            為地球環境與里山創生做出卓越貢獻。
+                                        </div>
                                     </div>
+
+                                    <!-- 4 卡片 -->
+                                    <table style="width: 100%; border-collapse: separate; border-spacing: 15px 0; margin-bottom: 30px; margin-left: -15px; margin-right: -15px;">
+                                        <tr>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #F7F4EF; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
+                                                    <i class="fas fa-shoe-prints" style="color: #8B9D77; font-size: 20px; line-height: 46px;"></i>
+                                                </div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">減碳里程</div>
+                                                <div style="font-size: 26px; font-weight: bold; color: #000000;">${((state.totalMileage || 0) / 1000).toFixed(1)} <span style="font-size: 12px; font-weight: normal;">km</span></div>
+                                            </td>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #E8EFE6; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
+                                                    <i class="fas fa-tree" style="color: #4A6741; font-size: 20px; line-height: 46px;"></i>
+                                                </div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">減少碳排</div>
+                                                <div style="font-size: 26px; font-weight: bold; color: #000000;">${Math.round(state.totalCarbon || 0).toLocaleString()} <span style="font-size: 12px; font-weight: normal;">g</span></div>
+                                            </td>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #FEFCE8; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
+                                                    <i class="fas fa-shopping-basket" style="color: #D2B48C; font-size: 20px; line-height: 46px;"></i>
+                                                </div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">綠色消費</div>
+                                                <div style="font-size: 26px; font-weight: bold; color: #000000;"><span style="font-size: 12px; font-weight: normal;">$</span>${(state.greenProcure || 0).toLocaleString()}</div>
+                                            </td>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #EFF6FF; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
+                                                    <i class="fas fa-hand-holding-heart" style="color: #3B82F6; font-size: 20px; line-height: 46px;"></i>
+                                                </div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">SROI 價值</div>
+                                                <div style="font-size: 26px; font-weight: bold; color: #000000;"><span style="font-size: 12px; font-weight: normal;">$</span>${(state.sroiProcure || 0).toLocaleString()}</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- 2 明細區 (全面捨棄 flex，純 Table 防跑版) -->
+                                    <table style="width: 100%; border-collapse: separate; border-spacing: 15px 0; margin-bottom: 30px; margin-left: -15px; margin-right: -15px;">
+                                        <tr>
+                                            <td style="width: 50%; background: #FAFCF8; padding: 20px; border-radius: 8px; border: 1px solid #E8EFE6; vertical-align: top;">
+                                                <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #E8EFE6;">
+                                                    <i class="fas fa-list-ul" style="margin-right: 6px;"></i> 近期永續行動明細
+                                                </div>
+                                                ${recentLogs}
+                                            </td>
+                                            <td style="width: 50%; background: #FFFDF8; padding: 20px; border-radius: 8px; border: 1px solid #F5ECD8; vertical-align: top;">
+                                                <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #F5ECD8;">
+                                                    <i class="fas fa-trophy" style="margin-right: 6px;"></i> 永續數據歸戶結算明細
+                                                </div>
+                                                ${recentCheckouts}
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- 底部資訊與印章 (外層維持 Table 防止垂直擠壓) -->
+                                    <table style="width: 100%; border-collapse: collapse; margin-top: 40px;">
+                                        <tr>
+                                            <td style="width: 50%; vertical-align: bottom; text-align: left; padding: 15px 0;">
+                                                <!-- 🌟 終極修復：拔除所有巢狀 Table、inline-block 與特殊對齊，改用最原始的 block div 並強制鎖死 320px 寬度，100% 杜絕內容隱形 -->
+                                                <div style="background-color: #FFFFFF; padding: 15px 20px; border-radius: 8px; border: 2px solid #E5E7EB; width: 320px; box-sizing: border-box; display: block;">
+                                                    <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 10px;">
+                                                        旅者代碼：<span style="font-family: monospace; font-size: 16px;">${state.playerCode}</span>
+                                                    </div>
+                                                    <div style="font-size: 13px; font-weight: bold; color: #000000;">
+                                                        發證日期：<span style="font-family: monospace; font-size: 16px;">${dateStr}</span>
+                                                    </div>
+                                                    ${state.enterpriseName ? `
+                                                    <div style="margin-top: 15px; padding-top: 15px; border-top: 2px dashed #000000;">
+                                                        <div style="font-size: 12px; font-weight: bold; color: #000000; margin-bottom: 6px;">企業 / 團體認證</div>
+                                                        <div style="font-size: 18px; font-weight: bold; color: #000000;">${state.enterpriseName}</div>
+                                                        ${state.entEmpId ? `<div style="font-size: 14px; font-weight: bold; font-family: monospace; color: #000000; margin-top: 5px;">員工編號: ${state.entEmpId}</div>` : ''}
+                                                    </div>
+                                                    ` : ''}
+                                                </div>
+                                            </td>
+                                            <td style="width: 50%; vertical-align: bottom; text-align: right; padding: 15px 0; position: relative;">
+                                                <!-- 紅色印章 -->
+                                                <div style="position: absolute; right: 20px; top: -115px; width: 100px; height: 100px; border: 4px solid #DC2626; border-radius: 50%; background-color: #FFFFFF; z-index: 20; transform: rotate(-15deg); box-sizing: border-box; text-align: center; padding-top: 26px;">
+                                                    <div style="color: #DC2626; font-weight: bold; font-size: 26px; line-height: 1; letter-spacing: 2px;">ESG</div>
+                                                    <div style="color: #DC2626; font-weight: bold; font-size: 12px; margin-top: 6px; letter-spacing: 2px;">探探里山</div>
+                                                </div>
+                                                <div style="font-size: 18px; font-weight: bold; color: #000000; margin-bottom: 6px; letter-spacing: 3px; position: relative; z-index: 10;">水里永續共好聯盟</div>
+                                                <div style="font-size: 11px; color: #000000; letter-spacing: 2px; position: relative; z-index: 10;">探探里山行動平台 授權核發</div>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </div>
                         </div>
