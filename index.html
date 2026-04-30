@@ -1663,9 +1663,17 @@
             });
 
             // 🌟 儀表板資料庫監聽 (加入 typeof 防呆鎖)
-            onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderGovDashboard === 'function') window.renderGovDashboard(); }, errHandler);
-            onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderEntProjectsDashboard === 'function') window.renderEntProjectsDashboard(); }, errHandler);
+            onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderGovDashboard === 'function') window.renderGovDashboard(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
+            onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderEntProjectsDashboard === 'function') window.renderEntProjectsDashboard(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
             onSnapshot(collection(db, 'lottery_events'), (snapshot) => { window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); });
+
+            // 🌟 復原：監聽操作員與講師名單，並觸發畫面渲染
+            onSnapshot(doc(db, 'system_messages', 'certifications'), (docSnap) => {
+                if (docSnap.exists()) {
+                    globalCerts = docSnap.data();
+                    if(typeof window.renderAdminLists === 'function') window.renderAdminLists();
+                }
+            }, errHandler);
 
             // 🌟 監聽動態地標 (黃色星星)
             onSnapshot(collection(db, 'custom_pois'), (snapshot) => { 
