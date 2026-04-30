@@ -297,7 +297,7 @@
     <!-- 總承預覽 Modal -->
     <div id="summary-preview-modal" class="modal-overlay hidden"><div class="modal-content max-w-lg p-6 bg-white border-t-4 border-yellow-500 rounded-2xl shadow-2xl relative"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('summary-preview-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-xl font-bold text-gray-800 mb-4 text-center"><i class="fas fa-gem text-yellow-500 mr-2"></i>總承結算卡片預覽</h3><div class="bg-gray-50 p-4 rounded-xl shadow-inner max-h-[60vh] overflow-y-auto no-scrollbar flex justify-center items-start"><div id="summary-card-container" class="w-full max-w-[400px]"></div></div><div class="mt-4 flex justify-end gap-3"><button class="px-5 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-200 transition" onclick="window.closeModal('summary-preview-modal')">關閉</button><button id="download-summary-btn" class="px-5 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center"><i class="fas fa-download mr-2"></i> 匯出圖檔</button></div></div></div>
     
-    <!-- 🌟 新增：證書預覽與下載 Modal (突破瀏覽器阻擋機制) -->
+    <!-- 證書預覽與下載 Modal (突破瀏覽器阻擋機制) -->
     <div id="cert-preview-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content max-w-lg p-6 bg-white border-t-4 border-mori-forest rounded-2xl shadow-2xl relative">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('cert-preview-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -315,7 +315,7 @@
         </div>
     </div>
 
-    <!-- 🌟 企業編輯 Modal (補齊起訖日期與 SROI 欄位) -->
+    <!-- 企業編輯 Modal (補齊起訖日期與 SROI 欄位) -->
     <div id="ent-edit-modal" class="modal-overlay hidden" style="z-index: 110;">
         <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-emerald-500 relative shadow-2xl">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('ent-edit-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -419,7 +419,7 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
-        let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [] };
+        let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], heroIndex: 0 };
         let globalGovData = { projects: [] }, globalEntData = { projects: [] };
         window.globalLotteryEvents = [];
         let db = null, isOfflineMode = false;
@@ -453,7 +453,10 @@
             if(document.getElementById('dash-carbon')) document.getElementById('dash-carbon').textContent = Math.round(state.totalCarbon || 0) + 'g';
             if(document.getElementById('dash-score')) document.getElementById('dash-score').textContent = (state.totalScore || 0);
             if(document.getElementById('dash-mileage')) document.getElementById('dash-mileage').textContent = ((state.totalMileage || 0) / 1000).toFixed(1) + 'km';
-            if(document.getElementById('dash-hero')) document.getElementById('dash-hero').textContent = (state.totalScore || 0) + Math.floor((state.totalCarbon || 0) / 100);
+            
+            // 🌟 核心修復：徹底拔除假算公式，完美同步遊戲回傳的 heroIndex
+            if(document.getElementById('dash-hero')) document.getElementById('dash-hero').textContent = state.heroIndex || 0;
+            
             if(document.getElementById('dash-green-procure')) document.getElementById('dash-green-procure').textContent = '$' + (state.greenProcure || 0).toLocaleString();
             if(document.getElementById('dash-sroi')) document.getElementById('dash-sroi').textContent = '$' + (state.sroiProcure || 0).toLocaleString();
         };
@@ -1113,11 +1116,12 @@
                         
                         <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-end text-[10px] text-gray-400 pb-2">
                             <span class="inline-block leading-relaxed break-all pr-2">
-                                <i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: <br class="sm:hidden"> ${traceUrl} 
+                                <i class="fas fa-link mr-1 text-gray-300"></i>溯源網址: <br class="sm:hidden"> ${traceUrl}
                                 <span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-blue-500 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded tracking-wider shadow-sm">#${displayCode}</span>
                             </span>
+                            <i class="fas fa-qrcode text-gray-300 text-xl flex-shrink-0 mb-0.5"></i>
                         </div>
-                    `;
+                    </div>`;
                     
                     card.querySelector('.share-card-btn').onclick = (e) => { 
                         e.stopPropagation(); 
@@ -1831,11 +1835,26 @@
             if (typeof bindSummaryEvents === 'function') bindSummaryEvents();
             if (typeof bindEditSaveEvents === 'function') bindEditSaveEvents();
 
-            // 🌟 接收來自互動主站的「無縫切換面板」指令
+            // 🌟 儀表板專屬：強制同步接收器 (包含無縫切換面板與資料覆寫)
             window.addEventListener('message', (event) => {
                 if (event.data && event.data.action === 'SWITCH_TAB') {
                     if (event.data.tab === 'gov') document.getElementById('tab-btn-gov')?.click();
                     else document.getElementById('tab-btn-ent')?.click();
+                }
+                
+                if (event.data && event.data.action === 'SYNC_FROM_MAIN') {
+                    try {
+                        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(event.data.state));
+                        if (typeof window.loadLocalData === 'function') window.loadLocalData();
+                        if (typeof window.updateTopDisplays === 'function') window.updateTopDisplays();
+                    } catch(e) { console.error("同步失敗", e); }
+                }
+            });
+            
+            // 監聽 LocalStorage 改變 (跨分頁同步備援)
+            window.addEventListener('storage', (e) => {
+                if (e.key === LOCAL_STORAGE_KEY || !e.key) {
+                    if (typeof window.loadLocalData === 'function') window.loadLocalData();
                 }
             });
         });
