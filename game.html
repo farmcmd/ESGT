@@ -35,7 +35,7 @@
     <!-- UI 層 -->
     <div class="ui-layer top-0 left-0 w-full p-3 sm:p-4 flex justify-between items-start pointer-events-none">
         <div class="bg-slate-900/90 border-2 border-emerald-500/80 p-3 rounded-lg shadow-lg backdrop-blur-sm pointer-events-auto max-w-[75%] sm:max-w-none">
-            <h1 class="text-xl font-bold text-emerald-400 tracking-wider">地球日誌 <span class="text-xs text-slate-400">生態觀測 v1.0</span></h1>
+            <h1 class="text-xl font-bold text-emerald-400 tracking-wider">地球日誌 <span class="text-xs text-slate-400">ESG環境勇者 v1.0</span></h1>
             <p class="text-sm text-green-300 mt-1" id="location-info">目前位置：系統載入中...</p>
             <p class="text-xs text-emerald-300 mt-1 font-bold hidden" id="traveler-name-display">認證旅者：</p>
             <p class="text-xs text-slate-400 mt-1 hidden sm:block" id="control-hint">使用滑鼠/觸控點擊目的地，或使用方向鍵</p>
@@ -478,7 +478,7 @@
 
             <div class="flex gap-2 mb-5 bg-slate-800 p-1.5 rounded-lg border border-slate-700">
                 <button id="tab-comp" onclick="setLoginMode('comp')" class="flex-1 bg-emerald-600 text-white font-bold py-2 rounded shadow transition-colors text-sm">🏆 專案競賽</button>
-                <button id="tab-guest" onclick="setLoginMode('guest')" class="flex-1 bg-transparent text-slate-400 font-bold py-2 rounded transition-colors text-sm hover:text-slate-200">🚶 單次體驗</button>
+                <button id="tab-guest" onclick="setLoginMode('guest')" class="flex-1 bg-transparent text-slate-400 font-bold py-2 rounded transition-colors text-sm hover:text-slate-200">🚶 訪客體驗</button>
             </div>
 
             <!-- 選擇性別 -->
@@ -499,7 +499,7 @@
             <div id="comp-locked-msg" class="hidden mb-4 bg-slate-800 border border-slate-600 p-4 rounded-lg text-center">
                 <div class="text-2xl mb-1">⏳</div>
                 <div class="text-emerald-400 font-bold text-sm">目前非專案競賽期間</div>
-                <div class="text-slate-400 text-xs mt-1">請選擇「單次體驗」進行遊玩，或等候主辦單位開啟新賽季。</div>
+                <div class="text-slate-400 text-xs mt-1">請選擇「訪客體驗」進行遊玩，或等候主辦單位開啟新賽季。</div>
             </div>
 
             <div class="mb-5">
@@ -1487,15 +1487,14 @@ window.setGender = (g) => {
 // 3. UI 與任務系統
 // ==========================================
 
-// 🧩 拼圖三：地球勇者指數回報器 (升級為跨分頁廣播支援)
+// 🧩 拼圖三：地球勇者指數回報器 (升級為 SSOT 單一真相同步)
 window.sendHeroIndexToMainPage = (currentPts) => {
-    // 1. 跨分頁 (New Tab) 廣播：透過 LocalStorage 事件傳遞給主頁
-    localStorage.setItem('esgt_hero_index_update', JSON.stringify({
-        heroIndex: currentPts,
-        timestamp: Date.now() // 加入時間戳，確保分數相同時也能觸發 storage 事件
-    }));
+    // 遊戲任何狀態改變 (消耗積分買道具、打怪獲得勇者指數) 時，瞬間強制寫回主網頁抽屜
+    if (travelerProfile) {
+        syncESGTData(travelerProfile.points, travelerProfile.heroIndex || 0);
+    }
 
-    // 2. 向下相容 iframe 或 opener 模式 (備用雙保險)
+    // 向下相容舊版 iframe 模式 (備用雙保險)
     const targetWindow = (window.opener && !window.opener.closed) ? window.opener : (window.parent !== window ? window.parent : null);
     if (targetWindow) {
         targetWindow.postMessage({
@@ -1503,8 +1502,6 @@ window.sendHeroIndexToMainPage = (currentPts) => {
             heroIndex: currentPts
         }, "https://farmcmd.github.io");
     }
-    
-    console.log("🎮 遊戲端已廣播勇者指數：", currentPts);
 };
 
 function updateStatusUI() {
@@ -1681,16 +1678,25 @@ window.useItem = async (itemId) => {
                 if (fm && fm.disasterName) contextText += fm.disasterName;
             }
             
+            // 🌟 升級：全面擴充 1~17 項的相剋關鍵字，確保所有飛鏢都有用武之地
             const sdgKeywords = {
+                1: ['移工', '仲介', '解雇', '生計'],
                 2: ['肥料', '農業', '畜牧', '飢餓'],
-                6: ['水', '近海', '海洋', '淨水', '港口'],
-                7: ['化石燃料', '工業', '能源', '碳'],
-                9: ['工業', '廢氣', '廠', '基礎建設'],
+                3: ['粉塵', '呼吸道', '疾病', '過勞', '身心', '健康'],
+                4: ['童工', '兒童', '教育'],
+                5: ['不平等', '歧視', '弱勢', '性別'],
+                6: ['水', '近海', '海洋', '淨水', '港口', '河川'],
+                7: ['化石燃料', '工業', '能源', '碳', '漏油'],
+                8: ['血汗', '慣老闆', '超時', '勞工', '供應鏈', '強迫'],
+                9: ['工業', '廢氣', '廠房', '基礎建設', '工安'],
+                10: ['壟斷', '反競爭', '市場', '托拉斯', '不平等'],
                 11: ['垃圾', '城鄉', '掩埋場', '港口'],
-                12: ['垃圾', '廢棄', '冷媒', '發泡劑', '消費'],
-                13: ['冰川', '氣候', '二氧化碳', '氟氯碳', '氧化亞氮', '溫室'],
-                14: ['近海', '港口', '海洋', '水'],
-                15: ['林區', '森林', '陸域', '生態', '畜牧']
+                12: ['垃圾', '廢棄', '冷媒', '發泡劑', '消費', '供應鏈'],
+                13: ['冰川', '氣候', '二氧化碳', '氟氯碳', '氧化亞氮', '溫室', '甲烷'],
+                14: ['近海', '港口', '海洋', '水', '漏油'],
+                15: ['林區', '森林', '陸域', '生態', '畜牧', '盜伐', '水土'],
+                16: ['貪汙', '洗錢', '黑箱', '腐敗', '財報', '漂綠', '決策'],
+                17: ['資安', '駭客', '機密', '信任']
             };
             
             let isEffective = (sdgKeywords[sdgNum] || []).some(k => contextText.includes(k));
@@ -2553,7 +2559,7 @@ function updatePromptUI() {
             uiBtn.innerText = "離開"; uiBtn.setAttribute('onclick', 'closePromptUI()'); uiBtn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-8 rounded-full shadow transition-colors";
         }
     } else if (currentEvent.type === 'shop') {
-        uiTitle.innerHTML = `⛺ 補給站`; uiDesc.innerText = '兌換復育裝備'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-blue-400 p-5 rounded-xl text-center shadow-lg opacity-100"; 
+        uiTitle.innerHTML = `⛺ 補給站`; uiDesc.innerText = '以「永續積分」兌換復育裝備。'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-blue-400 p-5 rounded-xl text-center shadow-lg opacity-100"; 
         uiBtn.innerText = "進入"; uiBtn.setAttribute('onclick', 'openShopModal()'); uiBtn.className = "interactive-btn bg-blue-600 text-white font-bold py-2 px-8 rounded-full shadow";
     } else if (currentEvent.type === 'npc') {
         uiTitle.innerHTML = `${currentEvent.icon} ${currentEvent.name}`; uiDesc.innerText = '想了解如何拯救地球嗎？'; uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 border-2 border-green-500 p-5 rounded-xl text-center shadow-lg opacity-100"; 
@@ -2611,9 +2617,26 @@ function update() {
 
     const gX = Math.floor((player.x+player.width/2)/TILE_SIZE), gY = Math.floor((player.y+player.height/2)/TILE_SIZE);
     
+    // 🌟 新增：終極防卡死救援機制 (若異常進入不可行走之海洋/高山，自動傳送回中央營地)
+    if (gX >= 0 && gX < MAP_COLS && gY >= 0 && gY < MAP_ROWS && !TERRAIN_CONFIG[mapData[gY][gX]].walkable) {
+        player.x = 25 * TILE_SIZE;
+        player.y = 25 * TILE_SIZE;
+        clearPath();
+        return;
+    }
+
     const hitFieldMonster = activeFieldMonsters.find(m => m.x === gX && m.y === gY);
     if (hitFieldMonster) {
-        player.x -= 20; player.y -= 20; 
+        // 🌟 修正卡牆漏洞：移除無差別 -20 推擠，改為退回上一步的安全網格
+        clearPath(); 
+        keys.ArrowUp = keys.ArrowDown = keys.ArrowLeft = keys.ArrowRight = keys.w = keys.a = keys.s = keys.d = false; 
+        if (lastStepX >= 0 && lastStepY >= 0) {
+            player.x = lastStepX * TILE_SIZE + TILE_SIZE / 2 - player.width / 2;
+            player.y = lastStepY * TILE_SIZE + TILE_SIZE / 2 - player.height / 2;
+        } else {
+            player.x = 25 * TILE_SIZE; player.y = 25 * TILE_SIZE;
+        }
+        
         const baseM = GHG_MONSTERS.find(m => m.name === hitFieldMonster.monsterName) || GHG_MONSTERS[0];
         triggerCombat(baseM, false, hitFieldMonster.id);
         return;
