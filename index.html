@@ -1833,6 +1833,8 @@
             window.syncToGame = function(addedCarbon, addedScore, addedDist = 0) {
                 try {
                     localStorage.setItem('esgt_pending_rewards', JSON.stringify({ carb: addedCarbon, pts: addedScore, dist: addedDist, timestamp: Date.now() }));
+                    // 🌟 核心新增：強制推播絕對數值，讓遊戲端不漏接任何分數
+                    localStorage.setItem('esgt_sync_to_game', JSON.stringify({ totalScore: state.totalScore, heroIndex: state.heroIndex, timestamp: Date.now() }));
                 } catch(e){}
             };
 
@@ -1873,9 +1875,15 @@
                         const data = JSON.parse(e.newValue);
                         if (typeof data.heroIndex !== 'undefined') {
                             state.heroIndex = parseInt(data.heroIndex) || 0;
+                            
+                            // 🌟 核心補齊：同時接收遊戲端消費後的「剩餘永續積分」！
+                            if (typeof data.totalScore !== 'undefined') {
+                                state.totalScore = parseInt(data.totalScore) || 0;
+                            }
+                            
                             window.saveData(); 
                             window.updateDisplays(); 
-                            window.showToast(`🌍 偵測到遊戲進度！勇者指數已同步更新為 ${state.heroIndex}`);
+                            window.showToast(`🌍 遊戲同步完成！目前積分: ${state.totalScore} pts`);
                         }
                     } catch(err){}
                 }
