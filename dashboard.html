@@ -27,7 +27,7 @@
     </script>
     <style>
         body { background-color: #F9FAFB; color: #2C3E28; }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
         .modal-overlay { backdrop-filter: blur(4px); transition: opacity 0.3s ease; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
@@ -46,60 +46,81 @@
 
     <!-- 頂部導覽與狀態列 -->
     <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-            <div class="flex justify-start items-center h-16 w-full gap-2 sm:gap-4 overflow-hidden">
-                
-                <!-- 標題 (手機版空間留給數據，平板以上顯示) -->
-                <h1 class="text-lg font-black text-gray-800 tracking-wide shrink-0 hidden md:block">永續數據歸戶中心</h1>
-                
-                <!-- 旅者即時狀態 (包含企業徽章與數據) -->
-                <div class="flex-1 flex items-center bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 shadow-inner overflow-hidden w-full">
-                    <!-- 基本姓名 -->
-                    <div class="flex items-center mr-2 sm:mr-3 pr-2 sm:pr-3 border-r border-gray-300 shrink-0">
-                        <i class="fas fa-user-circle text-blue-500 text-xl sm:text-2xl mr-1.5 sm:mr-2"></i>
-                        <div class="flex flex-col">
-                            <span id="dash-player-name" class="text-[12px] sm:text-[13px] font-black text-gray-800 leading-tight whitespace-nowrap">讀取中...</span>
-                            <span id="dash-player-code" class="text-[9px] sm:text-[10px] font-mono text-gray-500 tracking-widest leading-none">...</span>
-                        </div>
-                    </div>
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 md:py-3">
+            <div class="flex flex-col gap-2.5">
+                <div class="flex justify-start items-center w-full gap-2 sm:gap-4 overflow-hidden">
                     
-                    <!-- 🌟 企業綁定資訊顯示 Badge -->
-                    <div id="dash-enterprise-badge" class="hidden items-center mr-2 sm:mr-3 pr-2 sm:pr-3 border-r border-gray-300 shrink-0 animate-fade-in-down">
-                        <i class="fas fa-building text-mori-forest text-lg sm:text-xl mr-1.5 sm:mr-2"></i>
-                        <div class="flex flex-col justify-center">
-                            <span id="dash-enterprise-name" class="text-[11px] sm:text-[12px] font-black text-mori-forest leading-tight whitespace-nowrap truncate max-w-[80px] sm:max-w-[120px]"></span>
-                            <span id="dash-enterprise-emp-id" class="text-[9px] sm:text-[10px] font-mono text-gray-500 tracking-widest leading-none mt-[1px]"></span>
+                    <!-- 標題 (手機版空間留給數據，平板以上顯示) -->
+                    <h1 class="text-lg font-black text-gray-800 tracking-wide shrink-0 hidden md:block">永續數據歸戶中心</h1>
+                    
+                    <!-- 旅者即時狀態 (包含企業徽章與數據) -->
+                    <div class="flex-1 flex items-center bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 shadow-inner overflow-hidden w-full">
+                        <!-- 基本姓名 -->
+                        <div class="flex items-center mr-2 sm:mr-3 pr-2 sm:pr-3 border-r border-gray-300 shrink-0">
+                            <i class="fas fa-user-circle text-blue-500 text-xl sm:text-2xl mr-1.5 sm:mr-2"></i>
+                            <div class="flex flex-col">
+                                <span id="dash-player-name" class="text-[12px] sm:text-[13px] font-black text-gray-800 leading-tight whitespace-nowrap">讀取中...</span>
+                                <span id="dash-player-code" class="text-[9px] sm:text-[10px] font-mono text-gray-500 tracking-widest leading-none">...</span>
+                            </div>
                         </div>
-                    </div>
+                        
+                        <!-- 🌟 企業綁定資訊顯示 Badge -->
+                        <div id="dash-enterprise-badge" class="hidden items-center mr-2 sm:mr-3 pr-2 sm:pr-3 border-r border-gray-300 shrink-0 animate-fade-in-down">
+                            <i class="fas fa-building text-mori-forest text-lg sm:text-xl mr-1.5 sm:mr-2"></i>
+                            <div class="flex flex-col justify-center">
+                                <span id="dash-enterprise-name" class="text-[11px] sm:text-[12px] font-black text-mori-forest leading-tight whitespace-nowrap truncate max-w-[80px] sm:max-w-[120px]"></span>
+                                <span id="dash-enterprise-emp-id" class="text-[9px] sm:text-[10px] font-mono text-gray-500 tracking-widest leading-none mt-[1px]"></span>
+                            </div>
+                        </div>
 
-                    <!-- 數值區 -->
-                    <div class="flex gap-4 sm:gap-5 text-center overflow-x-auto custom-scrollbar pb-1 sm:pb-0 items-center flex-1">
-                        <div class="flex flex-col items-center shrink-0">
-                            <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">減碳量</span>
-                            <span id="dash-carbon" class="text-sm font-black text-mori-forest font-mono">0g</span>
-                        </div>
-                        <div class="flex flex-col items-center shrink-0">
-                            <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">永續積分</span>
-                            <span id="dash-score" class="text-sm font-black text-mori-wood font-mono">0</span>
-                        </div>
-                        <div class="flex flex-col items-center shrink-0">
-                            <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">累計里程</span>
-                            <span id="dash-mileage" class="text-sm font-black text-mori-sage font-mono">0km</span>
-                        </div>
-                        <div class="flex flex-col items-center shrink-0">
-                            <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">勇者指數</span>
-                            <span id="dash-hero" class="text-sm font-black text-blue-500 font-mono">0</span>
-                        </div>
-                        <div class="flex flex-col items-center shrink-0">
-                            <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">綠色採購</span>
-                            <span id="dash-green-procure" class="text-sm font-black text-green-600 font-mono">$0</span>
-                        </div>
-                        <div class="flex flex-col items-center shrink-0">
-                            <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">SROI價值</span>
-                            <span id="dash-sroi" class="text-sm font-black text-yellow-600 font-mono">$0</span>
+                        <!-- 數值區 -->
+                        <div class="flex gap-4 sm:gap-5 text-center overflow-x-auto custom-scrollbar pb-1 sm:pb-0 items-center flex-1">
+                            <div class="flex flex-col items-center shrink-0">
+                                <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">減碳量</span>
+                                <span id="dash-carbon" class="text-sm font-black text-mori-forest font-mono">0g</span>
+                            </div>
+                            <div class="flex flex-col items-center shrink-0">
+                                <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">永續積分</span>
+                                <span id="dash-score" class="text-sm font-black text-mori-wood font-mono">0</span>
+                            </div>
+                            <div class="flex flex-col items-center shrink-0">
+                                <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">累計里程</span>
+                                <span id="dash-mileage" class="text-sm font-black text-mori-sage font-mono">0km</span>
+                            </div>
+                            <div class="flex flex-col items-center shrink-0">
+                                <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">勇者指數</span>
+                                <span id="dash-hero" class="text-sm font-black text-blue-500 font-mono">0</span>
+                            </div>
+                            <div class="flex flex-col items-center shrink-0">
+                                <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">綠色採購</span>
+                                <span id="dash-green-procure" class="text-sm font-black text-green-600 font-mono">$0</span>
+                            </div>
+                            <div class="flex flex-col items-center shrink-0">
+                                <span class="text-[9px] sm:text-[10px] text-gray-500 font-bold mb-0.5">SROI價值</span>
+                                <span id="dash-sroi" class="text-sm font-black text-yellow-600 font-mono">$0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- 🌟 升級：抽獎序號常駐顯示列，附帶最新雲端活動推播 -->
+                <div id="lottery-ticket-bar" class="flex items-center justify-between bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200 shadow-sm overflow-hidden animate-fade-in-down w-full gap-2">
+                    <div class="flex items-center overflow-hidden flex-1">
+                        <div class="flex items-center shrink-0 mr-2 sm:mr-3 border-r border-yellow-200 pr-2 sm:pr-3">
+                            <i class="fas fa-ticket-alt text-yellow-500 text-sm md:text-base mr-1.5"></i>
+                            <span class="text-[11px] md:text-xs font-black text-yellow-800 tracking-wide">我的抽獎序號</span>
+                        </div>
+                        <div id="lottery-ticket-list" class="flex gap-2 overflow-x-auto custom-scrollbar pb-0.5 items-center flex-1">
+                            <span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>
+                        </div>
+                    </div>
+                    <!-- 後台推播最新活動 -->
+                    <div class="shrink-0 flex items-center bg-white/70 px-2 py-1.5 rounded-lg border border-yellow-200 shadow-sm transition-all hover:bg-white">
+                        <i class="fas fa-bullhorn text-red-400 mr-1.5 animate-pulse text-[11px]"></i>
+                        <span id="latest-event-title" class="text-[10px] md:text-[11px] font-black text-gray-700 tracking-wide truncate max-w-[100px] sm:max-w-[200px]">活動載入中...</span>
+                    </div>
+                </div>
+
             </div>
         </div>
     </header>
@@ -192,7 +213,7 @@
                             <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                                 <p class="text-[11px] font-bold text-gray-500 mb-2">SROI 專案數據綁定 (選填)</p>
                                 <div class="grid grid-cols-3 gap-2">
-                                    <select id="ent-create-proj-type" class="col-span-3 p-2 border border-gray-200 rounded-lg text-xs bg-gray-50 outline-none">
+                                    <select id="ent-create-proj-type" class="col-span-3 p-2 border border-gray-200 rounded-lg text-xs bg-white outline-none">
                                         <option value="">-- 請選擇專案類型 --</option>
                                         <option value="辦理企業日">辦理企業日</option>
                                         <option value="企業員工團購">企業員工團購</option>
@@ -474,7 +495,7 @@
             if(document.getElementById('dash-green-procure')) document.getElementById('dash-green-procure').textContent = '$' + (state.greenProcure || 0).toLocaleString();
             if(document.getElementById('dash-sroi')) document.getElementById('dash-sroi').textContent = '$' + (state.sroiProcure || 0).toLocaleString();
 
-            // 🌟 核心新增：自動偵測並同步顯示企業與員工編號
+            // 🌟 自動偵測並同步顯示企業與員工編號
             const entBadge = document.getElementById('dash-enterprise-badge');
             if (state.enterpriseName) {
                 if (entBadge) { entBadge.classList.remove('hidden'); entBadge.classList.add('flex'); }
@@ -482,6 +503,20 @@
                 if (document.getElementById('dash-enterprise-emp-id')) document.getElementById('dash-enterprise-emp-id').textContent = state.entEmpId || '無編號';
             } else {
                 if (entBadge) { entBadge.classList.add('hidden'); entBadge.classList.remove('flex'); }
+            }
+
+            // 🌟 核心新增：渲染抽獎序號列 (常駐顯示並加入防呆文字)
+            const ticketList = document.getElementById('lottery-ticket-list');
+            if (state.lotteryTickets && state.lotteryTickets.length > 0) {
+                if (ticketList) {
+                    ticketList.innerHTML = state.lotteryTickets.map(t =>
+                        `<span class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0" title="${t.eventName}">#${t.serial}</span>`
+                    ).join('');
+                }
+            } else {
+                if (ticketList) {
+                    ticketList.innerHTML = `<span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>`;
+                }
             }
         };
 
@@ -540,7 +575,7 @@
             const govContainer = document.getElementById('gov-eval-questions-container');
             
             if (entContainer) {
-                const entData = [ { title: '一、 環境永續參與 (E)', qs: ['1. 減碳認知：本次活動是否有效提升您對低碳旅遊與碳排放的認知？', '2. 生態導覽：您認為本次生態導覽或環境教育活動的內容豐富度？', '3. 綠色消費：您是否認同購買在地小農或友善環境產品的永續價值？', '4. 資源節約：活動中是否落實了減少一次性餐具及資源浪費的理念？'] }, { title: '二、 社會價值與地方創生 (S)', qs: ['5. 地方文化：本次行程是否讓您更深入了解當地的文化與社區發展？', '6. 經濟支持：您覺得企業舉辦此活動對當地商圈與青農是否有實質幫助？', '7. 團隊凝聚：本次戶外活動是否有助於提升企業員工間的交流與凝聚力？', '8. 身心健康：您認為參與里山自然體驗對您的身心健康與壓力釋放是否有益？'] }, { title: '三、 企業願景與綜合評價 (G)', qs: ['9. 願景對齊：您認為本次活動是否符合公司推推動 ESG 及永續發展的願景？', '10. 數據透明：使用「探探里山」平台記錄與歸戶數據，流程是否透明且直覺？', '11. 服務安排：您對本次行程的交通、食宿及整體時間節奏安排是否滿意？', '12. 持續參與：未來公司若繼續舉辦類似的 ESG 永續活動，您的參與意願？'] } ];
+                const entData = [ { title: '一、 環境永續參與 (E)', qs: ['1. 減碳認知：本次活動是否有效提升您對低碳旅遊與碳排放的認知？', '2. 生態導覽：您認為本次生態導覽或環境教育活動的內容豐富度？', '3. 綠色消費：您是否認同購買在地小農或友善環境產品的永續價值？', '4. 資源節約：活動中是否落實了減少一次性餐具及資源浪費的理念？'] }, { title: '二、 社會價值與地方創生 (S)', qs: ['5. 地方文化：本次行程是否讓您更深入了解當地的文化與社區發展？', '6. 經濟支持：您覺得企業舉辦此活動對當地商圈與青農是否有實質幫助？', '7. 團隊凝聚：本次戶外活動是否有助於提升企業員工間的交流與凝聚力？', '8. 身心健康：您認為參與里山自然體驗對您的身心健康與壓力釋放是否有益？'] }, { title: '三、 企業願景與綜合評價 (G)', qs: ['9. 願景對齊：您認為本次活動是否符合公司推動 ESG 及永續發展的願景？', '10. 數據透明：使用「探探里山」平台記錄與歸戶數據，流程是否透明且直覺？', '11. 服務安排：您對本次行程的交通、食宿及整體時間節奏安排是否滿意？', '12. 持續參與：未來公司若繼續舉辦類似的 ESG 永續活動，您的參與意願？'] } ];
                 let qIndex = 1; 
                 
                 let entHtml = '';
@@ -650,7 +685,28 @@
             
             onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); window.renderGovDashboard(); }, errHandler);
             onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); window.renderEntProjectsDashboard(); }, errHandler);
-            onSnapshot(collection(db, 'lottery_events'), (snapshot) => { window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); });
+            
+            // 🌟 監聽抽獎活動並動態推播最新活動至畫面右上角
+            onSnapshot(collection(db, 'lottery_events'), (snapshot) => { 
+                window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); 
+                
+                const activeEvents = window.globalLotteryEvents.filter(e => e.isActive);
+                activeEvents.sort((a, b) => {
+                    const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                    const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                    return tb - ta; // 最新在最前
+                });
+                
+                const latestEventTitleEl = document.getElementById('latest-event-title');
+                if (latestEventTitleEl) {
+                    if (activeEvents.length > 0) {
+                        latestEventTitleEl.textContent = activeEvents[0].title || '最新活動進行中';
+                        latestEventTitleEl.title = activeEvents[0].title || '';
+                    } else {
+                        latestEventTitleEl.textContent = '目前無活動';
+                    }
+                }
+            });
         }
 
         function loadMockData() {
@@ -1132,14 +1188,6 @@
                             <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                                 <div class="bg-yellow-400 h-1.5 rounded-full transition-all duration-1000" style="width: ${avgPercent}%"></div>
                             </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-3 mt-2">
-                            <div class="bg-white p-3.5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden group hover:border-green-200 transition-colors">
-                                <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-                                <div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black tracking-wide">累計減碳</p><span class="bg-green-50 text-green-600 text-[10px] px-1.5 py-0.5 rounded flex items-center"><i class="fas fa-arrow-trend-up"></i></span></div>
-                                <div class="flex justify-between items-end"><p class="font-black text-gray-700 text-xl flex items-baseline gap-1">${Math.round(Number(proj.carbon) || 0).toLocaleString()} <span class="text-[10px] text-gray-400 font-normal ml-0.5">g/CO2e</span></p></div>
-                            </div>
                             <div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-200 transition-colors">
                                 <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                                 <div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black tracking-wide">綠色消費</p><span class="bg-blue-50 text-blue-600 text-[10px] px-1.5 py-0.5 rounded flex items-center"><i class="fas fa-arrow-trend-up"></i></span></div>
@@ -1312,7 +1360,7 @@
                             <div class="mt-4 pt-3 border-t border-yellow-200/60 flex justify-between items-end text-[10px] text-gray-500 pb-2">
                                 <span class="inline-block leading-relaxed break-all pr-2">
                                     <i class="fas fa-link mr-1 text-gray-400"></i>溯源網址: <br class="sm:hidden"> ${traceUrl}
-                                    <span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-mori-forest bg-mori-light/50 border border-mori-sage/30 px-2 py-0.5 rounded tracking-wider shadow-sm">#${summaryCode}</span>
+                                    <span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-blue-500 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded tracking-wider shadow-sm">#${summaryCode}</span>
                                 </span>
                                 <i class="fas fa-qrcode text-gray-300 text-xl flex-shrink-0 mb-0.5"></i>
                             </div>
