@@ -1163,6 +1163,53 @@ window.addEventListener('storage', async (event) => {
     }
 });
 
+// 🌟 新增：主網頁指定的高階同步引擎 (攔截 esgt_sync_to_game 指令)
+async function handleEsgtSyncToGame(data) {
+    if (!travelerProfile) return;
+    
+    const newScore = parseInt(data.totalScore);
+    if (!isNaN(newScore)) {
+        console.log("📥 [遊戲端] 收到主網頁 esgt_sync_to_game 指令，更新金幣(積分)為:", newScore);
+        
+        // 👉 關鍵提醒實作：將收到的 totalScore 更新到遊戲內的金幣變數 (points) 中
+        travelerProfile.points = newScore; 
+        travelerProfile.lastSyncPts = newScore; // 同步水位線，防止重複發放
+        
+        updateStatusUI(); // 刷新右上角金幣顯示
+        await window.saveProgress(); // 確保存檔寫入硬碟
+        
+        // 給予玩家華麗的視覺回饋
+        if(uiPrompt) {
+            uiPrompt.classList.remove('hidden');
+            uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-emerald-500 p-5 rounded-xl text-center shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-all opacity-100 z-50";
+            document.getElementById('prompt-title').innerHTML = `📡 主網頁數據已同步`;
+            document.getElementById('prompt-desc').innerText = `您的永續積分已由系統校準至 ${newScore} pts！`;
+            const btn = document.getElementById('prompt-btn');
+            btn.innerText = "確認";
+            btn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
+            btn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 px-8 py-2 rounded-full text-white font-bold transition-colors";
+        }
+    }
+}
+
+// 攔截 PostMessage 形式的 esgt_sync_to_game
+window.addEventListener('message', async (event) => {
+    if (event.data && event.data.type === 'esgt_sync_to_game') {
+        await handleEsgtSyncToGame(event.data);
+    }
+});
+
+// 攔截 LocalStorage 形式的 esgt_sync_to_game
+window.addEventListener('storage', async (event) => {
+    if (event.key === 'esgt_sync_to_game' && event.newValue) {
+        try {
+            const data = JSON.parse(event.newValue);
+            await handleEsgtSyncToGame(data);
+            localStorage.removeItem('esgt_sync_to_game'); // 讀取後立刻銷毀，確保單次觸發
+        } catch(e) {}
+    }
+});
+
 // 更新：將根目錄 ID 設定為您的專案 ID
 const appId = 'sustainable-game-e1b6f';
 
