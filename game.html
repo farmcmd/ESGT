@@ -219,7 +219,7 @@
                 </div>
                 <div class="bg-indigo-900/40 p-3 rounded-lg border border-indigo-500/50 flex justify-between items-center">
                     <div class="flex items-center gap-3"><span class="text-3xl">🆘</span><div><h3 class="text-indigo-300 font-bold text-sm">戰鬥求救卡</h3><p class="text-indigo-200/70 text-xs mt-1">戰鬥中使用，請求支援。</p></div></div>
-                    <button onclick="buyItem('sos_card', 15, '戰鬥求救卡')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">15 pts</button>
+                    <button onclick="buyItem('sos_card', 15, '战鬥求救卡')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded shadow transition-colors shrink-0">15 pts</button>
                 </div>
                 <div class="bg-fuchsia-900/40 p-3 rounded-lg border border-fuchsia-500/50 flex justify-between items-center">
                     <div class="flex items-center gap-3"><span class="text-3xl">📘</span><div><h3 class="text-fuchsia-300 font-bold text-sm">資源循環技能書</h3><p class="text-fuchsia-200/70 text-xs mt-1">研讀後永久提升戰鬥技能傷害。</p></div></div>
@@ -650,17 +650,32 @@ window.ITEM_DICT = {
     'energy_book': {n:'能效專家技能書', i:'📗', d:'研讀後永久提升防禦力', price: 0} 
 };
 
-// 動態生成 SDG 1~17 飛鏢加入道具字典
-const SDG_LIST = [
-    "終結貧窮", "消除飢餓", "健康與福祉", "優質教育", "性別平權", "淨水及衛生", "可負擔的潔淨能源", "合適的工作及經濟成長", 
-    "工業化、創新及基礎建設", "減少不平等", "永續城鄉", "責任消費及生產", "氣候行動", "保育海洋生態", "保育陸域生態", 
-    "和平、正義及健全制度", "多元夥伴關係"
+// 🌟 升級：動態生成 SDG 1~17 飛鏢加入道具字典，並標註紅色剋制提示
+const SDG_DATA = [
+    { name: "終結貧窮", target: "弱勢剝削、惡劣仲介" },
+    { name: "消除飢餓", target: "農業污染、化學肥料" },
+    { name: "健康與福祉", target: "粉塵疾病、血汗過勞" },
+    { name: "優質教育", target: "童工剝削、教育剝奪" },
+    { name: "性別平權", target: "職場歧視、性別不公" },
+    { name: "淨水及衛生", target: "河川毒水、水域污染" },
+    { name: "可負擔的潔淨能源", target: "化石燃料、高碳排工業" },
+    { name: "合適的工作及經濟成長", target: "血汗企業、強迫勞動" },
+    { name: "工業化、創新及基礎建設", target: "危險廠房、工業廢氣" },
+    { name: "減少不平等", target: "市場壟斷、反競爭行為" },
+    { name: "永續城鄉", target: "城鄉垃圾、掩埋場污染" },
+    { name: "責任消費及生產", target: "有害廢棄物、發泡冷媒" },
+    { name: "氣候行動", target: "溫室氣體、氣候異常" },
+    { name: "保育海洋生態", target: "海洋垃圾、漏油污染" },
+    { name: "保育陸域生態", target: "森林盜伐、生態破壞" },
+    { name: "和平、正義及健全制度", target: "貪汙黑箱、財報漂綠" },
+    { name: "多元夥伴關係", target: "資安漏洞、信任危機" }
 ];
-SDG_LIST.forEach((name, idx) => {
+
+SDG_DATA.forEach((sdg, idx) => {
     window.ITEM_DICT[`sdg_${idx+1}`] = {
-        n: `SDG ${idx+1} ${name} 飛鏢`, 
+        n: `SDG ${idx+1} ${sdg.name} 飛鏢`, 
         i: '🎯', 
-        d: '戰鬥專用：擲出永續飛鏢，若精準對應污染場景可造成毀滅性真實重擊'
+        d: `戰鬥專用：剋制<span class="text-red-400 font-bold">【${sdg.target}】</span>相關之威脅，造成毀滅重擊`
     };
 });
 
@@ -693,7 +708,7 @@ const MAP_COLS = 50, MAP_ROWS = 50; let mapData = [];
 const allEvents = [
     { x: 15, y: 15, name: '季風觀測峽谷', icon: '🎐', desc: '記錄峽谷強風數據。', type: 'landmark' },
     { x: 35, y: 18, name: '濕地水質監測站', icon: '💧', desc: '採樣地下水純淨度。', type: 'landmark' },
-    { x: 25, y: 25, name: '減災物資補給站', icon: '⛺', desc: '兌換復育物資。', type: 'shop' },
+    { x: 25, y: 25, name: '減災物資補給站', icon: '⛺', desc: '以「永續積分」兌換復育裝備。', type: 'shop' },
     { x: 21, y: 25, name: '嚮導 AI', icon: '🤖', desc: '提供遊戲玩法解說。', type: 'npc' },
     { x: 28, y: 25, name: '守望老鷹', icon: '🦅', desc: '尋找有潛力能效專家的神鳥。', type: 'quest_npc_eagle' },
     { x: 22, y: 10, name: '北方生態林區', icon: '🔥', desc: '極端林火。', type: 'disaster', resolved: false, observed: false, reported: false },
@@ -854,6 +869,40 @@ function checkEndingCondition() {
 // ==========================================
 // 2. 外部通訊與 Firebase 登入邏輯
 // ==========================================
+
+// 🌍 探探里山 - 遊戲與主網頁雙向同步引擎 (Single Source of Truth)
+const ESGT_STORAGE_KEY = 'shuilMoriData_v3.0';
+
+function loadESGTData() {
+    try {
+        const raw = localStorage.getItem(ESGT_STORAGE_KEY);
+        if (raw) {
+            const state = JSON.parse(raw);
+            console.log("📥 [遊戲端] 成功讀取主網頁數據:", state);
+            return {
+                totalScore: parseInt(state.totalScore) || 0,
+                heroIndex: parseInt(state.heroIndex) || 0,
+                playerName: state.playerName || '匿名旅者'
+            };
+        }
+    } catch(e) { console.error("讀取主網頁數據失敗", e); }
+    return { totalScore: 0, heroIndex: 0, playerName: '匿名旅者' };
+}
+
+function syncESGTData(newTotalScore, newHeroIndex) {
+    try {
+        let state = {};
+        const raw = localStorage.getItem(ESGT_STORAGE_KEY);
+        if (raw) state = JSON.parse(raw);
+        
+        state.totalScore = parseInt(newTotalScore) || 0;
+        state.heroIndex = parseInt(newHeroIndex) || 0;
+        
+        localStorage.setItem(ESGT_STORAGE_KEY, JSON.stringify(state));
+        console.log("📤 [遊戲端] 已強制同步數據回主網頁:", { totalScore: newTotalScore, heroIndex: newHeroIndex });
+    } catch (e) { console.error("同步至主網頁失敗", e); }
+}
+
 function checkExternalLoginData() {
     let urlParams = new URLSearchParams(window.location.search);
 
@@ -879,26 +928,20 @@ function checkExternalLoginData() {
         window.parent.postMessage({ type: 'GAME_READY' }, "https://farmcmd.github.io");
     }
 
-    // 🌟 智慧擷取 2：讀取同網域共用的初始化資料
+    // 🌟 智慧擷取 2：讀取主網頁的 SSOT 數據
     let sharedData = null;
-    try {
-        // 嘗試讀取 init_data (標準跳轉抽屜)
-        let sharedStr = localStorage.getItem('esgt_init_data');
-        if (sharedStr) {
-            sharedData = JSON.parse(sharedStr);
-            localStorage.removeItem('esgt_init_data'); // 讀取後立刻刪除防重複
-            console.log("✅ 成功從 LocalStorage (init) 攔截初始化數據：", sharedData);
-        } else {
-            // 擴大寬容度：嘗試讀取 pending_rewards (動態雷達抽屜)
-            // 若主網頁開發者把資料放在這個抽屜然後跳轉，我們也一併把它接起來！
-            sharedStr = localStorage.getItem('esgt_pending_rewards');
-            if (sharedStr) {
-                sharedData = JSON.parse(sharedStr);
-                localStorage.removeItem('esgt_pending_rewards');
-                console.log("✅ 成功從 LocalStorage (pending) 攔截初始化數據：", sharedData);
-            }
-        }
-    } catch(e) {}
+    const esgtInit = loadESGTData();
+    if (esgtInit && (esgtInit.totalScore > 0 || esgtInit.playerName !== '匿名旅者')) {
+        sharedData = {
+            name: esgtInit.playerName !== '匿名旅者' ? esgtInit.playerName : null,
+            pts: esgtInit.totalScore,
+            heroIndex: esgtInit.heroIndex
+        };
+    }
+    
+    // 清除舊版的抽屜(若有殘留)，維持環境乾淨
+    localStorage.removeItem('esgt_init_data');
+    localStorage.removeItem('esgt_pending_rewards');
 
     // 🌟 智慧名稱組合：精準抓取 name 與 code，避免遺漏
     let qName = urlParams.get('name') || urlParams.get('user') || urlParams.get('username') || '';
@@ -1116,49 +1159,45 @@ window.addEventListener('message', async (event) => {
     } catch (e) {}
 });
 
-// 🧩 拼圖一：全自動感測雷達接收器 (LocalStorage)
+// 🧩 拼圖一：全自動感測雷達接收器 (SSOT 雙向連動監聽)
 window.addEventListener('storage', async (event) => {
-    // 只攔截我們專屬的雷達頻道
-    if (event.key === 'esgt_pending_rewards' && event.newValue) {
+    // 監聽主網頁數據抽屜的變動
+    if (event.key === ESGT_STORAGE_KEY && event.newValue) {
         try {
-            const reward = JSON.parse(event.newValue);
-            
-            // 確保有獲得分數才處理，且玩家已經登入
-            if (travelerProfile && (reward.pts > 0 || reward.carb > 0 || reward.dist > 0)) {
-                console.log("🎮 遊戲端成功攔截包裹：", reward);
+            const state = JSON.parse(event.newValue);
+            console.log("🔄 [遊戲端] 偵測到主網頁數據變動，最新永續積分:", state.totalScore);
 
-                const earnedPts = parseInt(reward.pts) || 0;
-                const earnedCarb = parseInt(reward.carb) || 0;
-                const earnedDist = parseFloat(reward.dist) || 0;
+            // 確保玩家已經登入，且主網頁傳來了有效的總積分
+            if (travelerProfile && state.totalScore !== undefined) {
+                const newTotalScore = parseInt(state.totalScore) || 0;
                 
-                // 遊戲邏輯：累加玩家資源
-                travelerProfile.points += earnedPts;
-                travelerProfile.lastSyncPts = (travelerProfile.lastSyncPts || 0) + earnedPts; // 更新水位線
-                travelerProfile.carbon += earnedCarb;
-                travelerProfile.distance += earnedDist;
-                travelerProfile.heroIndex = (travelerProfile.heroIndex || 0) + earnedPts;
-                
-                // 刷新 UI 與存檔 (updateStatusUI 內已包含拼圖三的發送邏輯)
-                updateStatusUI();
-                await window.saveProgress();
-                
-                // 🛡️ 處理完畢後，立刻把包裹銷毀，避免重複領取 (防弊機制)
-                localStorage.removeItem('esgt_pending_rewards');
-                
-                // 播放動畫「📡 系統同步完成...」
-                if(uiPrompt) {
-                    uiPrompt.classList.remove('hidden');
-                    uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-emerald-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100";
-                    document.getElementById('prompt-title').innerHTML = `📡 系統同步完成`;
-                    document.getElementById('prompt-desc').innerText = `偵測到外部永續行動！自動匯入 ${earnedPts} 點積分與 ${earnedDist}km 里程。`;
-                    const btn = document.getElementById('prompt-btn');
-                    btn.innerText = "確認";
-                    btn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
-                    btn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 px-8 py-2 rounded-full text-white font-bold transition-colors";
+                // 邏輯：只有當主網頁的積分「大於」遊戲目前的積分，代表玩家在主網頁做了新任務獲得積分
+                if (newTotalScore > travelerProfile.points) {
+                    const earnedPts = newTotalScore - travelerProfile.points;
+                    
+                    // 同步遊戲狀態
+                    travelerProfile.points = newTotalScore;
+                    travelerProfile.lastSyncPts = newTotalScore;
+                    
+                    // 刷新 UI 與存檔 (updateStatusUI 內已包含回傳機制)
+                    updateStatusUI();
+                    await window.saveProgress();
+                    
+                    // 播放動畫「📡 系統同步完成...」
+                    if(uiPrompt) {
+                        uiPrompt.classList.remove('hidden');
+                        uiPrompt.className = "ui-layer absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-950 border-2 border-emerald-500 p-5 rounded-xl text-center shadow-lg transition-all opacity-100 z-50";
+                        document.getElementById('prompt-title').innerHTML = `📡 主網頁數據已同步`;
+                        document.getElementById('prompt-desc').innerText = `偵測到外部永續行動！已匯入 ${earnedPts} 點新積分。`;
+                        const btn = document.getElementById('prompt-btn');
+                        btn.innerText = "確認";
+                        btn.onclick = () => { uiPrompt.classList.add('hidden'); currentEvent = null; };
+                        btn.className = "interactive-btn bg-emerald-600 hover:bg-emerald-500 px-8 py-2 rounded-full text-white font-bold transition-colors";
+                    }
                 }
             }
         } catch(err) {
-            console.error("包裹解析失敗", err);
+            console.error("解析主網頁變更失敗", err);
         }
     }
 });
@@ -1546,7 +1585,8 @@ window.sendHeroIndexToMainPage = (currentPts) => {
     if (targetWindow) {
         targetWindow.postMessage({
             type: 'SYNC_HERO_INDEX',
-            heroIndex: currentPts
+            heroIndex: currentPts,
+            totalScore: travelerProfile ? travelerProfile.points : 0 // 同時傳送最新積分餘額
         }, "https://farmcmd.github.io");
     }
 };
@@ -1593,10 +1633,15 @@ window.buyItem = (id, cost, name) => {
     if (!travelerProfile || travelerProfile.points < cost) {
         const msg = document.getElementById('shop-message'); msg.innerText = "❌ 積分不足"; msg.className = "h-6 mt-4 text-center text-red-400 text-sm font-bold animate-bounce"; setTimeout(() => msg.classList.remove('animate-bounce'), 500); return;
     }
-    travelerProfile.points -= cost; travelerProfile.inventory[id] = (travelerProfile.inventory[id] || 0) + 1;
+    
+    travelerProfile.points -= cost; 
+    travelerProfile.lastSyncPts -= cost; // 🌟 同步降低積分水位線
+    
+    travelerProfile.inventory[id] = (travelerProfile.inventory[id] || 0) + 1;
     document.getElementById('shop-current-pts').innerText = travelerProfile.points;
     const msg = document.getElementById('shop-message'); msg.innerText = `✅ 成功兌換 ${name}`; msg.className = "h-6 mt-4 text-center text-emerald-400 text-sm font-bold";
-    updateStatusUI();
+    
+    updateStatusUI(); 
     window.saveProgress(); 
 };
 
@@ -1608,7 +1653,7 @@ window.customConfirm = (title, desc, onConfirm) => {
     document.getElementById('btn-confirm-ok').onclick = () => { document.getElementById('confirm-modal').classList.add('hidden'); onConfirm(); };
 };
 
-// 🌟 新增：多孔隙生態棲地知識問答邏輯
+// 🌟 多孔隙生態棲地知識問答邏輯
 window.openFarmQuiz = () => {
     if (!currentEvent || currentEvent.type !== 'eco_farm' || currentEvent.built) return;
     if (!travelerProfile.quests.turtle || travelerProfile.quests.turtle.state !== 'active') return;
@@ -2408,7 +2453,14 @@ window.executeCombatAction = (action) => {
             setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'field_monsters', combatState.fieldMonsterId), { hp: currentMonster.hp }, { merge: true }).catch(e => {});
         }
 
-        setTimeout(() => { document.getElementById('combat-modal').classList.add('hidden'); player.x -= 20; player.y -= 20; isInCombat = false; currentMonster = null; }, 1000); return;
+        setTimeout(() => { 
+            document.getElementById('combat-modal').classList.add('hidden'); 
+            // 🌟 修正卡海漏洞：戰術撤退改為返回中央營地，避免穿牆
+            player.x = 25 * TILE_SIZE; 
+            player.y = 25 * TILE_SIZE; 
+            isInCombat = false; 
+            currentMonster = null; 
+        }, 1000); return;
     }
 
     if (action === 'basic_attack') {
