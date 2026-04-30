@@ -1818,8 +1818,9 @@
             window.loadLocalData();
             initFirebase();
 
-            // 🌟 接收來自內嵌儀表板的「無縫切換面板」與「關閉視窗」指令
+            // 🌟 接收來自內嵌儀表板與「地球日誌遊戲端」的跨網域指令
             window.addEventListener('message', (event) => {
+                // 1. 儀表板的切換與關閉
                 if (event.data && event.data.action === 'SWITCH_TAB') {
                     if (event.data.tab === 'gov') document.getElementById('tab-btn-gov')?.click();
                     else document.getElementById('tab-btn-ent')?.click();
@@ -1827,13 +1828,36 @@
                 if (event.data && event.data.action === 'CLOSE_MODAL') {
                     window.closeModal('dashboard-iframe-modal');
                 }
+                
+                // 2. 🌟 接收來自地球日誌遊戲端的回傳 (若未來改用 iframe 內嵌時備用)
+                if (event.data && event.data.type === 'SYNC_HERO_INDEX') {
+                    if (typeof event.data.heroIndex !== 'undefined') {
+                        state.heroIndex = parseInt(event.data.heroIndex) || 0;
+                        window.saveData(); window.updateDisplays(); 
+                        window.showToast(`🌍 收到來自地球日誌的同步！勇者指數已更新為 ${state.heroIndex}`);
+                    }
+                }
             });
 
             window.addEventListener('storage', (e) => {
+                // 1. 監聽原本的主狀態更新
                 if (e.key === LOCAL_STORAGE_KEY || !e.key) {
                     try {
                         const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
                         if (raw) { state = { ...state, ...JSON.parse(raw) }; window.updateDisplays(); window.renderCheckoutHistory(); window.renderLogs(); }
+                    } catch(err){}
+                }
+                
+                // 2. 🌟 核心修復：跨分頁專屬雷達！監聽來自地球日誌 (新分頁) 的勇者指數更新
+                if (e.key === 'esgt_hero_index_update' && e.newValue) {
+                    try {
+                        const data = JSON.parse(e.newValue);
+                        if (typeof data.heroIndex !== 'undefined') {
+                            state.heroIndex = parseInt(data.heroIndex) || 0;
+                            window.saveData(); // 存入主檔
+                            window.updateDisplays(); // 渲染藍色徽章
+                            window.showToast(`🌍 偵測到遊戲進度！勇者指數已同步更新為 ${state.heroIndex}`);
+                        }
                     } catch(err){}
                 }
             });
