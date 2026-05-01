@@ -114,11 +114,14 @@
                             <span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>
                         </div>
                     </div>
-                    <!-- 後台推播最新活動 -->
-                    <div class="shrink-0 flex items-center bg-white/70 px-2 py-1.5 rounded-lg border border-yellow-200 shadow-sm transition-all hover:bg-white">
-                        <i class="fas fa-bullhorn text-red-400 mr-1.5 animate-pulse text-[11px]"></i>
-                        <span id="latest-event-title" class="text-[10px] md:text-[11px] font-black text-gray-700 tracking-wide truncate max-w-[100px] sm:max-w-[200px]">活動載入中...</span>
-                    </div>
+                    <!-- 🌟 升級：後台推播最新活動按鈕 -->
+                    <button onclick="window.openLatestEventsModal()" class="shrink-0 flex items-center bg-white/95 px-3 py-1.5 rounded-lg border-2 border-yellow-300 shadow-sm hover:shadow hover:bg-yellow-50 transition-all group active:scale-95 cursor-pointer">
+                        <i class="fas fa-gift text-red-500 mr-1.5 group-hover:animate-bounce text-[12px]"></i>
+                        <span class="text-[10px] md:text-[11px] font-black text-red-600 tracking-wide mr-1.5 whitespace-nowrap">最新活動</span>
+                        <span id="latest-event-title" class="text-[10px] md:text-[11px] font-bold text-gray-700 tracking-wide truncate max-w-[80px] sm:max-w-[150px] border-l border-yellow-200 pl-1.5">抽獎活動關閉中</span>
+                        <span id="latest-event-light" class="ml-1.5 sm:ml-2 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shadow-sm animate-pulse"></span>
+                        <i class="fas fa-chevron-right text-[10px] text-yellow-500 ml-1.5 group-hover:translate-x-0.5 transition-transform"></i>
+                    </button>
                 </div>
 
             </div>
@@ -443,6 +446,25 @@
     <div id="share-qrcode-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-500 relative text-center shadow-2xl"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('share-qrcode-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-xl font-bold text-gray-800 mb-2 tracking-wide"><i class="fas fa-qrcode text-blue-500 mr-2"></i>掃描條碼分享</h3><p class="text-[12px] text-gray-500 mb-4">請現場夥伴直接掃描，或點擊複製連結</p><div id="qrcode-container" class="flex justify-center mb-4 p-4 bg-white border-2 border-gray-100 rounded-xl shadow-inner min-h-[180px] items-center"></div><input type="text" id="share-modal-url" class="w-full p-2.5 border-2 border-gray-200 rounded-lg text-xs bg-gray-50 outline-none text-gray-600 mb-3 font-mono" readonly><button id="share-modal-copy-btn" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-md transition flex items-center justify-center tracking-wide"><i class="fas fa-copy mr-2"></i>複製專屬連結</button></div></div>
     <div id="custom-prompt-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('custom-prompt-modal')"><i class="fas fa-times text-xl"></i></button><h3 id="custom-prompt-title" class="text-lg font-bold text-gray-800 mb-4 tracking-wide"></h3><input type="text" id="custom-prompt-input" class="w-full p-3 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-yellow-500 focus:outline-none mb-5 shadow-inner text-gray-700"><div class="flex gap-3"><button id="custom-prompt-cancel" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition shadow-sm border border-gray-200">取消</button><button id="custom-prompt-confirm" class="flex-1 py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-lg font-bold hover:shadow-lg transition shadow-md">確認產出</button></div></div></div>
 
+    <!-- 🌟 最新活動列表 Modal (Accordion 折疊呈現) -->
+    <div id="latest-events-modal" class="modal-overlay hidden" style="z-index: 9999;">
+        <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-red-500 rounded-2xl shadow-2xl relative flex flex-col h-[75vh] md:h-[70vh]">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('latest-events-modal')"><i class="fas fa-times text-xl"></i></button>
+            <div class="p-2 border-b border-gray-100 flex-shrink-0 mb-2">
+                <h3 class="text-xl font-black text-red-600 flex items-center tracking-wide"><i class="fas fa-gift text-red-500 mr-2"></i>最新抽獎活動列表</h3>
+                <p class="text-xs text-gray-500 mt-1">點擊標題展開活動詳情與規範，完成歸戶即可自動獲取抽獎資格！</p>
+            </div>
+            <div class="flex-grow overflow-y-auto custom-scrollbar p-2">
+                <div id="latest-events-accordion-container" class="space-y-3">
+                    <!-- JS 動態渲染折疊內容 -->
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end flex-shrink-0">
+                <button class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition shadow-sm" onclick="window.closeModal('latest-events-modal')">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, deleteDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
@@ -523,6 +545,64 @@
         window.resetPlayerStats = function() {
             state.totalMileage = 0; state.totalCarbon = 0; state.totalScore = 0; state.greenProcure = 0; state.sroiProcure = 0; state.projectProcure = 0;
             window.saveData(); window.updateTopDisplays();
+        };
+
+        // 🌟 新增：最新活動列表折疊 Modal 控制與渲染
+        window.openLatestEventsModal = function() {
+            const container = document.getElementById('latest-events-accordion-container');
+            if (!container) return;
+            
+            // 使用 globalLotteryEvents 渲染，將進行中的排前面，然後按時間排序
+            const events = [...(window.globalLotteryEvents || [])];
+            events.sort((a, b) => {
+                if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+                const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb - ta;
+            });
+
+            if (events.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-box-open text-3xl mb-3 opacity-50"></i><br>目前尚無任何活動資料</div>';
+            } else {
+                container.innerHTML = events.map((ev) => {
+                    const statusBadge = ev.isActive 
+                        ? `<span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-circle text-[8px] mr-1.5 animate-pulse text-green-500"></i>進行中</span>`
+                        : `<span class="bg-gray-100 text-gray-500 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-moon text-[10px] mr-1"></i>已結束</span>`;
+                    
+                    return `
+                    <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white group transition-all duration-300">
+                        <!-- 點擊展開的按鈕區塊 -->
+                        <button class="w-full text-left px-4 py-3.5 bg-gray-50 hover:bg-yellow-50/50 focus:outline-none flex justify-between items-center transition-colors" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180');">
+                            <div class="flex items-center gap-3 pr-4 overflow-hidden w-full">
+                                ${statusBadge}
+                                <span class="font-black text-gray-800 text-[14px] truncate flex-1">${ev.title || '未命名活動'}</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 chevron-icon shrink-0"></i>
+                        </button>
+                        
+                        <!-- 隱藏的折疊內容區塊 -->
+                        <div class="hidden px-4 py-4 bg-white border-t border-gray-100 animate-fade-in-down">
+                            <p class="text-[13px] text-gray-600 leading-relaxed mb-4 whitespace-pre-wrap"><i class="fas fa-info-circle text-gray-400 mr-1.5"></i>${ev.desc || '主辦單位暫無詳細說明'}</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-blue-50/30 p-3.5 rounded-lg border border-blue-100/50">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎯 歸戶限制</span>
+                                    <span class="text-[12px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded shadow-sm">${ev.targetBoard || '全站適用'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎫 兌換門檻</span>
+                                    <span class="text-[12px] font-black text-red-600 font-mono bg-red-50 px-1.5 py-0.5 rounded border border-red-100 shadow-sm">${ev.requiredScore || 100} pts/張</span>
+                                </div>
+                                <div class="sm:col-span-2 mt-1">
+                                    <span class="text-[10px] text-gray-400 block mb-0.5 font-bold">📅 活動期間</span>
+                                    <span class="text-[12px] font-bold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200 shadow-sm"><i class="far fa-calendar-alt text-gray-400 mr-1"></i>${ev.startDate || '即日起'} ~ ${ev.endDate || '未定'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+            window.openModal('latest-events-modal');
         };
 
         // ==========================================
@@ -698,12 +778,18 @@
                 });
                 
                 const latestEventTitleEl = document.getElementById('latest-event-title');
+                const latestEventLightEl = document.getElementById('latest-event-light');
                 if (latestEventTitleEl) {
                     if (activeEvents.length > 0) {
                         latestEventTitleEl.textContent = activeEvents[0].title || '最新活動進行中';
                         latestEventTitleEl.title = activeEvents[0].title || '';
+                        if(latestEventLightEl) {
+                            const color = activeEvents[0].lightColor || 'green';
+                            latestEventLightEl.className = `ml-1.5 sm:ml-2 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-sm animate-pulse ${color === 'red' ? 'bg-red-500' : (color === 'yellow' ? 'bg-yellow-400' : 'bg-green-500')}`;
+                        }
                     } else {
-                        latestEventTitleEl.textContent = '目前無活動';
+                        latestEventTitleEl.textContent = '抽獎活動關閉中';
+                        if(latestEventLightEl) latestEventLightEl.className = 'ml-1.5 sm:ml-2 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shadow-sm animate-pulse';
                     }
                 }
             });
