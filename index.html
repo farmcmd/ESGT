@@ -103,10 +103,11 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <button id="install-pwa-btn" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group">
-                    <i class="fas fa-plus-square text-white/90 text-sm group-hover:scale-110 transition-transform"></i>
-                    <span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">加主畫面</span>
-                </button>
+                <!-- 🌟 修改：將 PWA 安裝按鈕替換為「抽獎中心」捷徑 (改用標準 a 標籤確保最高相容性) -->
+                <a href="lottery.html" target="_blank" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group cursor-pointer decoration-transparent hover:decoration-transparent">
+                    <i class="fas fa-gift text-yellow-400 text-sm group-hover:scale-110 group-hover:animate-bounce transition-transform"></i>
+                    <span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">抽獎中心</span>
+                </a>
                 <button id="header-share-btn" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group">
                     <i class="fas fa-qrcode text-white/90 text-sm group-hover:scale-110 transition-transform"></i>
                     <span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">分享</span>
@@ -839,8 +840,14 @@
                 if (!iframe.dataset.loaded) {
                     iframe.src = `https://farmcmd.github.io/ESGT/dashboard.html?tab=${tab}&t=${Date.now()}`;
                     iframe.dataset.loaded = "true";
+                    // 🌟 確保 iframe 初次載入完畢後，瞬間空投狀態與抽獎活動清單
+                    iframe.onload = () => {
+                        iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state, events: window.globalLotteryEvents || [] }, '*');
+                    };
                 } else {
                     iframe.contentWindow.postMessage({ action: 'SWITCH_TAB', tab: tab }, '*');
+                    // 🌟 即使已經載入，每次打開也強制空投一次最新清單，確保不漏接
+                    iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state, events: window.globalLotteryEvents || [] }, '*');
                 }
             }
             window.openModal('dashboard-iframe-modal');
@@ -1279,7 +1286,8 @@
 
             const iframe = document.getElementById('dashboard-iframe');
             if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state }, '*');
+                // 🌟 核心修復：背景狀態更新時，將抽獎清單一起打包傳給儀表板
+                iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state, events: window.globalLotteryEvents || [] }, '*');
             }
         };
 
@@ -1830,7 +1838,12 @@
 
             onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
             onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
-            onSnapshot(collection(db, 'lottery_events'), (snapshot) => { window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); });
+            
+            // 🌟 修正：當雲端抽獎活動有更新時，強制觸發一次推播給儀表板
+            onSnapshot(collection(db, 'lottery_events'), (snapshot) => { 
+                window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); 
+                if(typeof window.updateDisplays === 'function') window.updateDisplays();
+            });
 
             onSnapshot(doc(db, 'system_messages', 'certifications'), (docSnap) => {
                 if (docSnap.exists()) { globalCerts = docSnap.data(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }
