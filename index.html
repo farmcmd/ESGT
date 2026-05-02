@@ -59,9 +59,15 @@
         .goog-logo-link { display: none !important; }
         .goog-te-gadget { color: transparent !important; font-size: 0 !important; }
         
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        
+        /* 🌟 新增：抽獎列專屬高質感橫向捲軸 */
+        .ticket-scrollbar::-webkit-scrollbar { height: 6px; }
+        .ticket-scrollbar::-webkit-scrollbar-track { background: rgba(254, 240, 138, 0.4); border-radius: 10px; }
+        .ticket-scrollbar::-webkit-scrollbar-thumb { background-color: #FBBF24; border-radius: 10px; cursor: pointer; }
+        .ticket-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #F59E0B; }
     </style>
 </head>
 <body class="font-sans antialiased overflow-x-hidden">
@@ -140,7 +146,28 @@
                 <i class="fas fa-id-badge mr-1 text-blue-300"></i><span id="display-enterprise-emp-id" class="font-mono font-bold tracking-wider"></span>
             </div>
 
-            <div class="mt-4 animate-fade-in-down" style="animation-delay: 0.1s;">
+            <!-- 🌟 抽獎序號常駐顯示列 (已依照指示安全隱藏) -->
+            <div id="lottery-ticket-bar" class="hidden items-center justify-between bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200 shadow-sm overflow-hidden animate-fade-in-down w-full max-w-4xl mt-4 mb-2 gap-2">
+                <div class="flex items-center overflow-hidden flex-1">
+                    <div class="flex items-center shrink-0 mr-2 sm:mr-3 border-r border-yellow-200 pr-2 sm:pr-3">
+                        <i class="fas fa-ticket-alt text-yellow-500 text-sm md:text-base mr-1.5"></i>
+                        <span class="text-[11px] md:text-xs font-black text-yellow-800 tracking-wide">序號</span>
+                    </div>
+                    <div id="lottery-ticket-list" class="flex gap-2 overflow-x-auto ticket-scrollbar pb-1.5 items-center flex-1">
+                        <span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>
+                    </div>
+                </div>
+                <!-- 🌟 後台推播最新活動按鈕 -->
+                <button onclick="window.openLatestEventsModal()" class="shrink-0 flex items-center bg-white/95 px-3 py-1.5 rounded-lg border-2 border-yellow-300 shadow-sm hover:shadow hover:bg-yellow-50 transition-all group active:scale-95 cursor-pointer">
+                    <i class="fas fa-gift text-red-500 mr-1.5 group-hover:animate-bounce text-[12px]"></i>
+                    <span class="text-[10px] md:text-[11px] font-black text-red-600 tracking-wide mr-1.5 whitespace-nowrap">活動列表</span>
+                    <div class="h-3.5 w-px bg-yellow-200 mx-1.5"></div>
+                    <span id="latest-event-light" class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shadow-sm animate-pulse" title="抽獎活動關閉中"></span>
+                    <i class="fas fa-chevron-right text-[10px] text-yellow-500 ml-1.5 group-hover:translate-x-0.5 transition-transform"></i>
+                </button>
+            </div>
+            
+            <div class="hidden mt-4 animate-fade-in-down" style="animation-delay: 0.1s;">
                 <a href="https://farmcmd.github.io/ESGT/events.html" target="_blank" class="px-6 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm flex items-center group animate-pulse inline-flex">
                     <i class="fas fa-ticket-alt mr-2 group-hover:scale-110 transition-transform"></i> 前往最新活動與報名資訊
                 </a>
@@ -446,6 +473,25 @@
         </section>
     </main>
 
+    <!-- 🌟 最新活動列表 Modal (Accordion 折疊呈現) -->
+    <div id="latest-events-modal" class="modal-overlay hidden" style="z-index: 9999;">
+        <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-red-500 rounded-2xl shadow-2xl relative flex flex-col h-[75vh] md:h-[70vh]">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('latest-events-modal')"><i class="fas fa-times text-xl"></i></button>
+            <div class="p-2 border-b border-gray-100 flex-shrink-0 mb-2">
+                <h3 class="text-xl font-black text-red-600 flex items-center tracking-wide"><i class="fas fa-gift text-red-500 mr-2"></i>最新抽獎活動列表</h3>
+                <p class="text-xs text-gray-500 mt-1">點擊標題展開活動詳情與規範，完成歸戶即可自動獲取抽獎資格！</p>
+            </div>
+            <div class="flex-grow overflow-y-auto custom-scrollbar p-2">
+                <div id="latest-events-accordion-container" class="space-y-3">
+                    <!-- JS 動態渲染折疊內容 -->
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end flex-shrink-0">
+                <button class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition shadow-sm" onclick="window.closeModal('latest-events-modal')">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ============================================== -->
     <!-- Modals (彈出視窗集合) -->
     <!-- ============================================== -->
@@ -476,7 +522,7 @@
                         <!-- JS 將在此動態生成 10 個按鈕 -->
                         <div class="col-span-2 text-xs text-gray-400 py-2 text-center"><i class="fas fa-spinner fa-spin mr-1"></i> 準備企業選項中...</div>
                     </div>
-                    <input type="text" id="player-enterprise-name" class="hidden mt-2 w-full p-2.5 border border-gray-200 rounded-lg text-sm font-bold tracking-wide focus:outline-none focus:border-mori-forest bg-white placeholder-gray-300 shadow-sm transition-all" placeholder="請手動輸入企業名稱">
+                    <input type="text" id="player-enterprise-name" class="hidden mt-2 w-full p-2.5 border border-gray-200 rounded-lg text-sm font-bold tracking-wide focus:outline-none focus:border-mori-forest bg-white placeholder-gray-300 shadow-sm transition-all" placeholder="請手手動輸入企業名稱">
                 </div>
                 
                 <!-- 🌟 隱藏區塊：點擊按鈕後動態展開 -->
@@ -585,7 +631,7 @@
                     <label class="block text-[13px] font-bold text-gray-600 mb-2">2. 輸入消費細節</label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="sm:col-span-2">
-                            <label class="block text-xs font-bold text-gray-500 mb-1.5">消費品項 / 店家 <span class="text-gray-400 font-normal">(選填)</span></label>
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5">消費品項 / 店家 /統編/發票號碼(依企業規定) <span class="text-gray-400 font-normal">(選填)</span></label>
                             <input type="text" id="green-item-name" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-mori-sage focus:ring-1 focus:ring-mori-sage transition-all" placeholder="例如: 購買在地小農蔬菜">
                         </div>
                         <div>
@@ -719,30 +765,32 @@
         const poiCategories = [{ id: 4, title: '1. 水里里山基地', desc: '基地推行里山倡議，串聯商圈與青農之永續據點。' }, { id: 1, title: '2. 里山餐桌團隊', desc: '核心規劃團隊，提供生態旅遊與 ESG 專案規劃。' }, { id: 5, title: '3. 南投青農', desc: '結合優質青農，提供高品質特色食農體驗。' }, { id: 3, title: '4. 水里觀光商圈', desc: '提供在地特色美食與優質採購，串聯觀光與消費，支持商圈創生。' }, { id: 2, title: '5. 低碳食宿', desc: '精選本地觀光食宿，倡議節水節電與永續觀光。' }, { id: 'dynamic_events', title: '6. 最新活動與特別推薦', desc: '由主辦方不定期更新的快閃市集與限定地標。' }];
         
         let pois = [
-            {categoryId:4,id:'poi1',name:'水里溪畔驛站',coords:{lat:23.809799,lng:120.849286},icon:'🌲',description:'位於水里圖書館內的小憩咖啡座。',esgEligible:true},
-            {categoryId:4,id:'poi25',name:'國立臺灣大學實驗林-水里營林區',coords:{lat:23.814313,lng:120.853435},icon:'🏛️',description:'推動里山倡議及大學社會責任等活動。'},
-            {categoryId:1,id:'poi12',name:'湧健酪梨園/梅園 SROI (✓)',coords:{lat:23.725349,lng:120.846123},icon:'🥑',description:'生產: 酪梨、青梅<br>預約活動: 食農教育、生態導覽',esgEligible:true},
-            {categoryId:1,id:'poi11',name:'阿爾喜莊園 SROI (✓)',coords:{lat:23.803119,lng:120.926340},icon:'🍋',description:'生產: 檸檬、國蘭<br>預約活動: 食農教育、生態導覽、循環經濟教學',esgEligible:true},
-            {categoryId:1,id:'poi10',name:'雨社山下 SROI (✓)',coords:{lat:23.790644,lng:120.896569},icon:'🥒',description:'生產: 絲瓜、石虎蓮霧<br>預約活動: 食農教育、生態導覽',esgEligible:true},
-            {categoryId:1,id:'poi8',name:'明揚養蜂 SROI (✓)',coords:{lat:23.803787,lng:120.862401},icon:'🐝',description:'生產: 國產蜂蜜、酪梨<br>預約活動: 食農教育、生態導覽',esgEligible:true},
-            {categoryId:1,id:'poi7',name:'指令教育農場 SROI (✓)',coords:{lat:23.802776,lng:120.864715},icon:'👆',description:'生產: 短期蔬菜<br>預約活動: 食農教育、生態導覽',esgEligible:true},
-            {categoryId:1,id:'poi19',name:'小茶米農場 SROI (✓)',coords:{lat:23.839892,lng:120.632519},icon:'🍵',description:'預約活動: 食農教育 1.爆打檸檬茶 2.調茶體驗',esgEligible:true},
-            {categoryId:1,id:'poi3',name:'鑫鮮菇園',coords:{lat:23.794049,lng:120.859407},icon:'🍄',description:'香菇園區導覽',esgEligible:true},
-            {categoryId:1,id:'poi26',name:'饕農園',coords:{lat:23.788395,lng:120.733095},icon:'🧑‍🌾',description:'業務活動: 食農教育 市集 手做農產',esgEligible:true},
-            {categoryId:1,id:'poi27',name:'Hó-lah! 星澍柢家',coords:{lat:24.102351,lng:120.666805},icon:'🌱',description:'預約活動: 食農教育 生態導覽',esgEligible:true},
-            {categoryId:5,id:'poi30',name:'墨梵農場香草莊園',coords:{lat:23.722627,lng:120.850277},icon:'🪴',description:'預約活動: 食農教育DIY與綠色療育植栽'},
-            {categoryId:5,id:'poi20',name:'集元果觀光工廠',coords:{lat:23.825288,lng:120.814236},icon:'🍌',description:'山蕉生態導覽'},
-            {categoryId:5,id:'poi21',name:'山水裡愛玉園',coords:{lat:23.827702,lng:120.814354},icon:'🌿',description:'預約活動: 手洗愛玉DIY'},
-            {categoryId:5,id:'poi28',name:'新豐農場(冷泉米)',coords:{lat:24.065240,lng:120.937692},icon:'🌾',description:'預約活動: 客家文化活動'},
-            {categoryId:5,id:'poi29',name:'逸和園檸檬宿',coords:{lat:24.049875,lng:120.861594},icon:'🍋',description:'預約活動: 有機農業導覽'},
-            {categoryId:2,id:'poi16',name:'水里里山村(低碳旅店)',coords:{lat:23.813514,lng:120.853722},icon:'🏡',description:'牛轀轆森林社區導覽',esgEligible:true},
-            {categoryId:2,id:'poi14',name:'機車貓聯盟(食店)',coords:{lat:23.810883,lng:120.855798},icon:'🍚',description:'在地特色餐盒'},
-            {categoryId:3,id:'poi23',name:'車程林班道',coords:{lat:23.833913,lng:120.866191},icon:'🚂',description:'導覽預約及場館活動'},
-            {categoryId:3,id:'poi24',name:'車埕木業展示館',coords:{lat:23.833549,lng:120.865796},icon:'🪵',description:'導覽預約'},
-            {categoryId:3,id:'poi18',name:'森音 Morinooto',coords:{lat:23.742587,lng:120.866954},icon:'🎶',description:'食農教育、森態導覽'},
-            {categoryId:3,id:'poi9',name:'蛇窯文化園區',coords:{lat:23.801177,lng:120.864479},icon:'🏺',description:'手拉坯｜手捏陶'},
+            {categoryId:4,id:'poi1',name:'水里溪畔驛站',coords:{lat:23.809799,lng:120.849286},icon:'🌲',description:'營業時間上午8:00~17:00。<br>位於水里圖書館內的小憩咖啡座，適合做為永續行程的起點與中繼休閒去處。亦是社團法人水里鄉商圈創生共好協會總部。',esgEligible:true, fbUrl: 'https://www.facebook.com/profile.php?id=100076220760859', iframeUrl: 'https://www.facebook.com/profile.php?id=100076220760859'},
+            {categoryId:4,id:'poi25',name:'國立臺灣大學生物資源暨農學院實驗林管理處-水里營林區',coords:{lat:23.814313377006552,lng:120.85343561499427},icon:'🏛️',description:'業務活動: 除造林與資源保育、研究與教育外，推動里山倡議及大學社會責任等活動。', websiteUrl: 'https://www.exfo.ntu.edu.tw/', fbUrl: 'https://www.facebook.com/xitou.nature.education?locale=zh_TW', iframeUrl: 'https://www.facebook.com/xitou.nature.education?locale=zh_TW'},
+            {categoryId:1,id:'poi12',name:'湧健酪梨園/梅園 SROI (✓)',coords:{lat:23.725349,lng:120.846123},icon:'🥑',description:'生產: 酪梨、青梅、梅精<br>特定活動:酪酪找生態/ 6小時/收費1299/人 / 含午餐、生態導覽、土壤觀察/DIY活動/沉浸式數位導覽應用<br>協作單位:里山餐桌團隊<br>預約活動: 食農教育、生態黨覽',esgEligible:true, fbUrl: 'https://www.facebook.com/profile.php?id=100085673588742&locale=zh_TW', iframeUrl: 'https://www.facebook.com/profile.php?id=100085673588742&locale=zh_TW'},
+            {categoryId:1,id:'poi11',name:'阿爾喜莊園 SROI (✓)',coords:{lat:23.803119,lng:120.926340},icon:'🍋',description:'生產: 檸檬、國蘭<br>特定活動:瓜呱報生態/ 6小時/收費1299/人 / 含午餐、生態導覽、設施導覽/DIY活動/沉浸式數位導覽應用<br>協作單位:里山餐桌團隊<br>預約活動: 食農教育、生態導覽、循環經濟教學',esgEligible:true, fbUrl: 'https://www.facebook.com/AHEIemon?locale=zh_TW', iframeUrl: 'https://www.facebook.com/AHEIemon?locale=zh_TW'},
+            {categoryId:1,id:'poi10',name:'雨社山下 SROI (✓)',coords:{lat:23.790644,lng:120.896569},icon:'🥒',description:'生產: 絲瓜、石虎蓮霧<br>特定活動:瓜呱報生態/ 6小時/收費1299/人 / 含午餐、生態導覽、河堤生態導覽/DIY活動/沉浸式數位導覽應用<br>協作單位:里山餐桌團隊<br>預約活動: 食農教育、生態導覽',esgEligible:true, fbUrl: 'https://www.facebook.com/YusheLand?locale=zh_TW', iframeUrl: 'https://www.facebook.com/YusheLand?locale=zh_TW'},
+            {categoryId:1,id:'poi8',name:'明揚養蜂 SROI (✓)',coords:{lat:23.803787,lng:120.862401},icon:'🐝',description:'生產: 國產蜂蜜、酪梨<br>特定活動:里山生態慢走/ 6小時/收費1299/人 / 含午餐、生態導覽、農村生活智慧/DIY活動/沉浸式數位導覽應用<br>協作單位:里山餐桌團隊<br>預約活動: 食農教育、生態導覽、金線連紓壓包',esgEligible:true, fbUrl: 'https://www.facebook.com/MingYangBee?locale=zh_TW', iframeUrl: 'https://www.facebook.com/MingYangBee?locale=zh_TW'},
+            {categoryId:1,id:'poi7',name:'指令教育農場 SROI (✓)',coords:{lat:23.802776,lng:120.864715},icon:'👆',description:'生產: 短期蔬菜<br>特定活動:里山生態慢走/ 6小時/收費1299/人 / 含午餐、生態導覽、農村生活智慧/DIY活動/沉浸式數位導覽應用<br>協作單位:里山餐桌團隊<br>預約活動: 食農教育、生態導覽、金線連紓壓包',esgEligible:true, fbUrl: 'https://www.facebook.com/FarmCMD?locale=zh_TW', iframeUrl: 'https://www.facebook.com/FarmCMD?locale=zh_TW'},
+            {categoryId:1,id:'poi19',name:'小茶米農場 SROI (✓)',coords:{lat:23.839892064879077,lng:120.63251990040033},icon:'🍵',description:'預約活動:食農教育1.爆打檸檬茶 2.調茶體驗',esgEligible:true, fbUrl: 'https://www.facebook.com/p/%E5%B0%8F%E8%8C%B6%E7%B1%B3%E8%BE%B2%E5%A0%B4-100057082105603/?locale=zh_TW', iframeUrl: 'https://www.facebook.com/p/%E5%B0%8F%E8%8C%B6%E7%B1%B3%E8%BE%B2%E5%A0%B4-100057082105603/?locale=zh_TW'},
+            {categoryId:1,id:'poi3',name:'鑫鮮菇園',coords:{lat:23.794049,lng:120.859407},icon:'🍄',description:'香菇園區導覽',esgEligible:true, fbUrl: 'https://www.facebook.com/Satoyamadining'},
+            {categoryId:1,id:'poi26',name:'饕農園',coords:{lat:23.806217691324676,lng:120.74678152084209},icon:'🧑‍🌾',description:'業務活動: 食農教育 市集 手做農產',esgEligible:true, websiteUrl: 'https://www.taofarm.tw/%E9%A5%95%E8%BE%B2%E5%9C%92%E5%B8%82%E9%9B%86%E6%99%82%E9%96%93', iframeUrl: 'https://www.taofarm.tw/%E9%A5%95%E8%BE%B2%E5%9C%92%E5%B8%82%E9%9B%86%E6%99%82%E9%96%93'},
+            {categoryId:1,id:'poi26_2',name:'饕農園 (第二據點)',coords:{lat:23.7875818658625,lng:120.7328778178834},icon:'🧑‍🌾',description:'業務活動: 食農教育 市集 手做農產',esgEligible:true, websiteUrl: 'https://www.taofarm.tw/%E9%A5%95%E8%BE%B2%E5%9C%92%E5%B8%82%E9%9B%86%E6%99%82%E9%96%93', iframeUrl: 'https://www.taofarm.tw/%E9%A5%95%E8%BE%B2%E5%9C%92%E5%B8%82%E9%9B%86%E6%99%82%E9%96%93'},
+            {categoryId:1,id:'poi27',name:'Hó-lah! 星澍柢家',coords:{lat:24.10235122116349,lng:120.66680502433258},icon:'🌱',description:'預約活動: 食農教育 生態導覽',esgEligible:true},
+            {categoryId:5,id:'poi30',name:'墨梵農場香草莊園',coords:{lat:23.722627,lng:120.850277},icon:'🪴',description:'預約活動: 食農教育DIY與綠色療育植栽', fbUrl: 'https://www.facebook.com/Satoyamadining'},
+            {categoryId:5,id:'poi20',name:'集元果觀光工廠',coords:{lat:23.825288405508015,lng:120.81423660000002},icon:'🍌',description:'山蕉生態導覽', fbUrl: 'https://www.facebook.com/jijibanana?locale=zh_TW', iframeUrl: 'https://www.facebook.com/jijibanana?locale=zh_TW'},
+            {categoryId:5,id:'poi21',name:'山水裡愛玉園',coords:{lat:23.827702759934983,lng:120.81435461719234},icon:'🌿',description:'預約活動:食農教育1.手洗愛玉DIY 2.石虎園區導覽', fbUrl: 'https://www.facebook.com/SunShuiLi?locale=zh_TW', iframeUrl: 'https://www.facebook.com/SunShuiLi?locale=zh_TW'},
+            {categoryId:5,id:'poi28',name:'新豐農場(冷泉米)',coords:{lat:24.065240930471894,lng:120.93769275440869},icon:'🌾',description:'預約活動: 食農教育 米食教育  客家文化活動 <br>協作單位:糯米橋休閒農業區', fbUrl: 'https://www.facebook.com/Sinfeng50?locale=zh_TW', iframeUrl: 'https://www.facebook.com/Sinfeng50?locale=zh_TW'},
+            {categoryId:5,id:'poi29',name:'逸和園檸檬宿',coords:{lat:24.049875320633813,lng:120.86159491207924},icon:'🍋',description:'預約活動: 食農教育 有機農業導覽活動<br>協作單位:國姓鄉農會', fbUrl: 'https://www.facebook.com/angelwing0521?locale=zh_TW', iframeUrl: 'https://www.facebook.com/angelwing0521?locale=zh_TW'},
+            {categoryId:3,id:'poi_new1',name:'水里槑休閒農業區(鵲橋小白屋)',coords:{lat:23.734616606941287,lng:120.856968180412686},icon:'🛖',description:'預約活動:1.食農教育活動，活動詳情請洽櫃台，2.賞梅導覽預約', fbUrl: 'https://www.facebook.com/profile.php?id=61573732140351&locale=zh_TW', iframeUrl: 'https://www.facebook.com/profile.php?id=61573732140351&locale=zh_TW'},
+            {categoryId:2,id:'poi16',name:'水里里山村(低碳旅店)',coords:{lat:23.813514741054327,lng:120.85372292524296},icon:'🏡',description:'預約活動:1.食農教育教室夜間開放，活動詳情請洽飯店櫃台，2.牛轀轆森林社區導覽',esgEligible:true, fbUrl: 'https://www.facebook.com/TGSatoyamaHotel?locale=zh_TW', iframeUrl: 'https://www.facebook.com/TGSatoyamaHotel?locale=zh_TW'},
+            {categoryId:2,id:'poi14',name:'機車貓聯盟(食店)',coords:{lat:23.810883,lng:120.855798},icon:'🍚',description:'預約活動: 無菜單料理、披薩<br>一般飲食:在地特色餐盒', fbUrl: 'https://www.facebook.com/changehsi/?locale=zh_TW', iframeUrl: 'https://www.facebook.com/changehsi/?locale=zh_TW'},
+            {categoryId:3,id:'poi23',name:'車程林班道',coords:{lat:23.83391340742498,lng:120.86619112601261},icon:'🚂',description:'預約活動:導覽預約及場館活動', fbUrl: 'https://www.facebook.com/search/top?q=%E6%9E%97%E7%8F%AD%E5%88%B0&locale=zh_TW', iframeUrl: 'https://www.facebook.com/search/top?q=%E6%9E%97%E7%8F%AD%E5%88%B0&locale=zh_TW'},
+            {categoryId:3,id:'poi24',name:'車埕木業展示館',coords:{lat:23.833549496234053,lng:120.8657961298074},icon:'🪵',description:'預約活動:導覽預約', fbUrl: 'https://www.facebook.com/profile.php?id=100057533984428&locale=zh_TW', iframeUrl: 'https://www.facebook.com/profile.php?id=100057533984428&locale=zh_TW'},
+            {categoryId:3,id:'poi18',name:'森音 Morinooto',coords:{lat:23.742587,lng:120.866954},icon:'🎶',description:'預約活動: 食農教育、森態導覽', fbUrl: 'https://www.facebook.com/morinooto111?locale=zh_TW', iframeUrl: 'https://www.facebook.com/morinooto111?locale=zh_TW'},
+            {categoryId:3,id:'poi9',name:'蛇窯文化園區',coords:{lat:23.801177,lng:120.864479},icon:'🏺',description:'門票:100~160元<br>體驗項目<br>手拉坯｜手捏陶｜彩繪撲滿｜釉下彩瓷｜古裝漢服體驗｜日本和服體驗', fbUrl: 'https://www.facebook.com/sskshop/?locale=zh_TW', iframeUrl: 'https://www.facebook.com/sskshop/?locale=zh_TW'},
             {categoryId:'map_only',id:'poi15',name:'二坪大觀冰店',coords:{lat:23.813627,lng:120.859651},icon:'🍦',description:'老牌電廠老店'},
-            {categoryId:3,id:'poi17',name:'水里星光市集(周六市集)',coords:{lat:23.813636,lng:120.850816},icon:'💡',description:'星光市集'},
+            {categoryId:3,id:'poi17',name:'水里星光市集(周六市集)',coords:{lat:23.813636,lng:120.850816},icon:'💡',description:'星光市集', fbUrl: 'https://www.facebook.com/Satoyamadining'},
             {categoryId:'map_only_blue',id:'poi32',name:'台中農改場',coords:{lat:24.001265,lng:120.533769},icon:'🏛️',description:'每年辦理開放日活動'},
             {categoryId:'map_only_blue',id:'poi34',name:'水里鄉農會',coords:{lat:23.817368,lng:120.854835},icon:'🏢',description:'不定期辦理活動。'}
         ];
@@ -783,8 +831,57 @@
             window.openModal('dashboard-iframe-modal');
         };
 
+        // 🌟 新增：最新活動列表折疊 Modal 控制與渲染
+        window.openLatestEventsModal = function() {
+            const container = document.getElementById('latest-events-accordion-container');
+            if (!container) return;
+            
+            // 使用 globalLotteryEvents 渲染，將進行中的排前面，然後按時間排序
+            const events = [...(window.globalLotteryEvents || [])];
+            events.sort((a, b) => {
+                if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+                const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                return tb - ta;
+            });
+
+            if (events.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-box-open text-3xl mb-3 opacity-50"></i><br>目前尚無任何活動資料</div>';
+            } else {
+                container.innerHTML = events.map((ev) => {
+                    const statusBadge = ev.isActive 
+                        ? `<span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-circle text-[8px] mr-1.5 animate-pulse text-green-500"></i>進行中</span>`
+                        : `<span class="bg-gray-100 text-gray-500 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-moon text-[10px] mr-1"></i>已結束</span>`;
+                    
+                    return `
+                    <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white group transition-all duration-300">
+                        <button class="w-full text-left px-4 py-3.5 bg-gray-50 hover:bg-yellow-50/50 focus:outline-none flex justify-between items-center transition-colors" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180');">
+                            <div class="flex items-center gap-3 pr-4 overflow-hidden w-full">
+                                ${statusBadge}
+                                <span class="font-black text-gray-800 text-[14px] truncate flex-1">${ev.title || '未命名活動'}</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 chevron-icon shrink-0"></i>
+                        </button>
+                        
+                        <div class="hidden px-4 py-4 bg-white border-t border-gray-100 animate-fade-in-down">
+                            <p class="text-[13px] text-gray-600 leading-relaxed mb-4 whitespace-pre-wrap"><i class="fas fa-info-circle text-gray-400 mr-1.5"></i>${ev.desc || '主辦單位暫無詳細說明'}</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-blue-50/30 p-3.5 rounded-lg border border-blue-100/50">
+                                <div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎯 歸戶限制</span><span class="text-[12px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded shadow-sm">${ev.targetBoard || '全站適用'}</span></div>
+                                <div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎫 兌換門檻</span><span class="text-[12px] font-black text-red-600 font-mono bg-red-50 px-1.5 py-0.5 rounded border border-red-100 shadow-sm">${ev.requiredScore || 100} pts/張</span></div>
+                                <div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎉 抽獎日期</span><span class="text-[12px] font-bold text-mori-forest bg-mori-light px-1.5 py-0.5 rounded border border-mori-sage/30 shadow-sm"><i class="fas fa-calendar-check mr-1 opacity-80"></i>${ev.lotteryDate || '依主辦單位公告'}</span></div>
+                                <div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🔢 辦理梯次</span><span class="text-[12px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded border border-purple-200 shadow-sm"><i class="fas fa-layer-group mr-1 opacity-80"></i>${ev.lotteryBatch || '常態辦理'}</span></div>
+                                <div class="sm:col-span-2 mt-1"><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">📅 活動期間</span><span class="text-[12px] font-bold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200 shadow-sm"><i class="far fa-calendar-alt text-gray-400 mr-1"></i>${ev.startDate || '即日起'} ~ ${ev.endDate || '未定'}</span></div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+            window.openModal('latest-events-modal');
+        };
+
         // ==========================================
-        // 3. UI 控制工具與本機資料 (LocalStorage)
+        // 3. UI 基礎工具與 Modal 控制
         // ==========================================
         window.addToGlobalTotal = async function(carbonToAdd, greenToAdd) {
             if (!db || isOfflineMode) return true; 
@@ -819,7 +916,7 @@
             window.dispatchEvent(new Event('storage'));
         };
 
-        // 🌟 升級：儲存企業完整綁定功能 (包含 Scope 3 防呆)
+        // 🌟 核心復原：企業綁定與 10 宮格按鈕渲染引擎
         window.saveEnterpriseName = function() {
             const input = document.getElementById('player-enterprise-name');
             const consentCheck = document.getElementById('scope3-consent-check');
@@ -829,7 +926,7 @@
                 // 防呆：確認是否勾選 Scope 3 同意 (只在展開面板時檢查)
                 if (detailsContainer && !detailsContainer.classList.contains('hidden')) {
                     if (consentCheck && !consentCheck.checked) {
-                        return window.showToast('⚠️ 請先勾選同意 Scope 3 碳盤查涵蓋聲明');
+                        return window.showToast('⚠️ 請先勾選同意 Scope 3 碳盤查涵蓋聲明', true);
                     }
                 }
                 
@@ -841,14 +938,14 @@
                 if (document.getElementById('player-ent-emp-id')) state.entEmpId = document.getElementById('player-ent-emp-id').value.trim();
                 
                 window.saveData();
+                window.updateDisplays();
                 window.showToast('✅ 企業綁定資訊已儲存！');
                 window.closeModal('enterprise-info-modal');
             } else {
-                window.showToast('⚠️ 請先點擊上方按鈕選擇您的企業');
+                window.showToast('⚠️ 請先點擊上方按鈕選擇您的企業', true);
             }
         };
 
-        // 🌟 升級：渲染 10 宮格企業按鈕 (純依賴 Firebase 真實資料)
         window.renderPartnerSelect = function() {
             const container = document.getElementById('player-enterprise-buttons');
             if (!container) return;
@@ -856,32 +953,30 @@
             let html = '';
             let count = 0;
             
-            // 💡 1. 渲染從 Firebase 後台抓來的企業
+            // 渲染從 Firebase 後台抓來的企業
             window.partnerEnterprises.forEach(p => {
                 if(count >= 9) return; // 保留第 10 個位子給「自行輸入」
                 html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition-all shadow-sm truncate" data-val="${p.id}" data-name="${p.name}">${p.name}</button>`;
                 count++;
             });
 
-            // 💡 2. 如果不到 9 家企業，以虛線按鈕補足空格
+            // 如果不到 9 家企業，以虛線按鈕補足空格
             while(count < 9) {
                 html += `<button type="button" disabled class="w-full px-2 py-2.5 border-2 border-dashed border-gray-200 rounded-lg text-[12px] font-bold text-gray-400 bg-gray-50/50 cursor-not-allowed truncate">尚未進駐</button>`;
                 count++;
             }
             
-            // 💡 3. 第 10 顆常駐按鈕
+            // 第 10 顆常駐按鈕
             html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition-all shadow-sm truncate" data-val="other">自行輸入</button>`;
             
             container.innerHTML = html;
             
-            // 由於按鈕是動態生成的，在此立刻綁定點擊事件
             if (typeof window.bindPartnerSelectEvents === 'function') window.bindPartnerSelectEvents();
             
             const detailsContainer = document.getElementById('enterprise-details-container');
             const consentCheck = document.getElementById('scope3-consent-check');
             const nameInput = document.getElementById('player-enterprise-name');
             
-            // 嘗試恢復之前的選項狀態並設定按鈕高亮
             if (state.enterpriseName) {
                 const matched = window.partnerEnterprises.find(p => p.name === state.enterpriseName);
                 let targetBtn = null;
@@ -893,7 +988,6 @@
                     if(nameInput) { nameInput.value = state.enterpriseName; nameInput.classList.remove('hidden'); }
                 }
                 
-                // 點亮已選中的按鈕
                 if (targetBtn) {
                     targetBtn.classList.replace('text-gray-600', 'text-mori-forest');
                     targetBtn.classList.replace('border-gray-200', 'border-mori-forest');
@@ -909,7 +1003,6 @@
             }
         };
 
-        // 🌟 升級：自動連動帶入欄位邏輯 (點擊 USI 按鈕會動態填滿備註並點亮標籤)
         window.bindPartnerSelectEvents = function() {
             const container = document.getElementById('player-enterprise-buttons');
             if (!container) return;
@@ -917,19 +1010,16 @@
             const btns = container.querySelectorAll('.ent-sel-btn');
             btns.forEach(btn => {
                 btn.onclick = function() {
-                    // 1. 重置所有按鈕樣式
                     btns.forEach(b => {
                         b.classList.remove('text-mori-forest', 'border-mori-forest', 'bg-mori-light/50', 'ring-2', 'ring-mori-sage', 'ring-opacity-40');
                         b.classList.add('text-gray-600', 'border-gray-200', 'bg-white');
                     });
                     
-                    // 2. 點亮被點擊的按鈕
                     this.classList.replace('text-gray-600', 'text-mori-forest');
                     this.classList.replace('border-gray-200', 'border-mori-forest');
                     this.classList.replace('bg-white', 'bg-mori-light/50');
                     this.classList.add('ring-2', 'ring-mori-sage', 'ring-opacity-40');
 
-                    // 3. 處理表單聯動展開
                     const val = this.dataset.val;
                     const nameInput = document.getElementById('player-enterprise-name');
                     const detailsContainer = document.getElementById('enterprise-details-container');
@@ -947,7 +1037,6 @@
                             if(el) { el.value = ''; el.readOnly = false; el.classList.remove('bg-gray-100', 'text-gray-500'); el.placeholder = '請手動輸入資料'; }
                         });
                         
-                        // 重置所有綠色標籤為未勾選
                         badges.forEach(badge => {
                             badge.className = 'green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors';
                             badge.querySelector('i').className = 'far fa-square mr-1 text-gray-400';
@@ -965,28 +1054,20 @@
                             if(sustNotes) sustNotes.value = p.sustNotes || ''; 
                             if(welfareNotes) welfareNotes.value = p.welfareNotes || '';
                             
-                            // 鎖定 2~5 號帶入的欄位，展現資料權威性
                             [scope, greenScope, sustNotes, welfareNotes].forEach(el => { 
                                 if(el) { el.readOnly = true; el.classList.add('bg-gray-100', 'text-gray-500'); el.placeholder = '系統自動帶入'; }
                             });
                             
-                            // 🌟 核心修復：動態點亮綠色採購的 Badge
                             const gsText = (p.greenScope || '').toLowerCase();
                             badges.forEach(badge => {
                                 const kw = badge.dataset.keyword.toLowerCase();
                                 const icon = badge.querySelector('i');
-                                // 若後台傳來的字串包含該關鍵字，或寫了全選等字眼，就亮燈
                                 if (gsText.includes(kw) || gsText === '全選' || gsText.includes('符合平台綠色採購')) {
                                     let colorClass = 'bg-green-50 text-green-700 border-green-200';
                                     let iconClass = 'text-green-600';
                                     
-                                    if (kw.includes('標章')) {
-                                        colorClass = 'bg-blue-50 text-blue-700 border-blue-200';
-                                        iconClass = 'text-blue-600';
-                                    } else if (kw.includes('sroi')) {
-                                        colorClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
-                                        iconClass = 'text-yellow-600';
-                                    }
+                                    if (kw.includes('標章')) { colorClass = 'bg-blue-50 text-blue-700 border-blue-200'; iconClass = 'text-blue-600'; } 
+                                    else if (kw.includes('sroi')) { colorClass = 'bg-yellow-50 text-yellow-700 border-yellow-200'; iconClass = 'text-yellow-600'; }
                                     
                                     badge.className = `green-badge px-2 py-1 rounded-md border font-bold transition-colors ${colorClass}`;
                                     icon.className = `far fa-check-square mr-1 ${iconClass}`;
@@ -998,200 +1079,6 @@
                         }
                     }
                 };
-            });
-        };
-
-        // ==========================================
-        // 🌟 核心系統工具箱：保證產圖不跑版與按鈕恢復
-        // ==========================================
-        window.bindSystemUtilities = function() {
-            // 1. 分享按鈕
-            document.getElementById('header-share-btn')?.addEventListener('click', () => {
-                window.openShareQRCode('https://farmcmd.github.io/ESGT/');
-            });
-            
-            // 2. 匯出進度
-            document.getElementById('export-data-button')?.addEventListener('click', () => {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
-                const link = document.createElement('a');
-                link.setAttribute("href", dataStr);
-                link.setAttribute("download", `探探里山_永續進度_${state.playerName || '匿名'}.json`);
-                link.click();
-                window.showToast('✅ 進度已匯出');
-            });
-
-            // 3. 匯入進度
-            document.getElementById('import-data-btn-trigger')?.addEventListener('click', () => {
-                document.getElementById('import-data-input')?.click();
-            });
-            document.getElementById('import-data-input')?.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const imported = JSON.parse(e.target.result);
-                        state = { ...state, ...imported };
-                        window.saveData(); window.updateDisplays();
-                        if(typeof window.renderCheckoutHistory === 'function') window.renderCheckoutHistory();
-                        if(typeof window.renderLogs === 'function') window.renderLogs();
-                        window.showToast('✅ 進度已還原');
-                    } catch (err) { window.showToast('❌ 檔案錯誤'); }
-                };
-                reader.readAsText(file);
-            });
-
-            // 4. 證書下載 (精準修復重疊問題)
-            document.getElementById('download-cert-btn')?.addEventListener('click', async () => {
-                window.showToast('🔄 繪製中，請勿關閉視窗...');
-                const container = document.getElementById('certificate-dom-container');
-                const dateStr = new Date().toLocaleDateString('zh-TW');
-
-                // --- 擷取近期紀錄 (供明細表使用) ---
-                const safeLogs = Array.isArray(state.activityLogs) ? state.activityLogs : [];
-                const recentLogs = safeLogs.slice(0, 3).map(l => {
-                    const timeStr = (l.time && l.time.split(' ')[0]) ? l.time.split(' ')[0] : dateStr;
-                    return `<div style="margin-bottom:6px; font-size:11px; color:#000000; line-height:1.4;"><span style="color:#000000; font-weight:bold; font-family:monospace; margin-right:6px;">${timeStr}</span> ${l.text || '永續行動'}</div>`;
-                }).join('') || '<div style="font-size:11px; color:#000000; font-style:italic;">尚無行動紀錄</div>';
-                
-                const safeHistory = Array.isArray(state.checkoutHistory) ? state.checkoutHistory : [];
-                const recentCheckouts = safeHistory.slice(0, 3).map(c => {
-                    const timeStr = (c.time && c.time.split(' ')[0]) ? c.time.split(' ')[0] : dateStr;
-                    return `<div style="margin-bottom:6px; font-size:11px; color:#000000; line-height:1.4;"><span style="color:#000000; font-weight:bold; font-family:monospace; margin-right:6px;">${timeStr}</span> 歸戶至: ${c.target || '未知'} <span style="color:#000000; font-weight:bold; margin-left:4px;">(${c.carbon || 0}g)</span></div>`;
-                }).join('') || '<div style="font-size:11px; color:#000000; font-style:italic;">尚無歸戶紀錄</div>';
-                
-                // 🛡️ 畫板重建：採用雙層邊框、純 div 彈性排版，杜絕跑版
-                container.innerHTML = `
-                    <div style="width: 800px; background-color: #F7F4EF; padding: 40px; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; position: relative;">
-                        <!-- 雙層邊框設計 -->
-                        <div style="border: 4px solid #4A6741; padding: 6px; background-color: #F7F4EF; position: relative; z-index: 10;">
-                            <div style="border: 1px dashed #8B9D77; background-color: #FFFFFF; padding: 50px 40px; position: relative; min-height: 750px;">
-                                
-                                <div style="position: relative; z-index: 10;">
-                                    <!-- 標題 -->
-                                    <div style="text-align: center; margin-bottom: 40px;">
-                                        <h1 style="font-size: 46px; font-weight: bold; color: #000000; margin: 0 0 10px 0; letter-spacing: 12px;">永續旅遊證書</h1>
-                                        <div style="font-size: 13px; font-weight: bold; color: #000000; letter-spacing: 5px;">CERTIFICATE OF SUSTAINABLE TOURISM</div>
-                                    </div>
-
-                                    <!-- 內文 -->
-                                    <div style="text-align: center; margin-bottom: 40px;">
-                                        <div style="font-size: 18px; font-weight: bold; color: #000000; margin-bottom: 20px; letter-spacing: 6px;">特 此 證 明</div>
-                                        <div style="display: inline-block; font-size: 40px; font-weight: bold; color: #000000; border-bottom: 3px solid #000000; padding: 0 60px 10px 60px; min-width: 250px; letter-spacing: 4px; margin-bottom: 25px;">
-                                            ${state.playerName || '匿名旅者'}
-                                        </div>
-                                        <div style="font-size: 16px; color: #000000; line-height: 2.2; font-weight: bold; letter-spacing: 2px;">
-                                            參與 探探里山 永續旅遊行動，<br>
-                                            透過實踐低碳交通與支持在地綠色消費，<br>
-                                            為地球環境與里山創生做出卓越貢獻。
-                                        </div>
-                                    </div>
-
-                                    <!-- 4 卡片 -->
-                                    <table style="width: 100%; border-collapse: separate; border-spacing: 15px 0; margin-bottom: 30px; margin-left: -15px; margin-right: -15px;">
-                                        <tr>
-                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                                                <div style="width: 46px; height: 46px; background-color: #F7F4EF; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
-                                                    <i class="fas fa-shoe-prints" style="color: #8B9D77; font-size: 20px; line-height: 46px;"></i>
-                                                </div>
-                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">減碳里程</div>
-                                                <div style="font-size: 26px; font-weight: bold; color: #000000;">${((state.totalMileage || 0) / 1000).toFixed(1)} <span style="font-size: 12px; font-weight: normal;">km</span></div>
-                                            </td>
-                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                                                <div style="width: 46px; height: 46px; background-color: #E8EFE6; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
-                                                    <i class="fas fa-tree" style="color: #4A6741; font-size: 20px; line-height: 46px;"></i>
-                                                </div>
-                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">減少碳排</div>
-                                                <div style="font-size: 26px; font-weight: bold; color: #000000;">${Math.round(state.totalCarbon || 0).toLocaleString()} <span style="font-size: 12px; font-weight: normal;">g</span></div>
-                                            </td>
-                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                                                <div style="width: 46px; height: 46px; background-color: #FEFCE8; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
-                                                    <i class="fas fa-shopping-basket" style="color: #D2B48C; font-size: 20px; line-height: 46px;"></i>
-                                                </div>
-                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">綠色消費</div>
-                                                <div style="font-size: 26px; font-weight: bold; color: #000000;"><span style="font-size: 12px; font-weight: normal;">$</span>${(state.greenProcure || 0).toLocaleString()}</div>
-                                            </td>
-                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-                                                <div style="width: 46px; height: 46px; background-color: #EFF6FF; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;">
-                                                    <i class="fas fa-hand-holding-heart" style="color: #3B82F6; font-size: 20px; line-height: 46px;"></i>
-                                                </div>
-                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">SROI 價值</div>
-                                                <div style="font-size: 26px; font-weight: bold; color: #000000;"><span style="font-size: 12px; font-weight: normal;">$</span>${(state.sroiProcure || 0).toLocaleString()}</div>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <!-- 2 明細區 (全面捨棄 flex，純 Table 防跑版) -->
-                                    <table style="width: 100%; border-collapse: separate; border-spacing: 15px 0; margin-bottom: 30px; margin-left: -15px; margin-right: -15px;">
-                                        <tr>
-                                            <td style="width: 50%; background: #FAFCF8; padding: 20px; border-radius: 8px; border: 1px solid #E8EFE6; vertical-align: top;">
-                                                <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #E8EFE6;">
-                                                    <i class="fas fa-list-ul" style="margin-right: 6px;"></i> 近期永續行動明細
-                                                </div>
-                                                ${recentLogs}
-                                            </td>
-                                            <td style="width: 50%; background: #FFFDF8; padding: 20px; border-radius: 8px; border: 1px solid #F5ECD8; vertical-align: top;">
-                                                <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #F5ECD8;">
-                                                    <i class="fas fa-trophy" style="margin-right: 6px;"></i> 永續數據歸戶結算明細
-                                                </div>
-                                                ${recentCheckouts}
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <!-- 底部資訊與印章 (外層維持 Table 防止垂直擠壓) -->
-                                    <table style="width: 100%; border-collapse: collapse; margin-top: 40px;">
-                                        <tr>
-                                            <td style="width: 50%; vertical-align: bottom; text-align: left; padding: 15px 0;">
-                                                <!-- 🌟 終極修復：拔除所有巢狀 Table、inline-block 與特殊對齊，改用最原始的 block div 並強制鎖死 320px 寬度，100% 杜絕內容隱形 -->
-                                                <div style="background-color: #FFFFFF; padding: 15px 20px; border-radius: 8px; border: 2px solid #E5E7EB; width: 320px; box-sizing: border-box; display: block;">
-                                                    <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 10px;">
-                                                        旅者代碼：<span style="font-family: monospace; font-size: 16px;">${state.playerCode}</span>
-                                                    </div>
-                                                    <div style="font-size: 13px; font-weight: bold; color: #000000;">
-                                                        發證日期：<span style="font-family: monospace; font-size: 16px;">${dateStr}</span>
-                                                    </div>
-                                                    ${state.enterpriseName ? `
-                                                    <div style="margin-top: 15px; padding-top: 15px; border-top: 2px dashed #000000;">
-                                                        <div style="font-size: 12px; font-weight: bold; color: #000000; margin-bottom: 6px;">企業 / 團體認證</div>
-                                                        <div style="font-size: 18px; font-weight: bold; color: #000000;">${state.enterpriseName}</div>
-                                                        ${state.entEmpId ? `<div style="font-size: 14px; font-weight: bold; font-family: monospace; color: #000000; margin-top: 5px;">員工編號: ${state.entEmpId}</div>` : ''}
-                                                    </div>
-                                                    ` : ''}
-                                                </div>
-                                            </td>
-                                            <td style="width: 50%; vertical-align: bottom; text-align: right; padding: 15px 0; position: relative;">
-                                                <!-- 紅色印章 -->
-                                                <div style="position: absolute; right: 20px; top: -115px; width: 100px; height: 100px; border: 4px solid #DC2626; border-radius: 50%; background-color: #FFFFFF; z-index: 20; transform: rotate(-15deg); box-sizing: border-box; text-align: center; padding-top: 26px;">
-                                                    <div style="color: #DC2626; font-weight: bold; font-size: 26px; line-height: 1; letter-spacing: 2px;">ESG</div>
-                                                    <div style="color: #DC2626; font-weight: bold; font-size: 12px; margin-top: 6px; letter-spacing: 2px;">探探里山</div>
-                                                </div>
-                                                <div style="font-size: 18px; font-weight: bold; color: #000000; margin-bottom: 6px; letter-spacing: 3px; position: relative; z-index: 10;">水里永續共好聯盟</div>
-                                                <div style="font-size: 11px; color: #000000; letter-spacing: 2px; position: relative; z-index: 10;">探探里山行動平台 授權核發</div>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                try {
-                    container.style.position = 'fixed'; container.style.top = '0'; container.style.left = '0'; container.style.zIndex = '-1000';
-                    const canvas = await html2canvas(container.firstElementChild, { 
-                        scale: 2, 
-                        useCORS: true, 
-                        logging: false,
-                        allowTaint: true 
-                    });
-                    const link = document.createElement('a');
-                    link.download = `探探里山_永續證書_${state.playerName || '旅者'}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    container.style.left = '-9999px';
-                    window.showToast('✅ 證書下載成功！');
-                } catch(err) { window.showToast('❌ 產圖失敗，請檢查權限'); }
             });
         };
 
@@ -1207,176 +1094,114 @@
         window.exportDashboardCard = async function(element, filename) { try { window.showToast('正在產生圖檔，請稍候...'); const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', useCORS: true }); const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL('image/png'); link.click(); window.showToast('✅ 下載成功！'); } catch(e) { console.error(e); window.showToast('❌ 圖檔產生失敗', true); } };
         window.openShareQRCode = function(url) { const container = document.getElementById('qrcode-container'); const input = document.getElementById('share-modal-url'); container.innerHTML = ''; input.value = url; try { new QRCode(container, { text: url, width: 160, height: 160, colorDark : "#3B82F6", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); } catch(e) { container.innerHTML = '<p class="text-sm text-red-400">產生失敗</p>'; } const copyBtn = document.getElementById('share-modal-copy-btn'); copyBtn.onclick = () => { if(navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(url).then(() => window.showToast('🔗 連結已複製！')).catch(() => { input.select(); document.execCommand('copy'); window.showToast('🔗 連結已複製！'); }); } else { input.select(); document.execCommand('copy'); window.showToast('🔗 連結已複製！'); } }; window.openModal('share-qrcode-modal'); };
 
-        window.updateDisplays = function() {
-            // 🌟 處理企業徽章顯示
-            const entContainer = document.getElementById('enterprise-badge-container');
-            const entNameDisplay = document.getElementById('display-enterprise-name');
-            const entEmpIdDisplay = document.getElementById('display-enterprise-emp-id');
-            if (state.enterpriseName) {
-                if (entContainer) { entContainer.classList.remove('hidden'); entContainer.classList.add('inline-flex'); }
-                if (entNameDisplay) entNameDisplay.textContent = state.enterpriseName;
-                if (entEmpIdDisplay) entEmpIdDisplay.textContent = state.entEmpId || '無編號';
-            } else {
-                if (entContainer) { entContainer.classList.add('hidden'); entContainer.classList.remove('inline-flex'); }
-            }
+        window.bindSystemUtilities = function() {
+            // 1. 分享按鈕
+            document.getElementById('header-share-btn')?.addEventListener('click', () => { window.openShareQRCode('https://farmcmd.github.io/ESGT/'); });
+            // 2. 匯出進度
+            document.getElementById('export-data-button')?.addEventListener('click', () => { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state)); const link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", `探探里山_永續進度_${state.playerName || '匿名'}.json`); link.click(); window.showToast('✅ 進度已匯出'); });
+            // 3. 匯入進度
+            document.getElementById('import-data-btn-trigger')?.addEventListener('click', () => { document.getElementById('import-data-input')?.click(); });
+            document.getElementById('import-data-input')?.addEventListener('change', (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const imported = JSON.parse(e.target.result); state = { ...state, ...imported }; window.saveData(); window.updateDisplays(); if(typeof window.renderCheckoutHistory === 'function') window.renderCheckoutHistory(); if(typeof window.renderLogs === 'function') window.renderLogs(); window.showToast('✅ 進度已還原'); } catch (err) { window.showToast('❌ 檔案錯誤'); } }; reader.readAsText(file); });
+            // 4. 證書下載
+            document.getElementById('download-cert-btn')?.addEventListener('click', async () => {
+                window.showToast('🔄 繪製中，請勿關閉視窗...');
+                const container = document.getElementById('certificate-dom-container');
+                const dateStr = new Date().toLocaleDateString('zh-TW');
 
-            const elMileage = document.getElementById('display-mileage'); if (elMileage) elMileage.textContent = ((state.totalMileage || 0) / 1000).toFixed(1);
-            const elCarbon = document.getElementById('display-carbon'); if (elCarbon) elCarbon.textContent = Math.round(state.totalCarbon || 0);
-            
-            // 🌟 核心修復：拔除主網頁的自我計算邏輯，完全依賴 state 中的數值
-            const elScore = document.getElementById('display-score'); if (elScore) elScore.textContent = state.totalScore || 0;
-            const elHero = document.getElementById('display-hero-index'); if (elHero) elHero.textContent = state.heroIndex || 0;
-            
-            const elGreen = document.getElementById('display-green-procurement'); if (elGreen) elGreen.textContent = `$${state.greenProcure || 0}`;
-            const elSroi = document.getElementById('display-sroi-procurement'); if (elSroi) elSroi.textContent = `$${state.sroiProcure || 0}`;
-            
-            const updateCircle = (id, val, max) => { const el = document.getElementById(id); if (el) el.setAttribute('stroke-dasharray', `${Math.min(100, (val/max)*100)}, 100`); };
-            updateCircle('circle-mileage', (state.totalMileage || 0) / 1000, 100); updateCircle('circle-carbon', state.totalCarbon || 0, 5000); updateCircle('circle-score', state.totalScore || 0, 1000);
-            updateCircle('circle-hero', state.heroIndex || 0, 2000);
+                const safeLogs = Array.isArray(state.activityLogs) ? state.activityLogs : [];
+                const recentLogs = safeLogs.slice(0, 3).map(l => {
+                    const timeStr = (l.time && l.time.split(' ')[0]) ? l.time.split(' ')[0] : dateStr;
+                    return `<div style="margin-bottom:6px; font-size:11px; color:#000000; line-height:1.4;"><span style="color:#000000; font-weight:bold; font-family:monospace; margin-right:6px;">${timeStr}</span> ${l.text || '永續行動'}</div>`;
+                }).join('') || '<div style="font-size:11px; color:#000000; font-style:italic;">尚無行動紀錄</div>';
+                
+                const safeHistory = Array.isArray(state.checkoutHistory) ? state.checkoutHistory : [];
+                const recentCheckouts = safeHistory.slice(0, 3).map(c => {
+                    const timeStr = (c.time && c.time.split(' ')[0]) ? c.time.split(' ')[0] : dateStr;
+                    let ticketsHtml = '';
+                    if (c.tickets && c.tickets.length > 0) ticketsHtml = `<div style="margin-top:2px; font-size:9px; color:#4A6741; font-weight:bold;">🎫 獲得序號: ${c.tickets.join(', ')}</div>`;
+                    return `<div style="margin-bottom:6px; font-size:11px; color:#000000; line-height:1.4;"><span style="color:#000000; font-weight:bold; font-family:monospace; margin-right:6px;">${timeStr}</span> 歸戶至: ${c.target || '未知'} <span style="color:#000000; font-weight:bold; margin-left:4px;">(${c.carbon || 0}g)</span>${ticketsHtml}</div>`;
+                }).join('') || '<div style="font-size:11px; color:#000000; font-style:italic;">尚無歸戶紀錄</div>';
+                
+                container.innerHTML = `
+                    <div style="width: 800px; background-color: #F7F4EF; padding: 40px; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; position: relative;">
+                        <div style="border: 4px solid #4A6741; padding: 6px; background-color: #F7F4EF; position: relative; z-index: 10;">
+                            <div style="border: 1px dashed #8B9D77; background-color: #FFFFFF; padding: 50px 40px; position: relative; min-height: 750px;">
+                                <div style="position: relative; z-index: 10;">
+                                    <div style="text-align: center; margin-bottom: 40px;">
+                                        <h1 style="font-size: 46px; font-weight: bold; color: #000000; margin: 0 0 10px 0; letter-spacing: 12px;">永續旅遊證書</h1>
+                                        <div style="font-size: 13px; font-weight: bold; color: #000000; letter-spacing: 5px;">CERTIFICATE OF SUSTAINABLE TOURISM</div>
+                                    </div>
+                                    <div style="text-align: center; margin-bottom: 40px;">
+                                        <div style="font-size: 18px; font-weight: bold; color: #000000; margin-bottom: 20px; letter-spacing: 6px;">特 此 證 明</div>
+                                        <div style="display: inline-block; font-size: 40px; font-weight: bold; color: #000000; border-bottom: 3px solid #000000; padding: 0 60px 10px 60px; min-width: 250px; letter-spacing: 4px; margin-bottom: 25px;">
+                                            ${state.playerName || '匿名旅者'}
+                                        </div>
+                                        <div style="font-size: 16px; color: #000000; line-height: 2.2; font-weight: bold; letter-spacing: 2px;">參與 探探里山 永續旅遊行動，<br>透過實踐低碳交通與支持在地綠色消費，<br>為地球環境與里山創生做出卓越貢獻。</div>
+                                    </div>
+                                    <table style="width: 100%; border-collapse: separate; border-spacing: 15px 0; margin-bottom: 30px; margin-left: -15px; margin-right: -15px;">
+                                        <tr>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #F7F4EF; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;"><i class="fas fa-shoe-prints" style="color: #8B9D77; font-size: 20px; line-height: 46px;"></i></div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">減碳里程</div><div style="font-size: 26px; font-weight: bold; color: #000000;">${((state.totalMileage || 0) / 1000).toFixed(1)} <span style="font-size: 12px; font-weight: normal;">km</span></div>
+                                            </td>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #E8EFE6; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;"><i class="fas fa-tree" style="color: #4A6741; font-size: 20px; line-height: 46px;"></i></div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">減少碳排</div><div style="font-size: 26px; font-weight: bold; color: #000000;">${Math.round(state.totalCarbon || 0).toLocaleString()} <span style="font-size: 12px; font-weight: normal;">g</span></div>
+                                            </td>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #FEFCE8; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;"><i class="fas fa-shopping-basket" style="color: #D2B48C; font-size: 20px; line-height: 46px;"></i></div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">綠色消費</div><div style="font-size: 26px; font-weight: bold; color: #000000;"><span style="font-size: 12px; font-weight: normal;">$</span>${(state.greenProcure || 0).toLocaleString()}</div>
+                                            </td>
+                                            <td style="width: 25%; background: white; padding: 25px 15px; text-align: center; border-radius: 8px; border: 1px solid #E8EFE6; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                                                <div style="width: 46px; height: 46px; background-color: #EFF6FF; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 12px;"><i class="fas fa-hand-holding-heart" style="color: #3B82F6; font-size: 20px; line-height: 46px;"></i></div>
+                                                <div style="font-size: 12px; color: #000000; font-weight: bold; margin-bottom: 8px;">SROI 價值</div><div style="font-size: 26px; font-weight: bold; color: #000000;"><span style="font-size: 12px; font-weight: normal;">$</span>${(state.sroiProcure || 0).toLocaleString()}</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <table style="width: 100%; border-collapse: separate; border-spacing: 15px 0; margin-bottom: 30px; margin-left: -15px; margin-right: -15px;">
+                                        <tr>
+                                            <td style="width: 50%; background: #FAFCF8; padding: 20px; border-radius: 8px; border: 1px solid #E8EFE6; vertical-align: top;">
+                                                <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #E8EFE6;"><i class="fas fa-list-ul" style="margin-right: 6px;"></i> 近期永續行動明細</div>${recentLogs}
+                                            </td>
+                                            <td style="width: 50%; background: #FFFDF8; padding: 20px; border-radius: 8px; border: 1px solid #F5ECD8; vertical-align: top;">
+                                                <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #F5ECD8;"><i class="fas fa-trophy" style="margin-right: 6px;"></i> 永續數據歸戶結算明細</div>${recentCheckouts}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <table style="width: 100%; border-collapse: collapse; margin-top: 40px;">
+                                        <tr>
+                                            <td style="width: 50%; vertical-align: bottom; text-align: left; padding: 15px 0;">
+                                                <div style="background-color: #FFFFFF; padding: 15px 20px; border-radius: 8px; border: 2px solid #E5E7EB; width: 320px; box-sizing: border-box; display: block;">
+                                                    <div style="font-size: 13px; font-weight: bold; color: #000000; margin-bottom: 10px;">旅者代碼：<span style="font-family: monospace; font-size: 16px;">${state.playerCode}</span></div>
+                                                    <div style="font-size: 13px; font-weight: bold; color: #000000;">發證日期：<span style="font-family: monospace; font-size: 16px;">${dateStr}</span></div>
+                                                    ${state.enterpriseName ? `<div style="margin-top: 15px; padding-top: 15px; border-top: 2px dashed #000000;"><div style="font-size: 12px; font-weight: bold; color: #000000; margin-bottom: 6px;">企業 / 團體認證</div><div style="font-size: 18px; font-weight: bold; color: #000000;">${state.enterpriseName}</div>${state.entEmpId ? `<div style="font-size: 14px; font-weight: bold; font-family: monospace; color: #000000; margin-top: 5px;">員工編號: ${state.entEmpId}</div>` : ''}</div>` : ''}
+                                                </div>
+                                            </td>
+                                            <td style="width: 50%; vertical-align: bottom; text-align: right; padding: 15px 0; position: relative;">
+                                                <div style="position: absolute; right: 20px; top: -115px; width: 100px; height: 100px; border: 4px solid #DC2626; border-radius: 50%; background-color: #FFFFFF; z-index: 20; transform: rotate(-15deg); box-sizing: border-box; text-align: center; padding-top: 26px;">
+                                                    <div style="color: #DC2626; font-weight: bold; font-size: 26px; line-height: 1; letter-spacing: 2px;">ESG</div><div style="color: #DC2626; font-weight: bold; font-size: 12px; margin-top: 6px; letter-spacing: 2px;">探探里山</div>
+                                                </div>
+                                                <div style="font-size: 18px; font-weight: bold; color: #000000; margin-bottom: 6px; letter-spacing: 3px; position: relative; z-index: 10;">水里永續共好聯盟</div><div style="font-size: 11px; color: #000000; letter-spacing: 2px; position: relative; z-index: 10;">探探里山行動平台 授權核發</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
 
-            // 🚀 強制推播：將最新狀態即時同步給內嵌的儀表板 iframe
-            const iframe = document.getElementById('dashboard-iframe');
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state }, '*');
-            }
-        };
-
-        window.updateGlobalSummary = function() { 
-            const serverCarbon = Math.max(0, Number(globalAbsolute.carbon || 0)); 
-            const serverGreen = Math.max(0, Number(globalAbsolute.green || 0)); 
-            const visitorCount = Math.max(0, Number(globalAbsolute.visitor_count || 0)); 
-            
-            if (document.getElementById('network-total-carbon-reduction')) document.getElementById('network-total-carbon-reduction').textContent = Math.round(serverCarbon).toLocaleString(); 
-            if (document.getElementById('display-grand-total-green')) document.getElementById('display-grand-total-green').textContent = `$${serverGreen.toLocaleString()}`; 
-            if (document.getElementById('trees-planted-count')) document.getElementById('trees-planted-count').textContent = (serverCarbon / 12000).toFixed(2); 
-            
-            const todayKey = `daily_${window.getTodayKey()}_carbon`;
-            const todayCarbon = Math.max(0, Number(globalAbsolute[todayKey] || 0));
-            if (document.getElementById('daily-carbon-addition')) document.getElementById('daily-carbon-addition').textContent = Math.round(todayCarbon).toLocaleString();
-            
-            if (document.getElementById('visitor-count')) document.getElementById('visitor-count').textContent = visitorCount.toLocaleString();
-
-            // 🌟 處理地圖解鎖狀態與 UI 全網連動
-            const now = Date.now();
-            const trialExpiry = Number(globalAbsolute.map_trial_expiry || 0);
-            const isTrialUnlocked = trialExpiry > now;
-
-            // 更新管理員面板的徽章狀態
-            const adminBadge = document.getElementById('admin-trial-status-badge');
-            if (adminBadge) {
-                if (isTrialUnlocked) {
-                    const remainMins = Math.ceil((trialExpiry - now) / 60000);
-                    adminBadge.className = 'ml-1 px-2 py-0.5 bg-green-800 border border-green-500 text-green-100 rounded-full font-bold shadow-inner flex items-center';
-                    adminBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-green-400 animate-pulse"></i>已解鎖 (剩 ${remainMins} 分)`;
-                } else {
-                    adminBadge.className = 'ml-1 px-2 py-0.5 bg-red-800 border border-red-500 text-red-100 rounded-full font-bold shadow-inner flex items-center';
-                    adminBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-red-400"></i>目前鎖定中`;
-                }
-            }
-
-            // 更新前台使用者的地圖鎖定畫面
-            const overlay = document.getElementById('trial-locked-overlay');
-            const content = document.getElementById('trial-unlocked-content');
-            const lockBtn = document.getElementById('trial-lock-btn');
-            if (overlay && content && lockBtn) {
-                if (isTrialUnlocked) {
-                    overlay.classList.add('hidden');
-                    overlay.classList.remove('flex');
-                    content.classList.remove('hidden');
-                    lockBtn.innerHTML = '<i class="fas fa-unlock text-emerald-500 text-sm"></i>';
-                    lockBtn.onclick = () => window.showToast('地圖試算目前為解鎖狀態');
-                } else {
-                    overlay.classList.remove('hidden');
-                    overlay.classList.add('flex');
-                    content.classList.add('hidden');
-                    lockBtn.innerHTML = '<i class="fas fa-lock text-sm"></i>';
-                    lockBtn.onclick = () => window.showToast('請至管理面板查看權限狀態');
-                    if (window.calcRefMode) document.getElementById('enable-calc-ref-btn')?.click(); // 鎖定時強制自動關閉點選模式
-                }
-            }
-        };
-
-        // 🌟 寫入 Firebase 的解鎖與上鎖引擎
-        window.unlockMapTrial = async function() {
-            if (!db) return window.showToast('資料庫未連線', true);
-            const mins = parseInt(document.getElementById('admin-trial-duration').value) || 30;
-            const expiryTime = Date.now() + mins * 60 * 1000;
-            try {
-                await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: expiryTime }, { merge: true });
-                window.showToast(`✅ 已全網解鎖地圖試算 ${mins} 分鐘`);
-            } catch (e) {
-                window.showToast('解鎖失敗，請確認權限', true);
-            }
-        };
-
-        window.lockMapTrial = async function() {
-            if (!db) return window.showToast('資料庫未連線', true);
-            try {
-                await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: 0 }, { merge: true });
-                window.showToast('🔒 已收回地圖試算權限');
-            } catch (e) {
-                window.showToast('收回失敗，請確認權限', true);
-            }
-        };
-
-        // 🌟 復原：管理員面板列表渲染與授權引擎 (徹底解決白畫面)
-        window.renderAdminLists = function() {
-            const authContainer = document.getElementById('auth-list-container');
-            if (authContainer) {
-                let authHtml = '';
-                const allProjects = [
-                    ...(globalEntData.projects || []).map(p => ({...p, _type: 'ENTERPRISE'})),
-                    ...(globalGovData.projects || []).map(p => ({...p, _type: 'GOVERNMENT'}))
-                ];
-
-                if (allProjects.length === 0) {
-                    authHtml = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無任何專案</div>';
-                } else {
-                    authHtml = allProjects.map(p => {
-                        const title = p._type === 'ENTERPRISE' ? p.orgName : p.name;
-                        const authStatus = p.isAuthorized
-                            ? `<span class="text-green-600 font-bold bg-green-50 px-2.5 py-1 rounded-md text-[11px]"><i class="fas fa-check-circle mr-1"></i>已授權</span>`
-                            : `<button onclick="window.authorizeProject('${p._type}', '${p.id}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold px-3 py-1 rounded-full text-[11px] shadow-sm transition transform active:scale-95"><i class="fas fa-shield-alt mr-1"></i>點擊授權</button>`;
-                        return `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="w-1/3 text-[13px] font-bold text-gray-700 truncate pr-2" title="${title}">${title}</span><div class="w-1/3 text-center">${authStatus}</div><span class="w-1/3 text-right text-[10px] font-mono text-gray-400 tracking-wider">${p._type}</span></div>`;
-                    }).join('');
-                }
-                authContainer.innerHTML = authHtml;
-            }
-
-            const opContainer = document.getElementById('operator-list-container');
-            if (opContainer) {
-                if (!globalCerts.operators || globalCerts.operators.length === 0) {
-                    opContainer.innerHTML = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無操作員資料</div>';
-                } else {
-                    opContainer.innerHTML = globalCerts.operators.map(op => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${op.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${op.name}</span></div>`).join('');
-                }
-            }
-
-            const lecContainer = document.getElementById('lecturer-list-container');
-            if (lecContainer) {
-                if (!globalCerts.lecturers || globalCerts.lecturers.length === 0) {
-                    lecContainer.innerHTML = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無講師資料</div>';
-                } else {
-                    lecContainer.innerHTML = globalCerts.lecturers.map(lec => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${lec.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${lec.name}</span></div>`).join('');
-                }
-            }
-        };
-
-        window.authorizeProject = async function(type, id) {
-            if (!db) return window.showToast('資料庫未連線', true);
-            const collectionName = type === 'ENTERPRISE' ? 'ent_projects' : 'gov_projects';
-            try {
-                window.showToast('🔄 授權中...');
-                await updateDoc(doc(db, collectionName, id), { isAuthorized: true });
-                window.showToast('✅ 授權成功！遊客已可進行歸戶');
-            } catch(e) {
-                window.showToast('❌ 授權失敗，請確認權限', true);
-            }
-        };
-
-        window.addLog = function(msg) { 
-            state.activityLogs.unshift({ text: msg, time: window.getFormattedTime() }); if(state.activityLogs.length > 20) state.activityLogs.pop(); 
-            window.renderLogs();
+                try {
+                    container.style.position = 'fixed'; container.style.top = '0'; container.style.left = '0'; container.style.zIndex = '-1000';
+                    const canvas = await html2canvas(container.firstElementChild, { scale: 2, useCORS: true, logging: false, allowTaint: true });
+                    const link = document.createElement('a');
+                    link.download = `探探里山_永續證書_${state.playerName || '旅者'}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    container.style.left = '-9999px';
+                    window.showToast('✅ 證書下載成功！');
+                } catch(err) { window.showToast('❌ 產圖失敗，請檢查權限'); }
+            });
         };
 
         window.renderLogs = function() { 
@@ -1388,11 +1213,16 @@
         window.renderCheckoutHistory = function() { 
             const list = document.getElementById('checkout-history-list'); if (!list) return; 
             if (!state.checkoutHistory || state.checkoutHistory.length === 0) { list.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">尚無結算紀錄</p>'; return; } 
-            list.innerHTML = state.checkoutHistory.map(r => `<div class="bg-white p-2 rounded border border-yellow-100 shadow-sm mb-1"><div class="flex justify-between items-start"><p class="text-xs font-bold text-gray-700">${r.target}</p><span class="text-[9px] text-gray-400 font-mono tracking-tighter mt-0.5">${r.time || ''}</span></div><p class="text-[10px] text-gray-500 mt-0.5">減碳 ${r.carbon}g | 綠消 $${r.green}</p></div>`).join(''); 
+            list.innerHTML = state.checkoutHistory.map(r => {
+                let ticketsHtml = '';
+                if (r.tickets && r.tickets.length > 0) {
+                    ticketsHtml = `<div class="mt-1.5 pt-1 border-t border-gray-100 flex flex-wrap gap-1">` + r.tickets.map(t => `<span class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-1 py-0.5 rounded shadow-sm text-[9px] font-mono tracking-widest shrink-0">#${t}</span>`).join('') + `</div>`;
+                }
+                return `<div class="bg-white p-2 rounded border border-yellow-100 shadow-sm mb-1"><div class="flex justify-between items-start"><p class="text-xs font-bold text-gray-700">${r.target}</p><span class="text-[9px] text-gray-400 font-mono tracking-tighter mt-0.5">${r.time || ''}</span></div><p class="text-[10px] text-gray-500 mt-0.5">減碳 ${r.carbon}g | 綠消 $${r.green}</p>${ticketsHtml}</div>`;
+            }).join(''); 
         };
 
         window.updateDisplays = function() {
-            // 🌟 處理企業徽章顯示
             const entContainer = document.getElementById('enterprise-badge-container');
             const entNameDisplay = document.getElementById('display-enterprise-name');
             const entEmpIdDisplay = document.getElementById('display-enterprise-emp-id');
@@ -1406,11 +1236,8 @@
 
             const elMileage = document.getElementById('display-mileage'); if (elMileage) elMileage.textContent = ((state.totalMileage || 0) / 1000).toFixed(1);
             const elCarbon = document.getElementById('display-carbon'); if (elCarbon) elCarbon.textContent = Math.round(state.totalCarbon || 0);
-            
-            // 🌟 核心修復：拔除主網頁的自我計算邏輯，完全依賴 state 中的數值
             const elScore = document.getElementById('display-score'); if (elScore) elScore.textContent = state.totalScore || 0;
             const elHero = document.getElementById('display-hero-index'); if (elHero) elHero.textContent = state.heroIndex || 0;
-            
             const elGreen = document.getElementById('display-green-procurement'); if (elGreen) elGreen.textContent = `$${state.greenProcure || 0}`;
             const elSroi = document.getElementById('display-sroi-procurement'); if (elSroi) elSroi.textContent = `$${state.sroiProcure || 0}`;
             
@@ -1418,7 +1245,20 @@
             updateCircle('circle-mileage', (state.totalMileage || 0) / 1000, 100); updateCircle('circle-carbon', state.totalCarbon || 0, 5000); updateCircle('circle-score', state.totalScore || 0, 1000);
             updateCircle('circle-hero', state.heroIndex || 0, 2000);
 
-            // 🚀 強制推播：將最新狀態即時同步給內嵌的儀表板 iframe
+            // 🌟 新增：渲染抽獎序號列
+            const ticketList = document.getElementById('lottery-ticket-list');
+            if (state.lotteryTickets && state.lotteryTickets.length > 0) {
+                if (ticketList) {
+                    ticketList.innerHTML = state.lotteryTickets.map(t =>
+                        `<span class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0" title="${t.eventName}">#${t.serial}</span>`
+                    ).join('');
+                }
+            } else {
+                if (ticketList) {
+                    ticketList.innerHTML = `<span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>`;
+                }
+            }
+
             const iframe = document.getElementById('dashboard-iframe');
             if (iframe && iframe.contentWindow) {
                 iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state }, '*');
@@ -1440,12 +1280,10 @@
             
             if (document.getElementById('visitor-count')) document.getElementById('visitor-count').textContent = visitorCount.toLocaleString();
 
-            // 🌟 處理地圖解鎖狀態與 UI 全網連動
             const now = Date.now();
             const trialExpiry = Number(globalAbsolute.map_trial_expiry || 0);
             const isTrialUnlocked = trialExpiry > now;
 
-            // 更新管理員面板的徽章狀態
             const adminBadge = document.getElementById('admin-trial-status-badge');
             if (adminBadge) {
                 if (isTrialUnlocked) {
@@ -1458,49 +1296,89 @@
                 }
             }
 
-            // 更新前台使用者的地圖鎖定畫面
             const overlay = document.getElementById('trial-locked-overlay');
             const content = document.getElementById('trial-unlocked-content');
             const lockBtn = document.getElementById('trial-lock-btn');
             if (overlay && content && lockBtn) {
                 if (isTrialUnlocked) {
-                    overlay.classList.add('hidden');
-                    overlay.classList.remove('flex');
-                    content.classList.remove('hidden');
+                    overlay.classList.add('hidden'); overlay.classList.remove('flex'); content.classList.remove('hidden');
                     lockBtn.innerHTML = '<i class="fas fa-unlock text-emerald-500 text-sm"></i>';
                     lockBtn.onclick = () => window.showToast('地圖試算目前為解鎖狀態');
                 } else {
-                    overlay.classList.remove('hidden');
-                    overlay.classList.add('flex');
-                    content.classList.add('hidden');
+                    overlay.classList.remove('hidden'); overlay.classList.add('flex'); content.classList.add('hidden');
                     lockBtn.innerHTML = '<i class="fas fa-lock text-sm"></i>';
                     lockBtn.onclick = () => window.showToast('請至管理面板查看權限狀態');
-                    if (window.calcRefMode) document.getElementById('enable-calc-ref-btn')?.click(); // 鎖定時強制自動關閉點選模式
+                    if (window.calcRefMode) document.getElementById('enable-calc-ref-btn')?.click(); 
                 }
             }
         };
 
-        // 🌟 寫入 Firebase 的解鎖與上鎖引擎
         window.unlockMapTrial = async function() {
             if (!db) return window.showToast('資料庫未連線', true);
             const mins = parseInt(document.getElementById('admin-trial-duration').value) || 30;
             const expiryTime = Date.now() + mins * 60 * 1000;
-            try {
-                await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: expiryTime }, { merge: true });
-                window.showToast(`✅ 已全網解鎖地圖試算 ${mins} 分鐘`);
-            } catch (e) {
-                window.showToast('解鎖失敗，請確認權限', true);
-            }
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: expiryTime }, { merge: true }); window.showToast(`✅ 已全網解鎖地圖試算 ${mins} 分鐘`); } catch (e) { window.showToast('解鎖失敗，請確認權限', true); }
         };
 
         window.lockMapTrial = async function() {
             if (!db) return window.showToast('資料庫未連線', true);
-            try {
-                await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: 0 }, { merge: true });
-                window.showToast('🔒 已收回地圖試算權限');
-            } catch (e) {
-                window.showToast('收回失敗，請確認權限', true);
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: 0 }, { merge: true }); window.showToast('🔒 已收回地圖試算權限'); } catch (e) { window.showToast('收回失敗，請確認權限', true); }
+        };
+
+        window.renderAdminLists = function() {
+            const authContainer = document.getElementById('auth-list-container');
+            if (authContainer) {
+                let authHtml = '';
+                const allProjects = [...(globalEntData.projects || []).map(p => ({...p, _type: 'ENTERPRISE'})), ...(globalGovData.projects || []).map(p => ({...p, _type: 'GOVERNMENT'}))];
+                if (allProjects.length === 0) { authHtml = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無任何專案</div>'; } else {
+                    authHtml = allProjects.map(p => {
+                        const title = p._type === 'ENTERPRISE' ? p.orgName : p.name;
+                        
+                        // 🌟 升級：雙向密碼鎖按鈕設計 (結合 Hover 狀態切換)
+                        const authStatus = p.isAuthorized 
+                            ? `<button onclick="window.requireAuth('收回歸戶權限', '772059', () => window.toggleProjectAuth('${p._type}', '${p.id}', false))" class="text-green-700 font-bold bg-green-100 hover:bg-red-100 hover:text-red-600 border border-green-300 hover:border-red-300 px-3 py-1 rounded-md text-[11px] transition-colors group shadow-sm"><i class="fas fa-lock-open mr-1 group-hover:hidden"></i><i class="fas fa-lock mr-1 hidden group-hover:inline"></i><span class="group-hover:hidden">已解鎖</span><span class="hidden group-hover:inline">點擊上鎖</span></button>` 
+                            : `<button onclick="window.requireAuth('解鎖歸戶權限', '772059', () => window.toggleProjectAuth('${p._type}', '${p.id}', true))" class="bg-gray-100 hover:bg-yellow-400 text-gray-600 hover:text-yellow-900 border border-gray-300 hover:border-yellow-500 font-bold px-3 py-1 rounded-md text-[11px] shadow-sm transition-colors transform active:scale-95"><i class="fas fa-lock mr-1"></i>點擊解鎖</button>`;
+                            
+                        return `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="w-1/3 text-[13px] font-bold text-gray-700 truncate pr-2" title="${title}">${title}</span><div class="w-1/3 text-center">${authStatus}</div><span class="w-1/3 text-right text-[10px] font-mono text-gray-400 tracking-wider">${p._type}</span></div>`;
+                    }).join('');
+                }
+                authContainer.innerHTML = authHtml;
             }
+
+            const opContainer = document.getElementById('operator-list-container');
+            if (opContainer) {
+                if (!globalCerts.operators || globalCerts.operators.length === 0) opContainer.innerHTML = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無操作員資料</div>';
+                else opContainer.innerHTML = globalCerts.operators.map(op => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${op.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${op.name}</span></div>`).join('');
+            }
+
+            const lecContainer = document.getElementById('lecturer-list-container');
+            if (lecContainer) {
+                if (!globalCerts.lecturers || globalCerts.lecturers.length === 0) lecContainer.innerHTML = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無講師資料</div>';
+                else lecContainer.innerHTML = globalCerts.lecturers.map(lec => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${lec.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${lec.name}</span></div>`).join('');
+            }
+        };
+
+        // 🌟 新增：支援雙向開關的授權函數
+        window.toggleProjectAuth = async function(type, id, isAuthorize) {
+            if (!db) return window.showToast('資料庫未連線', true);
+            const collectionName = type === 'ENTERPRISE' ? 'ent_projects' : 'gov_projects';
+            try { 
+                window.showToast('🔄 處理中...'); 
+                await updateDoc(doc(db, collectionName, id), { isAuthorized: isAuthorize }); 
+                window.showToast(isAuthorize ? '🔓 已解鎖！遊客已可進行歸戶' : '🔒 已上鎖！暫停遊客歸戶'); 
+            } catch(e) { 
+                window.showToast('❌ 操作失敗，請確認權限', true); 
+            }
+        };
+
+        // 保留相容性函數
+        window.authorizeProject = async function(type, id) {
+            window.requireAuth('解鎖歸戶權限', '772059', () => window.toggleProjectAuth(type, id, true));
+        };
+
+        window.addLog = function(msg) { 
+            state.activityLogs.unshift({ text: msg, time: window.getFormattedTime() }); if(state.activityLogs.length > 20) state.activityLogs.pop(); 
+            window.renderLogs();
         };
 
         // ==========================================
@@ -1540,11 +1418,35 @@
             const titleEl = document.getElementById('poi-modal-title'); if(titleEl) titleEl.innerHTML = `<i class="fas fa-map-marker-alt text-mori-sage mr-2"></i>${poi.name || '未命名地標'}`;
             const descEl = document.getElementById('poi-modal-description'); if(descEl) descEl.innerHTML = poi.description || '暫無說明';
             const btnContainer = document.getElementById('poi-modal-dynamic-buttons');
+            
             if(btnContainer) {
                 let btnsHtml = '';
-                if(poi.fbUrl) btnsHtml += `<a href="${poi.fbUrl}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-bold text-sm text-center border border-blue-200 w-full flex items-center justify-center mb-1"><i class="fab fa-facebook mr-1"></i>查看 FB 粉絲頁</a>`;
+                // 1. 渲染 FB 粉絲頁按鈕
+                if(poi.fbUrl) btnsHtml += `<a href="${poi.fbUrl}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-bold text-sm text-center border border-blue-200 w-full flex items-center justify-center mb-1 shadow-sm"><i class="fab fa-facebook mr-1.5"></i>查看 FB 粉絲頁</a>`;
+                
+                // 2. 渲染官方網站按鈕
+                if(poi.websiteUrl) btnsHtml += `<a href="${poi.websiteUrl}" target="_blank" class="px-4 py-2 bg-gray-50 text-gray-700 rounded-lg font-bold text-sm text-center border border-gray-200 w-full flex items-center justify-center mb-1 shadow-sm"><i class="fas fa-external-link-alt mr-1.5"></i>前往官方網站</a>`;
+                
+                // 🌟 3. 智慧防呆：針對具備 ESG 資格的景點，若無官網則自動補充「預約導流按鈕」
+                if(poi.esgEligible && !poi.websiteUrl) {
+                    btnsHtml += `<a href="https://farmcmd.github.io/ESGT/events.html" target="_blank" class="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg font-bold text-sm text-center border border-yellow-200 w-full flex items-center justify-center mb-1 shadow-sm"><i class="fas fa-ticket-alt mr-1.5"></i>查看活動與預約</a>`;
+                }
+
                 btnContainer.innerHTML = btnsHtml;
             }
+            
+            // 🌟 復原：嵌入式視窗 (iframe) 的動態顯示邏輯
+            const iframeContainer = document.getElementById('poi-iframe-container');
+            if(iframeContainer) {
+                if(poi.iframeUrl) {
+                    iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[300px] border-none bg-gray-50" allowfullscreen></iframe>`;
+                    iframeContainer.classList.remove('hidden');
+                } else {
+                    iframeContainer.innerHTML = '';
+                    iframeContainer.classList.add('hidden');
+                }
+            }
+
             const startBtn = document.getElementById('set-as-start-button'); const endBtn = document.getElementById('set-as-end-button');
             if(startBtn) startBtn.onclick = () => { selectedStart=poi; window.updateTripDisplay(); window.closeModal('poi-modal'); window.showToast('📍 已設為起點'); };
             if(endBtn) endBtn.onclick = () => { selectedEnd=poi; window.updateTripDisplay(); window.closeModal('poi-modal'); window.showToast('📍 已設為終點'); };
@@ -1773,8 +1675,6 @@
         // ==========================================
         // 7. Firebase 實時同步 (全網通訊核心)
         // ==========================================
-        
-        // 🌟 終極防呆機制：停止所有載入中動畫，並顯示錯誤原因
         window.stopLoadingSpinners = function(errMsg) {
             const errHtml = `<div class="p-4 text-center text-red-500 text-[13px] font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>資料庫拒絕連線<br><span class="text-[10px] text-gray-500 mt-1 block">${errMsg}</span></div>`;
             if (document.getElementById('auth-list-container')) document.getElementById('auth-list-container').innerHTML = errHtml;
@@ -1788,60 +1688,42 @@
             const el = document.getElementById('connection-status'); if(!el) return;
             if(status === 'online') { 
                 el.innerHTML = '<i class="fas fa-link text-green-400 text-sm"></i>'; 
-                el.classList.remove('bg-black/40', 'bg-red-600/60', 'border-red-400/50'); 
-                el.classList.add('bg-green-600/60', 'border-green-400/50'); 
-                el.title = "資料庫連線正常";
+                el.classList.remove('bg-black/40', 'bg-red-600/60', 'border-red-400/50'); el.classList.add('bg-green-600/60', 'border-green-400/50'); el.title = "資料庫連線正常";
             } else { 
                 const displayErr = errMsg ? `離線: ${errMsg.substring(0, 15)}...` : '預覽/離線模式'; 
                 el.innerHTML = `<i class="fas fa-unlink text-red-400 mr-2 text-xs"></i><span class="text-white/90 text-xs font-bold tracking-wide">${displayErr}</span>`; 
-                el.classList.remove('bg-black/40', 'bg-green-600/60', 'border-green-400/50'); 
-                el.classList.add('bg-red-600/60', 'border-red-400/50'); 
-                el.title = errMsg ? `錯誤詳情: ${errMsg}` : "資料庫連線失敗或處於預覽沙盒中"; 
+                el.classList.remove('bg-black/40', 'bg-green-600/60', 'border-green-400/50'); el.classList.add('bg-red-600/60', 'border-red-400/50'); el.title = errMsg ? `錯誤詳情: ${errMsg}` : "資料庫連線失敗或處於預覽沙盒中"; 
             }
         };
 
-        // 🌟 強化的 Firebase 啟動引擎
-        function initFirebase() {
+        window.initFirebase = function() {
             try {
                 const app = initializeApp(firebaseConfig); 
                 db = getFirestore(app); 
                 const auth = getAuth(app);
                 
-                // 1. 嘗試匿名登入 (若後台沒開，這裡會報錯)
                 signInAnonymously(auth).catch((err) => { 
                     isOfflineMode = true; 
-                    console.error("Firebase Auth 錯誤:", err);
-                    
                     let displayMsg = err.message;
-                    // 若抓到 operation-not-allowed 錯誤，明確提醒使用者
                     if (err.code === 'auth/operation-not-allowed') {
                         displayMsg = '請至 Firebase 後台啟用 Authentication 的「匿名登入」功能！';
                         window.showToast('⚠️ 重大警告：Firebase 拒絕發放身分！' + displayMsg, true);
-                    } else {
-                        window.showToast('⚠️ 連線錯誤：' + displayMsg, true);
                     }
-                    
                     window.updateConnectionStatus('offline', displayMsg);
                     window.stopLoadingSpinners(displayMsg);
                 });
 
                 let pageLoaded = false;
-                
-                // 2. 監聽登入狀態
                 onAuthStateChanged(auth, user => { 
                     if(user && db) { 
-                        // 登入成功，啟動資料讀取
-                        initGlobalCounters(); 
+                        window.initGlobalCounters(); 
                         window.updateConnectionStatus('online'); 
                         if(!pageLoaded) { 
                             pageLoaded = true; 
                             setDoc(doc(db, 'system_stats', 'global_absolute'), {visitor_count: increment(1)}, {merge:true}).catch(e=>{}); 
                         } 
                     } else {
-                        // user = null 代表登入失敗或被踢出
-                        if (!isOfflineMode) {
-                            window.stopLoadingSpinners('等待授權...');
-                        }
+                        if (!isOfflineMode) window.stopLoadingSpinners('等待授權...');
                     } 
                 });
             } catch(e) { 
@@ -1849,21 +1731,18 @@
                 window.updateConnectionStatus('offline', e.message); 
                 window.stopLoadingSpinners(e.message);
             }
-        }
+        };
 
-        function initGlobalCounters() {
+        window.initGlobalCounters = function() {
             if(!db) return;
             const errHandler = (err) => { 
-                console.warn("Firestore 讀取錯誤:", err); 
                 if(!isOfflineMode) { 
                     isOfflineMode = true; 
-                    loadMockData(); 
-                    window.showToast('資料庫連線受阻 (可能是安全規則阻擋)，已切換至展示模式', true); 
+                    window.showToast('資料庫連線受阻，已切換至展示模式', true); 
                     window.stopLoadingSpinners('Firestore 規則阻擋連線');
                 } 
             };
             
-            // 系統大盤與廣播監聽
             onSnapshot(doc(db, 'system_stats', 'global_absolute'), {includeMetadataChanges:true}, (docSnap) => { 
                 if(docSnap.metadata.hasPendingWrites) return; 
                 if(docSnap.exists()) { globalAbsolute = docSnap.data(); if(typeof window.updateGlobalSummary === 'function') window.updateGlobalSummary(); }
@@ -1878,20 +1757,14 @@
                 } else { if(container) container.classList.add('hidden'); }
             });
 
-            // 🌟 儀表板資料庫監聽
-            onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderGovDashboard === 'function') window.renderGovDashboard(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
-            onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderEntProjectsDashboard === 'function') window.renderEntProjectsDashboard(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
+            onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
+            onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
             onSnapshot(collection(db, 'lottery_events'), (snapshot) => { window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); });
 
-            // 🌟 監聽操作員與講師名單
             onSnapshot(doc(db, 'system_messages', 'certifications'), (docSnap) => {
-                if (docSnap.exists()) {
-                    globalCerts = docSnap.data();
-                    if(typeof window.renderAdminLists === 'function') window.renderAdminLists();
-                }
+                if (docSnap.exists()) { globalCerts = docSnap.data(); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }
             }, errHandler);
 
-            // 監聽動態地標 (黃色星星)
             onSnapshot(collection(db, 'custom_pois'), (snapshot) => { 
                 pois = pois.filter(p => p.categoryId !== 'dynamic_events'); 
                 snapshot.docs.forEach(doc => { 
@@ -1902,28 +1775,22 @@
                 if(window.mapsApiReady && document.getElementById('mission-page') && !document.getElementById('mission-page').classList.contains('hidden')) { if(typeof window.renderMap === 'function') window.renderMap(); } 
             }, errHandler);
             
-            // 監聽後台發布的合作企業清單
+            // 🌟 企業綁定 10 宮格的核心資料庫連線
             onSnapshot(collection(db, 'partner_enterprises'), (snapshot) => {
                 window.partnerEnterprises = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (typeof window.renderPartnerSelect === 'function') window.renderPartnerSelect();
             }, errHandler);
-        }
-
-        function loadMockData() {
-            globalEntData.projects = [{id:'mock_ent_1', orgName:'測試企業', year:'2026', event:'測試活動', carbon:875, green:168000, eval_count:4, total_score:230, isAuthorized:true}];
-            globalGovData.projects = [{id:'mock_gov_1', name:'測試計畫', event:'測試推廣', date:'2026-03-05', carbon:3200, green:15000, eval_count:10, total_score:480, isAuthorized:true}];
-            if(typeof window.renderGovDashboard === 'function') window.renderGovDashboard(); 
-            if(typeof window.renderEntProjectsDashboard === 'function') window.renderEntProjectsDashboard(); 
-        }
+        };
 
         // ==========================================
         // 8. 網頁啟動掛載 (DOM Ready)
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
             window.loadLocalData();
-            initFirebase();
-
-            // 🌟 接收來自內嵌儀表板與「地球日誌遊戲端」的跨網域指令
+            
+            // 🌟 啟動 Firebase 核心引擎
+            window.initFirebase();
+            
             window.addEventListener('message', (event) => {
                 if (event.data && event.data.action === 'SWITCH_TAB') {
                     if (event.data.tab === 'gov') document.getElementById('tab-btn-gov')?.click();
@@ -1951,7 +1818,6 @@
                         if (raw) { state = { ...state, ...JSON.parse(raw) }; window.updateDisplays(); window.renderCheckoutHistory(); window.renderLogs(); }
                     } catch(err){}
                 }
-                // 🌟 核心修復：跨分頁專屬雷達！監聽來自地球日誌 (新分頁) 的勇者指數更新
                 if (e.key === 'esgt_hero_index_update' && e.newValue) {
                     try {
                         const data = JSON.parse(e.newValue);
@@ -1973,9 +1839,6 @@
                 }
             });
             
-            window.addEventListener('online', () => { if(isOfflineMode){ isOfflineMode=false; initFirebase(); window.showToast('📶 網路連線已恢復，數據將同步至雲端'); } });
-            window.addEventListener('offline', () => { isOfflineMode=true; window.showToast('⚠️ 網路連線中斷，已開啟離線保護模式'); });
-
             if(typeof window.bindSystemUtilities === 'function') window.bindSystemUtilities();
             if(typeof window.bindMapAndTransportEvents === 'function') window.bindMapAndTransportEvents();
             if(typeof window.bindGreenConsumptionEvents === 'function') window.bindGreenConsumptionEvents();
