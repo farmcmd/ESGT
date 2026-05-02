@@ -1429,18 +1429,35 @@
                 
                 // 🌟 3. 智慧防呆：針對具備 ESG 資格的景點，若無官網則自動補充「預約導流按鈕」
                 if(poi.esgEligible && !poi.websiteUrl) {
-                    btnsHtml += `<a href="https://farmcmd.github.io/ESGT/events.html" target="_blank" class="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg font-bold text-sm text-center border border-yellow-200 w-full flex items-center justify-center mb-1 shadow-sm"><i class="fas fa-ticket-alt mr-1.5"></i>查看活動與預約</a>`;
+                    btnsHtml += `<a href="https://farmcmd.github.io/JOY/" target="_blank" class="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg font-bold text-sm text-center border border-yellow-200 w-full flex items-center justify-center mb-1 shadow-sm"><i class="fas fa-ticket-alt mr-1.5"></i>查看活動與預約</a>`;
                 }
 
                 btnContainer.innerHTML = btnsHtml;
             }
             
-            // 🌟 復原：嵌入式視窗 (iframe) 的動態顯示邏輯
+            // 🌟 升級：自動判斷並渲染 Facebook 官方時間軸外掛 或 一般 iframe
             const iframeContainer = document.getElementById('poi-iframe-container');
             if(iframeContainer) {
                 if(poi.iframeUrl) {
-                    iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[300px] border-none bg-gray-50" allowfullscreen></iframe>`;
-                    iframeContainer.classList.remove('hidden');
+                    if (poi.iframeUrl.includes('facebook.com') || poi.iframeUrl.includes('fb.com')) {
+                        // 使用 Facebook Page Plugin 標準結構
+                        iframeContainer.innerHTML = `
+                            <div class="w-full bg-white flex justify-center py-2">
+                                <div class="fb-page" data-href="${poi.iframeUrl}" data-tabs="timeline" data-width="380" data-height="350" data-small-header="false" data-adapt-container-width="true" data-hide-cover="false" data-show-facepile="false">
+                                    <blockquote cite="${poi.iframeUrl}" class="fb-xfbml-parse-ignore">
+                                        <a href="${poi.iframeUrl}" target="_blank" class="text-blue-500 text-sm font-bold"><i class="fab fa-facebook mr-1"></i>載入粉絲專頁中... 若無顯示請點此前往</a>
+                                    </blockquote>
+                                </div>
+                            </div>`;
+                        iframeContainer.classList.remove('hidden');
+                        
+                        // 呼叫 FB SDK 重新解析動態生成的 DOM
+                        setTimeout(() => { if (window.FB) window.FB.XFBML.parse(iframeContainer); }, 150);
+                    } else {
+                        // 一般網頁使用傳統 iframe
+                        iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[300px] border-none bg-gray-50" allowfullscreen></iframe>`;
+                        iframeContainer.classList.remove('hidden');
+                    }
                 } else {
                     iframeContainer.innerHTML = '';
                     iframeContainer.classList.add('hidden');
