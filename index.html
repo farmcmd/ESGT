@@ -179,6 +179,7 @@
         
         <!-- 系統儀表板總覽 -->
         <section id="homepage" class="page-section block">
+            <!-- 🌟 修正：還原單一版面，將綠色經濟貢獻優雅融入其中 -->
             <div class="bg-blue-50/50 p-6 rounded-2xl shadow-sm mb-8 border border-blue-100 text-center">
                  <h3 class="text-lg font-semibold text-blue-800 mb-3">探探里山旅者共同累積減碳量</h3>
                  <div class="flex justify-center items-center w-full">
@@ -187,6 +188,7 @@
                          <span id="network-unit" class="absolute left-full ml-2 text-lg md:text-xl font-bold text-black tracking-normal bottom-[2px] md:bottom-1 whitespace-nowrap">g/CO2e</span>
                      </div>
                  </div>
+
                  <div class="mt-6 flex flex-col items-center justify-center animate-pulse">
                      <div class="flex flex-row items-center justify-center gap-4">
                          <span class="text-4xl md:text-5xl filter drop-shadow-md">🌳</span>
@@ -337,6 +339,18 @@
                     <div class="p-4 bg-white rounded-xl shadow-sm border border-mori-light text-center">
                         <p class="text-[15px] font-black text-gray-700 tracking-wide mb-1">SROI 社會價值</p>
                         <p id="display-sroi-procurement" class="text-xl font-black text-mori-wood">$0</p>
+                    </div>
+                </div>
+                
+                <!-- 🌟 修正：將全網大盤數據優雅融入綠消面板底部 -->
+                <div class="mt-5 pt-4 border-t border-[#E8EFE6] relative z-10">
+                    <div class="flex justify-between items-end mb-2.5 px-1">
+                        <span class="text-[13px] font-bold text-gray-500 flex items-center"><i class="fas fa-user text-mori-sage mr-1.5"></i>個人貢獻小計</span>
+                        <span id="display-total-green-impact" class="text-lg font-bold text-mori-forest tracking-wide">$0</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-yellow-50/90 p-3.5 rounded-xl border border-yellow-200 shadow-sm">
+                        <span class="text-[15px] md:text-base font-black text-yellow-800 flex items-center"><i class="fas fa-globe-asia text-yellow-500 mr-2 animate-pulse"></i>全網綠色經濟總貢獻</span>
+                        <span id="display-grand-total-green" class="text-2xl md:text-3xl font-black text-yellow-600 drop-shadow-sm font-mono tracking-tighter">$0</span>
                     </div>
                 </div>
             </div>
@@ -664,8 +678,9 @@
                         </div>
                     </div>
                 </div>
+                <!-- 🌟 補回：SROI 按鈕上的即時總額顯示 -->
                 <button id="log-sroi-btn" class="w-full py-3.5 bg-mori-wood hover:bg-yellow-700 text-white font-bold rounded-xl shadow-md text-[15px] transition-all transform active:scale-95 flex items-center justify-center">
-                    <i class="fas fa-chart-line mr-2"></i> 登錄 SROI 價值
+                    <i class="fas fa-chart-line mr-2"></i> 登錄 SROI 價值 <span id="sroi-total-display" class="ml-2 text-yellow-200 font-mono tracking-wider">$0</span>
                 </button>
             </div>
         </div>
@@ -1238,8 +1253,11 @@
             const elCarbon = document.getElementById('display-carbon'); if (elCarbon) elCarbon.textContent = Math.round(state.totalCarbon || 0);
             const elScore = document.getElementById('display-score'); if (elScore) elScore.textContent = state.totalScore || 0;
             const elHero = document.getElementById('display-hero-index'); if (elHero) elHero.textContent = state.heroIndex || 0;
-            const elGreen = document.getElementById('display-green-procurement'); if (elGreen) elGreen.textContent = `$${state.greenProcure || 0}`;
-            const elSroi = document.getElementById('display-sroi-procurement'); if (elSroi) elSroi.textContent = `$${state.sroiProcure || 0}`;
+            
+            // 🌟 補回：具備千分位美化的金額顯示引擎
+            const elGreen = document.getElementById('display-green-procurement'); if (elGreen) elGreen.textContent = `$${(state.greenProcure || 0).toLocaleString()}`;
+            const elSroi = document.getElementById('display-sroi-procurement'); if (elSroi) elSroi.textContent = `$${(state.sroiProcure || 0).toLocaleString()}`;
+            const elTotalGreen = document.getElementById('display-total-green-impact'); if (elTotalGreen) elTotalGreen.textContent = `$${((state.greenProcure || 0) + (state.sroiProcure || 0)).toLocaleString()}`;
             
             const updateCircle = (id, val, max) => { const el = document.getElementById(id); if (el) el.setAttribute('stroke-dasharray', `${Math.min(100, (val/max)*100)}, 100`); };
             updateCircle('circle-mileage', (state.totalMileage || 0) / 1000, 100); updateCircle('circle-carbon', state.totalCarbon || 0, 5000); updateCircle('circle-score', state.totalScore || 0, 1000);
@@ -1267,9 +1285,25 @@
 
         window.updateGlobalSummary = function() { 
             const serverCarbon = Math.max(0, Number(globalAbsolute.carbon || 0)); 
-            const serverGreen = Math.max(0, Number(globalAbsolute.green || 0)); 
+            let serverGreen = Math.max(0, Number(globalAbsolute.green || 0)); 
             const visitorCount = Math.max(0, Number(globalAbsolute.visitor_count || 0)); 
             
+            // 🌟 雲端數據回推補償引擎 (Historical Backfill Engine)
+            // 如果全網大盤為 0，主動掃描 Firebase 歷史卡片並加總回推
+            if (serverGreen === 0) {
+                let historicalGreen = 0;
+                (globalEntData.projects || []).forEach(p => historicalGreen += (Number(p.green) || 0));
+                (globalGovData.projects || []).forEach(p => historicalGreen += (Number(p.green) || 0));
+
+                if (historicalGreen > 0) {
+                    serverGreen = historicalGreen;
+                    // 將找回的歷史數據，補寫回全網大盤中 (僅觸發一次)
+                    if (db && !isOfflineMode) {
+                        setDoc(doc(db, 'system_stats', 'global_absolute'), { green: historicalGreen }, { merge: true }).catch(e=>{});
+                    }
+                }
+            }
+
             if (document.getElementById('network-total-carbon-reduction')) document.getElementById('network-total-carbon-reduction').textContent = Math.round(serverCarbon).toLocaleString(); 
             if (document.getElementById('display-grand-total-green')) document.getElementById('display-grand-total-green').textContent = `$${serverGreen.toLocaleString()}`; 
             if (document.getElementById('trees-planted-count')) document.getElementById('trees-planted-count').textContent = (serverCarbon / 12000).toFixed(2); 
@@ -1625,8 +1659,24 @@
             document.getElementById('green-qty')?.addEventListener('input', updateGreenTotal); 
             document.getElementById('green-price')?.addEventListener('input', updateGreenTotal);
             
+            // 🌟 補回：SROI 總額的即時試算與綁定
+            const updateSroiTotal = () => {
+                const select = document.getElementById('sroi-unit-select');
+                const price = parseFloat(document.getElementById('sroi-price')?.value) || 0;
+                const display = document.getElementById('sroi-total-display');
+                if(select && display) {
+                    const weight = parseFloat(select.options[select.selectedIndex]?.value) || 1;
+                    display.textContent = `$${Math.round(price * weight).toLocaleString()}`;
+                }
+            };
+            document.getElementById('sroi-price')?.addEventListener('input', updateSroiTotal);
+            document.getElementById('sroi-unit-select')?.addEventListener('change', updateSroiTotal);
+
             const sroiSelect = document.getElementById('sroi-unit-select'); 
-            if(sroiSelect) sroiSelect.innerHTML = sroiUnits.map(u => `<option value="${u.weight}">${u.name} (加權 ${u.weight})</option>`).join('');
+            if(sroiSelect) {
+                sroiSelect.innerHTML = sroiUnits.map(u => `<option value="${u.weight}">${u.name} (加權 ${u.weight})</option>`).join('');
+                updateSroiTotal(); // 初始化觸發顯示
+            }
             
             document.getElementById('log-green-procure-btn')?.addEventListener('click', async () => {
                 const qty = parseFloat(document.getElementById('green-qty').value) || 0; 
@@ -1666,7 +1716,7 @@
                     const selectedOption = select.options[select.selectedIndex]; 
                     const weight = parseFloat(selectedOption.value) || 1; 
                     const farmName = selectedOption.text.split('(')[0].trim(); 
-                    const total = price * weight; 
+                    const total = Math.round(price * weight); // 確保轉為整數
                     const btn = document.getElementById('log-sroi-btn'); 
                     const origHtml = btn.innerHTML; 
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 同步中...'; 
@@ -1680,10 +1730,14 @@
                         const earnedPts = Math.floor(total / 30); 
                         state.totalScore += earnedPts; 
                         window.saveData(); 
-                        window.addLog(`SROI 登錄 (${farmName}): $${total.toFixed(0)} (獲得 ${earnedPts} 積分)`); 
+                        window.addLog(`SROI 登錄 (${farmName}): $${total.toLocaleString()} (獲得 ${earnedPts} 積分)`); 
                         window.updateDisplays(); 
                         window.closeModal('green-consumption-modal'); 
                         window.showToast(`✅ SROI 價值登錄成功！獲得 ${earnedPts} 積分`); 
+                        
+                        // 🌟 登錄後清空欄位防呆
+                        document.getElementById('sroi-price').value = '';
+                        if(document.getElementById('sroi-total-display')) document.getElementById('sroi-total-display').textContent = '$0';
                     }
                 } else { window.showToast('⚠️ 請選擇農場並輸入金額', true); }
             });
