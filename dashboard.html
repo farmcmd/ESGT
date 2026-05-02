@@ -518,13 +518,11 @@
             if(document.getElementById('dash-score')) document.getElementById('dash-score').textContent = (state.totalScore || 0);
             if(document.getElementById('dash-mileage')) document.getElementById('dash-mileage').textContent = ((state.totalMileage || 0) / 1000).toFixed(1) + 'km';
             
-            // 🌟 核心修復：徹底拔除假算公式，完美同步遊戲回傳的 heroIndex
             if(document.getElementById('dash-hero')) document.getElementById('dash-hero').textContent = state.heroIndex || 0;
             
             if(document.getElementById('dash-green-procure')) document.getElementById('dash-green-procure').textContent = '$' + (state.greenProcure || 0).toLocaleString();
             if(document.getElementById('dash-sroi')) document.getElementById('dash-sroi').textContent = '$' + (state.sroiProcure || 0).toLocaleString();
 
-            // 🌟 自動偵測並同步顯示企業與員工編號
             const entBadge = document.getElementById('dash-enterprise-badge');
             if (state.enterpriseName) {
                 if (entBadge) { entBadge.classList.remove('hidden'); entBadge.classList.add('flex'); }
@@ -534,7 +532,6 @@
                 if (entBadge) { entBadge.classList.add('hidden'); entBadge.classList.remove('flex'); }
             }
 
-            // 🌟 核心新增：渲染抽獎序號列 (常駐顯示並加入防呆文字)
             const ticketList = document.getElementById('lottery-ticket-list');
             if (state.lotteryTickets && state.lotteryTickets.length > 0) {
                 if (ticketList) {
@@ -554,12 +551,10 @@
             window.saveData(); window.updateTopDisplays();
         };
 
-        // 🌟 新增：最新活動列表折疊 Modal 控制與渲染
         window.openLatestEventsModal = function() {
             const container = document.getElementById('latest-events-accordion-container');
             if (!container) return;
             
-            // 使用 globalLotteryEvents 渲染，將進行中的排前面，然後按時間排序
             const events = [...(window.globalLotteryEvents || [])];
             events.sort((a, b) => {
                 if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
@@ -578,7 +573,6 @@
                     
                     return `
                     <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white group transition-all duration-300">
-                        <!-- 點擊展開的按鈕區塊 -->
                         <button class="w-full text-left px-4 py-3.5 bg-gray-50 hover:bg-yellow-50/50 focus:outline-none flex justify-between items-center transition-colors" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180');">
                             <div class="flex items-center gap-3 pr-4 overflow-hidden w-full">
                                 ${statusBadge}
@@ -587,7 +581,6 @@
                             <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 chevron-icon shrink-0"></i>
                         </button>
                         
-                        <!-- 隱藏的折疊內容區塊 -->
                         <div class="hidden px-4 py-4 bg-white border-t border-gray-100 animate-fade-in-down">
                             <p class="text-[13px] text-gray-600 leading-relaxed mb-4 whitespace-pre-wrap"><i class="fas fa-info-circle text-gray-400 mr-1.5"></i>${ev.desc || '主辦單位暫無詳細說明'}</p>
                             
@@ -823,6 +816,18 @@
                 if (e.targetSerial && (proj.serialNumber || '').toUpperCase() !== e.targetSerial.toUpperCase()) return false; 
                 const projCardCode = proj.cardCode || (proj.id.startsWith('mock_') ? (type === 'ent' ? 'USI88' : 'GOV99') : proj.id.slice(-5).toUpperCase()); 
                 if (e.targetCardCode && projCardCode.toUpperCase() !== e.targetCardCode.toUpperCase().replace('#', '')) return false; 
+                
+                // 動態偵測活動期間
+                const now = new Date();
+                if (e.startDate) {
+                    const sDate = new Date(e.startDate.replace(/-/g, '/'));
+                    if (now < sDate) return false;
+                }
+                if (e.endDate) {
+                    const eDate = new Date(e.endDate.replace(/-/g, '/') + ' 23:59:59');
+                    if (now > eDate) return false;
+                }
+                
                 return true; 
             });
         };
@@ -911,7 +916,6 @@
                     const ec = Number(proj.eval_count) || 0; 
                     const ts = Number(proj.total_score) || 0; 
                     
-                    // 🌟 核心修復：使用動態加權公式，解決舊版資料未記錄 ESG 分項造成的平均值暴跌問題
                     let avgOverallNum = ec > 0 ? (ts / (ec * 12)) : 0;
                     avgOverallNum = Math.min(5.0, avgOverallNum);
                     const avgOverall = avgOverallNum.toFixed(1); 
@@ -1279,7 +1283,7 @@
                         
                         <div class="mb-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                             <div class="flex justify-between items-end mb-1.5">
-                                <span class="text-[13px] font-black text-gray-700 tracking-wide flex items-center"><i class="fas fa-star text-yellow-400 mr-1.5 text-base"></i>活動滿意度 (${ec}人)</span>
+                                <span class="text-[13px] font-black text-gray-700 tracking-wide flex items-center"><i class="fas fa-star text-yellow-500 mr-1.5 text-base"></i>活動滿意度 (${ec}人)</span>
                                 <span class="text-sm font-black text-yellow-500">${avg} <span class="text-[10px] text-gray-400 font-normal">/ 5.0</span></span>
                             </div>
                             <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
@@ -1844,6 +1848,7 @@
             } else { window.showToast('請先選擇要歸戶的計畫'); }
         });
 
+        // 🌟 嚴格防呆抽獎發放與 Firebase 上傳邏輯 (企業)
         document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async () => {
             const selectId = 'ent-proj-select'; const projId = document.getElementById(selectId).value;
             if (!projId) return window.showToast('請先選擇歸戶對象');
@@ -1861,16 +1866,37 @@
             const carb = Math.round(state.totalCarbon); const totalGreen = state.greenProcure + state.sroiProcure;
 
             let newTicketsCount = 0; const p = globalEntData.projects.find(x => x.id === projId); state.lotteryTickets = state.lotteryTickets || [];
+            
+            let ticketsToUpload = []; // 🌟 新增：準備上傳至雲端的票箱
+            let generatedSerials = []; // 🌟 紀錄本次產生的序號供歷史紀錄使用
 
             if (p && window.globalLotteryEvents && window.getEligibleEventsForProject) {
                 const eligibleEvents = window.getEligibleEventsForProject(p, 'ent');
                 eligibleEvents.forEach(evt => {
-                    const reqPts = evt.requiredScore || 100; const canExchange = Math.floor(state.totalScore / reqPts);
-                    if (canExchange > 0) {
+                    const reqPts = evt.requiredScore || 100;
+                    // 🌟 嚴格防呆：只在分數足夠時才執行倍數計算與發放
+                    if (state.totalScore >= reqPts) {
+                        const canExchange = Math.floor(state.totalScore / reqPts);
                         for(let i=0; i<canExchange; i++) {
-                            state.lotteryTickets.push({ serial: `AENT${Math.random().toString(36).substring(2,10).toUpperCase()}`, eventId: evt.id, eventName: evt.title, targetCardId: p.cardCode || p.id.slice(-5).toUpperCase(), date: window.getFormattedTime().split(' ')[0], deadline: evt.endDate || '未定' });
+                            // 確保序號絕對不重複的 Hash 演算法
+                            const uniqueCode = Date.now().toString(36).slice(-4).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase();
+                            const serialCode = `AENT-${uniqueCode}`;
+                            generatedSerials.push(serialCode);
+                            
+                            const ticketData = { serial: serialCode, eventId: evt.id, eventName: evt.title, targetCardId: p.cardCode || p.id.slice(-5).toUpperCase(), date: window.getFormattedTime().split(' ')[0], deadline: evt.endDate || '未定' };
+                            state.lotteryTickets.push(ticketData);
+                            
+                            // 🌟 封裝要送到 Firebase 的完整機密資料
+                            ticketsToUpload.push({
+                                ...ticketData,
+                                playerName: state.playerName || '匿名旅者',
+                                playerCode: state.playerCode || 'UNKNOWN',
+                                createdAt: serverTimestamp(),
+                                isDrawn: false
+                            });
                             newTicketsCount++;
                         }
+                        // 精準扣除已兌換的積分
                         state.totalScore -= (canExchange * reqPts);
                     }
                 });
@@ -1882,6 +1908,11 @@
                     if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
                     await setDoc(doc(db, 'ent_projects', projId), updates, { merge: true });
                     await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(carb), green: increment(totalGreen), [`daily_${window.getTodayKey()}_carbon`]: increment(carb) }, { merge: true });
+                    
+                    // 🌟 一鍵將本次所有產生的抽獎卷投遞至雲端票箱
+                    if (ticketsToUpload.length > 0) {
+                        await Promise.all(ticketsToUpload.map(ticket => addDoc(collection(db, 'lottery_tickets'), ticket)));
+                    }
                 } catch(e) { window.showToast(`🚨 雲端歸戶失敗: ${e.message}`); return; }
             } else if (p) {
                  p.carbon = (p.carbon || 0) + carb; p.green = (p.green || 0) + totalGreen; p.eval_count = (p.eval_count || 0) + 1; p.total_score = (p.total_score || 0) + evalTotalScore; p.score_e = (p.score_e || 0) + scoreE; p.score_s = (p.score_s || 0) + scoreS; p.score_g = (p.score_g || 0) + scoreG;
@@ -1889,7 +1920,8 @@
             }
 
             const targetName = p ? (p.name || p.orgName) : projId;
-            state.checkoutHistory.unshift({ target: targetName, carbon: carb, green: totalGreen, time: window.getFormattedTime() }); window.addLog(`歸戶結算: 貢獻至 ${targetName}`);
+            // 🌟 歷史紀錄也一併寫入獲得的序號
+            state.checkoutHistory.unshift({ target: targetName, carbon: carb, green: totalGreen, time: window.getFormattedTime(), tickets: generatedSerials }); window.addLog(`歸戶結算: 貢獻至 ${targetName}`);
 
             // 🌟 擷取滿分狀態快照，留給自動產圖使用
             const stateSnapshot = JSON.parse(JSON.stringify(state));
@@ -1905,6 +1937,7 @@
             await window.autoDownloadCert(stateSnapshot);
         });
 
+        // 🌟 嚴格防呆抽獎發放與 Firebase 上傳邏輯 (政府)
         document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async () => {
             const selectId = 'user-proj-select'; const projId = document.getElementById(selectId).value;
             if (!projId) return window.showToast('請先選擇歸戶對象');
@@ -1923,13 +1956,31 @@
 
             let newTicketsCount = 0; const p = globalGovData.projects.find(x => x.id === projId); state.lotteryTickets = state.lotteryTickets || [];
 
+            let ticketsToUpload = []; // 🌟 新增
+            let generatedSerials = []; // 🌟 新增
+
             if (p && window.globalLotteryEvents && window.getEligibleEventsForProject) {
                 const eligibleEvents = window.getEligibleEventsForProject(p, 'gov');
                 eligibleEvents.forEach(evt => {
-                    const reqPts = evt.requiredScore || 100; const canExchange = Math.floor(state.totalScore / reqPts);
-                    if (canExchange > 0) {
+                    const reqPts = evt.requiredScore || 100; 
+                    // 🌟 嚴格防呆：只在分數足夠時才執行倍數計算與發放
+                    if (state.totalScore >= reqPts) {
+                        const canExchange = Math.floor(state.totalScore / reqPts);
                         for(let i=0; i<canExchange; i++) {
-                            state.lotteryTickets.push({ serial: `AGOV${Math.random().toString(36).substring(2,10).toUpperCase()}`, eventId: evt.id, eventName: evt.title, targetCardId: p.cardCode || p.id.slice(-5).toUpperCase(), date: window.getFormattedTime().split(' ')[0], deadline: evt.endDate || '未定' });
+                            const uniqueCode = Date.now().toString(36).slice(-4).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase();
+                            const serialCode = `AGOV-${uniqueCode}`;
+                            generatedSerials.push(serialCode);
+                            
+                            const ticketData = { serial: serialCode, eventId: evt.id, eventName: evt.title, targetCardId: p.cardCode || p.id.slice(-5).toUpperCase(), date: window.getFormattedTime().split(' ')[0], deadline: evt.endDate || '未定' };
+                            state.lotteryTickets.push(ticketData);
+                            
+                            ticketsToUpload.push({
+                                ...ticketData,
+                                playerName: state.playerName || '匿名旅者',
+                                playerCode: state.playerCode || 'UNKNOWN',
+                                createdAt: serverTimestamp(),
+                                isDrawn: false
+                            });
                             newTicketsCount++;
                         }
                         state.totalScore -= (canExchange * reqPts);
@@ -1942,6 +1993,11 @@
                     const updates = { carbon: increment(carb), green: increment(totalGreen), eval_count: increment(1), total_score: increment(evalTotalScore), updatedAt: serverTimestamp() };
                     if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
                     await setDoc(doc(db, 'gov_projects', projId), updates, { merge: true });
+                    
+                    // 🌟 上傳雲端票箱
+                    if (ticketsToUpload.length > 0) {
+                        await Promise.all(ticketsToUpload.map(ticket => addDoc(collection(db, 'lottery_tickets'), ticket)));
+                    }
                 } catch(e) { window.showToast(`🚨 雲端歸戶失敗: ${e.message}`); return; }
             } else if (p) {
                  p.carbon = (p.carbon || 0) + carb; p.green = (p.green || 0) + totalGreen; p.eval_count = (p.eval_count || 0) + 1; p.total_score = (p.total_score || 0) + evalTotalScore;
@@ -1949,7 +2005,7 @@
             }
 
             const targetName = p ? (p.name || p.orgName) : projId;
-            state.checkoutHistory.unshift({ target: targetName, carbon: carb, green: totalGreen, time: window.getFormattedTime() }); window.addLog(`歸戶結算: 貢獻至 ${targetName}`);
+            state.checkoutHistory.unshift({ target: targetName, carbon: carb, green: totalGreen, time: window.getFormattedTime(), tickets: generatedSerials }); window.addLog(`歸戶結算: 貢獻至 ${targetName}`);
 
             // 🌟 擷取滿分狀態快照，留給自動產圖使用
             const stateSnapshot = JSON.parse(JSON.stringify(state));
@@ -2121,7 +2177,7 @@
             if (typeof bindSummaryEvents === 'function') bindSummaryEvents();
             if (typeof bindEditSaveEvents === 'function') bindEditSaveEvents();
 
-            // 🌟 儀表板專屬：強制同步接收器 (包含無縫切換面板與資料覆寫)
+            // 🌟 跨網域通訊與活動接收器
             window.addEventListener('message', (event) => {
                 if (event.data && event.data.action === 'SWITCH_TAB') {
                     if (event.data.tab === 'gov') document.getElementById('tab-btn-gov')?.click();
@@ -2130,9 +2186,16 @@
                 
                 if (event.data && event.data.action === 'SYNC_FROM_MAIN') {
                     try {
-                        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(event.data.state));
-                        if (typeof window.loadLocalData === 'function') window.loadLocalData();
-                        if (typeof window.updateTopDisplays === 'function') window.updateTopDisplays();
+                        if (event.data.state) {
+                            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(event.data.state));
+                            state = { ...state, ...event.data.state };
+                            if (typeof window.loadLocalData === 'function') window.loadLocalData();
+                            if (typeof window.updateTopDisplays === 'function') window.updateTopDisplays();
+                        }
+                        // 🌟 接住跨網域空投的活動清單
+                        if (event.data.events) {
+                            window.globalLotteryEvents = event.data.events;
+                        }
                     } catch(e) { console.error("同步失敗", e); }
                 }
             });
