@@ -1,457 +1,1070 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>探探里山 - 永續抽獎慶典</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>探探里山 - 雲端開獎中心</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        mori: { base: '#F7F4EF', light: '#E8EFE6', sage: '#8B9D77', forest: '#4A6741', wood: '#D2B48C', dark: '#2C3E28' },
+                        gold: { 300: '#FDE047', 400: '#FACC15', 500: '#EAB308', 600: '#CA8A04', 700: '#A16207' }
+                    }, 
+                    fontFamily: { sans: ['Noto Sans TC', 'sans-serif'], mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'] } 
+                } 
+            } 
+        }
+    </script>
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; }
+        body { background-color: #111827; color: #F3F4F6; background-image: radial-gradient(circle at 50% 0%, #1F2937 0%, #030712 100%); min-height: 100vh; transition: background 0.3s ease; }
         
-        /* 慶典背景動畫 */
-        .bg-celebration {
-            background: radial-gradient(circle at center, #2e1065 0%, #0f172a 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .bg-celebration::before {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(251,191,36,0.1) 10%, transparent 20%),
-                        radial-gradient(circle, rgba(251,191,36,0.1) 10%, transparent 20%);
-            background-size: 60px 60px;
-            background-position: 0 0, 30px 30px;
-            animation: moveBackground 30s linear infinite;
-            z-index: 0;
-        }
-        @keyframes moveBackground {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        /* 綠幕模式 CSS */
+        body.green-screen-mode { background: #00FF00 !important; background-image: none !important; }
+        body.green-screen-mode .hide-on-green { display: none !important; }
+        body.green-screen-mode .glass-on-green { background: rgba(0,0,0,0.85) !important; border-color: #F59E0B !important; backdrop-filter: none !important; }
 
-        /* 隱藏觸發區 */
-        .secret-trigger {
-            position: fixed; bottom: 0; right: 0; width: 60px; height: 60px; z-index: 50; cursor: default;
-        }
-
-        /* 跑馬燈開獎動畫 */
-        .slot-machine-text {
-            background: linear-gradient(to right, #fbbf24, #f59e0b, #d97706);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: pulse 0.1s infinite alternate;
-        }
-        @keyframes pulse {
-            from { opacity: 0.8; transform: scale(0.98); }
-            to { opacity: 1; transform: scale(1.02); }
-        }
-
-        /* 閃爍進場 */
-        .fade-in-up {
-            animation: fadeInUp 0.6s ease-out forwards;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        @keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .gold-text { background: linear-gradient(to right, #FDE047, #F59E0B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .gold-border { border-image: linear-gradient(to right, #FDE047, #F59E0B) 1; }
+        
+        .slot-machine { height: 120px; overflow: hidden; position: relative; background: rgba(0,0,0,0.4); border-radius: 1rem; border: 2px solid rgba(250, 204, 21, 0.3); box-shadow: inset 0 10px 20px rgba(0,0,0,0.5); }
+        .slot-machine::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%); pointer-events: none; }
+        
+        .rolling-text { display: flex; flex-direction: column; transition: transform 0.1s linear; }
+        .roll-item { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-weight: 900; letter-spacing: 0.1em; color: #FCD34D; text-shadow: 0 2px 10px rgba(250, 204, 21, 0.5); }
+        
+        #custom-toast { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%) translateY(20px); background-color: rgba(250, 204, 21, 0.95); color: #422006; padding: 0.8rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); z-index: 2147483647; font-weight: bold; font-size: 1rem; opacity: 0; pointer-events: none; text-align: center; white-space: nowrap; backdrop-filter: blur(4px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); border: 1px solid #FEF08A; }
+        #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #custom-toast.error { background-color: rgba(220, 38, 38, 0.95); color: white; border-color: #F87171; }
+        
+        .winner-modal { backdrop-filter: blur(10px); background: rgba(0,0,0,0.8); }
+        .winner-card { background: linear-gradient(135deg, #1F2937, #111827); border: 2px solid #F59E0B; box-shadow: 0 0 40px rgba(245, 158, 11, 0.4), inset 0 0 20px rgba(250, 204, 21, 0.1); }
     </style>
 </head>
-<body class="bg-celebration text-white min-h-screen flex flex-col relative">
+<body id="main-body" class="font-sans antialiased overflow-x-hidden flex flex-col selection:bg-gold-500 selection:text-white">
+    <div id="custom-toast"></div>
 
-    <!-- 主視覺與公開展示區 -->
-    <main class="relative z-10 flex-grow flex flex-col items-center pt-16 px-4 pb-20">
-        <div class="text-center mb-12">
-            <h2 class="text-xl md:text-2xl text-amber-400 font-bold tracking-widest mb-2">探探里山 永續旅遊平台</h2>
-            <h1 class="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-600 drop-shadow-lg" id="display-event-title">
-                載入活動中...
-            </h1>
+    <!-- 頂部控制列 -->
+    <header id="main-header" class="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50 p-4 shadow-lg transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-gold-400 to-gold-600 rounded-full flex items-center justify-center shadow-lg shadow-gold-500/30">
+                    <i class="fas fa-gift text-gray-900 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-widest gold-text">探探里山 雲端開獎中心</h1>
+                    <p class="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Fair & Transparent Draw System</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 sm:gap-4 w-full md:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+                <!-- 🌟 新增：開獎紀錄按鈕 -->
+                <button id="btn-history" class="shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-200 hover:text-white hover:border-purple-500 transition shadow-sm flex items-center group">
+                    <i class="fas fa-history mr-1.5 sm:mr-2 text-purple-400 group-hover:animate-pulse"></i> 開獎紀錄
+                </button>
+
+                <!-- 直播設定按鈕 -->
+                <button id="btn-stream-tools" class="shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-200 hover:text-white hover:border-blue-500 transition shadow-sm flex items-center group">
+                    <i class="fas fa-broadcast-tower mr-1.5 sm:mr-2 text-blue-400 group-hover:animate-pulse"></i> 直播輸出
+                </button>
+
+                <!-- 啟動主持人鏡頭的按鈕 -->
+                <button id="btn-camera" class="shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-200 hover:text-white hover:border-gold-500 transition shadow-sm flex items-center group">
+                    <i class="fas fa-video mr-1.5 sm:mr-2 group-hover:text-gold-400 transition-colors"></i> <span class="hidden lg:inline">主持人鏡頭</span>
+                </button>
+
+                <!-- 活動選擇 -->
+                <div class="flex-1 min-w-[160px] md:w-48 relative shrink-0">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-calendar-check text-gold-500"></i>
+                    </div>
+                    <select id="event-select" class="block w-full pl-9 pr-4 py-2 sm:py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-200 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none appearance-none transition-all shadow-inner">
+                        <option value="">載入活動中...</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- 🌟 新增：獎項選擇器 -->
+                <div class="flex-1 min-w-[160px] md:w-48 relative shrink-0">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-award text-gold-500"></i>
+                    </div>
+                    <select id="prize-select" class="block w-full pl-9 pr-4 py-2 sm:py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-200 focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none appearance-none transition-all shadow-inner">
+                        <option value="">載入獎項中...</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
+                    </div>
+                </div>
+                
+                <div id="conn-status" class="hidden md:flex items-center px-3 py-1.5 bg-gray-800 rounded-lg border border-gray-700 text-xs font-bold text-gray-400 shrink-0">
+                    <i class="fas fa-circle-notch fa-spin text-gold-500 mr-2"></i> 連線中
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主開獎區塊 -->
+    <main class="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-5xl mx-auto relative transition-all duration-300">
+        
+        <!-- 背景裝飾 (綠幕模式下隱藏) -->
+        <div class="hide-on-green absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gold-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="w-full text-center relative z-10 mb-8 glass-on-green rounded-2xl p-4">
+            <h2 id="display-event-name" class="text-2xl md:text-4xl font-black text-white mb-3 tracking-wide drop-shadow-lg">請於上方選擇開獎活動</h2>
+            <p id="display-event-desc" class="text-sm text-gray-400 max-w-2xl mx-auto">連線 Firebase 雲端票箱，確保每一張抽獎卷皆擁有公平、透明的被抽中機會。</p>
         </div>
 
-        <!-- 開獎結果展示卡片 -->
-        <div id="winners-container" class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
-            <!-- 得獎名單動態注入區 -->
-        </div>
+        <!-- 開獎大螢幕 -->
+        <div class="glass-on-green w-full max-w-3xl bg-gray-800/50 backdrop-blur-sm p-6 md:p-10 rounded-3xl border border-gray-700 shadow-2xl relative z-10 transition-all duration-300">
+            
+            <div class="flex justify-between items-end mb-6 border-b border-gray-700/50 pb-4">
+                <div>
+                    <p class="text-xs text-gray-400 font-bold tracking-widest uppercase mb-1">Total Eligible Tickets</p>
+                    <p class="text-xl text-gray-200 font-black"><i class="fas fa-ticket-alt text-gold-500 mr-2"></i>有效票池：<span id="ticket-pool-count" class="text-3xl text-gold-400 mx-1 font-mono">0</span> 張</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-400 font-bold tracking-widest uppercase mb-1">System Status</p>
+                    <p id="ready-status" class="text-sm font-bold text-red-400 flex items-center justify-end"><i class="fas fa-lock mr-1.5"></i>等待活動選擇</p>
+                </div>
+            </div>
 
-        <!-- 尚未開獎或無資料狀態 -->
-        <div id="empty-state" class="flex flex-col items-center justify-center mt-20 opacity-80">
-            <svg class="w-24 h-24 text-amber-500/50 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="text-xl text-amber-200 tracking-wide">等待吉時，即將開獎</p>
+            <!-- 🌟 新增：本次抽出獎項大看板 -->
+            <div class="mb-8 text-center bg-gradient-to-b from-gray-900/80 to-gray-800/40 rounded-2xl p-6 border border-gold-500/30 shadow-inner relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold-300 via-gold-500 to-gold-300"></div>
+                <p class="text-xs text-gold-500/80 font-bold tracking-widest uppercase mb-2"><i class="fas fa-award mr-1.5"></i>Current Prize / 本次抽出獎項</p>
+                <p id="display-current-prize" class="text-3xl md:text-5xl font-black text-gray-500 tracking-widest drop-shadow-lg mb-2 transition-colors duration-300">請於上方選擇獎項</p>
+                <p class="text-sm text-gray-400 font-bold mt-3">目前庫存：<span id="display-prize-qty" class="text-white text-lg mx-1 font-mono">0</span> 份</p>
+            </div>
+
+            <!-- 老虎機滾動區 -->
+            <div class="slot-machine mb-8 bg-gray-900 w-full rounded-2xl">
+                <div id="roller" class="rolling-text">
+                    <div class="roll-item text-gray-600 font-mono tracking-widest">WAITING...</div>
+                </div>
+            </div>
+
+            <!-- 控制按鈕與互動區 (直接顯示於畫面) -->
+            <div id="action-area" class="w-full mt-2">
+                <!-- 未就緒狀態 -->
+                <div id="draw-disabled-state" class="flex justify-center">
+                    <button disabled class="px-12 py-5 bg-gray-700 text-gray-500 rounded-2xl font-black text-xl tracking-widest cursor-not-allowed border border-gray-600 uppercase flex items-center justify-center min-w-[280px] shadow-sm">
+                        <i class="fas fa-lock mr-3"></i> 等待活動選擇
+                    </button>
+                </div>
+
+                <!-- 嘉賓互動挑戰區 -->
+                <div id="math-challenge-section" class="hidden w-full animate-fade-in-down transition-opacity duration-500">
+                    <div class="flex items-center justify-center mb-5">
+                        <span class="bg-blue-900/40 border border-blue-500/30 text-blue-400 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase shadow-inner flex items-center"><i class="fas fa-brain mr-2"></i>Guest Interactive Challenge</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                        <!-- 嘉賓 1 -->
+                        <div class="bg-gray-800/60 p-5 rounded-2xl border border-gray-600 shadow-inner relative flex flex-col items-center transition-all duration-300">
+                            <input type="text" id="guest-name-1" class="w-full text-center bg-transparent border-b-2 border-gray-600 hover:border-gray-400 text-lg font-bold text-white mb-4 pb-1 focus:border-gold-500 focus:outline-none placeholder-gray-500 transition-colors" placeholder="輸入嘉賓姓名" value="貴賓 1">
+                            <p id="math-q-1" class="text-3xl font-black text-gold-500 mb-4 tracking-widest font-mono drop-shadow-sm">? + ? =</p>
+                            <input type="number" id="math-a-1" class="w-3/4 p-3 text-2xl font-black text-center bg-gray-900 border-2 border-gray-600 rounded-xl text-white focus:border-blue-400 focus:outline-none shadow-inner transition-colors" placeholder="?" autocomplete="off">
+                            <p id="math-s-1" class="text-xs text-gray-400 mt-3 font-bold h-4">等待作答...</p>
+                        </div>
+                        <!-- 嘉賓 2 -->
+                        <div class="bg-gray-800/60 p-5 rounded-2xl border border-gray-600 shadow-inner relative flex flex-col items-center transition-all duration-300">
+                            <input type="text" id="guest-name-2" class="w-full text-center bg-transparent border-b-2 border-gray-600 hover:border-gray-400 text-lg font-bold text-white mb-4 pb-1 focus:border-gold-500 focus:outline-none placeholder-gray-500 transition-colors" placeholder="輸入嘉賓姓名" value="貴賓 2">
+                            <p id="math-q-2" class="text-3xl font-black text-gold-500 mb-4 tracking-widest font-mono drop-shadow-sm">? + ? =</p>
+                            <input type="number" id="math-a-2" class="w-3/4 p-3 text-2xl font-black text-center bg-gray-900 border-2 border-gray-600 rounded-xl text-white focus:border-blue-400 focus:outline-none shadow-inner transition-colors" placeholder="?" autocomplete="off">
+                            <p id="math-s-2" class="text-xs text-gray-400 mt-3 font-bold h-4">等待作答...</p>
+                        </div>
+                        <!-- 嘉賓 3 -->
+                        <div class="bg-gray-800/60 p-5 rounded-2xl border border-gray-600 shadow-inner relative flex flex-col items-center transition-all duration-300">
+                            <input type="text" id="guest-name-3" class="w-full text-center bg-transparent border-b-2 border-gray-600 hover:border-gray-400 text-lg font-bold text-white mb-4 pb-1 focus:border-gold-500 focus:outline-none placeholder-gray-500 transition-colors" placeholder="輸入嘉賓姓名" value="貴賓 3">
+                            <p id="math-q-3" class="text-3xl font-black text-gold-500 mb-4 tracking-widest font-mono drop-shadow-sm">? + ? =</p>
+                            <input type="number" id="math-a-3" class="w-3/4 p-3 text-2xl font-black text-center bg-gray-900 border-2 border-gray-600 rounded-xl text-white focus:border-blue-400 focus:outline-none shadow-inner transition-colors" placeholder="?" autocomplete="off">
+                            <p id="math-s-3" class="text-xs text-gray-400 mt-3 font-bold h-4">等待作答...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="hide-on-green text-center text-[11px] text-gray-500 mt-8 font-mono"><i class="fas fa-shield-alt mr-1 text-gray-600"></i>Data encrypted and verified by Firebase Firestore. Drawn tickets will be marked to prevent duplicates.</p>
         </div>
+        
     </main>
 
-    <!-- 動畫重疊層 (抽獎進行中) -->
-    <div id="draw-animation-overlay" class="fixed inset-0 bg-black/90 z-40 hidden flex-col items-center justify-center backdrop-blur-sm">
-        <h3 class="text-3xl text-amber-400 font-bold mb-8">幸運兒抽出中...</h3>
-        <div class="bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-amber-500 rounded-2xl p-8 shadow-[0_0_50px_rgba(245,158,11,0.3)] w-11/12 max-w-lg text-center">
-            <div id="slot-name" class="slot-machine-text text-5xl font-black mb-4">王*明</div>
-            <div id="slot-serial" class="text-2xl text-gray-400 tracking-widest font-mono">A01***001</div>
-        </div>
-    </div>
-
-    <!-- 隱藏觸發區 (點擊右下角5次開啟管理員) -->
-    <div id="secret-trigger" class="secret-trigger"></div>
-
-    <!-- 管理員控制台 Modal -->
-    <div id="admin-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center backdrop-blur-md p-4">
-        <div class="bg-slate-800 border border-slate-600 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-            <button id="close-admin" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <!-- 直播設定彈出視窗 -->
+    <div id="stream-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div id="stream-card" class="bg-gray-900 border-2 border-blue-500/50 w-full max-w-xl rounded-3xl p-6 md:p-8 transform scale-90 transition-transform duration-300 relative shadow-2xl">
+            <button onclick="window.closeStreamModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-times"></i>
             </button>
             
-            <h2 class="text-2xl font-bold text-amber-500 mb-6 flex items-center">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                開獎控制台
-            </h2>
-
-            <div class="space-y-4">
-                <!-- 選擇活動 -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">1. 選擇抽獎活動</label>
-                    <select id="select-event" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-amber-500 outline-none">
-                        <option value="">請選擇活動...</option>
-                    </select>
+            <h3 class="text-2xl font-black text-white mb-2 flex items-center"><i class="fas fa-broadcast-tower text-blue-500 mr-3 animate-pulse"></i>專業直播輸出設定</h3>
+            <p class="text-sm text-gray-400 mb-6 border-b border-gray-800 pb-4">支援 OBS Studio、vMix、StreamYard 等導播軟體。無需串接複雜 API，完美且免費發送至 Facebook 與 YouTube。</p>
+            
+            <div class="space-y-6">
+                <!-- 方法一：瀏覽器來源 -->
+                <div class="bg-gray-800/50 p-5 rounded-2xl border border-gray-700">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h4 class="text-lg font-bold text-blue-400 mb-1">方法一：使用瀏覽器來源 (推薦)</h4>
+                            <p class="text-xs text-gray-400">將此網址貼入 OBS 的「Browser Source」，寬度設 1920，高度 1080。</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="stream-url-input" class="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-2.5 text-sm text-gray-300 font-mono outline-none" readonly value="讀取中...">
+                        <button id="btn-copy-url" class="shrink-0 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-colors shadow-sm">
+                            <i class="fas fa-copy mr-1"></i> 複製
+                        </button>
+                    </div>
                 </div>
 
-                <!-- 選擇歸戶類型 -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">2. 選擇歸戶類型</label>
-                    <select id="select-category" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-amber-500 outline-none">
-                        <option value="all">全部 (All)</option>
-                        <option value="ent">企業 (Enterprise)</option>
-                        <option value="gov">政府 (Government)</option>
-                    </select>
+                <!-- 專業綠幕去背模式 -->
+                <div class="bg-gradient-to-r from-green-900/30 to-gray-800 p-5 rounded-2xl border border-green-500/30">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="text-lg font-bold text-green-400 mb-1"><i class="fas fa-layer-group mr-2"></i>專業綠幕去背 (Chroma Key)</h4>
+                            <p class="text-xs text-gray-400 leading-relaxed max-w-sm">開啟後背景將變為純綠色，適合在 OBS 中加入「色度鍵」濾鏡去背，讓開獎機直接「懸浮」疊加在您的實況攝影機畫面上！</p>
+                        </div>
+                        
+                        <!-- 綠幕切換開關 -->
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggle-green-screen" class="sr-only peer">
+                            <div class="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 shadow-inner"></div>
+                        </label>
+                    </div>
                 </div>
-
-                <!-- 選擇歸戶卡片代碼 -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">3. 選擇歸戶卡片代碼</label>
-                    <select id="select-card" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-amber-500 outline-none">
-                        <option value="all">不限卡片</option>
-                    </select>
-                </div>
-
-                <!-- 抽出人數 -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">4. 設定抽出人數</label>
-                    <input type="number" id="draw-count" min="1" value="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-amber-500 outline-none">
-                </div>
-
-                <!-- 狀態提示 -->
-                <div id="pool-status" class="text-sm text-amber-400 font-medium bg-amber-900/30 p-3 rounded-lg text-center hidden">
-                    符合條件的票數：<span id="pool-count">0</span> 張
-                </div>
-
-                <!-- 按鈕區 -->
-                <div class="pt-4 flex gap-3">
-                    <button id="btn-mock-data" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm">
-                        產生測試資料
-                    </button>
-                    <button id="btn-draw" class="flex-[2] bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        開始開獎！
-                    </button>
-                </div>
+            </div>
+            
+            <div class="mt-6 pt-4 text-center">
+                <button onclick="window.closeStreamModal()" class="px-8 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-bold text-sm transition-colors">
+                    完成設定
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK Modules -->
+    <!-- 🌟 新增：開獎紀錄彈出視窗 -->
+    <div id="history-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-4">
+        <div id="history-card" class="bg-gray-900 border-2 border-purple-500/50 w-full max-w-5xl max-h-[85vh] rounded-3xl p-6 md:p-8 transform scale-90 transition-transform duration-300 relative shadow-2xl flex flex-col">
+            <button onclick="window.closeHistoryModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors z-20">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <h3 class="text-2xl font-black text-white mb-2 flex items-center shrink-0"><i class="fas fa-list-alt text-purple-400 mr-3"></i>開獎核銷紀錄中心</h3>
+            <p class="text-sm text-gray-400 mb-6 border-b border-gray-800 pb-4 shrink-0">即時同步雲端中獎名單，供主辦單位進行現場身分核對與兌獎登記。</p>
+            
+            <div class="flex-grow overflow-hidden flex flex-col bg-gray-800/50 rounded-2xl border border-gray-700">
+                <div class="overflow-x-auto flex-grow custom-scrollbar">
+                    <table class="w-full text-left whitespace-nowrap">
+                        <thead class="bg-gray-800 sticky top-0 z-10">
+                            <tr class="text-xs text-gray-400 uppercase tracking-wider">
+                                <th class="p-4 font-bold border-b border-gray-700">活動名稱 / 抽獎時間</th>
+                                <th class="p-4 font-bold border-b border-gray-700">獲得獎項</th>
+                                <th class="p-4 font-bold border-b border-gray-700">中獎者資訊</th>
+                                <th class="p-4 font-bold border-b border-gray-700 text-right">兌獎狀態 / 領獎時限</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-list" class="divide-y divide-gray-800 text-sm">
+                            <!-- JS 動態渲染 -->
+                            <tr><td colspan="4" class="text-center py-10 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>載入紀錄中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-5 pt-4 text-center shrink-0 flex justify-between items-center">
+                <p class="text-xs text-gray-500 font-mono"><i class="fas fa-shield-alt mr-1"></i>資料經由 Firebase Firestore 即時加密驗證</p>
+                <button onclick="window.loadHistoryData()" class="px-5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl font-bold text-xs transition-colors border border-gray-600 shadow-sm flex items-center">
+                    <i class="fas fa-sync-alt mr-1.5"></i> 重新整理
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 可拖曳的主持人鏡頭浮動視窗 (Picture-in-Picture) -->
+    <div id="camera-container" class="hidden fixed bottom-8 right-8 w-64 aspect-video bg-gray-900 rounded-2xl border-2 border-gold-500 shadow-[0_10px_30px_rgba(250,204,21,0.2)] overflow-hidden z-[90] group cursor-move">
+        <div class="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-black/60 to-transparent z-10 pointer-events-none flex justify-center pt-1">
+            <div class="w-10 h-1 bg-white/30 rounded-full"></div>
+        </div>
+        <video id="host-video" autoplay playsinline muted class="w-full h-full object-cover transform scale-x-[-1] pointer-events-none"></video>
+        <button id="btn-close-camera" class="absolute top-2 right-2 w-7 h-7 bg-black/50 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 shadow-md">
+            <i class="fas fa-times text-xs"></i>
+        </button>
+    </div>
+
+    <!-- 得獎者彈出視窗 -->
+    <div id="winner-modal" class="fixed inset-0 winner-modal z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-500 p-4">
+        <!-- 煙火特效 Canvas -->
+        <canvas id="confetti-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+        
+        <div id="winner-card" class="winner-card w-full max-w-2xl rounded-3xl p-8 md:p-12 text-center transform scale-90 transition-transform duration-500 relative z-20">
+            <div class="absolute -top-12 left-1/2 transform -translate-x-1/2 w-24 h-24 bg-gradient-to-br from-gold-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg border-4 border-gray-900">
+                <i class="fas fa-trophy text-4xl text-gray-900"></i>
+            </div>
+            
+            <h3 class="text-gold-400 font-black tracking-[0.3em] text-sm mt-8 mb-2 uppercase">Winner Announcement</h3>
+            <h2 class="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-md">恭喜中獎！</h2>
+            
+            <!-- 獎項顯示區塊 -->
+            <p class="text-2xl font-black text-gold-300 mb-8 drop-shadow-md tracking-widest">獲得獎項：<span id="winner-prize-name" class="text-white border-b-2 border-gold-500 pb-1 px-2 ml-1">載入中...</span></p>
+            
+            <div class="bg-gray-900/80 rounded-2xl p-6 border border-gray-700 mb-8 inline-block w-full max-w-md mx-auto shadow-inner relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-gold-500"></div>
+                <p class="text-sm text-gray-400 font-bold mb-2">得獎者姓名</p>
+                <p id="winner-name" class="text-3xl font-black text-white mb-4 tracking-wide border-b border-gray-700 pb-4">王大明</p>
+                
+                <div class="flex justify-between items-center text-left">
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Ticket Serial</p>
+                        <p id="winner-serial" class="text-xl font-mono font-black gold-text tracking-widest">AENT-XXXXXX</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Validation</p>
+                        <p class="text-sm font-bold text-green-400"><i class="fas fa-check-circle mr-1"></i>Verified</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 justify-center">
+                <button onclick="window.closeWinnerModal()" class="px-8 py-3.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold text-sm tracking-widest transition-colors border border-gray-600 shadow-md">
+                    關閉並繼續
+                </button>
+                <button id="btn-draw-again" class="px-8 py-3.5 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-gray-900 rounded-xl font-black text-sm tracking-widest transition-all shadow-[0_0_20px_rgba(250,204,21,0.4)] hover:shadow-[0_0_30px_rgba(250,204,21,0.6)]">
+                    <i class="fas fa-redo-alt mr-2"></i>再抽一位
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase 與核心邏輯 -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-        // Firebase Configuration (Canvas Environment)
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // State Management
+        // ==========================================
+        // 1. 系統組態與狀態
+        // ==========================================
+        const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
+        let db = null;
+        
         let allEvents = [];
-        let allTickets = [];
-        let filteredTickets = [];
-        let currentUser = null;
+        let currentEventId = '';
+        let eligibleTickets = []; 
+        let isDrawing = false;
+        let globalPrizes = {}; 
 
-        // UI Elements
-        const DOM = {
-            secretTrigger: document.getElementById('secret-trigger'),
-            adminModal: document.getElementById('admin-modal'),
-            closeAdmin: document.getElementById('closeAdmin'),
-            selectEvent: document.getElementById('select-event'),
-            selectCategory: document.getElementById('select-category'),
-            selectCard: document.getElementById('select-card'),
-            drawCount: document.getElementById('draw-count'),
-            poolStatus: document.getElementById('pool-status'),
-            poolCount: document.getElementById('pool-count'),
-            btnDraw: document.getElementById('btn-draw'),
-            btnMock: document.getElementById('btn-mock-data'),
-            overlay: document.getElementById('draw-animation-overlay'),
-            slotName: document.getElementById('slot-name'),
-            slotSerial: document.getElementById('slot-serial'),
-            winnersContainer: document.getElementById('winners-container'),
-            emptyState: document.getElementById('empty-state'),
-            displayEventTitle: document.getElementById('display-event-title')
+        // UI 元件
+        const eventSelect = document.getElementById('event-select');
+        const prizeSelect = document.getElementById('prize-select');
+        const displayEventName = document.getElementById('display-event-name');
+        const displayEventDesc = document.getElementById('display-event-desc');
+        const displayCurrentPrize = document.getElementById('display-current-prize');
+        const displayPrizeQty = document.getElementById('display-prize-qty');
+        const poolCount = document.getElementById('ticket-pool-count');
+        const readyStatus = document.getElementById('ready-status');
+        const roller = document.getElementById('roller');
+        
+        // 鏡頭相關元件
+        const btnCamera = document.getElementById('btn-camera');
+        const cameraContainer = document.getElementById('camera-container');
+        const hostVideo = document.getElementById('host-video');
+        const btnCloseCamera = document.getElementById('btn-close-camera');
+        let localStream = null;
+
+        // ==========================================
+        // 2. 基礎工具
+        // ==========================================
+        window.showToast = function(msg, isError = false) { 
+            const t = document.getElementById('custom-toast'); 
+            if (t) { 
+                t.textContent = msg; 
+                t.className = isError ? 'error show' : 'show';
+                if(window.toastTimer) clearTimeout(window.toastTimer); 
+                window.toastTimer = setTimeout(() => { t.classList.remove('show', 'error'); }, 3000); 
+            } 
         };
 
-        // --- Utility Functions ---
+        function updateConnStatus(isOnline, msg = '') {
+            const el = document.getElementById('conn-status');
+            if (isOnline) {
+                el.innerHTML = '<i class="fas fa-wifi text-green-400 mr-2"></i>系統已連線';
+                el.className = 'hidden md:flex items-center px-3 py-1.5 bg-gray-800 rounded-lg border border-gray-700 text-xs font-bold text-gray-300 shrink-0';
+            } else {
+                el.innerHTML = `<i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>連線異常: ${msg}`;
+                el.className = 'hidden md:flex items-center px-3 py-1.5 bg-red-900/30 rounded-lg border border-red-500/50 text-xs font-bold text-red-400 shrink-0';
+            }
+        }
 
-        // 姓名隱碼 (陳明 -> 陳*明, 李四 -> 李*)
-        const maskName = (name) => {
-            if (!name) return '未知';
-            if (name.length <= 1) return name;
-            if (name.length === 2) return name[0] + '*';
-            return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
-        };
-
-        // 序號隱碼 (A012345A001 -> A01***A001)
-        const maskSerial = (serial) => {
-            if (!serial) return '***';
-            if (serial.length <= 6) return serial.substring(0,2) + '***' + serial.substring(serial.length-2);
-            return serial.substring(0, 3) + '***' + serial.substring(serial.length - 4);
-        };
-
-        // --- Authentication (Rule 3) ---
-        const initAuth = async () => {
+        // ==========================================
+        // 3. Firebase 引擎初始化
+        // ==========================================
+        function initFirebase() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth Error:", error);
-                DOM.displayEventTitle.innerText = "系統驗證失敗";
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                const auth = getAuth(app);
+                
+                signInAnonymously(auth).catch((err) => { 
+                    updateConnStatus(false, '認證失敗，請檢查權限');
+                });
+                
+                onAuthStateChanged(auth, user => { 
+                    if(user && db) { 
+                        updateConnStatus(true);
+                        listenToEvents();
+                        // 🌟 監聽系統獎項庫，即時更新選單與庫存顯示
+                        onSnapshot(doc(db, 'system_stats', 'lottery_prizes'), (docSnap) => {
+                            if (docSnap.exists()) globalPrizes = docSnap.data();
+                            else globalPrizes = {};
+                            renderPrizeSelect();
+                        });
+                    } else {
+                        updateConnStatus(false, '等待授權...');
+                    } 
+                });
+            } catch(e) { 
+                updateConnStatus(false, e.message);
             }
-        };
+        }
 
-        // --- Data Fetching (Rule 1 & 2) ---
-        const loadData = () => {
-            if (!currentUser) return;
-
-            // Strict path for public data
-            const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'lottery_events');
-            const ticketsRef = collection(db, 'artifacts', appId, 'public', 'data', 'lottery_tickets');
-
-            // Listen to Events
-            onSnapshot(eventsRef, (snapshot) => {
-                allEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateEventDropdown();
-                if(allEvents.length > 0) {
-                    DOM.displayEventTitle.innerText = allEvents[0].title || '準備開獎';
+        // 監聽活動清單
+        function listenToEvents() {
+            onSnapshot(collection(db, 'lottery_events'), (snapshot) => { 
+                allEvents = snapshot.docs.map(d => ({id: d.id, ...d.data()})); 
+                
+                const activeEvents = allEvents.filter(e => e.isActive);
+                
+                if (activeEvents.length === 0) {
+                    eventSelect.innerHTML = '<option value="">目前無開放抽獎之活動</option>';
+                    eventSelect.disabled = true;
                 } else {
-                    DOM.displayEventTitle.innerText = '尚無活動資料';
+                    const currentVal = eventSelect.value;
+                    eventSelect.innerHTML = '<option value="">-- 請選擇開獎活動 --</option>' + 
+                        activeEvents.map(e => `<option value="${e.id}">🎁 ${e.title}</option>`).join('');
+                    eventSelect.disabled = false;
+                    
+                    if (currentVal && activeEvents.some(e => e.id === currentVal)) {
+                        eventSelect.value = currentVal;
+                    }
                 }
-            }, (error) => console.error("Events fetch error:", error));
-
-            // Listen to Tickets
-            onSnapshot(ticketsRef, (snapshot) => {
-                allTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                filterTickets(); // Re-filter if admin panel is adjusting
-            }, (error) => console.error("Tickets fetch error:", error));
-        };
-
-        // --- Admin Logic ---
-
-        // 隱藏觸發機制
-        let clickCount = 0;
-        let clickTimer = null;
-        DOM.secretTrigger.addEventListener('click', () => {
-            clickCount++;
-            clearTimeout(clickTimer);
-            if (clickCount >= 5) {
-                DOM.adminModal.classList.remove('hidden');
-                DOM.adminModal.classList.add('flex');
-                clickCount = 0;
-            }
-            clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
-        });
-
-        document.getElementById('close-admin').addEventListener('click', () => {
-            DOM.adminModal.classList.add('hidden');
-            DOM.adminModal.classList.remove('flex');
-        });
-
-        // 更新下拉選單
-        const updateEventDropdown = () => {
-            const currentVal = DOM.selectEvent.value;
-            DOM.selectEvent.innerHTML = '<option value="">請選擇活動...</option>' + 
-                allEvents.map(e => `<option value="${e.id}">${e.title} ${e.isActive?'(進行中)':'(已結束)'}</option>`).join('');
-            if (currentVal) DOM.selectEvent.value = currentVal;
-        };
-
-        const updateCardDropdown = (eventId, category) => {
-            const cards = new Set();
-            allTickets.forEach(t => {
-                if (t.eventId === eventId && (category === 'all' || t.targetCategory === category)) {
-                    if(t.targetCardId) cards.add(t.targetCardId);
-                }
+            }, (err) => {
+                window.showToast('無法讀取活動清單，請檢查權限', true);
             });
-            DOM.selectCard.innerHTML = '<option value="all">不限卡片</option>' + 
-                Array.from(cards).map(c => `<option value="${c}">${c}</option>`).join('');
-        };
+        }
 
-        // 過濾票箱 (在記憶體中進行，符合 Rule 2)
-        const filterTickets = () => {
-            const eventId = DOM.selectEvent.value;
-            const category = DOM.selectCategory.value;
-            const cardId = DOM.selectCard.value;
+        // ==========================================
+        // 4. 獎項選定與開獎票箱邏輯
+        // ==========================================
+        
+        // 渲染獎項下拉選單
+        function renderPrizeSelect() {
+            const currentVal = prizeSelect.value;
+            // 只列出庫存大於 0 的獎項
+            const availablePrizes = Object.keys(globalPrizes).filter(k => (globalPrizes[k].qty || 0) > 0);
+            
+            if (availablePrizes.length === 0) {
+                prizeSelect.innerHTML = '<option value="">目前無庫存獎項</option>';
+            } else {
+                prizeSelect.innerHTML = '<option value="">-- 請選擇本次抽獎獎項 --</option>' + 
+                    availablePrizes.map(p => `<option value="${p}">🎁 ${p} (剩餘 ${globalPrizes[p].qty})</option>`).join('');
+                
+                // 恢復之前選擇的獎項 (如果它還有庫存的話)
+                if (currentVal && availablePrizes.includes(currentVal)) {
+                    prizeSelect.value = currentVal;
+                }
+            }
+            updatePrizeDisplay();
+        }
 
-            if (!eventId) {
-                filteredTickets = [];
-                updateDrawButtonState();
+        // 當下拉選單變更時，更新中央燙金看板
+        prizeSelect.addEventListener('change', updatePrizeDisplay);
+
+        function updatePrizeDisplay() {
+            const selected = prizeSelect.value;
+            if (selected && globalPrizes[selected]) {
+                displayCurrentPrize.textContent = selected;
+                displayCurrentPrize.classList.remove('text-gray-500');
+                displayCurrentPrize.classList.add('gold-text');
+                
+                displayPrizeQty.textContent = globalPrizes[selected].qty;
+                displayPrizeQty.classList.add('text-gold-400');
+                displayPrizeQty.classList.remove('text-white');
+            } else {
+                displayCurrentPrize.textContent = '請於上方選擇獎項';
+                displayCurrentPrize.classList.add('text-gray-500');
+                displayCurrentPrize.classList.remove('gold-text');
+                
+                displayPrizeQty.textContent = '0';
+                displayPrizeQty.classList.remove('text-gold-400');
+                displayPrizeQty.classList.add('text-white');
+            }
+        }
+
+        // 選擇活動，抓取該活動的票箱
+        eventSelect.addEventListener('change', async (e) => {
+            currentEventId = e.target.value;
+            
+            if (!currentEventId) {
+                displayEventName.textContent = '請於上方選擇開獎活動';
+                displayEventDesc.textContent = '連線 Firebase 雲端票箱，確保每一張抽獎卷皆擁有公平、透明的被抽中機會。';
+                poolCount.textContent = '0';
+                setDrawReady(false, '等待活動選擇');
+                roller.innerHTML = '<div class="roll-item text-gray-600 font-mono tracking-widest">WAITING...</div>';
                 return;
             }
 
-            filteredTickets = allTickets.filter(t => {
-                const matchEvent = t.eventId === eventId;
-                const matchCategory = category === 'all' || t.targetCategory === category;
-                const matchCard = cardId === 'all' || t.targetCardId === cardId;
-                return matchEvent && matchCategory && matchCard;
-            });
+            const evt = allEvents.find(x => x.id === currentEventId);
+            displayEventName.textContent = evt.title;
+            displayEventDesc.textContent = `限定歸戶對象：${evt.targetBoard || '全站適用'} | 抽出後系統將自動核銷票券`;
+            
+            roller.innerHTML = '<div class="roll-item text-gray-500 font-mono text-xl"><i class="fas fa-spinner fa-spin mr-2"></i>正在載入雲端票箱...</div>';
+            setDrawReady(false, '載入資料中');
 
-            DOM.poolStatus.classList.remove('hidden');
-            DOM.poolCount.innerText = filteredTickets.length;
-            updateDrawButtonState();
-        };
-
-        const updateDrawButtonState = () => {
-            const count = parseInt(DOM.drawCount.value) || 0;
-            DOM.btnDraw.disabled = filteredTickets.length === 0 || count < 1 || count > filteredTickets.length;
-        };
-
-        // 監聽管理員過濾條件改變
-        DOM.selectEvent.addEventListener('change', (e) => {
-            updateCardDropdown(e.target.value, DOM.selectCategory.value);
-            filterTickets();
-            // Update Background display title
-            const evt = allEvents.find(ev => ev.id === e.target.value);
-            if(evt) DOM.displayEventTitle.innerText = evt.title;
+            try {
+                const q = query(
+                    collection(db, 'lottery_tickets'), 
+                    where("eventId", "==", currentEventId),
+                    where("isDrawn", "==", false)
+                );
+                
+                const querySnapshot = await getDocs(q);
+                eligibleTickets = querySnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+                
+                poolCount.textContent = eligibleTickets.length;
+                
+                if (eligibleTickets.length > 0) {
+                    setDrawReady(true);
+                    roller.innerHTML = `<div class="roll-item text-gold-500 font-mono tracking-widest text-2xl md:text-5xl">READY TO DRAW</div>`;
+                } else {
+                    setDrawReady(false, '票箱已空');
+                    roller.innerHTML = '<div class="roll-item text-red-500 font-mono text-xl"><i class="fas fa-exclamation-circle mr-2"></i>目前無有效抽獎卷</div>';
+                }
+            } catch (err) {
+                console.error(err);
+                window.showToast('票箱讀取失敗：' + err.message, true);
+                setDrawReady(false, '讀取失敗');
+            }
         });
-        DOM.selectCategory.addEventListener('change', (e) => {
-            updateCardDropdown(DOM.selectEvent.value, e.target.value);
-            filterTickets();
-        });
-        DOM.selectCard.addEventListener('change', filterTickets);
-        DOM.drawCount.addEventListener('input', updateDrawButtonState);
 
-        // --- 動畫與開獎邏輯 ---
+        function setDrawReady(isReady, msg = '') {
+            const disabledState = document.getElementById('draw-disabled-state');
+            const mathSection = document.getElementById('math-challenge-section');
+            const disabledBtn = disabledState.querySelector('button');
+
+            if (isReady) {
+                readyStatus.innerHTML = '<i class="fas fa-check-circle mr-1.5"></i>準備就緒';
+                readyStatus.className = 'text-sm font-bold text-green-400 flex items-center justify-end';
+                
+                disabledState.classList.add('hidden');
+                mathSection.classList.remove('hidden');
+                
+                mathSection.classList.remove('opacity-50', 'pointer-events-none');
+                
+                for(let i=1; i<=3; i++) {
+                    document.getElementById(`guest-name-${i}`).disabled = false;
+                    document.getElementById(`math-a-${i}`).disabled = false;
+                }
+                generateMathQuestions();
+
+            } else {
+                readyStatus.innerHTML = `<i class="fas fa-lock mr-1.5"></i>${msg}`;
+                readyStatus.className = 'text-sm font-bold text-red-400 flex items-center justify-end';
+                
+                mathSection.classList.add('hidden');
+                disabledState.classList.remove('hidden');
+                disabledBtn.innerHTML = `<i class="fas fa-lock mr-3"></i> ${msg || '無法抽獎'}`;
+            }
+        }
+
+        // ==========================================
+        // 5. 數學互動挑戰與亂數開獎引擎
+        // ==========================================
         
-        DOM.btnDraw.addEventListener('click', () => {
-            const count = parseInt(DOM.drawCount.value);
-            if(count > filteredTickets.length) return;
+        let expectedAnswers = [0, 0, 0];
 
-            // 關閉管理面板，開啟動畫覆蓋層
-            DOM.adminModal.classList.add('hidden');
-            DOM.adminModal.classList.remove('flex');
-            DOM.overlay.classList.remove('hidden');
-            DOM.overlay.classList.add('flex');
-
-            // 隨機選出中獎者 (洗牌演算法取出 N 個)
-            const pool = [...filteredTickets];
-            const winners = [];
-            for (let i = 0; i < count; i++) {
-                const randIdx = Math.floor(Math.random() * pool.length);
-                winners.push(pool.splice(randIdx, 1)[0]);
+        document.getElementById('btn-draw-again').addEventListener('click', () => {
+            window.closeWinnerModal();
+            
+            const mathSection = document.getElementById('math-challenge-section');
+            mathSection.classList.remove('opacity-50', 'pointer-events-none');
+            
+            for(let i=1; i<=3; i++) {
+                document.getElementById(`guest-name-${i}`).disabled = false;
+                document.getElementById(`math-a-${i}`).disabled = false;
             }
 
-            // 跑馬燈動畫效應
-            let ticks = 0;
-            const maxTicks = 40; // 動畫總幀數
-            const interval = setInterval(() => {
-                // 亂數展示
-                const randomTicket = filteredTickets[Math.floor(Math.random() * filteredTickets.length)];
-                DOM.slotName.innerText = maskName(randomTicket.playerName);
-                DOM.slotSerial.innerText = maskSerial(randomTicket.serial);
-                
-                ticks++;
-                if (ticks >= maxTicks) {
-                    clearInterval(interval);
-                    showWinners(winners);
-                }
-            }, 80); // 速度
+            const event = new Event('change');
+            eventSelect.dispatchEvent(event);
         });
 
-        const showWinners = (winners) => {
-            // 隱藏動畫，顯示名單
-            setTimeout(() => {
-                DOM.overlay.classList.remove('flex');
-                DOM.overlay.classList.add('hidden');
+        function generateMathQuestions() {
+            for(let i = 1; i <= 3; i++) {
+                const num1 = Math.floor(Math.random() * 20) + 1;
+                const num2 = Math.floor(Math.random() * 20) + 1;
+                expectedAnswers[i-1] = num1 + num2;
                 
-                DOM.emptyState.classList.add('hidden');
-                DOM.winnersContainer.classList.remove('hidden');
+                document.getElementById(`math-q-${i}`).textContent = `${num1} + ${num2} =`;
                 
-                // 產生卡片並帶入動畫
-                DOM.winnersContainer.innerHTML = winners.map((w, idx) => `
-                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden fade-in-up" style="animation-delay: ${idx * 0.15}s">
-                        <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-bl-full"></div>
-                        <div class="text-amber-500 text-sm font-bold tracking-wider mb-1">幸運得主</div>
-                        <h3 class="text-3xl font-black text-white mb-2 tracking-widest">${maskName(w.playerName)}</h3>
-                        <div class="inline-block bg-slate-950 px-3 py-1 rounded text-sm font-mono text-gray-400 border border-slate-700">
-                            序號: ${maskSerial(w.serial)}
-                        </div>
-                        <div class="mt-4 text-xs text-gray-500">
-                            歸戶代碼: ${w.targetCardId || 'N/A'}
-                        </div>
-                    </div>
-                `).join('');
+                const inputEl = document.getElementById(`math-a-${i}`);
+                inputEl.value = '';
+                inputEl.classList.remove('border-red-500', 'border-green-400');
+                inputEl.classList.add('border-gray-600');
+                
+                inputEl.oninput = () => verifySingleAnswer(i);
+                
+                const statusEl = document.getElementById(`math-s-${i}`);
+                statusEl.textContent = '等待作答...';
+                statusEl.className = 'text-xs text-gray-400 mt-2 font-bold h-4';
+            }
+        }
+
+        function verifySingleAnswer(index) {
+            if (isDrawing) return;
+            
+            const answerInput = document.getElementById(`math-a-${index}`);
+            const statusEl = document.getElementById(`math-s-${index}`);
+            const userAnswer = parseInt(answerInput.value);
+            
+            if (answerInput.value === '') {
+                answerInput.classList.remove('border-red-500', 'border-green-400');
+                answerInput.classList.add('border-gray-600');
+                statusEl.innerHTML = '等待作答...';
+                statusEl.className = 'text-xs text-gray-400 mt-2 font-bold h-4';
+                return;
+            }
+
+            if (userAnswer === expectedAnswers[index-1]) {
+                answerInput.classList.add('border-green-400');
+                answerInput.classList.remove('border-gray-600', 'border-red-500');
+                statusEl.innerHTML = '<i class="fas fa-check-circle text-green-400 mr-1.5"></i>回答正確';
+                statusEl.className = 'text-xs text-green-400 mt-2 font-bold h-4';
+            } else {
+                answerInput.classList.add('border-red-500');
+                answerInput.classList.remove('border-gray-600', 'border-green-400');
+                statusEl.innerHTML = '<i class="fas fa-pen text-red-400 mr-1.5"></i>計算中...';
+                statusEl.className = 'text-xs text-red-400 mt-2 font-bold h-4';
+            }
+
+            checkAllAnswers();
+        }
+
+        function checkAllAnswers() {
+            if (isDrawing) return;
+            
+            let allCorrect = true;
+            for(let i = 1; i <= 3; i++) {
+                const userAnswer = parseInt(document.getElementById(`math-a-${i}`).value);
+                if (userAnswer !== expectedAnswers[i-1]) {
+                    allCorrect = false;
+                    break;
+                }
+            }
+            
+            if (allCorrect) {
+                // 🌟 嚴格防呆：檢查是否已選擇獎項
+                const selectedPrize = prizeSelect.value;
+                if (!selectedPrize) {
+                    window.showToast('⚠️ 警告：請先於右上角選擇【本次要抽出的獎項】才能開獎！', true);
+                    return; // 中止開獎程序，等待管理員選獎項
+                }
+
+                isDrawing = true; // 立即鎖定，防止重複觸發
+                window.showToast('✅ 恭喜 3 位嘉賓全數答對！系統自動啟動開獎程序！');
+                
+                for(let i=1; i<=3; i++) {
+                    document.getElementById(`guest-name-${i}`).disabled = true;
+                    document.getElementById(`math-a-${i}`).disabled = true;
+                }
+                
+                setTimeout(() => {
+                    document.getElementById('math-challenge-section').classList.add('opacity-50', 'pointer-events-none');
+                    isDrawing = false; // 短暫解鎖以讓 startDraw 內部正常通過
+                    startDraw();
+                }, 1500);
+            }
+        }
+
+        async function startDraw() {
+            if (eligibleTickets.length === 0 || isDrawing) return;
+            
+            isDrawing = true;
+            
+            const rollingItems = [];
+            for(let i=0; i<30; i++) {
+                if (eligibleTickets.length > 3) {
+                    rollingItems.push(eligibleTickets[Math.floor(Math.random() * eligibleTickets.length)].serial);
+                } else {
+                    rollingItems.push(`AENT-${Math.random().toString(36).substring(2,8).toUpperCase()}`);
+                }
+            }
+            
+            const winnerIndex = Math.floor(Math.random() * eligibleTickets.length);
+            const winnerTicket = eligibleTickets[winnerIndex];
+            
+            rollingItems.push(winnerTicket.serial);
+
+            roller.innerHTML = rollingItems.map(item => `<div class="roll-item">${item}</div>`).join('');
+            roller.style.transition = 'none';
+            roller.style.transform = 'translateY(0)';
+            
+            void roller.offsetWidth;
+
+            const itemHeight = 120;
+            const targetY = -(rollingItems.length - 1) * itemHeight;
+            
+            roller.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.85, 0.15, 1)';
+            roller.style.transform = `translateY(${targetY}px)`;
+
+            setTimeout(async () => {
+                try {
+                    // 🎲 核心升級：直接取得管理者選定的獎項
+                    const selectedPrizeName = prizeSelect.value;
+                    const prizeData = globalPrizes[selectedPrizeName];
+
+                    if (prizeData && prizeData.qty > 0) {
+                        prizeData.qty -= 1;
+                        if (!prizeData.winners) prizeData.winners = [];
+                        prizeData.winners.push({
+                            serial: winnerTicket.serial,
+                            name: winnerTicket.playerName || '匿名旅者',
+                            time: new Date().toISOString()
+                        });
+                        
+                        await updateDoc(doc(db, 'system_stats', 'lottery_prizes'), {
+                            [selectedPrizeName]: prizeData
+                        });
+                    } else {
+                        // 防呆：萬一在剛剛那一秒被抽光了
+                        throw new Error("您選擇的獎項庫存已不足！");
+                    }
+
+                    await updateDoc(doc(db, 'lottery_tickets', winnerTicket.docId), {
+                        isDrawn: true,
+                        drawnAt: serverTimestamp(),
+                        prizeName: selectedPrizeName
+                    });
+                    
+                    winnerTicket.prizeName = selectedPrizeName;
+                    showWinner(winnerTicket);
+                    
+                    eligibleTickets.splice(winnerIndex, 1);
+                    poolCount.textContent = eligibleTickets.length;
+                    
+                } catch (e) {
+                    console.error("核銷票券失敗", e);
+                    window.showToast(`🚨 開獎失敗：${e.message}`, true);
+                    
+                    // 失敗時解開輸入框讓其能重試
+                    document.getElementById('math-challenge-section').classList.remove('opacity-50', 'pointer-events-none');
+                    for(let i=1; i<=3; i++) {
+                        document.getElementById(`guest-name-${i}`).disabled = false;
+                        document.getElementById(`math-a-${i}`).disabled = false;
+                    }
+                } finally {
+                    isDrawing = false;
+                }
+            }, 3600);
+        }
+
+        // ==========================================
+        // 6. 煙火特效與彈出視窗
+        // ==========================================
+        function showWinner(ticket) {
+            const modal = document.getElementById('winner-modal');
+            const card = document.getElementById('winner-card');
+            
+            document.getElementById('winner-name').textContent = ticket.playerName || '匿名旅者';
+            document.getElementById('winner-serial').textContent = ticket.serial;
+            
+            // 🌟 顯示抽出的獎項名稱
+            const prizeEl = document.getElementById('winner-prize-name');
+            if(prizeEl) prizeEl.textContent = ticket.prizeName || '精美神秘好禮';
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => { 
+                modal.classList.remove('opacity-0'); 
+                card.classList.remove('scale-90');
+                card.classList.add('scale-100');
+            }, 50);
+
+            fireConfetti();
+        }
+
+        window.closeWinnerModal = function() {
+            const modal = document.getElementById('winner-modal');
+            const card = document.getElementById('winner-card');
+            
+            modal.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-90');
+            
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
             }, 500);
         };
 
-
-        // --- Mock Data Generator (For Testing without DB config initially) ---
-        DOM.btnMock.addEventListener('click', async () => {
-            if(!currentUser) return;
-            DOM.btnMock.innerText = "寫入中...";
-            DOM.btnMock.disabled = true;
-
-            const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'lottery_events');
-            const ticketsRef = collection(db, 'artifacts', appId, 'public', 'data', 'lottery_tickets');
-
+        // ==========================================
+        // 7. 主持人直播鏡頭控制引擎 (WebRTC)
+        // ==========================================
+        btnCamera.addEventListener('click', async () => {
+            if (localStream) {
+                btnCloseCamera.click();
+                return;
+            }
             try {
-                const eventId = "evt_" + new Date().getTime();
-                await setDoc(doc(eventsRef, eventId), {
-                    title: "2026 探探里山春季永續大賞",
-                    isActive: true,
-                    targetCategory: "all",
-                    targetBoard: "首頁橫幅"
-                });
-
-                const mockNames = ["陳大明", "林美麗", "張志豪", "王曉玲", "李建國", "黃淑芬", "吳家豪", "周杰", "鄭成功", "蔡依林"];
-                
-                for(let i=0; i<15; i++) {
-                    const isEnt = Math.random() > 0.5;
-                    await setDoc(doc(ticketsRef, "tkt_" + i + "_" + new Date().getTime()), {
-                        serial: `A0${i+1}XXX${Math.floor(Math.random()*9000)+1000}`,
-                        eventId: eventId,
-                        targetCategory: isEnt ? 'ent' : 'gov',
-                        targetCardId: isEnt ? 'USI88' : 'GOV01',
-                        playerName: mockNames[Math.floor(Math.random() * mockNames.length)],
-                        timestamp: new Date().toISOString()
-                    });
-                }
-                DOM.btnMock.innerText = "資料已產生";
-                setTimeout(() => { DOM.btnMock.innerText = "產生測試資料"; DOM.btnMock.disabled = false; }, 2000);
+                localStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+                hostVideo.srcObject = localStream;
+                cameraContainer.classList.remove('hidden');
+                btnCamera.classList.add('bg-gold-500', 'text-gray-900');
+                btnCamera.classList.remove('bg-gray-800', 'text-gray-200');
+                btnCamera.innerHTML = '<i class="fas fa-video-slash mr-2"></i> <span class="hidden lg:inline">關閉鏡頭</span>';
+                window.showToast('🎥 攝影機已啟動！請使用視訊軟體分享此網頁畫面');
             } catch (err) {
-                console.error("Mock Data Error:", err);
-                DOM.btnMock.innerText = "寫入失敗";
-                DOM.btnMock.disabled = false;
+                console.error("Camera error:", err);
+                window.showToast('❌ 無法存取攝影機，請檢查瀏覽器權限設定', true);
             }
         });
 
-        // --- Initialization ---
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                loadData();
+        btnCloseCamera.addEventListener('click', () => {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                hostVideo.srcObject = null;
+            }
+            cameraContainer.classList.add('hidden');
+            btnCamera.classList.remove('bg-gold-500', 'text-gray-900');
+            btnCamera.classList.add('bg-gray-800', 'text-gray-200');
+            btnCamera.innerHTML = '<i class="fas fa-video mr-1.5 sm:mr-2 group-hover:text-gold-400 transition-colors"></i> <span class="hidden lg:inline">主持人鏡頭</span>';
+        });
+
+        let isDragging = false;
+        let currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+
+        cameraContainer.addEventListener("mousedown", dragStart);
+        document.addEventListener("mouseup", dragEnd);
+        document.addEventListener("mousemove", drag);
+        
+        cameraContainer.addEventListener("touchstart", dragStart, {passive: false});
+        document.addEventListener("touchend", dragEnd);
+        document.addEventListener("touchmove", drag, {passive: false});
+
+        function dragStart(e) {
+            if(e.target === btnCloseCamera) return;
+            if (e.type === "touchstart") {
+                initialX = e.touches[0].clientX - xOffset;
+                initialY = e.touches[0].clientY - yOffset;
+            } else {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+            }
+            isDragging = true;
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                if (e.type === "touchmove") {
+                    currentX = e.touches[0].clientX - initialX;
+                    currentY = e.touches[0].clientY - initialY;
+                } else {
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                }
+                xOffset = currentX;
+                yOffset = currentY;
+                cameraContainer.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+            }
+        }
+
+        function fireConfetti() {
+            const duration = 3000;
+            const end = Date.now() + duration;
+            const myCanvas = document.getElementById('confetti-canvas');
+            const myConfetti = confetti.create(myCanvas, { resize: true, useWorker: true });
+
+            (function frame() {
+                myConfetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FDE047', '#F59E0B', '#FFFFFF'] });
+                myConfetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FDE047', '#F59E0B', '#FFFFFF'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        // ==========================================
+        // 7.5 開獎紀錄大廳 (History & Redemption)
+        // ==========================================
+        const btnHistory = document.getElementById('btn-history');
+        const historyModal = document.getElementById('history-modal');
+        const historyCard = document.getElementById('history-card');
+        const historyList = document.getElementById('history-list');
+
+        btnHistory.addEventListener('click', () => {
+            historyModal.classList.remove('hidden');
+            setTimeout(() => { historyModal.classList.remove('opacity-0'); historyCard.classList.remove('scale-90'); }, 10);
+            window.loadHistoryData();
+        });
+
+        window.closeHistoryModal = function() {
+            historyModal.classList.add('opacity-0');
+            historyCard.classList.add('scale-90');
+            setTimeout(() => { historyModal.classList.add('hidden'); }, 300);
+        };
+
+        window.loadHistoryData = async function() {
+            historyList.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>載入開獎紀錄中...</td></tr>';
+            
+            try {
+                // 遵從無複合查詢原則：讀取全量票箱，再由前端記憶體過濾已中獎者
+                const snapshot = await getDocs(collection(db, 'lottery_tickets'));
+                let drawnTickets = [];
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.isDrawn) {
+                        drawnTickets.push({ docId: doc.id, ...data });
+                    }
+                });
+                
+                // 依據中獎時間 (drawnAt) 反向排序 (最新在最上)
+                drawnTickets.sort((a, b) => {
+                    const ta = a.drawnAt?.toMillis ? a.drawnAt.toMillis() : 0;
+                    const tb = b.drawnAt?.toMillis ? b.drawnAt.toMillis() : 0;
+                    return tb - ta;
+                });
+                
+                if (drawnTickets.length === 0) {
+                    historyList.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-500">目前尚無任何開獎紀錄</td></tr>';
+                    return;
+                }
+                
+                // 渲染清單
+                historyList.innerHTML = drawnTickets.map(t => {
+                    const drawTime = t.drawnAt ? new Date(t.drawnAt.toMillis()).toLocaleString('zh-TW', { hour12: false }) : '未知時間';
+                    const deadlineText = t.deadline || '依照主辦單位公告';
+                    
+                    // 判斷兌獎狀態按鈕 UI
+                    const redeemBtnHtml = t.isRedeemed 
+                        ? `<button disabled class="px-4 py-1.5 bg-green-900/30 text-green-400 border border-green-500/30 rounded-lg text-xs font-bold flex items-center ml-auto cursor-not-allowed"><i class="fas fa-check-circle mr-1.5"></i>已完成兌獎</button>`
+                        : `<button onclick="window.markAsRedeemed('${t.docId}', this)" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center ml-auto"><i class="fas fa-gift mr-1.5"></i>兌獎登記</button>`;
+                        
+                    return `
+                        <tr class="hover:bg-gray-800/60 transition-colors">
+                            <td class="p-4 align-top">
+                                <p class="font-bold text-gray-200 text-sm mb-1">${t.eventName || '未知活動'}</p>
+                                <p class="text-[11px] text-gray-500 font-mono"><i class="far fa-clock mr-1"></i>${drawTime}</p>
+                            </td>
+                            <td class="p-4 align-top">
+                                <span class="bg-gradient-to-r from-gold-500/20 to-gold-600/20 text-gold-400 border border-gold-500/30 px-2.5 py-1 rounded-md text-xs font-bold inline-flex items-center shadow-inner">
+                                    <i class="fas fa-award mr-1.5"></i>${t.prizeName || '精美神秘好禮'}
+                                </span>
+                            </td>
+                            <td class="p-4 align-top">
+                                <p class="font-black text-blue-400 text-sm mb-1"><i class="fas fa-user-circle mr-1.5"></i>${t.playerName || '匿名旅者'}</p>
+                                <p class="text-[11px] text-gray-500 font-mono tracking-widest bg-gray-900 px-1.5 py-0.5 rounded border border-gray-700 w-fit">#${t.serial}</p>
+                            </td>
+                            <td class="p-4 align-top text-right">
+                                <div class="mb-1">${redeemBtnHtml}</div>
+                                <p class="text-[10px] text-red-400 mt-1.5 font-bold"><i class="fas fa-exclamation-circle mr-1"></i>領獎期限: ${deadlineText}</p>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+            } catch (e) {
+                console.error("載入紀錄失敗", e);
+                historyList.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-red-400">載入失敗: ${e.message}</td></tr>`;
+            }
+        };
+
+        // 兌獎登記核銷功能
+        window.markAsRedeemed = async function(docId, btnElement) {
+            if (!confirm('確定要將此張抽獎卷標記為「已完成兌獎」嗎？此操作不可逆。')) return;
+            
+            const origHtml = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>處理中';
+            btnElement.disabled = true;
+            
+            try {
+                await updateDoc(doc(db, 'lottery_tickets', docId), {
+                    isRedeemed: true,
+                    redeemedAt: serverTimestamp()
+                });
+                
+                // 更新 UI 為已兌獎狀態
+                btnElement.className = "px-4 py-1.5 bg-green-900/30 text-green-400 border border-green-500/30 rounded-lg text-xs font-bold flex items-center ml-auto cursor-not-allowed";
+                btnElement.innerHTML = '<i class="fas fa-check-circle mr-1.5"></i>已完成兌獎';
+                window.showToast('✅ 兌獎登記成功！');
+                
+            } catch (e) {
+                console.error("核銷失敗", e);
+                window.showToast('❌ 核銷寫入失敗', true);
+                btnElement.innerHTML = origHtml;
+                btnElement.disabled = false;
+            }
+        };
+
+        // ==========================================
+        // 8. 直播導播工具 (綠幕與網址複製)
+        // ==========================================
+        const btnStreamTools = document.getElementById('btn-stream-tools');
+        const streamModal = document.getElementById('stream-modal');
+        const streamCard = document.getElementById('stream-card');
+        const btnCopyUrl = document.getElementById('btn-copy-url');
+        const urlInput = document.getElementById('stream-url-input');
+        const toggleGreenScreen = document.getElementById('toggle-green-screen');
+
+        btnStreamTools.addEventListener('click', () => {
+            urlInput.value = window.location.href;
+            streamModal.classList.remove('hidden');
+            setTimeout(() => { streamModal.classList.remove('opacity-0'); streamCard.classList.remove('scale-90'); }, 10);
+        });
+
+        window.closeStreamModal = function() {
+            streamModal.classList.add('opacity-0');
+            streamCard.classList.add('scale-90');
+            setTimeout(() => { streamModal.classList.add('hidden'); }, 300);
+        };
+
+        btnCopyUrl.addEventListener('click', () => {
+            urlInput.select();
+            document.execCommand('copy');
+            const origHtml = btnCopyUrl.innerHTML;
+            btnCopyUrl.innerHTML = '<i class="fas fa-check mr-1"></i> 已複製';
+            btnCopyUrl.classList.replace('bg-blue-600', 'bg-green-600');
+            setTimeout(() => { btnCopyUrl.innerHTML = origHtml; btnCopyUrl.classList.replace('bg-green-600', 'bg-blue-600'); }, 2000);
+        });
+
+        toggleGreenScreen.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.body.classList.add('green-screen-mode');
+                document.getElementById('main-header').classList.remove('bg-gray-900/80', 'backdrop-blur-md', 'border-b', 'shadow-lg');
+                document.getElementById('main-header').classList.add('bg-transparent');
+                window.showToast('🟢 綠幕去背模式已啟動');
+            } else {
+                document.body.classList.remove('green-screen-mode');
+                document.getElementById('main-header').classList.add('bg-gray-900/80', 'backdrop-blur-md', 'border-b', 'shadow-lg');
+                document.getElementById('main-header').classList.remove('bg-transparent');
             }
         });
 
-        initAuth();
-
+        document.addEventListener('DOMContentLoaded', initFirebase);
     </script>
 </body>
 </html>
