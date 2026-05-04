@@ -44,6 +44,21 @@
         .gold-shine { background: linear-gradient(90deg, #F59E0B, #FCD34D, #F59E0B); background-size: 200% 100%; color: white; animation: shine 3s infinite linear; }
         @keyframes shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
         
+        /* 🌟 新增：中獎序號瘋狂閃爍特效 */
+        @keyframes jackpot-flash {
+            0% { transform: scale(1); background-color: #ffffff; border-color: #fde047; box-shadow: 0 0 0 rgba(250,204,21,0); }
+            20% { transform: scale(1.15) rotate(-3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            40% { transform: scale(1.15) rotate(3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            60% { transform: scale(1.15) rotate(-3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            80% { transform: scale(1.15) rotate(3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            100% { transform: scale(1); background-color: #fef08a; border-color: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.5); color: #b91c1c; }
+        }
+        .jackpot-winner {
+            animation: jackpot-flash 0.8s ease-in-out infinite;
+            z-index: 50;
+            position: relative;
+        }
+
         #custom-toast { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%) translateY(20px); background-color: rgba(31, 41, 55, 0.95); color: white; padding: 0.8rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 2147483647; font-weight: bold; font-size: 0.9rem; opacity: 0; pointer-events: none; text-align: center; white-space: nowrap; backdrop-filter: blur(4px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
@@ -535,8 +550,9 @@
             const ticketList = document.getElementById('lottery-ticket-list');
             if (state.lotteryTickets && state.lotteryTickets.length > 0) {
                 if (ticketList) {
+                    // 🌟 升級：為每一張序號加入唯一的 ID (ticket-ui-序號) 以供中獎時觸發動畫
                     ticketList.innerHTML = state.lotteryTickets.map(t =>
-                        `<span class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0" title="${t.eventName}">#${t.serial}</span>`
+                        `<span id="ticket-ui-${t.serial}" class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName}">#${t.serial}</span>`
                     ).join('');
                 }
             } else {
@@ -632,6 +648,33 @@
         window.getTodayKey = function() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
         window.exportDashboardCard = async function(element, filename) { try { window.showToast('正在產生圖檔，請稍候...'); const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', useCORS: true }); const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL('image/png'); link.click(); window.showToast('✅ 下載成功！'); } catch(e) { console.error(e); window.showToast('❌ 圖檔產生失敗'); } };
         
+        // 🌟 新增：瀏覽器原生合成器中獎音效 (Web Audio API - 零成本、零外部請求)
+        window.playJackpotSound = function() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine'; // 清脆的電子音
+                
+                // 模擬馬力歐吃金幣/中獎的階梯音效 (C5 -> E5 -> G5 -> C6)
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+                
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 1.2);
+            } catch(e) { console.log('Audio playback prevented'); }
+        };
+
         window.openShareQRCode = function(url) { 
             const container = document.getElementById('qrcode-container'); const input = document.getElementById('share-modal-url'); 
             container.innerHTML = ''; input.value = url; 
@@ -794,6 +837,43 @@
                     } else {
                         latestEventLightEl.className = 'w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shadow-sm animate-pulse';
                         latestEventLightEl.title = '抽獎活動關閉中';
+                    }
+                }
+            });
+
+            // 🌟 升級功能：監聽開獎動態，觸發中獎共振音效與動畫
+            let lastLotteryTrigger = 0;
+            onSnapshot(doc(db, 'system_stats', 'lottery_room'), (docSnap) => {
+                if(docSnap.exists() && state.lotteryTickets && state.lotteryTickets.length > 0) {
+                    const data = docSnap.data();
+                    // 偵測大螢幕是否發出「正在開獎」訊號
+                    if (data.status === 'drawing' && data.drawData && data.drawData.triggerTime > lastLotteryTrigger) {
+                        lastLotteryTrigger = data.drawData.triggerTime;
+                        const winnerSerial = data.drawData.winnerTicket?.serial;
+                        
+                        // 延遲 3.6 秒，完美配合大螢幕老虎機停止轉動的瞬間
+                        setTimeout(() => {
+                            // 檢查自己身上有沒有這張中獎序號
+                            const myWinningTicket = state.lotteryTickets.find(t => t.serial === winnerSerial);
+                            if (myWinningTicket) {
+                                const ticketEl = document.getElementById(`ticket-ui-${winnerSerial}`);
+                                if (ticketEl) {
+                                    // 加入瘋狂閃爍特效
+                                    ticketEl.classList.add('jackpot-winner');
+                                    // 自動將畫面捲動到該序號
+                                    ticketEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                                }
+                                
+                                // 觸發特製音效與恭喜訊息
+                                window.playJackpotSound();
+                                window.showToast(`🎉 天啊恭喜！您的序號 #${winnerSerial} 抽中「${data.drawData.prizeName}」！`);
+                                
+                                // 特效持續 15 秒後自動移除，恢復正常
+                                setTimeout(() => {
+                                    if(ticketEl) ticketEl.classList.remove('jackpot-winner');
+                                }, 15000);
+                            }
+                        }, 3600);
                     }
                 }
             });
