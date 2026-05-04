@@ -650,6 +650,13 @@
         const readyStatus = document.getElementById('ready-status');
         const roller = document.getElementById('roller');
 
+        // 🌟 補回：攝影機與 WebRTC 相關 DOM 元件綁定宣告
+        const btnCamera = document.getElementById('btn-camera');
+        const cameraContainer = document.getElementById('camera-container');
+        const hostVideo = document.getElementById('host-video');
+        const btnCloseCamera = document.getElementById('btn-close-camera');
+        let localStream = null;
+
         // 綁定輸入框至伺服器狀態
         function bindInputsToServer() {
             for (let i = 1; i <= 3; i++) {
@@ -658,7 +665,8 @@
                 
                 if (nameEl) {
                     nameEl.addEventListener('input', (e) => {
-                        if (window.isGuestMode === 0 && e.isTrusted && db) {
+                        // 🌟 升級：主機可改所有人，貴賓可修改自己的專屬姓名欄位
+                        if ((window.isGuestMode === 0 || window.isGuestMode === i) && e.isTrusted && db) {
                             updateDoc(doc(db, 'system_stats', 'lottery_room'), { [`guests.${i}.name`]: e.target.value }).catch(()=>{});
                         }
                     });
@@ -800,12 +808,13 @@
                     }
 
                     if (window.isGuestMode > 0) {
-                        nameEl.disabled = true; 
                         if (window.isGuestMode !== i) {
+                            nameEl.disabled = true; 
                             aEl.disabled = true;
                             boxEl.classList.add('opacity-40');
                             boxEl.classList.remove('border-blue-500', 'shadow-[0_0_20px_rgba(59,130,246,0.4)]');
                         } else {
+                            nameEl.disabled = false; // 🌟 升級：解除貴賓修改自己姓名的鎖定
                             aEl.disabled = false;
                             boxEl.classList.remove('opacity-40');
                             boxEl.classList.add('border-blue-500', 'shadow-[0_0_20px_rgba(59,130,246,0.4)]');
@@ -814,6 +823,32 @@
                         nameEl.disabled = false;
                         aEl.disabled = false;
                         boxEl.classList.remove('opacity-40', 'border-blue-500', 'shadow-[0_0_20px_rgba(59,130,246,0.4)]');
+                    }
+                }
+            }
+
+            // 🌟 升級功能：處理貴賓「已登入就位」的雙向廣播
+            if (state.guests) {
+                // 貴賓端：若雲端未標記自己為 online (包含主機發布新題時)，主動宣告上線
+                if (window.isGuestMode > 0 && state.guests[window.isGuestMode]) {
+                    if (!state.guests[window.isGuestMode].online) {
+                        updateDoc(doc(db, 'system_stats', 'lottery_room'), {
+                            [`guests.${window.isGuestMode}.online`]: true
+                        }).catch(()=>{});
+                        window.showToast('✅ 頻道連線成功！您可以點擊上方修改您的專屬顯示名稱');
+                    }
+                }
+                
+                // 主機端：監聽線上狀態變化，推播「已就位」提示給主持人
+                if (window.isGuestMode === 0) {
+                    if (!window.guestOnlineStatus) window.guestOnlineStatus = {};
+                    for (let i = 1; i <= 3; i++) {
+                        if (state.guests[i] && state.guests[i].online && !window.guestOnlineStatus[i]) {
+                            window.guestOnlineStatus[i] = true;
+                            window.showToast(`🔔 ${state.guests[i].name || '貴賓 '+i} 已登入就位！`);
+                        } else if (state.guests[i] && !state.guests[i].online) {
+                            window.guestOnlineStatus[i] = false;
+                        }
                     }
                 }
             }
@@ -1052,7 +1087,8 @@
                     name: document.getElementById(`guest-name-${i}`).value || `貴賓 ${i}`,
                     q: `${num1} + ${num2} =`,
                     expected: num1 + num2,
-                    a: null
+                    a: null,
+                    online: false // 🌟 重置就位狀態，讓下一組貴賓掃碼時能重新觸發通知
                 };
             }
             
@@ -1364,6 +1400,44 @@
             document.getElementById('live-player-container').classList.add('hidden');
             document.getElementById('live-player-frame').src = '';
             window.currentLiveStreamUrl = null; // 這樣如果伺服器再次推播相同的，就不會重開，直到網址換掉或清空
+        });
+
+        // 🌟 核心修復：補回遺失的主持人鏡頭 (WebRTC) 控制與資源釋放邏輯
+        btnCamera?.addEventListener('click', async () => {
+            if (localStream) {
+                btnCloseCamera?.click();
+                return;
+            }
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+                hostVideo.srcObject = localStream;
+                cameraContainer.classList.remove('hidden');
+                
+                // 按鈕高亮視覺回饋
+                btnCamera.classList.remove('bg-gray-800', 'text-gray-200', 'border-gray-700');
+                btnCamera.classList.add('bg-gold-500', 'text-gray-900', 'border-gold-600', 'shadow-[0_0_15px_rgba(250,204,21,0.4)]');
+                btnCamera.innerHTML = '<i class="fas fa-video-slash mr-1.5 sm:mr-2"></i> <span class="hidden lg:inline">關閉鏡頭</span>';
+                
+                window.showToast('🎥 攝影機已啟動！');
+            } catch (err) {
+                console.error("Camera access error:", err);
+                window.showToast('❌ 無法存取攝影機，請檢查瀏覽器隱私權限設定', true);
+            }
+        });
+
+        btnCloseCamera?.addEventListener('click', () => {
+            if (localStream) {
+                // 徹底切斷硬體佔用，保護隱私與節省效能
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            hostVideo.srcObject = null;
+            cameraContainer.classList.add('hidden');
+            
+            // 恢復按鈕預設外觀
+            btnCamera.classList.remove('bg-gold-500', 'text-gray-900', 'border-gold-600', 'shadow-[0_0_15px_rgba(250,204,21,0.4)]');
+            btnCamera.classList.add('bg-gray-800', 'text-gray-200', 'border-gray-700');
+            btnCamera.innerHTML = '<i class="fas fa-video mr-1.5 sm:mr-2 group-hover:text-gold-400 transition-colors"></i> <span class="hidden lg:inline">主持人鏡頭</span>';
         });
 
         // 浮動視窗拖曳共用邏輯
