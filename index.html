@@ -54,7 +54,8 @@
         #custom-toast { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%) translateY(20px); background-color: rgba(31, 41, 55, 0.95); color: white; padding: 0.8rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 2147483647; font-weight: bold; font-size: 0.9rem; opacity: 0; pointer-events: none; text-align: center; white-space: nowrap; backdrop-filter: blur(4px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         
-        .goog-te-banner-frame.skiptranslate, #google_translate_element { display: none !important; }
+        /* 🌟 核心修復：移除 #google_translate_element 的 display:none 讓腳本能順利生成內部選單 */
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
         body { top: 0px !important; }
         .goog-logo-link { display: none !important; }
         .goog-te-gadget { color: transparent !important; font-size: 0 !important; }
@@ -103,11 +104,11 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- 🌟 修改：將 PWA 安裝按鈕替換為「抽獎中心」捷徑 (改用標準 a 標籤確保最高相容性) -->
-                <a href="lottery.html" target="_blank" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group cursor-pointer decoration-transparent hover:decoration-transparent">
+                <!-- 🌟 修正：完美綁定密碼鎖，開啟高質感抽獎中心入口 -->
+                <button onclick="window.openLotteryAuthModal()" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group cursor-pointer outline-none">
                     <i class="fas fa-gift text-yellow-400 text-sm group-hover:scale-110 group-hover:animate-bounce transition-transform"></i>
                     <span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">抽獎中心</span>
-                </a>
+                </button>
                 <button id="header-share-btn" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group">
                     <i class="fas fa-qrcode text-white/90 text-sm group-hover:scale-110 transition-transform"></i>
                     <span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">分享</span>
@@ -343,7 +344,6 @@
                     </div>
                 </div>
                 
-                <!-- 🌟 修正：將全網大盤數據優雅融入綠消面板底部 -->
                 <div class="mt-5 pt-4 border-t border-[#E8EFE6] relative z-10">
                     <div class="flex justify-between items-end mb-2.5 px-1">
                         <span class="text-[13px] font-bold text-gray-500 flex items-center"><i class="fas fa-user text-mori-sage mr-1.5"></i>個人貢獻小計</span>
@@ -537,7 +537,7 @@
                         <!-- JS 將在此動態生成 10 個按鈕 -->
                         <div class="col-span-2 text-xs text-gray-400 py-2 text-center"><i class="fas fa-spinner fa-spin mr-1"></i> 準備企業選項中...</div>
                     </div>
-                    <input type="text" id="player-enterprise-name" class="hidden mt-2 w-full p-2.5 border border-gray-200 rounded-lg text-sm font-bold tracking-wide focus:outline-none focus:border-mori-forest bg-white placeholder-gray-300 shadow-sm transition-all" placeholder="請手手動輸入企業名稱">
+                    <input type="text" id="player-enterprise-name" class="hidden mt-2 w-full p-2.5 border border-gray-200 rounded-lg text-sm font-bold tracking-wide focus:outline-none focus:border-mori-forest bg-white placeholder-gray-300 shadow-sm transition-all" placeholder="請手動輸入企業名稱">
                 </div>
                 
                 <!-- 🌟 隱藏區塊：點擊按鈕後動態展開 -->
@@ -572,7 +572,7 @@
                             <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors" data-keyword="綠色保育"><i class="far fa-square mr-1"></i>綠色保育</span>
                             <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors" data-keyword="在地小農"><i class="far fa-square mr-1"></i>在地小農</span>
                             <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors" data-keyword="碳足跡標籤"><i class="far fa-square mr-1"></i>碳足跡標籤</span>
-                            <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors" data-keyword="環保標章"><i class="far fa-square mr-1"></i>環保標章(旅宿)</span>
+                            <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors text-center" data-keyword="環保標章"><i class="far fa-square mr-1"></i>環保標章(旅宿)</span>
                             <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors" data-keyword="省水標章"><i class="far fa-square mr-1"></i>省水標章(旅宿)</span>
                             <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors" data-keyword="SROI"><i class="far fa-square mr-1"></i>SROI(附公開報告)</span>
                             <span class="green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold transition-colors" data-keyword="其他備註"><i class="far fa-square mr-1"></i>其他備註:(說明)</span>
@@ -679,7 +679,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- 🌟 補回：SROI 按鈕上的即時總額顯示 -->
                 <button id="log-sroi-btn" class="w-full py-3.5 bg-mori-wood hover:bg-yellow-700 text-white font-bold rounded-xl shadow-md text-[15px] transition-all transform active:scale-95 flex items-center justify-center">
                     <i class="fas fa-chart-line mr-2"></i> 登錄 SROI 價值 <span id="sroi-total-display" class="ml-2 text-yellow-200 font-mono tracking-wider">$0</span>
                 </button>
@@ -763,8 +762,89 @@
     <div id="export-receipt-container" class="p-8 w-[600px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0"></div>
     <div id="certificate-dom-container" class="p-8 w-[800px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans"></div>
 
+    <!-- 🌟 新增：抽獎中心密碼驗證 Modal -->
+    <div id="main-lottery-auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] hidden items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white border-t-4 border-yellow-500 w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl relative transform scale-90 transition-transform duration-300" id="main-lottery-auth-card">
+            <button onclick="window.closeLotteryAuthModal()" class="absolute top-3 right-3 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 transition-colors outline-none">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="w-16 h-16 mx-auto bg-yellow-50 rounded-full flex items-center justify-center shadow-inner mb-4">
+                <i class="fas fa-lock text-2xl text-yellow-500"></i>
+            </div>
+            <h2 class="text-xl font-black text-gray-800 mb-2 tracking-widest">開獎中心安全登入</h2>
+            <p class="text-xs text-gray-500 mb-6">此入口僅限活動主辦方使用，請輸入授權密碼。</p>
+            
+            <input type="password" id="main-lottery-pwd" class="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-center text-xl font-mono text-gray-800 tracking-widest focus:border-yellow-500 focus:outline-none mb-2 transition-colors" placeholder="輸入密碼">
+            <p id="main-lottery-error" class="text-[11px] text-red-500 font-bold mb-4 hidden opacity-0 transition-opacity">❌ 密碼錯誤，請重新輸入</p>
+            
+            <button onclick="window.verifyLotteryAuth()" class="w-full py-3 mt-2 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-xl font-black text-sm tracking-widest transition-all shadow-md">
+                <i class="fas fa-sign-in-alt mr-2"></i> 確認授權
+            </button>
+        </div>
+    </div>
+
     <script type="text/javascript">function googleTranslateElementInit(){new google.translate.TranslateElement({pageLanguage:'zh-TW',includedLanguages:'zh-TW,en,ja,ko,vi,th,id,de,fr,es',layout:google.translate.TranslateElement.InlineLayout.SIMPLE},'google_translate_element');}</script>
     <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <!-- 密碼鎖獨立邏輯 -->
+    <script>
+        window.openLotteryAuthModal = function() {
+            const modal = document.getElementById('main-lottery-auth-modal');
+            const card = document.getElementById('main-lottery-auth-card');
+            const input = document.getElementById('main-lottery-pwd');
+            document.getElementById('main-lottery-error').classList.add('hidden');
+            input.value = '';
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-90');
+                input.focus();
+            }, 10);
+        };
+
+        window.closeLotteryAuthModal = function() {
+            const modal = document.getElementById('main-lottery-auth-modal');
+            const card = document.getElementById('main-lottery-auth-card');
+            
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-90');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        };
+
+        window.verifyLotteryAuth = function() {
+            const pwd = document.getElementById('main-lottery-pwd').value;
+            const error = document.getElementById('main-lottery-error');
+            
+            if (pwd === '545366') {
+                window.closeLotteryAuthModal();
+                window.showToast('🚀 授權成功！正在為您跳轉至開獎中心...');
+                // 🌟 終極修復：改用「絕對網址」，徹底解決預覽沙盒報錯與 LINE 內建瀏覽器的白畫面阻擋！
+                setTimeout(() => {
+                    window.location.href = 'https://farmcmd.github.io/ESGT/lottery.html?auth=545366';
+                }, 800);
+            } else {
+                error.classList.remove('hidden');
+                setTimeout(() => error.classList.remove('opacity-0'), 10);
+                
+                const input = document.getElementById('main-lottery-pwd');
+                input.classList.add('border-red-500');
+                setTimeout(() => input.classList.remove('border-red-500'), 1000);
+                input.value = '';
+                input.focus();
+            }
+        };
+
+        document.getElementById('main-lottery-pwd')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                window.verifyLotteryAuth();
+            }
+        });
+    </script>
 
     <!-- Firebase 與核心邏輯 -->
     <script type="module">
@@ -815,7 +895,6 @@
         const sroiUnits=[{name:'指令教育農場',weight:1.95},{name:'阿爾喜',weight:1.95},{name:'雨社山下',weight:1.58},{name:'明揚養蜂',weight:1.58},{name:'湧健酪梨園',weight:2.66},{name:'里山餐桌團隊',weight:3.40}];
         const taiwanCities = [{ name: '臺北市', lat: 25.0330, lng: 121.5654 }, { name: '新北市', lat: 25.0110, lng: 121.4653 }, { name: '臺中市', lat: 24.1477, lng: 120.6736 }, { name: '南投縣', lat: 23.9037, lng: 120.6839 }, { name: '高雄市', lat: 22.6273, lng: 120.3014 }];
 
-        // 🛡️ 升級：在 state 中加入 6 個報到欄位與企業選單暫存
         let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', enterpriseName: '', entScope: '', entGreenScope: '', entSustNotes: '', entWelfareNotes: '', entEmpId: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], currentTransport: null };
         let globalGovData = { projects: [] }, globalEntData = { projects: [] }, globalAbsolute = { carbon: 0, green: 0, visitor_count: 0, map_trial_expiry: 0 }, globalCerts = { operators: [], lecturers: [] };
         let summaryState = { entMode: false, entSelected: new Set(), govMode: false, govSelected: new Set() };
@@ -840,25 +919,21 @@
                 if (!iframe.dataset.loaded) {
                     iframe.src = `https://farmcmd.github.io/ESGT/dashboard.html?tab=${tab}&t=${Date.now()}`;
                     iframe.dataset.loaded = "true";
-                    // 🌟 確保 iframe 初次載入完畢後，瞬間空投狀態與抽獎活動清單
                     iframe.onload = () => {
                         iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state, events: window.globalLotteryEvents || [] }, '*');
                     };
                 } else {
                     iframe.contentWindow.postMessage({ action: 'SWITCH_TAB', tab: tab }, '*');
-                    // 🌟 即使已經載入，每次打開也強制空投一次最新清單，確保不漏接
                     iframe.contentWindow.postMessage({ action: 'SYNC_FROM_MAIN', state: state, events: window.globalLotteryEvents || [] }, '*');
                 }
             }
             window.openModal('dashboard-iframe-modal');
         };
 
-        // 🌟 新增：最新活動列表折疊 Modal 控制與渲染
         window.openLatestEventsModal = function() {
             const container = document.getElementById('latest-events-accordion-container');
             if (!container) return;
             
-            // 使用 globalLotteryEvents 渲染，將進行中的排前面，然後按時間排序
             const events = [...(window.globalLotteryEvents || [])];
             events.sort((a, b) => {
                 if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
@@ -917,7 +992,6 @@
             if (document.getElementById('player-name')) document.getElementById('player-name').value = state.playerName || '';
             if (document.getElementById('player-code')) document.getElementById('player-code').textContent = state.playerCode;
             
-            // 載入時同步企業所有欄位
             if (document.getElementById('player-enterprise-name')) document.getElementById('player-enterprise-name').value = state.enterpriseName || '';
             if (document.getElementById('player-ent-scope')) document.getElementById('player-ent-scope').value = state.entScope || '';
             if (document.getElementById('player-ent-green-scope')) document.getElementById('player-ent-green-scope').value = state.entGreenScope || '';
@@ -932,24 +1006,29 @@
             if (document.getElementById('player-name')) state.playerName = document.getElementById('player-name').value;
             try { 
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state)); 
-                // 🌟 核心修復：強制推播絕對數值給遊戲端，不論加分或扣分都瞬間同步
                 localStorage.setItem('esgt_sync_to_game', JSON.stringify({ totalScore: state.totalScore, heroIndex: state.heroIndex, timestamp: Date.now() }));
             } catch(e) {}
             window.dispatchEvent(new Event('storage'));
         };
 
-        // 🌟 核心復原：企業綁定與 10 宮格按鈕渲染引擎
-        window.saveEnterpriseName = function() {
+        // 🌟 企業綁定與 10 宮格按鈕渲染引擎 (加入 Firebase 同步機制)
+        window.saveEnterpriseName = async function() {
             const input = document.getElementById('player-enterprise-name');
             const consentCheck = document.getElementById('scope3-consent-check');
             const detailsContainer = document.getElementById('enterprise-details-container');
+            const saveBtn = document.querySelector('#enterprise-info-modal button[onclick="window.saveEnterpriseName()"]');
             
             if (input && input.value.trim() !== '') {
-                // 防呆：確認是否勾選 Scope 3 同意 (只在展開面板時檢查)
                 if (detailsContainer && !detailsContainer.classList.contains('hidden')) {
                     if (consentCheck && !consentCheck.checked) {
                         return window.showToast('⚠️ 請先勾選同意 Scope 3 碳盤查涵蓋聲明', true);
                     }
+                }
+                
+                if (saveBtn) {
+                    saveBtn.dataset.origHtml = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 同步雲端中...';
+                    saveBtn.disabled = true;
                 }
                 
                 state.enterpriseName = input.value.trim();
@@ -959,10 +1038,32 @@
                 if (document.getElementById('player-ent-welfare-notes')) state.entWelfareNotes = document.getElementById('player-ent-welfare-notes').value.trim();
                 if (document.getElementById('player-ent-emp-id')) state.entEmpId = document.getElementById('player-ent-emp-id').value.trim();
                 
+                if (db && !isOfflineMode) {
+                    try {
+                        const bindData = {
+                            playerCode: state.playerCode || 'UNKNOWN',
+                            playerName: state.playerName || '匿名旅者',
+                            enterpriseName: state.enterpriseName,
+                            empId: state.entEmpId || '未提供',
+                            scope3Consent: consentCheck ? consentCheck.checked : false,
+                            boundAt: serverTimestamp()
+                        };
+                        await setDoc(doc(db, 'ent_employee_bindings', state.playerCode), bindData, { merge: true });
+                    } catch (err) {
+                        console.error("雲端寫入失敗", err);
+                        window.showToast('⚠️ 雲端同步失敗，但已為您保存於本機', true);
+                    }
+                }
+
                 window.saveData();
                 window.updateDisplays();
-                window.showToast('✅ 企業綁定資訊已儲存！');
+                window.showToast('✅ 企業綁定資訊已儲存並同步至雲端！');
                 window.closeModal('enterprise-info-modal');
+                
+                if (saveBtn) {
+                    saveBtn.innerHTML = saveBtn.dataset.origHtml;
+                    saveBtn.disabled = false;
+                }
             } else {
                 window.showToast('⚠️ 請先點擊上方按鈕選擇您的企業', true);
             }
@@ -975,22 +1076,18 @@
             let html = '';
             let count = 0;
             
-            // 渲染從 Firebase 後台抓來的企業
             window.partnerEnterprises.forEach(p => {
-                if(count >= 9) return; // 保留第 10 個位子給「自行輸入」
+                if(count >= 9) return; 
                 html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition-all shadow-sm truncate" data-val="${p.id}" data-name="${p.name}">${p.name}</button>`;
                 count++;
             });
 
-            // 如果不到 9 家企業，以虛線按鈕補足空格
             while(count < 9) {
                 html += `<button type="button" disabled class="w-full px-2 py-2.5 border-2 border-dashed border-gray-200 rounded-lg text-[12px] font-bold text-gray-400 bg-gray-50/50 cursor-not-allowed truncate">尚未進駐</button>`;
                 count++;
             }
             
-            // 第 10 顆常駐按鈕
             html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition-all shadow-sm truncate" data-val="other">自行輸入</button>`;
-            
             container.innerHTML = html;
             
             if (typeof window.bindPartnerSelectEvents === 'function') window.bindPartnerSelectEvents();
@@ -1104,7 +1201,8 @@
             });
         };
 
-        window.openEarthLogGame = function() { window.open('https://farmcmd.github.io/ESGT/game.html', '_blank'); };
+        // 🌟 一併修復地球日誌的跳轉，避免同樣的白畫面災難
+        window.openEarthLogGame = function() { window.location.href = 'https://farmcmd.github.io/ESGT/game.html'; };
         window.openModal = function(id) { document.getElementById(id)?.classList.remove('hidden'); };
         window.closeModal = function(id) { document.getElementById(id)?.classList.add('hidden'); };
         window.showToast = function(msg, isError = false) { const t = document.getElementById('custom-toast'); if (t) { t.textContent = msg; if (isError) { t.style.backgroundColor = '#EF4444'; } else { t.style.backgroundColor = 'rgba(31, 41, 55, 0.95)'; } t.classList.add('show'); if(window.toastTimer) clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3500); } };
@@ -1113,7 +1211,7 @@
         window.customPrompt = function(message, defaultValue, callback) { const modal = document.getElementById('custom-prompt-modal'); const titleEl = document.getElementById('custom-prompt-title'); const inputEl = document.getElementById('custom-prompt-input'); const confirmBtn = document.getElementById('custom-prompt-confirm'); const cancelBtn = document.getElementById('custom-prompt-cancel'); if(!modal) return callback(defaultValue); titleEl.textContent = message; inputEl.value = defaultValue; confirmBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(inputEl.value); }; cancelBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(null); }; window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100); };
         window.getFormattedTime = function() { const d = new Date(); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
         window.getTodayKey = function() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
-        window.exportDashboardCard = async function(element, filename) { try { window.showToast('正在產生圖檔，請稍候...'); const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff', useCORS: true }); const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL('image/png'); link.click(); window.showToast('✅ 下載成功！'); } catch(e) { console.error(e); window.showToast('❌ 圖檔產生失敗', true); } };
+        
         window.openShareQRCode = function(url) { const container = document.getElementById('qrcode-container'); const input = document.getElementById('share-modal-url'); container.innerHTML = ''; input.value = url; try { new QRCode(container, { text: url, width: 160, height: 160, colorDark : "#3B82F6", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); } catch(e) { container.innerHTML = '<p class="text-sm text-red-400">產生失敗</p>'; } const copyBtn = document.getElementById('share-modal-copy-btn'); copyBtn.onclick = () => { if(navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(url).then(() => window.showToast('🔗 連結已複製！')).catch(() => { input.select(); document.execCommand('copy'); window.showToast('🔗 連結已複製！'); }); } else { input.select(); document.execCommand('copy'); window.showToast('🔗 連結已複製！'); } }; window.openModal('share-qrcode-modal'); };
 
         window.bindSystemUtilities = function() {
@@ -1124,7 +1222,8 @@
             // 3. 匯入進度
             document.getElementById('import-data-btn-trigger')?.addEventListener('click', () => { document.getElementById('import-data-input')?.click(); });
             document.getElementById('import-data-input')?.addEventListener('change', (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const imported = JSON.parse(e.target.result); state = { ...state, ...imported }; window.saveData(); window.updateDisplays(); if(typeof window.renderCheckoutHistory === 'function') window.renderCheckoutHistory(); if(typeof window.renderLogs === 'function') window.renderLogs(); window.showToast('✅ 進度已還原'); } catch (err) { window.showToast('❌ 檔案錯誤'); } }; reader.readAsText(file); });
-            // 4. 證書下載
+            
+            // 4. 證書下載 (🌟 完整復原繪圖引擎)
             document.getElementById('download-cert-btn')?.addEventListener('click', async () => {
                 window.showToast('🔄 繪製中，請勿關閉視窗...');
                 const container = document.getElementById('certificate-dom-container');
@@ -1224,6 +1323,42 @@
                     window.showToast('✅ 證書下載成功！');
                 } catch(err) { window.showToast('❌ 產圖失敗，請檢查權限'); }
             });
+
+            // 🌟 核心修復 2：免重整 DOM 觸發模式，徹底繞過沙盒 Cookie 限制
+            const langSelect = document.getElementById('custom-lang-select');
+            if (langSelect) {
+                // 讀取 Cookie 讓選單狀態同步 (針對正式網域)
+                const match = document.cookie.match(/googtrans=\/zh-TW\/([a-zA-Z-]+)/);
+                if (match && match[1]) {
+                    langSelect.value = match[1];
+                }
+
+                langSelect.addEventListener('change', function(e) {
+                    const lang = e.target.value;
+                    window.saveData();
+                    
+                    // 尋找 Google 剛剛成功生成的標準隱藏選單
+                    const googleSelect = document.querySelector('.goog-te-combo');
+                    
+                    if (googleSelect) {
+                        // 若切換回繁體中文 (預設)，Google 規定要傳入空值
+                        googleSelect.value = lang === 'zh-TW' ? '' : lang;
+                        
+                        // 派發原生 HTML 事件觸發 Google 底層翻譯腳本
+                        if (document.createEvent) {
+                            const evt = document.createEvent("HTMLEvents");
+                            evt.initEvent("change", true, true);
+                            googleSelect.dispatchEvent(evt);
+                        } else {
+                            googleSelect.dispatchEvent(new Event('change'));
+                        }
+                        
+                        window.showToast('🌍 語言切換成功！');
+                    } else {
+                        window.showToast('⏳ 翻譯模組準備中，請稍等一秒再試', true);
+                    }
+                });
+            }
         };
 
         window.renderLogs = function() { 
@@ -1839,7 +1974,6 @@
             onSnapshot(collection(db, 'gov_projects'), (snapshot) => { globalGovData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
             onSnapshot(collection(db, 'ent_projects'), (snapshot) => { globalEntData.projects = snapshot.docs.map(d => ({id:d.id, ...d.data()})); if(typeof window.renderAdminLists === 'function') window.renderAdminLists(); }, errHandler);
             
-            // 🌟 修正：當雲端抽獎活動有更新時，強制觸發一次推播給儀表板
             onSnapshot(collection(db, 'lottery_events'), (snapshot) => { 
                 window.globalLotteryEvents = snapshot.docs.map(d => ({id:d.id, ...d.data()})); 
                 if(typeof window.updateDisplays === 'function') window.updateDisplays();
@@ -1859,7 +1993,6 @@
                 if(window.mapsApiReady && document.getElementById('mission-page') && !document.getElementById('mission-page').classList.contains('hidden')) { if(typeof window.renderMap === 'function') window.renderMap(); } 
             }, errHandler);
             
-            // 🌟 企業綁定 10 宮格的核心資料庫連線
             onSnapshot(collection(db, 'partner_enterprises'), (snapshot) => {
                 window.partnerEnterprises = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (typeof window.renderPartnerSelect === 'function') window.renderPartnerSelect();
@@ -1871,8 +2004,6 @@
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
             window.loadLocalData();
-            
-            // 🌟 啟動 Firebase 核心引擎
             window.initFirebase();
             
             window.addEventListener('message', (event) => {
