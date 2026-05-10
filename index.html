@@ -2085,6 +2085,29 @@
             const bBar = document.getElementById('system-broadcast-bar'); const bDrop = document.getElementById('system-broadcast-dropdown'); const bChev = document.getElementById('broadcast-chevron'); const bClose = document.getElementById('close-broadcast-btn');
             if(bBar && bDrop) { bBar.addEventListener('click', () => { const isClosed = bDrop.classList.contains('scale-y-0'); if(isClosed) { bDrop.classList.remove('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(180deg)'; } else { bDrop.classList.add('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(0deg)'; } }); }
             if(bClose && bDrop) { bClose.addEventListener('click', (e) => { e.stopPropagation(); bDrop.classList.add('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(0deg)'; }); }
+            
+            // 🌟 升級：【探探里山主站專用】自動將網址 Hash 空投給 iframe 儀表板，並自動展開對應面板
+            const hash = window.location.hash;
+            if (hash && hash.includes('-board-')) {
+                // 智慧判斷要開啟哪一個頁籤 (例如: 網址帶有 ent-board 開企業，否則預設開政府)
+                const targetTab = hash.includes('ent-') ? 'ent' : 'gov';
+                
+                // 1. 自動展開儀表板 Modal，這會觸發 iframe 載入目標 src
+                window.openDashboardModal(targetTab);
+                
+                // 2. 獲取精準的 iframe 元素
+                const iframe = document.getElementById('dashboard-iframe'); 
+                if (iframe) {
+                    // 3. 延遲 1.5 秒發送，確保 iframe 內的 Firebase 讀取與接收器已經準備好
+                    setTimeout(() => {
+                        iframe.contentWindow.postMessage({
+                            action: 'LOCATE_BOARD',
+                            hash: hash
+                        }, '*'); // 授權推播
+                        window.showToast('🎯 正在為您定位專屬計畫卡片...');
+                    }, 1500);
+                }
+            }
         });
     </script>
 </body>
