@@ -550,10 +550,14 @@
             const ticketList = document.getElementById('lottery-ticket-list');
             if (state.lotteryTickets && state.lotteryTickets.length > 0) {
                 if (ticketList) {
-                    // 🌟 升級：為每一張序號加入唯一的 ID (ticket-ui-序號) 以供中獎時觸發動畫
-                    ticketList.innerHTML = state.lotteryTickets.map(t =>
-                        `<span id="ticket-ui-${t.serial}" class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName}">#${t.serial}</span>`
-                    ).join('');
+                    // 🌟 升級：根據是否中獎 (isWinner) 給予永久專屬標示 (紅框、金底、皇冠)
+                    ticketList.innerHTML = state.lotteryTickets.map(t => {
+                        if (t.isWinner) {
+                            return `<span id="ticket-ui-${t.serial}" class="bg-gradient-to-r from-yellow-200 to-yellow-400 border-2 border-red-500 text-red-700 px-2 py-0.5 rounded shadow-md text-[10px] sm:text-[11px] font-black font-mono tracking-widest shrink-0 transition-all duration-300 flex items-center gap-1" title="${t.eventName} (已中獎)"><i class="fas fa-crown text-red-600"></i>#${t.serial}</span>`;
+                        } else {
+                            return `<span id="ticket-ui-${t.serial}" class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName}">#${t.serial}</span>`;
+                        }
+                    }).join('');
                 }
             } else {
                 if (ticketList) {
@@ -922,6 +926,11 @@
                             // 檢查自己身上有沒有這張中獎序號
                             const myWinningTicket = state.lotteryTickets.find(t => t.serial === winnerSerial);
                             if (myWinningTicket) {
+                                // 🌟 升級：永久標記中獎狀態並存檔，這會觸發重新渲染套用金底紅框
+                                myWinningTicket.isWinner = true;
+                                window.saveData(); 
+                                
+                                // 重新抓取渲染後的新 DOM 元素來掛載閃爍特效
                                 const ticketEl = document.getElementById(`ticket-ui-${winnerSerial}`);
                                 if (ticketEl) {
                                     // 加入瘋狂閃爍特效
@@ -934,7 +943,7 @@
                                 window.playJackpotSound();
                                 window.showToast(`🎉 天啊恭喜！您的序號 #${winnerSerial} 抽中「${data.drawData.prizeName}」！`);
                                 
-                                // 特效持續 15 秒後自動移除，恢復正常
+                                // 特效持續 15 秒後自動移除，恢復正常 (但因為存檔了，所以金底紅框會永久保留)
                                 setTimeout(() => {
                                     if(ticketEl) ticketEl.classList.remove('jackpot-winner');
                                 }, 15000);
