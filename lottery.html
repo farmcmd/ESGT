@@ -184,7 +184,7 @@
             <p id="display-event-desc" class="text-sm text-gray-400 max-w-2xl mx-auto">連線 Firebase 雲端票箱，確保每一張抽獎卷皆擁有公平、透明的被抽中機會。</p>
         </div>
 
-        <!-- 🌟 開獎大螢幕 (這是直播的主要抓取區域) -->
+        <!-- 開獎大螢幕 (這是直播的主要抓取區域) -->
         <div class="glass-on-green w-full max-w-4xl bg-gray-800/50 backdrop-blur-sm p-6 md:p-10 rounded-3xl border border-gray-700 shadow-2xl relative z-10 transition-all duration-300 mb-6">
             
             <div class="flex justify-between items-end mb-6 border-b border-gray-700/50 pb-4">
@@ -198,7 +198,7 @@
                 </div>
             </div>
 
-            <!-- 本次抽出獎項大看板 (加入 id 以利對貴賓隱藏) -->
+            <!-- 本次抽出獎項大看板 -->
             <div id="prize-display-board" class="mb-8 text-center bg-gradient-to-b from-gray-900/80 to-gray-800/40 rounded-2xl p-6 border border-gold-500/30 shadow-inner relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold-300 via-gold-500 to-gold-300"></div>
                 <p class="text-xs text-gold-500/80 font-bold tracking-widest uppercase mb-2"><i class="fas fa-award mr-1.5"></i>Current Prize / 本次抽出獎項</p>
@@ -206,14 +206,14 @@
                 <p class="text-sm text-gray-400 font-bold mt-3">目前庫存：<span id="display-prize-qty" class="text-white text-lg mx-1 font-mono">0</span> 份</p>
             </div>
 
-            <!-- 老虎機滾動區 (加入 id 以利對貴賓隱藏) -->
+            <!-- 老虎機滾動區 -->
             <div id="slot-machine-board" class="slot-machine mb-8 bg-gray-900 w-full rounded-2xl">
                 <div id="roller" class="rolling-text">
                     <div class="roll-item text-gray-600 font-mono tracking-widest">WAITING...</div>
                 </div>
             </div>
 
-            <!-- 控制按鈕與互動區 (原在此處的排程已移出) -->
+            <!-- 控制按鈕與互動區 -->
             <div id="action-area" class="w-full mt-2">
                 <!-- 未就緒狀態 -->
                 <div id="draw-disabled-state" class="flex justify-center">
@@ -228,7 +228,7 @@
                         <span class="bg-blue-900/40 border border-blue-500/30 text-blue-400 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase shadow-inner flex items-center"><i class="fas fa-brain mr-2"></i>Guest Interactive Challenge</span>
                     </div>
                     
-                    <!-- 動態渲染貴賓框，由系統控制顯示目前輪到的那 1 位 -->
+                    <!-- 動態渲染貴賓框 -->
                     <div class="flex justify-center mb-6 w-full" id="guest-boxes">
                         <!-- JS 動態渲染貴賓框 -->
                     </div>
@@ -311,7 +311,7 @@
             <h3 class="text-2xl font-black text-white mb-2"><i class="fas fa-qrcode text-green-400 mr-2"></i>邀請嘉賓登入</h3>
             <p class="text-sm text-gray-400 mb-8">請嘉賓掃描當前專屬條碼，手機畫面將同步連動大螢幕考題！</p>
             
-            <!-- 🌟 修正點 1：清空並注入唯一 ID 的 QR Code 容器 -->
+            <!-- 動態置中的單一 QR Code 容器 -->
             <div id="qrcode-dynamic-container" class="flex justify-center">
                 <!-- JS 動態產生對應 Round 的 QR Code -->
             </div>
@@ -357,7 +357,7 @@
                         
                         <!-- 綠幕模式整合進 OBS 區塊 -->
                         <div class="flex items-center justify-between bg-gray-900/80 p-2 rounded-lg border border-gray-700">
-                            <span class="text-[11px] text-green-400 font-bold"><i class="fas fa-layer-group mr-1.5"></i>啟動純綠幕去背模式</span>
+                            <span class="text-[11px] text-green-400 font-bold"><i class="fas fa-layer-group mr-1.5"></i>啟勃純綠幕去背模式</span>
                             <label class="relative inline-flex items-center cursor-pointer transform scale-75 origin-right">
                                 <input type="checkbox" id="toggle-green-screen" class="sr-only peer">
                                 <div class="w-14 h-7 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 shadow-inner"></div>
@@ -800,13 +800,12 @@
 
             if(modal) modal.classList.remove('hidden');
             
-            // 🌟 修正點 1：開啟 Modal 時先清空容器，避免 DOM 殘留
             if(containerWrapper) containerWrapper.innerHTML = '';
             
             setTimeout(() => {
                 const guestName = state.guests && state.guests[guestId] ? state.guests[guestId].name : `貴賓 ${guestId}`;
                 const guestUrl = `${baseUrl}?guest=${guestId}&t=${Date.now()}`;
-                const qrUniqueId = `guest-qr-canvas-${guestId}-${Date.now()}`; // 🌟 強制唯一 ID 避免 QRCode.js 快取衝突
+                const qrUniqueId = `guest-qr-canvas-${guestId}-${Date.now()}`; 
                 
                 const warningHtml = isPreview ? `<div class="w-full bg-red-900/50 border border-red-500 text-red-200 text-[10px] p-2 rounded mb-3 text-left leading-relaxed"><i class="fas fa-exclamation-triangle mr-1"></i><b>測試提醒：</b> 條碼已指向您的 GitHub 網址。若手機掃碼變主站，是因為您<b>尚未將最新代碼推送到 GitHub</b> (舊版程式不認得此排程)。請更新 GitHub 後測試！</div>` : '';
 
@@ -833,7 +832,6 @@
                 const container = document.getElementById(qrUniqueId);
                 
                 try {
-                    // 🌟 修正點 2：調高容錯率並固定長寬，確保長網址不報錯
                     if(container) new QRCode(container, { text: guestUrl, width: 168, height: 168, colorDark : "#111827", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L });
                 } catch(e) {
                     console.error("QR Code Error:", e);
@@ -932,7 +930,6 @@
         }
 
         function initHostOrGuest() {
-            // 🌟 修正點 3：初始建立 15 組 DOM 緩衝，防範網路延遲造成找不到 DOM
             for (let i = 1; i <= 15; i++) {
                 ensureGuestDom(i);
             }
@@ -944,7 +941,6 @@
                 document.getElementById('status-board')?.classList.add('hidden');
                 document.getElementById('schedule-controls')?.classList.add('hidden');
                 
-                // 🌟 修正點 4：嘉賓介面深度隔離！徹底隱藏主機的大看板、老虎機與排程區塊
                 document.getElementById('prize-display-board')?.classList.add('hidden');
                 document.getElementById('slot-machine-board')?.classList.add('hidden');
                 document.getElementById('schedule-section')?.classList.add('hidden');
@@ -1045,6 +1041,12 @@
                     prizeSelect.value = state.prizeName;
                     updatePrizeDisplay();
                 }
+            } else {
+                // 確保當雲端 prizeName 被清空時，本地 UI 也會跟著清空
+                if (prizeSelect && prizeSelect.value !== '') {
+                    prizeSelect.value = '';
+                    updatePrizeDisplay();
+                }
             }
 
             // 同步排程看板 (Schedule UI)
@@ -1117,13 +1119,13 @@
                 ensureGuestDom(i);
             }
 
-            // 🌟 核心修正點：確保嘉賓永遠能看到自己的作答框，不再被隱藏！
+            // 確保只顯示當前 Round 對應的單一嘉賓框
             const activeGuestId = state.currentGuestId || 1;
             for (let i = 1; i <= maxGuestRounds; i++) {
                 const box = document.getElementById(`guest-box-container-${i}`);
                 if (box) {
                     if (window.isGuestMode > 0) {
-                        // 嘉賓端：永遠顯示自己的專屬框！(解決掃碼後白畫面的 Bug)
+                        // 嘉賓端：永遠顯示自己的專屬框！
                         if (i === window.isGuestMode) {
                             box.classList.remove('hidden');
                         } else {
@@ -1196,13 +1198,11 @@
 
             // 處理貴賓「已登入就位」的雙向廣播與防搶登機制
             if (state.guests) {
-                // 貴賓端：防搶登與自動宣告上線機制
                 if (window.isGuestMode > 0 && state.guests[window.isGuestMode]) {
                     const mySlot = state.guests[window.isGuestMode];
                     const intruderOverlay = document.getElementById('intruder-overlay');
                     
                     if (!mySlot.deviceToken) {
-                        // 1. 席位為空，當前裝置宣示主權！
                         if(intruderOverlay) {
                             intruderOverlay.classList.add('hidden');
                             intruderOverlay.classList.remove('flex');
@@ -1215,13 +1215,11 @@
                         window.showToast('✅ 頻道連線成功！您可以點擊上方修改您的專屬顯示名稱');
                         
                     } else if (mySlot.deviceToken !== window.myDeviceToken) {
-                        // 2. 席位已被其他裝置佔用，強制鎖定畫面並阻斷操作！
                         if(intruderOverlay) {
                             intruderOverlay.classList.remove('hidden');
                             intruderOverlay.classList.add('flex');
                         }
                     } else {
-                        // 3. 我就是這個席位的主人，確保狀態維持在線
                         if(intruderOverlay) {
                             intruderOverlay.classList.add('hidden');
                             intruderOverlay.classList.remove('flex');
@@ -1235,7 +1233,6 @@
                     }
                 }
                 
-                // 主機端：監聽線上狀態變化，推播「已就位」提示給主持人
                 if (window.isGuestMode === 0) {
                     if (!window.guestOnlineStatus) window.guestOnlineStatus = {};
                     for (let i = 1; i <= maxGuestRounds; i++) {
@@ -1344,13 +1341,14 @@
         function renderPrizeSelect() {
             const currentVal = prizeSelect?.value;
             
-            // 🌟 嚴格過濾：獎項數量需大於0，且必須符合當前選擇的活動 (或相容舊版無 eventId 者)
+            // 🌟 核心修正：活動與獎項絕對隔離模式 (Strict Isolation)
+            // 必須明確擁有 eventId 且與當前活動 ID 絕對吻合，才允許顯示。徹底阻絕測試資料與跨活動污染！
             const availablePrizes = Object.keys(globalPrizes).filter(k => {
                 const p = globalPrizes[k];
                 if ((p.qty || 0) <= 0) return false;
                 if (!currentEventId) return false; 
-                if (p.eventId && p.eventId !== currentEventId) return false; 
-                return true;
+                
+                return p.eventId === currentEventId;
             });
             
             if (availablePrizes.length === 0) {
@@ -1377,8 +1375,16 @@
         eventSelect?.addEventListener('change', async (e) => {
             currentEventId = e.target.value;
             
-            if (window.isGuestMode === 0 && e.isTrusted && db && currentEventId) {
-                updateDoc(doc(db, 'system_stats', 'lottery_room'), { eventId: currentEventId }).catch(()=>{});
+            if (window.isGuestMode === 0 && e.isTrusted && db) {
+                // 核心防呆：切換活動時，無條件清空「當前排程」、「當前獎項」與「進度」，徹底隔離！
+                updateDoc(doc(db, 'system_stats', 'lottery_room'), {
+                    eventId: currentEventId || null,
+                    prizeName: '',
+                    schedule: [],
+                    currentRoundIndex: 0,
+                    currentGuestId: 1,
+                    status: 'idle'
+                }).catch(()=>{});
             }
 
             // 強制重新渲染對應的獎項選單
