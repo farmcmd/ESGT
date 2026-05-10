@@ -148,7 +148,7 @@
                 <i class="fas fa-id-badge mr-1 text-blue-300"></i><span id="display-enterprise-emp-id" class="font-mono font-bold tracking-wider"></span>
             </div>
 
-            <!-- 🌟 抽獎序號常駐顯示列 (已依照指示安全隱藏) -->
+            <!-- 🌟 抽獎序號常駐顯示列 -->
             <div id="lottery-ticket-bar" class="hidden items-center justify-between bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200 shadow-sm overflow-hidden animate-fade-in-down w-full max-w-4xl mt-4 mb-2 gap-2">
                 <div class="flex items-center overflow-hidden flex-1">
                     <div class="flex items-center shrink-0 mr-2 sm:mr-3 border-r border-yellow-200 pr-2 sm:pr-3">
@@ -181,7 +181,7 @@
         
         <!-- 系統儀表板總覽 -->
         <section id="homepage" class="page-section block">
-            <!-- 🌟 修正：還原單一版面，將綠色經濟貢獻優雅融入其中 -->
+            <!-- 🌟 單一版面：綠色經濟貢獻優雅融入其中 -->
             <div class="bg-blue-50/50 p-6 rounded-2xl shadow-sm mb-8 border border-blue-100 text-center">
                  <h3 class="text-lg font-semibold text-blue-800 mb-3">探探里山旅者共同累積減碳量</h3>
                  <div class="flex justify-center items-center w-full">
@@ -2023,6 +2023,8 @@
                 if (event.data && event.data.action === 'CLOSE_MODAL') {
                     window.closeModal('dashboard-iframe-modal');
                 }
+                
+                // 🌟 補回：地球日誌積分同步
                 if (event.data && event.data.type === 'SYNC_HERO_INDEX') {
                     if (typeof event.data.heroIndex !== 'undefined') {
                         state.heroIndex = parseInt(event.data.heroIndex) || 0;
@@ -2031,6 +2033,14 @@
                         }
                         window.saveData(); window.updateDisplays(); 
                         window.showToast(`🌍 收到來自地球日誌的同步！勇者指數已更新為 ${state.heroIndex}`);
+                    }
+                }
+                
+                // 🌟 補回：接收來自 iframe 的逆向請求，幫助畫面捲動到 iframe 位置
+                if (event.data && event.data.action === 'SCROLL_TO_IFRAME') {
+                    const iframe = document.getElementById('dashboard-iframe');
+                    if (iframe) {
+                        iframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 }
             });
@@ -2086,24 +2096,22 @@
             if(bBar && bDrop) { bBar.addEventListener('click', () => { const isClosed = bDrop.classList.contains('scale-y-0'); if(isClosed) { bDrop.classList.remove('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(180deg)'; } else { bDrop.classList.add('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(0deg)'; } }); }
             if(bClose && bDrop) { bClose.addEventListener('click', (e) => { e.stopPropagation(); bDrop.classList.add('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(0deg)'; }); }
             
-            // 🌟 升級：【探探里山主站專用】自動將網址 Hash 空投給 iframe 儀表板，並自動展開對應面板
+            // 🌟 升級：【探探里山主站專用】自動將網址 Hash 空投給 iframe 儀表板
             const hash = window.location.hash;
+            const targetIframe = document.getElementById('dashboard-iframe');
+            
             if (hash && hash.includes('-board-')) {
-                // 智慧判斷要開啟哪一個頁籤 (例如: 網址帶有 ent-board 開企業，否則預設開政府)
+                // 1. 智慧判斷並自動展開對應的儀表板 Modal (觸發 iframe 載入)
                 const targetTab = hash.includes('ent-') ? 'ent' : 'gov';
-                
-                // 1. 自動展開儀表板 Modal，這會觸發 iframe 載入目標 src
                 window.openDashboardModal(targetTab);
                 
-                // 2. 獲取精準的 iframe 元素
-                const iframe = document.getElementById('dashboard-iframe'); 
-                if (iframe) {
-                    // 3. 延遲 1.5 秒發送，確保 iframe 內的 Firebase 讀取與接收器已經準備好
+                // 2. 延遲 1.5 秒空投，確保 iframe 內的接收器已經準備好
+                if (targetIframe) {
                     setTimeout(() => {
-                        iframe.contentWindow.postMessage({
+                        targetIframe.contentWindow.postMessage({
                             action: 'LOCATE_BOARD',
                             hash: hash
-                        }, '*'); // 授權推播
+                        }, '*'); 
                         window.showToast('🎯 正在為您定位專屬計畫卡片...');
                     }, 1500);
                 }
