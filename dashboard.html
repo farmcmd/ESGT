@@ -684,6 +684,56 @@
             window.openModal('share-qrcode-modal'); 
         };
 
+        // 🌟 修復補回：透過網址 Hash 自動定位並展開特定卡片的尋路引擎
+        window.hasAutoLocated = false;
+        window.checkHashAndLocate = function() {
+            if (window.hasAutoLocated) return;
+            const hash = window.location.hash; 
+            if (!hash || !hash.includes('-board-')) return;
+
+            const targetId = 'card-' + hash.substring(1); 
+            const targetCard = document.getElementById(targetId);
+
+            if (targetCard) {
+                window.hasAutoLocated = true; 
+                
+                // 1. 自動切換到該卡片所在的頁籤
+                const isEnt = targetCard.closest('#section-ent') !== null;
+                if (isEnt) document.getElementById('tab-btn-ent')?.click();
+                else document.getElementById('tab-btn-gov')?.click();
+
+                // 2. 自動展開它所屬的群組
+                const groupGrid = targetCard.closest('.grid');
+                if (groupGrid && groupGrid.classList.contains('hidden')) {
+                    groupGrid.classList.remove('hidden');
+                    const prevSibling = groupGrid.previousElementSibling;
+                    if (prevSibling) {
+                        const icon = prevSibling.querySelector('.fa-chevron-down');
+                        if (icon) icon.style.transform = 'rotate(0deg)';
+                    }
+                }
+
+                // 3. 平滑捲動並高光提示
+                setTimeout(() => {
+                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const innerCard = Array.from(targetCard.children).find(el => el.classList.contains('bg-white')); 
+                    if (innerCard) {
+                        innerCard.style.transition = 'all 0.5s ease-out';
+                        innerCard.classList.add('ring-4', 'ring-yellow-400', 'scale-[1.02]', 'z-50', 'shadow-2xl');
+                        setTimeout(() => {
+                            innerCard.classList.remove('ring-4', 'ring-yellow-400', 'scale-[1.02]', 'z-50', 'shadow-2xl');
+                        }, 3000);
+                    }
+                }, 500);
+            }
+        };
+        
+        // 若使用者在同一頁面貼上網址也需重新定位
+        window.addEventListener('hashchange', () => {
+            window.hasAutoLocated = false;
+            window.checkHashAndLocate();
+        });
+
         // ==========================================
         // 4. 面板切換與問卷星等初始化
         // ==========================================
@@ -1467,6 +1517,9 @@
                     select.innerHTML += optionHtml;
                 });
             });
+            
+            // 🌟 每次渲染完畢後，嘗試檢查是否需要定位卡片
+            window.checkHashAndLocate();
         };
 
         // ==========================================
@@ -2271,6 +2324,12 @@
                 if (event.data && event.data.action === 'SWITCH_TAB') {
                     if (event.data.tab === 'gov') document.getElementById('tab-btn-gov')?.click();
                     else document.getElementById('tab-btn-ent')?.click();
+                }
+                
+                // 🌟 新增：讓主網頁能強制傳送 Hash 進行定位
+                if (event.data && event.data.action === 'LOCATE_BOARD') {
+                    window.hasAutoLocated = false;
+                    window.checkHashAndLocate(event.data.hash);
                 }
                 
                 if (event.data && event.data.action === 'SYNC_FROM_MAIN') {
