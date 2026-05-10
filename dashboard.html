@@ -684,39 +684,56 @@
             window.openModal('share-qrcode-modal'); 
         };
 
-        // 🌟 修復補回：透過網址 Hash 自動定位並展開特定卡片的尋路引擎
+        // 🌟 終極升級：解決 Firebase 非同步渲染與 CORS 的「記憶尋路引擎」
         window.hasAutoLocated = false;
-        window.checkHashAndLocate = function() {
+        window.pendingHashToLocate = null; 
+
+        window.checkHashAndLocate = function(forceHash = null) {
             if (window.hasAutoLocated) return;
-            const hash = window.location.hash; 
+            if (forceHash) window.pendingHashToLocate = forceHash;
+            
+            // 優先使用主站空投的 Hash，若無則看自己
+            let hash = window.pendingHashToLocate || window.location.hash; 
+            try {
+                if ((!hash || !hash.includes('-board-')) && window.parent && window.parent !== window) {
+                    hash = window.parent.location.hash;
+                }
+            } catch (e) { /* CORS 跨網域阻擋，安全略過 */ }
+
             if (!hash || !hash.includes('-board-')) return;
 
-            const targetId = 'card-' + hash.substring(1); 
+            const pureHash = hash.replace('#', '');
+            const targetId = 'card-' + pureHash; 
             const targetCard = document.getElementById(targetId);
 
+            // 若卡片已經渲染出來了，就執行定位
             if (targetCard) {
                 window.hasAutoLocated = true; 
+                window.pendingHashToLocate = null; // 任務完成，清除暫存
                 
-                // 1. 自動切換到該卡片所在的頁籤
                 const isEnt = targetCard.closest('#section-ent') !== null;
                 if (isEnt) document.getElementById('tab-btn-ent')?.click();
                 else document.getElementById('tab-btn-gov')?.click();
 
-                // 2. 自動展開它所屬的群組
                 const groupGrid = targetCard.closest('.grid');
                 if (groupGrid && groupGrid.classList.contains('hidden')) {
                     groupGrid.classList.remove('hidden');
                     const prevSibling = groupGrid.previousElementSibling;
-                    if (prevSibling) {
+                    if (prevSibling && prevSibling.querySelector) {
                         const icon = prevSibling.querySelector('.fa-chevron-down');
                         if (icon) icon.style.transform = 'rotate(0deg)';
                     }
                 }
 
-                // 3. 平滑捲動並高光提示
+                // 平滑捲動並高光提示
                 setTimeout(() => {
+                    // 主動通知主網頁也捲動至 iframe 處
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ action: 'SCROLL_TO_IFRAME' }, '*');
+                    }
+                    
                     targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    const innerCard = Array.from(targetCard.children).find(el => el.classList.contains('bg-white')); 
+                    const innerCard = targetCard.querySelector('.bg-white'); 
                     if (innerCard) {
                         innerCard.style.transition = 'all 0.5s ease-out';
                         innerCard.classList.add('ring-4', 'ring-yellow-400', 'scale-[1.02]', 'z-50', 'shadow-2xl');
@@ -728,7 +745,6 @@
             }
         };
         
-        // 若使用者在同一頁面貼上網址也需重新定位
         window.addEventListener('hashchange', () => {
             window.hasAutoLocated = false;
             window.checkHashAndLocate();
@@ -1019,8 +1035,11 @@
                 grouped[sn].forEach(proj => {
                     const isExpired = proj.deadline && new Date() > new Date(proj.deadline); 
                     const opacityClass = 'opacity-100'; 
+                    const displayCode = proj.cardCode || (proj.id.startsWith('mock_') ? 'USI88' : proj.id.slice(-5).toUpperCase()); 
+                    
                     const wrapper = document.createElement('div'); 
-                    wrapper.className = 'relative h-full';
+                    wrapper.className = 'relative h-full transition-all duration-500';
+                    wrapper.id = `card-ESG-board-${displayCode}`;
                     
                     let summaryOverlay = ''; 
                     if (summaryState.entMode) { 
@@ -1040,7 +1059,6 @@
                             ? `<button class="auth-card-btn absolute top-0 left-0 bg-slate-600 hover:bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-tl-2xl rounded-br-lg shadow-sm z-20 transition-colors" data-id="${proj.id}" data-type="ent" title="點擊輸入密碼授權"><i class="fas fa-lock mr-1"></i>等待授權 (點擊)</button>` 
                             : '');
                             
-                    const displayCode = proj.cardCode || (proj.id.startsWith('mock_') ? 'USI88' : proj.id.slice(-5).toUpperCase()); 
                     const traceUrl = `https://farmcmd.github.io/ESGT/#ESG-board-${displayCode}`;
                     
                     const ec = Number(proj.eval_count) || 0; 
@@ -1246,6 +1264,7 @@
                     select.innerHTML += optionHtml;
                 }); 
             });
+            window.checkHashAndLocate();
         };
 
         window.renderGovDashboard = function() {
@@ -1305,8 +1324,11 @@
                 grouped[sn].forEach(proj => {
                     const isExpired = proj.deadline && new Date() > new Date(proj.deadline); 
                     const opacityClass = 'opacity-100'; 
+                    const displayCode = proj.cardCode || (proj.id.startsWith('mock_') ? 'GOV99' : proj.id.slice(-5).toUpperCase()); 
+                    
                     const wrapper = document.createElement('div'); 
-                    wrapper.className = 'relative h-full';
+                    wrapper.className = 'relative h-full transition-all duration-500';
+                    wrapper.id = `card-ESG-board-${displayCode}`;
                     
                     let summaryOverlay = ''; 
                     if (summaryState.govMode) { 
@@ -1326,7 +1348,6 @@
                             ? `<button class="auth-card-btn absolute top-0 left-0 bg-slate-600 hover:bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-tl-2xl rounded-br-lg shadow-sm z-20 transition-colors" data-id="${proj.id}" data-type="gov" title="點擊輸入密碼授權"><i class="fas fa-lock mr-1"></i>等待授權 (點擊)</button>` 
                             : '');
                             
-                    const displayCode = proj.cardCode || (proj.id.startsWith('mock_') ? 'GOV99' : proj.id.slice(-5).toUpperCase()); 
                     const traceUrl = `https://farmcmd.github.io/ESGT/#ESG-board-${displayCode}`;
                     
                     const ec = Number(proj.eval_count) || 0; 
@@ -1517,8 +1538,6 @@
                     select.innerHTML += optionHtml;
                 });
             });
-            
-            // 🌟 每次渲染完畢後，嘗試檢查是否需要定位卡片
             window.checkHashAndLocate();
         };
 
@@ -2325,7 +2344,7 @@
                     if (event.data.tab === 'gov') document.getElementById('tab-btn-gov')?.click();
                     else document.getElementById('tab-btn-ent')?.click();
                 }
-                
+
                 // 🌟 新增：讓主網頁能強制傳送 Hash 進行定位
                 if (event.data && event.data.action === 'LOCATE_BOARD') {
                     window.hasAutoLocated = false;
