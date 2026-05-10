@@ -238,7 +238,7 @@
             <p class="hide-on-green text-center text-[11px] text-gray-500 mt-8 font-mono"><i class="fas fa-shield-alt mr-1 text-gray-600"></i>Data encrypted and verified by Firebase Firestore. Drawn tickets will be marked to prevent duplicates.</p>
         </div>
 
-        <!-- 🌟 抽獎排程看板：獨立移至主視窗下方，並加上 hide-on-green 避免干擾直播畫面 -->
+        <!-- 🌟 抽獎排程看板 -->
         <div id="schedule-section" class="w-full max-w-4xl bg-gray-900/80 backdrop-blur-md p-6 md:p-8 rounded-3xl border border-gray-700 shadow-2xl relative z-10 animate-fade-in-down hidden hide-on-green transition-all duration-300">
             <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 border-b border-gray-700 pb-3 gap-3">
                 <h3 class="text-sm font-black text-gold-400 tracking-widest flex items-center shrink-0">
@@ -357,7 +357,7 @@
                         
                         <!-- 綠幕模式整合進 OBS 區塊 -->
                         <div class="flex items-center justify-between bg-gray-900/80 p-2 rounded-lg border border-gray-700">
-                            <span class="text-[11px] text-green-400 font-bold"><i class="fas fa-layer-group mr-1.5"></i>啟勃純綠幕去背模式</span>
+                            <span class="text-[11px] text-green-400 font-bold"><i class="fas fa-layer-group mr-1.5"></i>啟動純綠幕去背模式</span>
                             <label class="relative inline-flex items-center cursor-pointer transform scale-75 origin-right">
                                 <input type="checkbox" id="toggle-green-screen" class="sr-only peer">
                                 <div class="w-14 h-7 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500 shadow-inner"></div>
@@ -868,6 +868,9 @@
         window.serverState = {}; // 全域伺服器狀態機
         let lastDrawTrigger = 0;    
         window.currentLiveStreamUrl = null; // 記錄當前播放的直播網址
+        
+        // 🌟 核心防呆全域變數：負責跨引擎快取當前真正能用的獎項列表
+        window.currentAvailablePrizes = {};
 
         const eventSelect = document.getElementById('event-select');
         const prizeSelect = document.getElementById('prize-select');
@@ -1333,6 +1336,10 @@
                         }
                     }
                 }
+                
+                // 🌟 當活動資料庫有變動時（可能包含舊版後台寫入的獎項），強制重繪獎項選單
+                renderPrizeSelect();
+                
             }, (err) => {
                 window.showToast('無法讀取活動清單，請檢查權限', true);
             });
@@ -1341,28 +1348,49 @@
         function renderPrizeSelect() {
             const currentVal = prizeSelect?.value;
             
-            // 🌟 核心修正：活動與獎項絕對隔離模式 (Strict Isolation)
-            // 必須明確擁有 eventId 且與當前活動 ID 絕對吻合，才允許顯示。徹底阻絕測試資料與跨活動污染！
-            const availablePrizes = Object.keys(globalPrizes).filter(k => {
-                const p = globalPrizes[k];
-                if ((p.qty || 0) <= 0) return false;
-                if (!currentEventId) return false; 
-                
-                return p.eventId === currentEventId;
-            });
+            // 🌟 終極防呆：雙引擎自動相容模式 (Dual Engine Architecture)
+            // 自動聚合「中央獎品庫」與「舊版獨立活動庫」的獎項，確保資料100%不漏失
+            let aggregatedPrizes = {};
+
+            // 來源 1：中央獎品庫 (對應新版 APP.py)
+            if (globalPrizes) {
+                Object.keys(globalPrizes).forEach(k => {
+                    const p = globalPrizes[k];
+                    if ((p.qty || 0) > 0 && p.eventId === currentEventId) {
+                        aggregatedPrizes[k] = p;
+                    }
+                });
+            }
+
+            // 來源 2：活動文件本身的 prizes 欄位 (相容舊版未更新的 APP.py)
+            if (currentEventId && allEvents.length > 0) {
+                const evt = allEvents.find(x => x.id === currentEventId);
+                if (evt && evt.prizes) {
+                    Object.keys(evt.prizes).forEach(k => {
+                        const p = evt.prizes[k];
+                        if ((p.qty || 0) > 0) {
+                            aggregatedPrizes[k] = p; // 允許舊版覆寫合併
+                        }
+                    });
+                }
+            }
             
-            if (availablePrizes.length === 0) {
+            // 將聚合結果存入全域變數供其他函式使用
+            window.currentAvailablePrizes = aggregatedPrizes;
+            const availablePrizesList = Object.keys(aggregatedPrizes);
+            
+            if (availablePrizesList.length === 0) {
                 if (prizeSelect) prizeSelect.innerHTML = '<option value="">目前無庫存獎項</option>';
             } else {
                 if (prizeSelect) {
                     prizeSelect.innerHTML = '<option value="">-- 選擇獎項... --</option>' + 
-                        availablePrizes.map(p => `<option value="${p}">🎁 ${p} (剩 ${globalPrizes[p].qty})</option>`).join('');
+                        availablePrizesList.map(pName => `<option value="${pName}">🎁 ${pName} (剩 ${aggregatedPrizes[pName].qty})</option>`).join('');
                     
-                    if (window.serverState?.prizeName && availablePrizes.includes(window.serverState.prizeName)) {
+                    if (window.serverState?.prizeName && availablePrizesList.includes(window.serverState.prizeName)) {
                         if (prizeSelect.value !== window.serverState.prizeName) {
                             prizeSelect.value = window.serverState.prizeName;
                         }
-                    } else if (currentVal && availablePrizes.includes(currentVal)) {
+                    } else if (currentVal && availablePrizesList.includes(currentVal)) {
                         prizeSelect.value = currentVal;
                     } else {
                         prizeSelect.value = '';
@@ -1435,20 +1463,22 @@
 
         function updatePrizeDisplay() {
             const selected = prizeSelect?.value;
-            if (selected && globalPrizes[selected]) {
+            const prizeObj = window.currentAvailablePrizes ? window.currentAvailablePrizes[selected] : null;
+
+            if (selected && prizeObj) {
                 if(displayCurrentPrize) {
                     displayCurrentPrize.textContent = selected;
                     displayCurrentPrize.classList.remove('text-gray-500');
                     displayCurrentPrize.classList.add('gold-text');
                 }
                 if(displayPrizeQty) {
-                    displayPrizeQty.textContent = globalPrizes[selected].qty;
+                    displayPrizeQty.textContent = prizeObj.qty;
                     displayPrizeQty.classList.add('text-gold-400');
                     displayPrizeQty.classList.remove('text-white');
                 }
             } else {
                 if(displayCurrentPrize) {
-                    displayCurrentPrize.textContent = '請於上方設定排程';
+                    displayCurrentPrize.textContent = '請於下方設定排程';
                     displayCurrentPrize.classList.add('text-gray-500');
                     displayCurrentPrize.classList.remove('gold-text');
                 }
@@ -1518,7 +1548,7 @@
                 const pQ = typeof p === 'object' ? p.qty : 1;
                 if (pN === pName) scheduledCount += pQ;
             });
-            const availableQty = globalPrizes[pName]?.qty || 0;
+            const availableQty = (window.currentAvailablePrizes && window.currentAvailablePrizes[pName]) ? window.currentAvailablePrizes[pName].qty : 0;
             
             if (scheduledCount + drawQty > availableQty) {
                 return window.showToast(`⚠️ 庫存不足！【${pName}】剩餘 ${availableQty} 份，已排程 ${scheduledCount} 份，無法再增加 ${drawQty} 份。`, true);
@@ -1667,7 +1697,7 @@
             updateDoc(doc(db, 'system_stats', 'lottery_room'), updates).catch(console.error);
         }
 
-        // 終極批量抽獎演算法：支援 1~N 名得主一次抽出
+        // 終極批量抽獎演算法：支援雙來源庫自動核銷與防呆
         async function triggerServerDraw() {
             if (isDrawing) return;
             
@@ -1684,13 +1714,11 @@
             let selectedPrizeName = prizeSelect?.value; 
             let requestedDrawQty = parseInt(document.getElementById('prize-draw-qty')?.value) || 1;
 
-            // 若有排程，嚴格依照排程設定執行
             if (activePrizeObj) {
                 selectedPrizeName = typeof activePrizeObj === 'object' ? activePrizeObj.prizeName : activePrizeObj;
                 requestedDrawQty = typeof activePrizeObj === 'object' ? activePrizeObj.qty : 1;
             }
 
-            // 防呆：不能抽出超過有效票池數量的得主
             const actualDrawQty = Math.min(requestedDrawQty, eligibleTickets.length);
             if (actualDrawQty === 0) { 
                 isDrawing = false; 
@@ -1698,14 +1726,12 @@
                 return; 
             }
 
-            // 產生過場動畫用的滾動資料
             const rollingItems = [];
             for(let i=0; i<30; i++) {
                 if (eligibleTickets.length > 3) rollingItems.push(eligibleTickets[Math.floor(Math.random() * eligibleTickets.length)].serial);
                 else rollingItems.push(`AENT-${Math.random().toString(36).substring(2,8).toUpperCase()}`);
             }
             
-            // 核心：一次洗牌並抽出 N 位得主
             const winners = [];
             let tempEligible = [...eligibleTickets];
             for (let i = 0; i < actualDrawQty; i++) {
@@ -1714,13 +1740,12 @@
                 tempEligible.splice(wIndex, 1);
             }
             
-            // 動畫最後停留在第一位得主的序號
             rollingItems.push(winners[0].serial);
 
             const drawData = {
                 triggerTime: Date.now(),
-                winnerTicket: winners[0], // 相容舊版客戶端
-                winners: winners, // 傳遞陣列
+                winnerTicket: winners[0], 
+                winners: winners,
                 prizeName: selectedPrizeName,
                 sequence: rollingItems 
             };
@@ -1733,8 +1758,19 @@
             }
 
             try {
-                // 1. 扣除獎項庫存
-                const prizeData = globalPrizes[selectedPrizeName];
+                // 🌟 1. 雙引擎自動判斷：扣除對應來源的獎項庫存
+                let prizeData = null;
+                let isCentralRepo = false;
+
+                if (window.currentAvailablePrizes && window.currentAvailablePrizes[selectedPrizeName]) {
+                    prizeData = window.currentAvailablePrizes[selectedPrizeName];
+                }
+                
+                // 判斷是否為新版中央庫產生的獎項
+                if (globalPrizes && globalPrizes[selectedPrizeName] && globalPrizes[selectedPrizeName].eventId === currentEventId) {
+                    isCentralRepo = true;
+                }
+
                 if (prizeData && prizeData.qty >= actualDrawQty) {
                     prizeData.qty -= actualDrawQty;
                     if (!prizeData.winners) prizeData.winners = [];
@@ -1745,7 +1781,13 @@
                             time: new Date().toISOString()
                         });
                     });
-                    await updateDoc(doc(db, 'system_stats', 'lottery_prizes'), { [selectedPrizeName]: prizeData });
+                    
+                    // 根據判斷結果，把庫存減除寫回正確的源頭！
+                    if (isCentralRepo) {
+                        await updateDoc(doc(db, 'system_stats', 'lottery_prizes'), { [selectedPrizeName]: prizeData });
+                    } else {
+                        await updateDoc(doc(db, 'lottery_events', currentEventId), { [`prizes.${selectedPrizeName}`]: prizeData });
+                    }
                 } else {
                     throw new Error("您選擇的獎項庫存已不足！");
                 }
@@ -1763,7 +1805,6 @@
                         prizeName: selectedPrizeName
                     });
                     count++;
-                    // Firestore 每個 Batch 上限 500 筆
                     if (count % 500 === 0) {
                         batches.push(currentBatch.commit());
                         currentBatch = writeBatch(db);
@@ -1776,7 +1817,7 @@
             } catch (e) {
                 console.error("核銷票券失敗", e);
                 window.showToast(`🚨 開獎資料庫核銷失敗：${e.message}`, true);
-                isDrawing = false; // 發生錯誤時釋放死鎖
+                isDrawing = false; 
             }
         }
 
