@@ -549,15 +549,51 @@
 
             const ticketList = document.getElementById('lottery-ticket-list');
             if (state.lotteryTickets && state.lotteryTickets.length > 0) {
-                if (ticketList) {
-                    // 🌟 升級：根據是否中獎 (isWinner) 給予永久專屬標示 (紅框、金底、皇冠)
-                    ticketList.innerHTML = state.lotteryTickets.map(t => {
-                        if (t.isWinner) {
-                            return `<span id="ticket-ui-${t.serial}" class="bg-gradient-to-r from-yellow-200 to-yellow-400 border-2 border-red-500 text-red-700 px-2 py-0.5 rounded shadow-md text-[10px] sm:text-[11px] font-black font-mono tracking-widest shrink-0 transition-all duration-300 flex items-center gap-1" title="${t.eventName} (已中獎)"><i class="fas fa-crown text-red-600"></i>#${t.serial}</span>`;
+                // 🌟 升級：自動清除過期彩卷邏輯 (加入 7 天對獎寬限期)
+                const now = new Date();
+                const validTickets = [];
+                let hasExpired = false;
+
+                state.lotteryTickets.forEach(t => {
+                    if (t.deadline && t.deadline !== '未定') {
+                        const expDate = new Date(t.deadline.replace(/-/g, '/') + ' 23:59:59');
+                        expDate.setDate(expDate.getDate() + 7); // 7 天寬限期
+                        if (now > expDate) {
+                            hasExpired = true; // 已超過寬限期，準備銷毀
                         } else {
-                            return `<span id="ticket-ui-${t.serial}" class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName}">#${t.serial}</span>`;
+                            validTickets.push(t);
                         }
-                    }).join('');
+                    } else {
+                        validTickets.push(t);
+                    }
+                });
+
+                if (hasExpired) {
+                    state.lotteryTickets = validTickets;
+                    try { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+                }
+
+                if (ticketList) {
+                    if (state.lotteryTickets.length > 0) {
+                        // 🌟 升級：根據狀態給予不同視覺 (中獎：金底紅框 / 待開獎寬限期：灰底 / 正常：白底黃框)
+                        ticketList.innerHTML = state.lotteryTickets.map(t => {
+                            let isWaitingToExpire = false;
+                            if (t.deadline && t.deadline !== '未定') {
+                                const exactExpDate = new Date(t.deadline.replace(/-/g, '/') + ' 23:59:59');
+                                if (now > exactExpDate) isWaitingToExpire = true; 
+                            }
+
+                            if (t.isWinner) {
+                                return `<span id="ticket-ui-${t.serial}" class="bg-gradient-to-r from-yellow-200 to-yellow-400 border-2 border-red-500 text-red-700 px-2 py-0.5 rounded shadow-md text-[10px] sm:text-[11px] font-black font-mono tracking-widest shrink-0 transition-all duration-300 flex items-center gap-1" title="${t.eventName} (已中獎)"><i class="fas fa-crown text-red-600"></i>#${t.serial}</span>`;
+                            } else if (isWaitingToExpire) {
+                                return `<span id="ticket-ui-${t.serial}" class="bg-gray-100 border border-gray-300 text-gray-400 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName} (已結束，等待開獎)"><i class="fas fa-hourglass-half mr-1 opacity-50"></i>#${t.serial}</span>`;
+                            } else {
+                                return `<span id="ticket-ui-${t.serial}" class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName}">#${t.serial}</span>`;
+                            }
+                        }).join('');
+                    } else {
+                        ticketList.innerHTML = `<span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>`;
+                    }
                 }
             } else {
                 if (ticketList) {
@@ -2047,10 +2083,12 @@
                     // 🌟 嚴格防呆：只在分數足夠時才執行倍數計算與發放
                     if (state.totalScore >= reqPts) {
                         const canExchange = Math.floor(state.totalScore / reqPts);
+                        // 🌟 升級：產生該抽獎活動的「專屬辨識碼 (Event Signature)」(取活動 ID 前 3 碼)
+                        const eventSig = evt.id ? evt.id.substring(0, 3).toUpperCase() : 'DEF';
                         for(let i=0; i<canExchange; i++) {
-                            // 確保序號絕對不重複的 Hash 演算法
-                            const uniqueCode = Date.now().toString(36).slice(-4).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase();
-                            const serialCode = `AENT-${uniqueCode}`;
+                            // 確保序號絕對不重複的 Hash 演算法 (縮短時間戳與亂碼，加入活動特徵碼)
+                            const uniqueCode = Date.now().toString(36).slice(-3).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
+                            const serialCode = `AENT-${eventSig}-${uniqueCode}`;
                             generatedSerials.push(serialCode);
                             
                             const ticketData = { serial: serialCode, eventId: evt.id, eventName: evt.title, targetCardId: p.cardCode || p.id.slice(-5).toUpperCase(), date: window.getFormattedTime().split(' ')[0], deadline: evt.endDate || '未定' };
@@ -2136,9 +2174,12 @@
                     // 🌟 嚴格防呆：只在分數足夠時才執行倍數計算與發放
                     if (state.totalScore >= reqPts) {
                         const canExchange = Math.floor(state.totalScore / reqPts);
+                        // 🌟 升級：產生該抽獎活動的「專屬辨識碼 (Event Signature)」(取活動 ID 前 3 碼)
+                        const eventSig = evt.id ? evt.id.substring(0, 3).toUpperCase() : 'DEF';
                         for(let i=0; i<canExchange; i++) {
-                            const uniqueCode = Date.now().toString(36).slice(-4).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase();
-                            const serialCode = `AGOV-${uniqueCode}`;
+                            // 確保序號絕對不重複的 Hash 演算法 (縮短時間戳與亂碼，加入活動特徵碼)
+                            const uniqueCode = Date.now().toString(36).slice(-3).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
+                            const serialCode = `AGOV-${eventSig}-${uniqueCode}`;
                             generatedSerials.push(serialCode);
                             
                             const ticketData = { serial: serialCode, eventId: evt.id, eventName: evt.title, targetCardId: p.cardCode || p.id.slice(-5).toUpperCase(), date: window.getFormattedTime().split(' ')[0], deadline: evt.endDate || '未定' };
