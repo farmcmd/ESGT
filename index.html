@@ -1725,7 +1725,42 @@
             }
 
             document.getElementById('submit-activity-log')?.addEventListener('click', () => { const code = document.getElementById('verification-code-input')?.value; if (!code) return window.showToast('請輸入通關代碼', true); window.addLog(`完成實體任務驗證 (代碼: ${code})`); state.totalScore += 50; window.updateDisplays(); window.saveData(); window.showToast('✅ 驗證成功！獲得 50 積分'); document.getElementById('verification-code-input').value = ''; });
-            document.getElementById('log-action-button')?.addEventListener('click', () => { const logInput = document.getElementById('sustainable-action-log'); if (!logInput || !logInput.value.trim()) return window.showToast('請輸入心得內容', true); window.addLog(`記錄心得: ${logInput.value.substring(0, 15)}...`); state.totalScore += 10; window.updateDisplays(); window.saveData(); window.showToast('✅ 心得已記錄！獲得 10 積分'); logInput.value = ''; });
+            
+            // 🌟 升級：心得記錄防護鎖 (發送後鎖定，輸入任意 8 碼盲解鎖)
+            document.getElementById('log-action-button')?.addEventListener('click', function() { 
+                const logInput = document.getElementById('sustainable-action-log'); 
+                if (!logInput) return;
+                
+                // 1. 若處於上鎖狀態，執行無提示的盲解鎖判定
+                if (this.dataset.locked === 'true') {
+                    // 密碼判定：檢查輸入字元是否剛好為 8 碼
+                    if (logInput.value.trim().length === 8) {
+                        this.dataset.locked = 'false';
+                        this.innerHTML = '<i class="fas fa-edit mr-1"></i> 記錄心得';
+                        this.classList.replace('bg-gray-500', 'bg-mori-sage');
+                        this.classList.replace('hover:bg-gray-600', 'hover:bg-mori-forest');
+                        logInput.value = ''; 
+                        window.showToast('🔓 心得專區已解鎖');
+                    }
+                    // 密碼錯誤則保持絕對沉默，不給予任何提示
+                    return;
+                }
+
+                // 2. 正常記錄心得邏輯
+                if (!logInput.value.trim()) return window.showToast('請輸入心得內容', true); 
+                window.addLog(`記錄心得: ${logInput.value.substring(0, 15)}...`); 
+                state.totalScore += 10; 
+                window.updateDisplays(); 
+                window.saveData(); 
+                window.showToast('✅ 心得已記錄！獲得 10 積分'); 
+                logInput.value = ''; 
+
+                // 3. 記錄成功後，立即上鎖按鈕
+                this.dataset.locked = 'true';
+                this.innerHTML = '<i class="fas fa-lock mr-1"></i> 已上鎖';
+                this.classList.replace('bg-mori-sage', 'bg-gray-500');
+                this.classList.replace('hover:bg-mori-forest', 'hover:bg-gray-600');
+            });
 
             document.getElementById('reward-verify-full-btn')?.addEventListener('click', async () => { const codeInput = document.getElementById('reward-verify-code'); if(codeInput && codeInput.value.length > 0) { await window.processTripCompletion(pendingTrip.distKm, pendingTrip.reduction); if(codeInput) codeInput.value = ''; window.closeModal('reward-verification-modal'); } else { window.showToast('請輸入密碼', true); } });
             document.getElementById('reward-verify-tenth-btn')?.addEventListener('click', async () => { await window.processTripCompletion(pendingTrip.distKm, Math.round(pendingTrip.reduction / 10)); window.closeModal('reward-verification-modal'); });
