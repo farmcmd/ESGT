@@ -82,6 +82,18 @@
         </p>
     </div>
 
+    <!-- 🌟 新增：系統已上鎖的鎖定畫面 (強制踢除嘉賓用) -->
+    <div id="locked-overlay" class="fixed inset-0 bg-gray-900/95 z-[99999] hidden flex-col items-center justify-center p-6 text-center backdrop-blur-md transition-opacity duration-500">
+        <div class="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mb-6 border-4 border-gray-500 shadow-[0_0_30px_rgba(107,114,128,0.5)]">
+            <i class="fas fa-lock text-5xl text-gray-400"></i>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-black text-white mb-3 tracking-widest">系統已安全上鎖</h2>
+        <h3 class="text-lg font-bold text-gray-300 mb-6">本次抽獎活動已圓滿結束</h3>
+        <p class="text-sm text-gray-400 leading-relaxed max-w-sm bg-black/40 p-4 rounded-xl border border-gray-600/30">
+            感謝您的熱情參與！目前連線通道已由主辦單位徹底關閉並清除快取。<br><br>請留意大螢幕或現場主持人之最新指示。
+        </p>
+    </div>
+
     <!-- UI 確認對話框 -->
     <div id="lottery-confirm-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999999] hidden items-center justify-center p-4 transition-opacity duration-300 opacity-0">
         <div class="bg-gray-900 border-2 border-red-500 w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl relative transform scale-90 transition-transform duration-300">
@@ -566,11 +578,13 @@
             };
         };
 
-        window.customPrompt = function(title, defaultVal, onConfirm) {
+        // 🌟 升級：支援隱碼輸入 (isPassword) 參數
+        window.customPrompt = function(title, defaultVal, onConfirm, isPassword = false) {
             const m = document.getElementById('lottery-prompt-modal');
             const input = document.getElementById('lottery-prompt-input');
             if(!m || !input) return;
             document.getElementById('lottery-prompt-title').textContent = title;
+            input.type = isPassword ? 'password' : 'text';
             input.value = defaultVal;
             m.classList.remove('hidden'); m.classList.add('flex');
             setTimeout(() => { m.classList.remove('opacity-0'); m.firstElementChild.classList.remove('scale-90'); input.focus(); input.select(); }, 10);
@@ -595,10 +609,33 @@
         
         window.isGuestMode = 0; // 0: 大螢幕主機模式, 1~N: 對應貴賓手機遙控模式
 
+        // 🌟 核心升級：要求輸入密碼並清空雲端狀態，強制踢出所有人
         window.lockLotteryCenter = function() {
-            sessionStorage.removeItem(AUTH_KEY);
-            sessionStorage.removeItem('lottery_is_authenticated'); 
-            window.location.href = window.location.pathname; 
+            window.customPrompt('🔒 系統安全上鎖', '', (pwd) => {
+                if (pwd === AUTH_PASSWORD) {
+                    if (db) {
+                        // 1. 更新雲端狀態，鎖定房間並清空所有嘉賓憑證
+                        updateDoc(doc(db, 'system_stats', 'lottery_room'), { 
+                            isLocked: true, 
+                            schedule: [], 
+                            status: 'idle', 
+                            guests: {}, 
+                            prizeName: '',
+                            eventId: null
+                        }).then(() => {
+                            // 2. 清除主機本地授權並跳轉回登入畫面
+                            sessionStorage.removeItem(AUTH_KEY);
+                            sessionStorage.removeItem('lottery_is_authenticated'); 
+                            window.location.href = window.location.pathname; 
+                        });
+                    } else {
+                        sessionStorage.removeItem(AUTH_KEY);
+                        window.location.href = window.location.pathname;
+                    }
+                } else {
+                    window.showToast('❌ 密碼錯誤，上鎖失敗', true);
+                }
+            }, true); // 啟用密碼隱碼模式
         };
 
         function checkLotteryAuth() {
@@ -945,6 +982,26 @@
 
         function renderGameServerState(state) {
             window.serverState = state || {};
+
+            // 🚨 終極防護：若房間被主機上鎖，強制踢出並攔截所有嘉賓操作
+            if (state.isLocked) {
+                if (window.isGuestMode > 0) {
+                    const lockedOverlay = document.getElementById('locked-overlay');
+                    if (lockedOverlay) {
+                        lockedOverlay.classList.remove('hidden');
+                        lockedOverlay.classList.add('flex');
+                    }
+                    const syncOverlay = document.getElementById('guest-sync-overlay');
+                    if (syncOverlay) syncOverlay.classList.add('hidden');
+                    return; // 🛑 停止渲染後續畫面，徹底封鎖嘉賓操作
+                }
+            } else {
+                const lockedOverlay = document.getElementById('locked-overlay');
+                if (lockedOverlay) {
+                    lockedOverlay.classList.add('hidden');
+                    lockedOverlay.classList.remove('flex');
+                }
+            }
 
             // 1. 隱藏貴賓連線過場，確認連線成功
             if (window.isGuestMode > 0) {
@@ -1331,7 +1388,8 @@
                     schedule: [],
                     currentRoundIndex: 0,
                     currentGuestId: 1,
-                    status: 'idle'
+                    status: 'idle',
+                    isLocked: false // 🌟 切換活動時自動解除上鎖狀態，開放新一輪連線
                 }).catch(()=>{});
             }
 
@@ -1476,7 +1534,7 @@
 
             // 將獎項名稱與抽出數量封裝為物件推入排程
             const newSchedule = [...currentSchedule, { prizeName: pName, qty: drawQty }];
-            let updates = { schedule: newSchedule };
+            let updates = { schedule: newSchedule, isLocked: false }; // 🌟 確保加入新排程時房間是解鎖狀態
             
             if (newSchedule.length === 1) {
                 updates.currentRoundIndex = 0;
