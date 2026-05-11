@@ -71,6 +71,11 @@
         .ticket-scrollbar::-webkit-scrollbar-track { background: rgba(254, 240, 138, 0.4); border-radius: 10px; }
         .ticket-scrollbar::-webkit-scrollbar-thumb { background-color: #FBBF24; border-radius: 10px; cursor: pointer; }
         .ticket-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #F59E0B; }
+        
+        /* 🌟 升級：系統省電模式 (強制暫停全站所有動畫渲染) */
+        .power-save-mode *, .power-save-mode *::before, .power-save-mode *::after {
+            animation-play-state: paused !important;
+        }
     </style>
 </head>
 <body class="font-sans antialiased overflow-x-hidden">
@@ -2390,6 +2395,26 @@
                     }, 1500);
                 }
             }
+
+            // 🌟 升級：系統電源與生命週期管理引擎 (Page Visibility API)
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    // 1. 網頁進入後台/手機休眠，立刻凍結所有 CSS 渲染動畫以節省 CPU/GPU 資源
+                    document.body.classList.add('power-save-mode');
+                    
+                    // 2. 致命耗電防禦：強制關閉遺留的相機鏡頭，防止背景吃電與發熱
+                    if (typeof window.isCameraOn !== 'undefined' && window.isCameraOn) {
+                        console.log("💤 系統進入省電休眠，自動關閉相機");
+                        if (typeof window.closeScannerModal === 'function') {
+                            window.closeScannerModal();
+                            // 系統靜默關閉硬體，避免打擾已離開的使用者
+                        }
+                    }
+                } else {
+                    // 網頁回到前台，瞬間恢復動畫渲染
+                    document.body.classList.remove('power-save-mode');
+                }
+            });
         });
     </script>
 </body>
