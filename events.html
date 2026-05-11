@@ -90,6 +90,7 @@
                     <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2"><i class="fas fa-calendar-check text-yellow-500"></i> 近期開放活動</h2>
                 </div>
                 <div class="flex gap-2">
+                    <!-- ✨ 路由還原 1：依據截圖證據，拔除 dashboard.html -->
                     <a href="https://farmcmd.github.io/ESGT/" class="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-sm font-bold rounded-xl transition-all shadow-sm flex items-center group">
                         <i class="fas fa-home mr-2 text-gray-400 group-hover:text-gray-600 transition-colors"></i> 前往主系統
                     </a>
@@ -107,6 +108,7 @@
     </main>
 
     <!-- 浮動導航按鈕 (常駐右上方約 1/5 處) -->
+    <!-- ✨ 路由還原 2：依據截圖證據，拔除 dashboard.html -->
     <a href="https://farmcmd.github.io/ESGT/" class="fixed top-[18%] right-4 md:right-8 z-[90] flex items-center gap-1.5 px-3 py-1.5 bg-white/60 backdrop-blur-md text-gray-700 rounded-full shadow-sm border border-white/50 hover:bg-yellow-50/90 hover:border-yellow-400 hover:shadow-md hover:scale-105 transition-all duration-300 group">
         <div class="bg-gray-100/80 rounded-full w-6 h-6 flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-colors">
             <i class="fas fa-home text-gray-500 text-[10px] group-hover:text-white transition-colors"></i>
@@ -150,7 +152,7 @@
             <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3 shrink-0 bg-white">
                 <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-300 transition-all">
                     <span class="text-[11px] font-bold text-gray-400 whitespace-nowrap pl-2"><i class="fas fa-keyboard mr-1"></i>或手動輸入:</span>
-                    <input type="text" id="manual-board-code" class="w-full bg-transparent border-none px-2 py-1 font-mono text-[13px] font-black text-gray-700 focus:outline-none uppercase placeholder-gray-300" placeholder="輸入 5 碼代碼">
+                    <input type="text" id="manual-board-code" class="w-full bg-transparent border-none px-2 py-1 font-mono text-[13px] font-black text-gray-700 focus:outline-none uppercase placeholder-gray-300" placeholder="主系統 5 碼 (例:AHNWJ)">
                 </div>
                 
                 <!-- ✨ 升級：新增「清除」按鈕，與確認按鈕並列 -->
@@ -396,6 +398,7 @@
         };
 
         window.returnToMain = function() {
+            // ✨ 路由還原 3
             window.location.href = 'https://farmcmd.github.io/ESGT/';
         };
 
@@ -410,10 +413,16 @@
             if (!urlDisplay) return;
             
             let boardCode = btnImport ? (btnImport.getAttribute('data-code') || '').trim().toUpperCase() : '';
-            let finalUrl = '';
+            let dbUrl = btnImport ? (btnImport.getAttribute('data-url') || '') : '';
             
-            if (btnEnt && btnEnt.getAttribute('data-active') === 'true') { finalUrl = `https://farmcmd.github.io/ESGT/#ESG-board${boardCode ? '-' + boardCode : ''}`; } 
-            else if (btnGov && btnGov.getAttribute('data-active') === 'true') { finalUrl = `https://farmcmd.github.io/ESGT/#OKR-board${boardCode ? '-' + boardCode : ''}`; }
+            // ✨ 資料流引擎 1：優先使用資料庫自帶的原生網址
+            let finalUrl = dbUrl;
+            
+            // ✨ 雙重保險：如果資料庫裡剛好沒有存網址，則安全降級為自動拼湊的正確路徑
+            if (!finalUrl) {
+                if (btnEnt && btnEnt.getAttribute('data-active') === 'true') { finalUrl = `https://farmcmd.github.io/ESGT/#ESG-board${boardCode ? '-' + boardCode : ''}`; } 
+                else if (btnGov && btnGov.getAttribute('data-active') === 'true') { finalUrl = `https://farmcmd.github.io/ESGT/#ESG-board${boardCode ? '-' + boardCode : ''}`; }
+            }
             urlDisplay.value = finalUrl;
         };
 
@@ -492,7 +501,7 @@
             window.updateDashboardUrl(cardId);
         };
 
-        // ✨ 置換完成：已拔除嚴格濾網，無條件顯示所有已截止卡片的引擎
+        // ✨ 修復：補上真正的實體資料表名稱 (ent_projects, gov_projects)，讓雲端看板精準現身
         window.openBoardSelector = async function(cardId) {
             const btnEnt = document.getElementById(`btn-ent-${cardId}`);
             const btnGov = document.getElementById(`btn-gov-${cardId}`);
@@ -514,9 +523,10 @@
             let uniqueCodes = new Set();
 
             if (db) {
+                // ✨ 致命盲點修復：補上主系統「最新建立」政府儀表板的專屬集合 'gov_dashboards'
                 const colNames = boardType === 'ent' ? 
-                    ['esg_reports', 'esg_evaluations', 'esg_dashboards', 'esg_boards', 'esg_projects', 'esg_records', 'esg_data', 'corporate_esg', 'ESG', 'esg'] : 
-                    ['okr_reports', 'okr_evaluations', 'okr_dashboards', 'okr_boards', 'okr_projects', 'okr_records', 'okr_data', 'gov_okr', 'OKR', 'okr'];
+                    ['ent_projects', 'esg_dashboards', 'esg_projects'] : 
+                    ['gov_projects', 'gov_dashboards', 'okr_dashboards', 'okr_projects'];
                 
                 // 1. 掃描實體儀表板集合
                 for (const colName of colNames) {
@@ -525,130 +535,82 @@
                         if (!snap.empty) {
                             snap.forEach(doc => {
                                 const data = doc.data();
-                                const code = data.code || data.id || data.projectId || doc.id.substring(0, 5).toUpperCase();
-                                const name = data.name || data.title || data.companyName || data.projectName || '未命名看板卡片';
                                 
-                                let statusHtml = '';
-                                const today = new Date();
-                                today.setHours(0,0,0,0);
-                                if (data.deadline || data.endDate) {
-                                    const dlStr = data.deadline || data.endDate;
-                                    const dlMatch = dlStr.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
-                                    if (dlMatch) {
-                                        const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
-                                        dlDate.setDate(dlDate.getDate() + 1); 
-                                        if (!isNaN(dlDate) && today >= dlDate) {
-                                            statusHtml = ' <span class="text-red-500 font-black text-[10px] bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shrink-0 whitespace-nowrap">(已截止歸戶)</span>';
-                                        } else {
-                                            statusHtml = ' <span class="text-emerald-500 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">(收集中)</span>';
-                                        }
-                                    }
+                                // ✨ 終極修復：智慧型代碼過濾器
+                                // 優先採用內部代碼 (解決 7211Z 抓不到的問題)
+                                // 但必須是「純 4~6 碼英數字」(解決 2026411-3 日期假碼干擾的問題)
+                                let validCode = doc.id;
+                                if (data.code && /^[A-Za-z0-9]{4,6}$/.test(data.code)) {
+                                    validCode = data.code;
+                                } else if (data.id && /^[A-Za-z0-9]{4,6}$/.test(data.id)) {
+                                    validCode = data.id;
                                 }
+                                const displayCode = validCode.length > 5 ? validCode.substring(0, 5).toUpperCase() : validCode.toUpperCase();
+                                
+                                // ✨ 原生萃取引擎：直接提取資料庫卡片中的分享網址
+                                let cardUrl = data.url || data.shareUrl || data.link || data.boardUrl || '';
+                                
+                                // ✨ 優化：精準抓取主系統存入的欄位 (orgName + event)
+                                let baseName = data.orgName || data.name || data.title || data.companyName || data.projectName || '未命名看板卡片';
+                                if (data.event) {
+                                    baseName = `${baseName} - ${data.event}`;
+                                }
+                                
+                                let statusHtml = ' <span class="text-emerald-500 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">(雲端看板)</span>';
 
-                                if (!uniqueCodes.has(code)) {
-                                    uniqueCodes.add(code);
-                                    boards.push({ id: doc.id, code: code, name: name, status: statusHtml, source: '🌟 雲端看板' });
+                                if (displayCode && !uniqueCodes.has(displayCode)) {
+                                    uniqueCodes.add(displayCode);
+                                    boards.push({ id: doc.id, code: displayCode, name: baseName, status: statusHtml, source: '🌟 主系統', url: cardUrl });
                                 }
                             });
                         }
-                    } catch(e) {}
+                    } catch(e) {
+                        console.warn('掃描集合時發生略過錯誤:', e);
+                    }
                 }
                 
-                // 2. 掃描陣列型集合備援
+                // 2. 掃描陣列型集合備援 (同步套用智慧過濾與網址萃取)
                 try {
-                    const docName = boardType === 'ent' ? 'esg_projects' : 'okr_projects';
-                    const snap = await getDoc(doc(db, 'system_messages', docName));
-                    if (snap.exists() && snap.data().projects) {
-                        snap.data().projects.forEach(p => {
-                            const code = p.code || p.id || p.projectId;
-                            const name = p.name || p.title || p.companyName || p.projectName || '未命名專案';
-                            
-                            let statusHtml = '';
-                            const today = new Date();
-                            today.setHours(0,0,0,0);
-                            if (p.deadline || p.endDate) {
-                                const dlStr = p.deadline || p.endDate;
-                                const dlMatch = dlStr.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
-                                if (dlMatch) {
-                                    const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
-                                    dlDate.setDate(dlDate.getDate() + 1); 
-                                    if (!isNaN(dlDate) && today >= dlDate) {
-                                        statusHtml = ' <span class="text-red-500 font-black text-[10px] bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shrink-0 whitespace-nowrap">(已截止歸戶)</span>';
-                                    } else {
-                                        statusHtml = ' <span class="text-emerald-500 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">(收集中)</span>';
-                                    }
-                                }
-                            }
+                    const fallbackDocs = boardType === 'ent' ? ['esg_projects', 'ent_projects'] : ['okr_projects', 'gov_projects'];
+                    for (const docName of fallbackDocs) {
+                        const snap = await getDoc(doc(db, 'system_messages', docName));
+                        if (snap.exists() && snap.data().projects) {
+                            snap.data().projects.forEach(p => {
+                                let validCode = p.id || p.projectId || '';
+                                if (p.code && /^[A-Za-z0-9]{4,6}$/.test(p.code)) validCode = p.code;
+                                
+                                if(!validCode) return;
+                                const displayCode = validCode.length > 5 ? validCode.substring(0, 5).toUpperCase() : validCode.toUpperCase();
+                                
+                                let cardUrl = p.url || p.shareUrl || p.link || p.boardUrl || '';
+                                
+                                let baseName = p.orgName || p.name || p.title || p.companyName || p.projectName || '未命名專案';
+                                if (p.event) { baseName = `${baseName} - ${p.event}`; }
+                                
+                                let statusHtml = ' <span class="text-blue-500 font-bold text-[10px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 shrink-0 whitespace-nowrap">(專案庫)</span>';
 
-                            if (code && !uniqueCodes.has(code)) {
-                                uniqueCodes.add(code);
-                                boards.push({ id: code, code: code, name: name, status: statusHtml, source: '📁 專案庫' });
-                            }
-                        });
+                                if (displayCode && !uniqueCodes.has(displayCode)) {
+                                    uniqueCodes.add(displayCode);
+                                    boards.push({ id: displayCode, code: displayCode, name: baseName, status: statusHtml, source: '📁 專案庫', url: cardUrl });
+                                }
+                            });
+                        }
                     }
                 } catch(e) {}
             }
 
-            // 3. ✨ 終極升級：動態代碼映射 (拔除 boardType 濾網，無條件列出所有已過期的活動卡片)
-            const today = new Date(); today.setHours(0,0,0,0);
-            const processedForIds = [...window.currentEventsList].map(ev => { 
-                let isExpired = false; 
-                if(ev.date) { 
-                    const dateMatch = ev.date.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
-                    if (dateMatch) {
-                        const evDate = new Date(dateMatch[0].replace(/[\-\.]/g, '/')); 
-                        if(!isNaN(evDate) && evDate < today) isExpired = true; 
-                    } else {
-                        const fallbackDate = new Date(ev.date.replace(/[\-\.]/g, '/')); 
-                        if(!isNaN(fallbackDate) && fallbackDate < today) isExpired = true; 
-                    }
-                } 
-                if(ev.deadline) {
-                    const dlMatch = ev.deadline.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
-                    if (dlMatch) {
-                        const dlDate = new Date(dlMatch[0].replace(/[\-\.]/g, '/'));
-                        dlDate.setDate(dlDate.getDate() + 1); 
-                        if (!isNaN(dlDate) && today >= dlDate) isExpired = true; 
-                    }
-                }
-                return { ...ev, isExpired }; 
-            }).sort((a,b) => (a.isExpired === b.isExpired ? 0 : (a.isExpired ? 1 : -1)));
-
-            processedForIds.forEach((ev, index) => {
-                // 🔥 無條件檢查：只要卡片已過期/截止，就加入候選清單
-                if (ev.isExpired) {
-                    const dateStr = (ev.date || '00000000').replace(/[\/\-\.]/g, '');
-                    const shortId = `${dateStr}-${index + 1}`;
-                    
-                    // 如果這張卡片已經被手動存過代碼，就顯示手動的，否則顯示系統幫它算好的短代碼
-                    const codeToUse = ev.boardCode || shortId;
-                    
-                    if (!uniqueCodes.has(codeToUse)) {
-                        uniqueCodes.add(codeToUse);
-                        
-                        let statusHtml = ' <span class="text-red-500 font-black text-[10px] bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shrink-0 whitespace-nowrap">(已截止歸戶)</span>';
-                        
-                        // 狀態標記：清楚告訴管理員這張卡片目前的綁定狀況
-                        let sourceLabel = '📌 待綁定卡片';
-                        if (ev.boardType === 'ent') sourceLabel = '📍 已綁定 (企業)';
-                        else if (ev.boardType === 'gov') sourceLabel = '📍 已綁定 (政府)';
-
-                        boards.push({ id: codeToUse, code: codeToUse, name: `活動：${ev.name}`, status: statusHtml, source: sourceLabel });
-                    }
-                }
-            });
-
-            // 4. 渲染畫面
+            // 3. 渲染畫面
             if (boards.length > 0) {
                 container.innerHTML = boards.map(b => `
                     <label class="flex items-center gap-3 p-3 border-2 border-gray-100 rounded-xl hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-all shadow-sm group bg-white">
                         <div class="flex-shrink-0 pl-1">
-                            <input type="radio" name="board_selection" value="${b.code}" class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
+                            <!-- ✨ 將原生網址埋入單選按鈕中 -->
+                            <input type="radio" name="board_selection" value="${b.code}" data-url="${b.url || ''}" class="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
                         </div>
                         <div class="flex-grow overflow-hidden">
                             <h4 class="font-bold text-gray-800 text-[14px] group-hover:text-blue-700 transition-colors flex items-center flex-wrap gap-1 leading-snug">${b.name} ${b.status}</h4>
                             <div class="mt-1.5 flex items-center text-[10px] text-gray-500 font-mono gap-2">
-                                <span class="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">#${b.code}</span>
+                                <span class="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 shadow-inner">#${b.code}</span>
                                 <span class="text-gray-400 opacity-80">${b.source}</span>
                             </div>
                         </div>
@@ -658,8 +620,8 @@
                 container.innerHTML = `
                     <div class="py-12 text-center text-gray-500 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 m-2">
                         <i class="fas fa-folder-open text-5xl mb-4 text-gray-300"></i>
-                        <p class="font-bold text-sm text-gray-600">目前雲端尚無相關卡片</p>
-                        <p class="text-[11px] mt-2 text-gray-400">請先在主系統填寫問卷建立看板，或使用手動輸入</p>
+                        <p class="font-bold text-sm text-gray-600">目前雲端尚無相關看板</p>
+                        <p class="text-[11px] mt-2 text-gray-400 leading-relaxed">請在下方手動輸入主系統的 5 碼代碼 (例如: AHNWJ)<br>或確認主系統中是否已成功建立儀表板。</p>
                     </div>
                 `;
             }
@@ -670,9 +632,14 @@
             if (!window.pendingImportCardId) return;
             
             let selectedCode = '';
+            let selectedUrl = '';
             const radios = document.querySelectorAll('input[name="board_selection"]');
             for (const radio of radios) {
-                if (radio.checked) { selectedCode = radio.value; break; }
+                if (radio.checked) { 
+                    selectedCode = radio.value; 
+                    selectedUrl = radio.getAttribute('data-url') || '';
+                    break; 
+                }
             }
             
             const manualCode = document.getElementById('manual-board-code').value.trim().toUpperCase();
@@ -687,6 +654,7 @@
             const btnImport = document.getElementById(`btn-import-${cardId}`);
             if (btnImport) {
                 btnImport.setAttribute('data-code', finalCode);
+                btnImport.setAttribute('data-url', selectedUrl); // ✨ 轉存原生網址
                 btnImport.innerHTML = `<i class="fas fa-check-circle mr-1"></i>已導入 #${finalCode}`;
                 btnImport.className = "w-auto px-3 py-1.5 text-[11px] font-mono border-2 rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-orange-50 text-orange-700 border-orange-400 shadow-md font-black tracking-wide cursor-pointer hover:bg-orange-100";
                 window.updateDashboardUrl(cardId);
@@ -719,6 +687,7 @@
             // 2. 將導入按鈕完全恢復為解鎖後的初始「待選擇」狀態
             if (btnImport) {
                 btnImport.setAttribute('data-code', '');
+                btnImport.setAttribute('data-url', '');
                 btnImport.innerHTML = '<i class="fas fa-search-plus animate-pulse mr-1"></i>導入卡片編號';
                 btnImport.className = "w-auto px-3 py-1.5 text-[11px] font-bold border rounded-lg text-center transition-all focus:outline-none flex items-center justify-center bg-blue-50 text-blue-600 border-blue-300 hover:bg-blue-100 shadow-sm cursor-pointer tracking-wide";
             }
@@ -739,6 +708,7 @@
             
             let boardType = (btnEnt && btnEnt.getAttribute('data-active') === 'true') ? 'ent' : ((btnGov && btnGov.getAttribute('data-active') === 'true') ? 'gov' : '');
             let boardCode = btnImport ? (btnImport.getAttribute('data-code') || '').trim().toUpperCase() : '';
+            let boardUrl = btnImport ? (btnImport.getAttribute('data-url') || '') : '';
             
             if (db) {
                 try {
@@ -750,6 +720,8 @@
                         if (idx !== -1) { 
                             events[idx].boardType = boardType; 
                             events[idx].boardCode = boardCode; 
+                            // ✨ 將正確的原生網址存入資料庫
+                            events[idx].boardUrl = boardUrl || document.getElementById(`display-url-${cardId}`).value;
                             await updateDoc(docRef, { events: events }); 
                             
                             const lockBtn = document.getElementById(`admin-lock-btn-${cardId}`);
@@ -1054,7 +1026,10 @@
                 if (isExpired) {
                     let savedBoardType = ev.boardType || '';
                     let savedBoardCode = ev.boardCode || '';
-                    let initUrl = savedBoardType === 'ent' ? `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}` : (savedBoardType === 'gov' ? `https://farmcmd.github.io/ESGT/#OKR-board${savedBoardCode ? '-' + savedBoardCode : ''}` : '');
+                    let savedBoardUrl = ev.boardUrl || '';
+                    
+                    // ✨ 優先讀取卡片本身存著的網址，沒有才啟動安全降級組合
+                    let initUrl = savedBoardUrl || ((savedBoardType === 'ent' || savedBoardType === 'gov') ? `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}` : '');
 
                     return `<div data-event-id="${shortId}" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm relative opacity-95 mb-4 transition-all hover:shadow-md">
                         <div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm">
