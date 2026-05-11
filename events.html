@@ -1221,7 +1221,20 @@
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
+                
                 if (db) {
+                    // ✨ 終極省錢黑科技：啟動本機資料庫快取 (IndexedDB Cache)
+                    try {
+                        enableIndexedDbPersistence(db).catch((err) => {
+                            if (err.code == 'failed-precondition') {
+                                console.warn('多個分頁同時開啟，快取模式僅在單一分頁生效');
+                            } else if (err.code == 'unimplemented') {
+                                console.warn('當前瀏覽器不支援離線快取功能');
+                            }
+                        });
+                    } catch (e) { console.warn('快取啟動略過', e); }
+
+                    // 監聽器會優先從本地快取瞬間拿取資料，然後才在背景比對雲端差異
                     onSnapshot(doc(db, 'system_messages', 'event_schedule'), (docSnap) => { window.currentEventsList = docSnap.exists() ? (docSnap.data().events || []) : []; window.renderEventsListUI(); });
                     
                     // ✨ 核心升級 3：移除 event_registrations 的全域耗能監聽器，改為點擊時才單次抓取
