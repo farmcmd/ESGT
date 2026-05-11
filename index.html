@@ -1067,7 +1067,8 @@
     <!-- Firebase 與核心邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, deleteDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        // 🌟 升級：引入 enableMultiTabIndexedDbPersistence 支援多分頁本機快取
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, deleteDoc, updateDoc, arrayUnion, serverTimestamp, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // ==========================================
@@ -2202,6 +2203,17 @@
             try {
                 const app = initializeApp(firebaseConfig); 
                 db = getFirestore(app); 
+                
+                // 🌟 核心防護：啟動本機資料庫快取 (IndexedDB Cache)
+                // 魔法效果：大幅節省讀取次數與流量，並提供弱網環境下的秒開體驗
+                enableMultiTabIndexedDbPersistence(db).catch((err) => {
+                    if (err.code == 'failed-precondition') {
+                        console.warn('多個分頁開啟，無法啟用快取');
+                    } else if (err.code == 'unimplemented') {
+                        console.warn('瀏覽器不支援本機快取');
+                    }
+                });
+
                 const auth = getAuth(app);
                 
                 signInAnonymously(auth).catch((err) => { 
