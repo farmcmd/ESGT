@@ -823,7 +823,7 @@
 
     <!-- 獨立邏輯區塊 -->
     <script>
-        // 🌟 升級：相機掃描器全域變數與「終極防閃退安全鎖」
+        // 🌟 升級：相機掃描器全域變數與「終極防閃退視覺隱藏鎖」
         let html5QrcodeScanner = null;
         window.isProcessingScan = false;
         window.isCameraOn = false;
@@ -831,7 +831,13 @@
         window.openScannerModal = function() {
             const modal = document.getElementById('qr-scan-modal');
             const statusEl = document.getElementById('qr-scan-status');
-            if (modal) modal.classList.remove('hidden');
+            
+            // 確保每次打開時恢復正常的顯示屬性
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+            }
             
             statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 請求相機權限中...';
             window.isProcessingScan = false; // 每次打開重置安全鎖
@@ -840,65 +846,78 @@
                 html5QrcodeScanner = new Html5Qrcode("qr-reader");
             }
             
-            // 🌟 核心防護 1：降低 FPS (從 10 降為 5)，大幅減少手機鏡頭過熱與記憶體暴增
+            // 降低 FPS 減少手機負擔
             const config = { fps: 5, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
             
             html5QrcodeScanner.start(
-                { facingMode: "environment" }, // 強制調用後置鏡頭
+                { facingMode: "environment" },
                 config, 
                 (decodedText, decodedResult) => {
-                    // 🌟 防呆：鎖定掃描，防止相機高幀率在 1 秒內讀取數十次導致崩潰
+                    // 🌟 防呆：鎖定掃描，防止相機高幀率重複觸發
                     if (window.isProcessingScan) return;
                     window.isProcessingScan = true;
 
-                    // 🚨 致命錯誤修復：絕對不能在相機運作時對外層 div 設定 display:none (hidden)
-                    // 這會導致 iOS/Android WebKit 瞬間發生 GPU 崩潰閃退！
-                    // 改為先顯示成功提示，等待硬體安全釋放
-                    statusEl.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i> 掃描成功，安全處理中...';
+                    // 🚨 終極修復：絕對不能使用 classList.add('hidden')，會導致 WebKit GPU 崩潰閃退！
+                    // 改用 CSS 透明度將視窗「視覺隱藏」，讓瀏覽器以為影片還在播放
+                    if (modal) {
+                        modal.style.opacity = '0';
+                        modal.style.pointerEvents = 'none';
+                    }
 
-                    const processResult = () => {
-                        // 硬體安全關閉後，才真正隱藏彈窗
-                        if (modal) modal.classList.add('hidden');
-                        
-                        window.isCameraOn = false;
-                        const scanText = decodedText.trim();
-                        
-                        // 隱藏版密碼彩蛋給分邏輯
+                    const scanText = decodedText.trim();
+                    
+                    // 處理給分邏輯與 UI 提示 (此時相機視窗已透明，不阻擋畫面)
+                    const giveReward = () => {
                         if (scanText === '2026051110star') {
-                            state.totalScore += 10; window.addLog('掃描專屬條碼獲得 10 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 10 點永續積分'); return;
+                            state.totalScore += 10; window.addLog('掃描專屬條碼獲得 10 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 10 點永續積分');
                         } else if (scanText === '2026051150star') {
-                            state.totalScore += 50; window.addLog('掃描專屬條碼獲得 50 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 50 點永續積分'); return;
+                            state.totalScore += 50; window.addLog('掃描專屬條碼獲得 50 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 50 點永續積分');
                         } else if (scanText === '20260511100star') {
-                            state.totalScore += 100; window.addLog('掃描專屬條碼獲得 100 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 100 點永續積分'); return;
+                            state.totalScore += 100; window.addLog('掃描專屬條碼獲得 100 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 100 點永續積分');
+                        } else {
+                            const itemNameInput = document.getElementById('green-item-name');
+                            if (itemNameInput) {
+                                const cleanText = decodedText.length > 30 ? decodedText.substring(0, 30) + '...' : decodedText;
+                                itemNameInput.value = `[條碼載入] ${cleanText}`;
+                            }
+                            window.showToast('✅ 掃描成功！已自動帶入消費品項');
+                            // 延遲開啟計算機，讓視覺過渡更滑順
+                            setTimeout(() => window.openModal('green-consumption-modal'), 300);
                         }
-
-                        // 帶入綠消計算機邏輯
-                        const itemNameInput = document.getElementById('green-item-name');
-                        if (itemNameInput) {
-                            const cleanText = decodedText.length > 30 ? decodedText.substring(0, 30) + '...' : decodedText;
-                            itemNameInput.value = `[條碼載入] ${cleanText}`;
-                        }
-                        
-                        window.showToast('✅ 掃描成功！已自動帶入消費品項');
-                        // 稍微延遲彈窗，增加視覺穩定度
-                        setTimeout(() => window.openModal('green-consumption-modal'), 150);
                     };
 
-                    // 🌟 核心防護 2：將硬體中斷與 UI 渲染徹底「非同步隔離」
-                    // 先給瀏覽器 100ms 喘息時間，再切斷鏡頭
+                    giveReward();
+
+                    // 🌟 核心防護：非同步硬體釋放
+                    // 讓透明的相機繼續運作 400ms，避開 UI 渲染的尖峰期，然後再發出斷電指令
                     setTimeout(() => {
                         if (html5QrcodeScanner && window.isCameraOn) {
                             html5QrcodeScanner.stop().then(() => {
-                                try { html5QrcodeScanner.clear(); } catch(e){} // 嘗試清除殘影
-                                processResult();
+                                window.isCameraOn = false;
+                                // 硬體完全斷電後，再給 400ms 讓記憶體回收，最後才徹底移除 DOM (hidden)
+                                setTimeout(() => {
+                                    if (modal) {
+                                        modal.classList.add('hidden');
+                                        modal.style.opacity = '1'; // 恢復透明度預設值以供下次使用
+                                        modal.style.pointerEvents = 'auto';
+                                    }
+                                }, 400);
                             }).catch(e => {
                                 console.error("相機關閉延遲", e);
-                                processResult();
+                                if (modal) {
+                                    modal.classList.add('hidden');
+                                    modal.style.opacity = '1';
+                                    modal.style.pointerEvents = 'auto';
+                                }
                             });
                         } else {
-                            processResult();
+                            if (modal) {
+                                modal.classList.add('hidden');
+                                modal.style.opacity = '1';
+                                modal.style.pointerEvents = 'auto';
+                            }
                         }
-                    }, 100);
+                    }, 400);
                 },
                 (errorMessage) => {
                     // 背景尋找條碼中，不印出錯誤避免洗版
@@ -915,26 +934,45 @@
 
         // 🌟 安全關閉掃描器，釋放硬體資源
         window.closeScannerModal = function() {
-            window.isProcessingScan = true; // 鎖定不讓它繼續掃
+            if (window.isProcessingScan) return; // 如果正在處理成功掃描，不允許點擊取消
+            window.isProcessingScan = true; 
+            
+            const modal = document.getElementById('qr-scan-modal');
             const statusEl = document.getElementById('qr-scan-status');
             if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 正在關閉相機...';
             
-            // 同樣採用延遲釋放法，避免使用者連點關閉導致卡死
-            if (html5QrcodeScanner && window.isCameraOn) {
-                html5QrcodeScanner.stop().then(() => {
-                    window.isCameraOn = false;
-                    try { html5QrcodeScanner.clear(); } catch(e){}
-                    const modal = document.getElementById('qr-scan-modal');
-                    if (modal) modal.classList.add('hidden');
-                }).catch(e => {
-                    console.error("Failed to stop scanner", e);
-                    const modal = document.getElementById('qr-scan-modal');
-                    if (modal) modal.classList.add('hidden');
-                });
-            } else {
-                const modal = document.getElementById('qr-scan-modal');
-                if (modal) modal.classList.add('hidden');
+            // 先視覺隱藏
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.style.pointerEvents = 'none';
             }
+            
+            // 延遲釋放法，避免瞬間崩潰
+            setTimeout(() => {
+                if (html5QrcodeScanner && window.isCameraOn) {
+                    html5QrcodeScanner.stop().then(() => {
+                        window.isCameraOn = false;
+                        if (modal) {
+                            modal.classList.add('hidden');
+                            modal.style.opacity = '1';
+                            modal.style.pointerEvents = 'auto';
+                        }
+                    }).catch(e => {
+                        console.error("Failed to stop scanner", e);
+                        if (modal) {
+                            modal.classList.add('hidden');
+                            modal.style.opacity = '1';
+                            modal.style.pointerEvents = 'auto';
+                        }
+                    });
+                } else {
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.style.opacity = '1';
+                        modal.style.pointerEvents = 'auto';
+                    }
+                }
+            }, 300);
         };
 
         // 密碼鎖獨立邏輯
