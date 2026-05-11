@@ -822,8 +822,10 @@
 
     <!-- 獨立邏輯區塊 -->
     <script>
-        // 🌟 新增：相機掃描器全域變數與控制器
+        // 🌟 升級：相機掃描器全域變數與「防閃退安全鎖」
         let html5QrcodeScanner = null;
+        window.isProcessingScan = false;
+        window.isCameraOn = false;
 
         window.openScannerModal = function() {
             const modal = document.getElementById('qr-scan-modal');
@@ -831,6 +833,7 @@
             if (modal) modal.classList.remove('hidden');
             
             statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 請求相機權限中...';
+            window.isProcessingScan = false; // 每次打開重置安全鎖
             
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5Qrcode("qr-reader");
@@ -843,49 +846,57 @@
                 { facingMode: "environment" }, // 強制調用後置鏡頭
                 config, 
                 (decodedText, decodedResult) => {
-                    // 掃描成功事件
-                    window.closeScannerModal();
-                    
-                    // 🌟 升級：隱藏版密碼彩蛋攔截器 (QR Code 給分機制)
-                    const scanText = decodedText.trim();
-                    if (scanText === '2026051110star') {
-                        state.totalScore += 10;
-                        window.addLog('掃描專屬條碼獲得 10 積分');
-                        window.updateDisplays(); window.saveData();
-                        window.showToast('✅ 掃描成功！獲得 10 點永續積分');
-                        return; // 中斷後續邏輯，不開啟綠消計算機
-                    } else if (scanText === '2026051150star') {
-                        state.totalScore += 50;
-                        window.addLog('掃描專屬條碼獲得 50 積分');
-                        window.updateDisplays(); window.saveData();
-                        window.showToast('✅ 掃描成功！獲得 50 點永續積分');
-                        return;
-                    } else if (scanText === '20260511100star') {
-                        state.totalScore += 100;
-                        window.addLog('掃描專屬條碼獲得 100 積分');
-                        window.updateDisplays(); window.saveData();
-                        window.showToast('✅ 掃描成功！獲得 100 點永續積分');
-                        return;
+                    // 🌟 防呆：鎖定掃描，防止相機高幀率在 1 秒內讀取數十次導致崩潰
+                    if (window.isProcessingScan) return;
+                    window.isProcessingScan = true;
+
+                    // 1. 視覺上先隱藏掃描視窗
+                    if (modal) modal.classList.add('hidden');
+
+                    const processResult = () => {
+                        window.isCameraOn = false;
+                        const scanText = decodedText.trim();
+                        
+                        // 隱藏版密碼彩蛋給分邏輯
+                        if (scanText === '2026051110star') {
+                            state.totalScore += 10; window.addLog('掃描專屬條碼獲得 10 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 10 點永續積分'); return;
+                        } else if (scanText === '2026051150star') {
+                            state.totalScore += 50; window.addLog('掃描專屬條碼獲得 50 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 50 點永續積分'); return;
+                        } else if (scanText === '20260511100star') {
+                            state.totalScore += 100; window.addLog('掃描專屬條碼獲得 100 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 100 點永續積分'); return;
+                        }
+
+                        // 帶入綠消計算機邏輯
+                        const itemNameInput = document.getElementById('green-item-name');
+                        if (itemNameInput) {
+                            const cleanText = decodedText.length > 30 ? decodedText.substring(0, 30) + '...' : decodedText;
+                            itemNameInput.value = `[條碼載入] ${cleanText}`;
+                        }
+                        
+                        window.showToast('✅ 掃描成功！已自動帶入消費品項');
+                        setTimeout(() => window.openModal('green-consumption-modal'), 300);
+                    };
+
+                    // 2. 嚴謹地關閉相機硬體，成功後再處理 UI 變化，徹底避免硬體與 UI 爭搶資源導致手機閃退
+                    if (html5QrcodeScanner && window.isCameraOn) {
+                        html5QrcodeScanner.stop().then(() => {
+                            processResult();
+                        }).catch(e => {
+                            console.error("相機關閉延遲", e);
+                            processResult(); // 即使硬體報錯也繼續給分，確保體驗不中斷
+                        });
+                    } else {
+                        processResult();
                     }
-                    
-                    // 若非上述密碼，則執行原邏輯：將結果截斷過長字串並自動帶入綠消計算機
-                    const itemNameInput = document.getElementById('green-item-name');
-                    if (itemNameInput) {
-                        const cleanText = decodedText.length > 30 ? decodedText.substring(0, 30) + '...' : decodedText;
-                        itemNameInput.value = `[條碼載入] ${cleanText}`;
-                    }
-                    
-                    window.showToast('✅ 掃描成功！已自動帶入消費品項');
-                    
-                    // 自動彈出計算機方便使用者繼續填寫金額
-                    setTimeout(() => window.openModal('green-consumption-modal'), 300);
                 },
                 (errorMessage) => {
                     // 背景尋找條碼中，不印出錯誤避免洗版
                 }
             ).then(() => {
+                window.isCameraOn = true;
                 statusEl.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> 請將條碼對準掃描框';
             }).catch((err) => {
+                window.isCameraOn = false;
                 statusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-1"></i> 鏡頭啟動失敗';
                 window.showToast('❌ 無法存取相機，請確認瀏覽器隱私設定', true);
             });
@@ -895,8 +906,12 @@
         window.closeScannerModal = function() {
             const modal = document.getElementById('qr-scan-modal');
             if (modal) modal.classList.add('hidden');
-            if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
-                html5QrcodeScanner.stop().catch(e => console.error("Failed to stop scanner", e));
+            window.isProcessingScan = true; // 鎖定不讓它繼續掃
+            
+            if (html5QrcodeScanner && window.isCameraOn) {
+                html5QrcodeScanner.stop().then(() => {
+                    window.isCameraOn = false;
+                }).catch(e => console.error("Failed to stop scanner", e));
             }
         };
 
