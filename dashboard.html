@@ -489,7 +489,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, deleteDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        // 🌟 升級：新增匯入 enableIndexedDbPersistence 快取功能
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, deleteDoc, updateDoc, arrayUnion, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // ==========================================
@@ -896,6 +897,16 @@
             try {
                 const app = initializeApp(firebaseConfig); 
                 db = getFirestore(app); 
+                
+                // 🌟 新增：啟動本機資料庫快取 (IndexedDB Cache) 大幅節省讀取次數與加速
+                enableIndexedDbPersistence(db).catch((err) => {
+                    if (err.code == 'failed-precondition') {
+                        console.warn('⚠️ 多個分頁開啟，無法啟用資料庫快取');
+                    } else if (err.code == 'unimplemented') {
+                        console.warn('⚠️ 當前瀏覽器不支援 IndexedDB 快取');
+                    }
+                });
+
                 const auth = getAuth(app);
                 
                 signInAnonymously(auth).catch((err) => { 
