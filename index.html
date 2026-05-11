@@ -899,11 +899,11 @@
                         if (modal) modal.classList.add('hidden');
 
                         if (scanText === '2026051110star') {
-                            state.totalScore += 10; window.addLog('掃描專屬條碼獲得 10 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 10 點永續積分');
+                            if (window.addScannerPoints) window.addScannerPoints(10, '掃描專屬條碼獲得 10 積分');
                         } else if (scanText === '2026051150star') {
-                            state.totalScore += 50; window.addLog('掃描專屬條碼獲得 50 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 50 點永續積分');
+                            if (window.addScannerPoints) window.addScannerPoints(50, '掃描專屬條碼獲得 50 積分');
                         } else if (scanText === '20260511100star') {
-                            state.totalScore += 100; window.addLog('掃描專屬條碼獲得 100 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 100 點永續積分');
+                            if (window.addScannerPoints) window.addScannerPoints(100, '掃描專屬條碼獲得 100 積分');
                         } else {
                             const itemNameInput = document.getElementById('green-item-name');
                             if (itemNameInput) {
@@ -1855,6 +1855,15 @@
                 state.totalMileage += (distKm * 1000); state.totalCarbon += carbon; const pts = Math.round(carbon / 10); state.totalScore += pts;
                 window.updateDisplays(); window.saveData(); window.addLog(`完成旅程: ${distKm.toFixed(1)}km, 獲得減碳 ${carbon}g`); window.showToast('✅ 積分已記錄！');
             }
+        };
+
+        // 🌟 新增：開放給外部掃描器專用的安全加分通道
+        window.addScannerPoints = function(points, logMsg) {
+            state.totalScore += points;
+            window.addLog(logMsg);
+            window.updateDisplays();
+            window.saveData();
+            window.showToast(`✅ 掃描成功！獲得 ${points} 點永續積分`);
         };
 
         window.bindMapAndActions = function() {
