@@ -332,10 +332,10 @@
                      <h3 class="text-xl font-bold text-mori-dark flex items-center gap-2">
                          <span><i class="fas fa-shopping-basket text-mori-forest"></i> 綠色消費評鑑</span>
                      </h3>
-                     <!-- 🌟 加入硬體掃描按鈕與群組排列 -->
+                     <!-- 🌟 升級：加入硬體掃描按鈕與動態鎖定 UI 綁定 -->
                      <div class="flex w-full md:w-auto gap-2">
-                         <button onclick="window.openScannerModal()" class="w-12 h-10 md:w-auto md:px-4 bg-white border-2 border-mori-forest text-mori-forest rounded-full shadow-sm hover:bg-mori-light transition flex items-center justify-center group outline-none" title="開啟相機掃描產品或發票條碼">
-                             <i class="fas fa-qrcode text-lg group-hover:scale-110 transition-transform"></i>
+                         <button id="btn-open-qr-scanner" onclick="window.checkAndOpenScanner()" class="w-12 h-10 md:w-auto md:px-4 bg-gray-100 border-2 border-gray-300 text-gray-400 rounded-full shadow-sm transition flex items-center justify-center group outline-none" title="掃描功能鎖定中，請洽管理員">
+                             <i id="icon-qr-scanner" class="fas fa-lock text-lg group-hover:scale-110 transition-transform"></i>
                          </button>
                          <button onclick="window.openModal('green-consumption-modal')" class="flex-1 md:w-auto px-6 py-2 bg-mori-forest text-white text-sm font-bold rounded-full shadow hover:bg-mori-dark transition">
                             <i class="fas fa-calculator mr-2"></i>開啟評鑑計算機
@@ -787,6 +787,31 @@
                     </div>
                 </div>
 
+                <!-- 🌟 QR掃描相機解鎖面板 -->
+                <div class="bg-[#3b82f6] rounded-xl shadow-sm border border-[#2563eb] overflow-hidden mb-6 p-4 md:p-5 text-white relative">
+                    <div class="absolute right-0 top-0 opacity-10 text-[100px] -mt-4 -mr-4 pointer-events-none"><i class="fas fa-qrcode"></i></div>
+                    <h4 class="font-black text-lg flex items-center mb-2 relative z-10">
+                        <span class="mr-2">📷 📷</span> 掃描消費憑證解鎖
+                    </h4>
+                    <div class="text-[11px] md:text-xs mb-4 font-medium flex items-center relative z-10">
+                        設定解鎖時長，全網旅者將於期限內解除掃描相機限制。（目前狀態： <span id="admin-qr-status-badge" class="ml-1 px-2 py-0.5 bg-red-800 border border-red-500 text-red-100 rounded-full font-bold shadow-inner flex items-center"><i class="fas fa-circle text-[8px] mr-1 text-red-400"></i>目前鎖定中</span> ）
+                    </div>
+                    <div class="flex flex-wrap gap-2 relative z-10">
+                        <select id="admin-qr-duration" class="px-3 py-2 bg-white text-gray-800 rounded-lg text-sm font-bold outline-none shadow-sm focus:ring-2 focus:ring-yellow-400 border border-transparent">
+                            <option value="30">解鎖 30 分鐘</option>
+                            <option value="60">解鎖 1 小時</option>
+                            <option value="120">解鎖 2 小時</option>
+                            <option value="1440">解鎖 24 小時</option>
+                        </select>
+                        <button onclick="window.requireAuth('QR掃描解鎖權限驗證', '772059', () => window.unlockQrScan())" class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg text-sm font-black transition-colors shadow-sm flex items-center">
+                            <i class="fas fa-lock-open mr-1.5"></i> 確認解鎖
+                        </button>
+                        <button onclick="window.requireAuth('QR掃描收回權限驗證', '772059', () => window.lockQrScan())" class="px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm font-bold transition-colors shadow-sm border border-[#1d4ed8] flex items-center">
+                            <i class="fas fa-lock mr-1.5"></i> 立即收回
+                        </button>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6"><div class="bg-indigo-50/40 border-b border-gray-200 p-3 md:p-4"><h4 class="font-bold text-indigo-800 text-lg flex items-center"><i class="fas fa-chart-pie text-indigo-500 mr-2"></i>企業 / 計畫儀表管理名單</h4></div><div class="p-0"><div class="flex justify-between items-center bg-gray-100/80 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-200"><span class="w-1/3">儀表板名稱</span><span class="w-1/3 text-center">歸戶許可</span><span class="w-1/3 text-right">負責儀表板</span></div><div id="auth-list-container" class="max-h-60 overflow-y-auto custom-scrollbar"><div class="p-4 text-center text-gray-400 text-[13px]">等待載入中...</div></div></div></div>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6"><div class="bg-slate-50 border-b border-gray-200 p-3 md:p-4"><h4 class="font-bold text-slate-700 text-lg flex items-center"><i class="fas fa-user-cog text-blue-500 mr-2"></i>網站操作員認證名單</h4><p class="text-[11px] text-slate-500 mt-1.5 font-medium leading-relaxed"><i class="fas fa-info-circle mr-1"></i>說明權限：各類活動中解說系統操作、數據講解及歸戶操作。</p></div><div class="p-0"><div class="flex justify-between items-center bg-gray-100/80 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-200"><span class="flex-1">認證人員單位</span><span class="w-32 text-right">操作管理師</span></div><div id="operator-list-container" class="max-h-60 overflow-y-auto custom-scrollbar"><div class="p-4 text-center text-gray-400 text-[13px]">等待載入中...</div></div></div></div>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6"><div class="bg-mori-light/30 border-b border-gray-200 p-3 md:p-4"><h4 class="font-bold text-mori-forest text-lg flex items-center"><i class="fas fa-medal text-yellow-500 mr-2"></i>網站應用操作講師認證</h4></div><div class="p-0"><div class="flex justify-between items-center bg-gray-100/80 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-200"><span class="flex-1">認證講師所屬單位</span><span class="w-32 text-right">講師姓名</span></div><div id="lecturer-list-container" class="max-h-60 overflow-y-auto custom-scrollbar"><div class="p-4 text-center text-gray-400 text-[13px]">等待載入中...</div></div></div></div>
@@ -838,6 +863,16 @@
         window.isProcessingScan = false;
         window.isCameraOn = false;
         window.isCameraStarting = false;
+        window.isQrScannerLocked = true; // 預設鎖定
+
+        // 🌟 新增：點擊前的權限檢查
+        window.checkAndOpenScanner = function() {
+            if (window.isQrScannerLocked) {
+                window.showToast('🔒 掃描功能目前鎖定中，請待活動開放或洽詢管理員', true);
+                return;
+            }
+            window.openScannerModal();
+        };
 
         window.openScannerModal = function() {
             const modal = document.getElementById('qr-scan-modal');
@@ -1661,6 +1696,38 @@
                     if (window.calcRefMode) document.getElementById('enable-calc-ref-btn')?.click(); 
                 }
             }
+
+            // 🌟 處理 QR 掃描器解鎖狀態與 UI 更新
+            const qrExpiry = Number(globalAbsolute.qr_scan_expiry || 0);
+            const isQrUnlocked = qrExpiry > now;
+
+            const adminQrBadge = document.getElementById('admin-qr-status-badge');
+            if (adminQrBadge) {
+                if (isQrUnlocked) {
+                    const remainMins = Math.ceil((qrExpiry - now) / 60000);
+                    adminQrBadge.className = 'ml-1 px-2 py-0.5 bg-green-800 border border-green-500 text-green-100 rounded-full font-bold shadow-inner flex items-center';
+                    adminQrBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-green-400 animate-pulse"></i>已解鎖 (剩 ${remainMins} 分)`;
+                } else {
+                    adminQrBadge.className = 'ml-1 px-2 py-0.5 bg-red-800 border border-red-500 text-red-100 rounded-full font-bold shadow-inner flex items-center';
+                    adminQrBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-red-400"></i>目前鎖定中`;
+                }
+            }
+
+            const btnQrScanner = document.getElementById('btn-open-qr-scanner');
+            const iconQrScanner = document.getElementById('icon-qr-scanner');
+            if (btnQrScanner && iconQrScanner) {
+                if (isQrUnlocked) {
+                    btnQrScanner.className = "w-12 h-10 md:w-auto md:px-4 bg-white border-2 border-mori-forest text-mori-forest rounded-full shadow-sm hover:bg-mori-light transition flex items-center justify-center group outline-none";
+                    btnQrScanner.title = "開啟相機掃描產品或發票條碼";
+                    iconQrScanner.className = "fas fa-qrcode text-lg group-hover:scale-110 transition-transform";
+                    window.isQrScannerLocked = false;
+                } else {
+                    btnQrScanner.className = "w-12 h-10 md:w-auto md:px-4 bg-gray-100 border-2 border-gray-300 text-gray-400 rounded-full shadow-sm transition flex items-center justify-center group outline-none";
+                    btnQrScanner.title = "掃描功能未解鎖，請洽管理員";
+                    iconQrScanner.className = "fas fa-lock text-lg group-hover:scale-110 transition-transform";
+                    window.isQrScannerLocked = true;
+                }
+            }
         };
 
         window.unlockMapTrial = async function() {
@@ -1673,6 +1740,19 @@
         window.lockMapTrial = async function() {
             if (!db) return window.showToast('資料庫未連線', true);
             try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: 0 }, { merge: true }); window.showToast('🔒 已收回地圖試算權限'); } catch (e) { window.showToast('收回失敗，請確認權限', true); }
+        };
+
+        // 🌟 新增：QR 掃描器解鎖與收回雲端功能
+        window.unlockQrScan = async function() {
+            if (!db) return window.showToast('資料庫未連線', true);
+            const mins = parseInt(document.getElementById('admin-qr-duration').value) || 30;
+            const expiryTime = Date.now() + mins * 60 * 1000;
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { qr_scan_expiry: expiryTime }, { merge: true }); window.showToast(`✅ 已全網解鎖掃描器 ${mins} 分鐘`); } catch (e) { window.showToast('解鎖失敗，請確認權限', true); }
+        };
+
+        window.lockQrScan = async function() {
+            if (!db) return window.showToast('資料庫未連線', true);
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { qr_scan_expiry: 0 }, { merge: true }); window.showToast('🔒 已收回掃描器權限'); } catch (e) { window.showToast('收回失敗，請確認權限', true); }
         };
 
         window.renderAdminLists = function() {
