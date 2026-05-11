@@ -731,7 +731,8 @@
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 outline-none" onclick="window.closeScannerModal()"><i class="fas fa-times text-xl"></i></button>
             <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-mori-light rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-camera text-2xl text-mori-forest"></i></div></div>
             <h3 class="text-xl font-bold text-gray-800 mb-2 tracking-wide">掃描消費憑證</h3>
-            <p class="text-[12px] text-gray-500 mb-4 leading-relaxed">請將相機對準產銷履歷 QR Code 或發票條碼，系統將自動解析並帶入資料。</p>
+            <!-- 🌟 修正：依照需求更新說明文字 -->
+            <p class="text-[12px] text-gray-500 mb-4 leading-relaxed">本地市集消費活動獲得積分使用，僅於特定活動開啟使用。</p>
             
             <div id="qr-reader" class="w-full bg-black rounded-lg overflow-hidden border-2 border-gray-200 mb-4 min-h-[250px] flex items-center justify-center shadow-inner"></div>
             
@@ -822,7 +823,7 @@
 
     <!-- 獨立邏輯區塊 -->
     <script>
-        // 🌟 升級：相機掃描器全域變數與「防閃退安全鎖」
+        // 🌟 升級：相機掃描器全域變數與「終極防閃退安全鎖」
         let html5QrcodeScanner = null;
         window.isProcessingScan = false;
         window.isCameraOn = false;
@@ -839,8 +840,8 @@
                 html5QrcodeScanner = new Html5Qrcode("qr-reader");
             }
             
-            // 設定掃描框解析度與掃描範圍
-            const config = { fps: 10, qrbox: { width: 200, height: 200 }, aspectRatio: 1.0 };
+            // 🌟 核心防護 1：降低 FPS (從 10 降為 5)，大幅減少手機鏡頭過熱與記憶體暴增
+            const config = { fps: 5, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
             
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, // 強制調用後置鏡頭
@@ -850,7 +851,7 @@
                     if (window.isProcessingScan) return;
                     window.isProcessingScan = true;
 
-                    // 1. 視覺上先隱藏掃描視窗
+                    // 1. 視覺上先隱藏掃描視窗，讓使用者覺得已經掃到
                     if (modal) modal.classList.add('hidden');
 
                     const processResult = () => {
@@ -874,20 +875,26 @@
                         }
                         
                         window.showToast('✅ 掃描成功！已自動帶入消費品項');
-                        setTimeout(() => window.openModal('green-consumption-modal'), 300);
+                        // 稍微延遲彈窗，增加視覺穩定度
+                        setTimeout(() => window.openModal('green-consumption-modal'), 150);
                     };
 
-                    // 2. 嚴謹地關閉相機硬體，成功後再處理 UI 變化，徹底避免硬體與 UI 爭搶資源導致手機閃退
-                    if (html5QrcodeScanner && window.isCameraOn) {
-                        html5QrcodeScanner.stop().then(() => {
+                    // 🌟 核心防護 2：將硬體中斷與 UI 渲染徹底「非同步隔離」
+                    // 先給瀏覽器 100ms 喘息時間，再切斷鏡頭
+                    setTimeout(() => {
+                        if (html5QrcodeScanner && window.isCameraOn) {
+                            html5QrcodeScanner.stop().then(() => {
+                                try { html5QrcodeScanner.clear(); } catch(e){} // 嘗試清除殘影
+                                // 🌟 核心防護 3：硬體關閉後，再給 300ms 讓垃圾回收機制 (GC) 釋放記憶體，才執行彈窗
+                                setTimeout(processResult, 300);
+                            }).catch(e => {
+                                console.error("相機關閉延遲", e);
+                                setTimeout(processResult, 300);
+                            });
+                        } else {
                             processResult();
-                        }).catch(e => {
-                            console.error("相機關閉延遲", e);
-                            processResult(); // 即使硬體報錯也繼續給分，確保體驗不中斷
-                        });
-                    } else {
-                        processResult();
-                    }
+                        }
+                    }, 100);
                 },
                 (errorMessage) => {
                     // 背景尋找條碼中，不印出錯誤避免洗版
@@ -898,21 +905,25 @@
             }).catch((err) => {
                 window.isCameraOn = false;
                 statusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-1"></i> 鏡頭啟動失敗';
-                window.showToast('❌ 無法存取相機，請確認瀏覽器隱私設定', true);
+                window.showToast('❌ 無法存取相機，請確認瀏覽器權限設定', true);
             });
         };
 
-        // 安全關閉掃描器，釋放硬體資源
+        // 🌟 安全關閉掃描器，釋放硬體資源
         window.closeScannerModal = function() {
             const modal = document.getElementById('qr-scan-modal');
             if (modal) modal.classList.add('hidden');
             window.isProcessingScan = true; // 鎖定不讓它繼續掃
             
-            if (html5QrcodeScanner && window.isCameraOn) {
-                html5QrcodeScanner.stop().then(() => {
-                    window.isCameraOn = false;
-                }).catch(e => console.error("Failed to stop scanner", e));
-            }
+            // 同樣採用延遲釋放法，避免使用者連點關閉導致卡死
+            setTimeout(() => {
+                if (html5QrcodeScanner && window.isCameraOn) {
+                    html5QrcodeScanner.stop().then(() => {
+                        window.isCameraOn = false;
+                        try { html5QrcodeScanner.clear(); } catch(e){}
+                    }).catch(e => console.error("Failed to stop scanner", e));
+                }
+            }, 100);
         };
 
         // 密碼鎖獨立邏輯
