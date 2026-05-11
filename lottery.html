@@ -553,7 +553,7 @@
     <!-- Firebase 與核心邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, query, where, getDocs, serverTimestamp, writeBatch, deleteField, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, setDoc, query, where, getDocs, serverTimestamp, writeBatch, deleteField, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // ==========================================
@@ -1685,6 +1685,33 @@
             }
             
             isDrawing = true;
+
+            // 🌟 核心修正：分散式防重複抽獎鎖定 (Distributed Lock)
+            // 防止主辦單位同時開啟多個大螢幕/控制台分頁，導致瞬間重複觸發抽獎
+            try {
+                const roomRef = doc(db, 'system_stats', 'lottery_room');
+                await runTransaction(db, async (transaction) => {
+                    const roomDoc = await transaction.get(roomRef);
+                    if (!roomDoc.exists()) throw new Error("ROOM_NOT_FOUND");
+                    
+                    // 必須要是 answering 狀態才能抽獎，否則代表別的視窗已經搶先一步了！
+                    if (roomDoc.data().status !== 'answering') {
+                        throw new Error("ALREADY_DRAWN");
+                    }
+                    
+                    // 搶奪開獎權：將狀態改為 processing_draw 以阻擋其他分頁
+                    transaction.update(roomRef, { status: 'processing_draw' });
+                });
+            } catch (error) {
+                if (error.message === "ALREADY_DRAWN") {
+                    console.log("🔒 另一個主控台視窗已接管本次開獎，本視窗進入靜默觀察模式。");
+                    return; // 放棄抽獎，交給贏得鎖的那個視窗處理，避免重複扣票
+                }
+                isDrawing = false;
+                console.error("Transaction failed: ", error);
+                window.showToast('🚨 抽獎權搶佔失敗，請確認網路狀態', true);
+                return;
+            }
             
             const state = window.serverState || {};
             const activePrizeObj = state.schedule ? state.schedule[state.currentRoundIndex || 0] : null;
