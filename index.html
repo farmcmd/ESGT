@@ -851,10 +851,15 @@
                     if (window.isProcessingScan) return;
                     window.isProcessingScan = true;
 
-                    // 1. 視覺上先隱藏掃描視窗，讓使用者覺得已經掃到
-                    if (modal) modal.classList.add('hidden');
+                    // 🚨 致命錯誤修復：絕對不能在相機運作時對外層 div 設定 display:none (hidden)
+                    // 這會導致 iOS/Android WebKit 瞬間發生 GPU 崩潰閃退！
+                    // 改為先顯示成功提示，等待硬體安全釋放
+                    statusEl.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i> 掃描成功，安全處理中...';
 
                     const processResult = () => {
+                        // 硬體安全關閉後，才真正隱藏彈窗
+                        if (modal) modal.classList.add('hidden');
+                        
                         window.isCameraOn = false;
                         const scanText = decodedText.trim();
                         
@@ -885,11 +890,10 @@
                         if (html5QrcodeScanner && window.isCameraOn) {
                             html5QrcodeScanner.stop().then(() => {
                                 try { html5QrcodeScanner.clear(); } catch(e){} // 嘗試清除殘影
-                                // 🌟 核心防護 3：硬體關閉後，再給 300ms 讓垃圾回收機制 (GC) 釋放記憶體，才執行彈窗
-                                setTimeout(processResult, 300);
+                                processResult();
                             }).catch(e => {
                                 console.error("相機關閉延遲", e);
-                                setTimeout(processResult, 300);
+                                processResult();
                             });
                         } else {
                             processResult();
@@ -911,19 +915,26 @@
 
         // 🌟 安全關閉掃描器，釋放硬體資源
         window.closeScannerModal = function() {
-            const modal = document.getElementById('qr-scan-modal');
-            if (modal) modal.classList.add('hidden');
             window.isProcessingScan = true; // 鎖定不讓它繼續掃
+            const statusEl = document.getElementById('qr-scan-status');
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 正在關閉相機...';
             
             // 同樣採用延遲釋放法，避免使用者連點關閉導致卡死
-            setTimeout(() => {
-                if (html5QrcodeScanner && window.isCameraOn) {
-                    html5QrcodeScanner.stop().then(() => {
-                        window.isCameraOn = false;
-                        try { html5QrcodeScanner.clear(); } catch(e){}
-                    }).catch(e => console.error("Failed to stop scanner", e));
-                }
-            }, 100);
+            if (html5QrcodeScanner && window.isCameraOn) {
+                html5QrcodeScanner.stop().then(() => {
+                    window.isCameraOn = false;
+                    try { html5QrcodeScanner.clear(); } catch(e){}
+                    const modal = document.getElementById('qr-scan-modal');
+                    if (modal) modal.classList.add('hidden');
+                }).catch(e => {
+                    console.error("Failed to stop scanner", e);
+                    const modal = document.getElementById('qr-scan-modal');
+                    if (modal) modal.classList.add('hidden');
+                });
+            } else {
+                const modal = document.getElementById('qr-scan-modal');
+                if (modal) modal.classList.add('hidden');
+            }
         };
 
         // 密碼鎖獨立邏輯
