@@ -823,10 +823,11 @@
 
     <!-- 獨立邏輯區塊 -->
     <script>
-        // 🌟 升級：相機掃描器全域變數與「硬體絕對優先」防閃退安全鎖
+        // 🌟 升級：相機掃描器全域變數與「終極降壓防閃退安全鎖」
         let html5QrcodeScanner = null;
         window.isProcessingScan = false;
         window.isCameraOn = false;
+        window.isCameraStarting = false; // 🌟 核心防護 1：追蹤是否正在啟動中，防止未啟動完就強制關閉導致底層死結
 
         window.openScannerModal = function() {
             const modal = document.getElementById('qr-scan-modal');
@@ -838,13 +839,16 @@
             
             statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 請求相機權限中...';
             window.isProcessingScan = false; // 每次打開重置安全鎖
+            window.isCameraStarting = true;  // 標記相機開始啟動
             
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5Qrcode("qr-reader");
             }
             
-            // 降低 FPS 減少手機負擔
-            const config = { fps: 5, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+            // 🚨 核心防護 2：拔除 aspectRatio: 1.0
+            // 強制正方形比例會迫使舊手機與 Safari 每秒進行即時影像裁切，瞬間榨乾記憶體導致閃退！
+            // 將 FPS 降為 4，減少發熱與運算負擔
+            const config = { fps: 4, qrbox: { width: 250, height: 250 } };
             
             html5QrcodeScanner.start(
                 { facingMode: "environment" },
@@ -854,7 +858,7 @@
                     if (window.isProcessingScan) return;
                     window.isProcessingScan = true;
 
-                    // 1. 僅更新提示文字，絕對不進行其他 DOM 操作 (不隱藏視窗、不開新視窗)，避免 GPU 崩潰
+                    // 僅更新提示文字，絕對不進行其他 DOM 隱藏操作，避免 GPU 崩潰
                     if (statusEl) {
                         statusEl.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i> 掃描成功！安全斷電中...';
                     }
@@ -884,29 +888,37 @@
                         }
                     };
 
-                    // 🌟 核心防護：第一時間「強制先關閉相機」
-                    if (html5QrcodeScanner && window.isCameraOn) {
-                        html5QrcodeScanner.stop().then(() => {
-                            window.isCameraOn = false;
-                            try { html5QrcodeScanner.clear(); } catch(e){}
-                            // 2. 等待相機完全斷電後，才去執行高耗能的 UI 給分彈窗
+                    // 🌟 核心防護 3：確保相機啟動流程完全走完，才執行拔插頭 (stop)
+                    const safeStop = () => {
+                        if (html5QrcodeScanner && (window.isCameraOn || window.isCameraStarting)) {
+                            html5QrcodeScanner.stop().then(() => {
+                                window.isCameraOn = false;
+                                window.isCameraStarting = false;
+                                try { html5QrcodeScanner.clear(); } catch(e){}
+                                executeRewards();
+                            }).catch(e => {
+                                console.error("相機關閉延遲", e);
+                                window.isCameraOn = false;
+                                window.isCameraStarting = false;
+                                executeRewards(); // 即使硬體報錯也繼續給分，確保體驗不中斷
+                            });
+                        } else {
                             executeRewards();
-                        }).catch(e => {
-                            console.error("相機關閉延遲", e);
-                            window.isCameraOn = false;
-                            executeRewards(); // 即使硬體報錯也繼續給分，確保體驗不中斷
-                        });
-                    } else {
-                        executeRewards();
-                    }
+                        }
+                    };
+
+                    // 給予 200ms 緩衝，避免瞬間掃到條碼時，Promise 互相衝突
+                    setTimeout(safeStop, 200);
                 },
                 (errorMessage) => {
                     // 背景尋找條碼中，不印出錯誤避免洗版
                 }
             ).then(() => {
+                window.isCameraStarting = false;
                 window.isCameraOn = true;
                 statusEl.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> 請將條碼對準掃描框';
             }).catch((err) => {
+                window.isCameraStarting = false;
                 window.isCameraOn = false;
                 statusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-1"></i> 鏡頭啟動失敗';
                 window.showToast('❌ 無法存取相機，請確認瀏覽器權限設定', true);
@@ -922,18 +934,29 @@
             const statusEl = document.getElementById('qr-scan-status');
             if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 正在關閉相機...';
             
-            // 同樣採用硬體優先斷電法
-            if (html5QrcodeScanner && window.isCameraOn) {
-                html5QrcodeScanner.stop().then(() => {
-                    window.isCameraOn = false;
-                    try { html5QrcodeScanner.clear(); } catch(e){}
+            const doClose = () => {
+                if (html5QrcodeScanner && (window.isCameraOn || window.isCameraStarting)) {
+                    html5QrcodeScanner.stop().then(() => {
+                        window.isCameraOn = false;
+                        window.isCameraStarting = false;
+                        try { html5QrcodeScanner.clear(); } catch(e){}
+                        if (modal) modal.classList.add('hidden');
+                    }).catch(e => {
+                        console.error("Failed to stop scanner", e);
+                        window.isCameraOn = false;
+                        window.isCameraStarting = false;
+                        if (modal) modal.classList.add('hidden');
+                    });
+                } else {
                     if (modal) modal.classList.add('hidden');
-                }).catch(e => {
-                    console.error("Failed to stop scanner", e);
-                    if (modal) modal.classList.add('hidden');
-                });
+                }
+            };
+
+            // 如果還在啟動中就按取消，稍微等待再關，避免當機
+            if (window.isCameraStarting) {
+                setTimeout(doClose, 500);
             } else {
-                if (modal) modal.classList.add('hidden');
+                doClose();
             }
         };
 
