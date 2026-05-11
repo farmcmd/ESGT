@@ -731,10 +731,20 @@
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 outline-none" onclick="window.closeScannerModal()"><i class="fas fa-times text-xl"></i></button>
             <div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-mori-light rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-camera text-2xl text-mori-forest"></i></div></div>
             <h3 class="text-xl font-bold text-gray-800 mb-2 tracking-wide">掃描消費憑證</h3>
-            <!-- 🌟 修正：依照需求更新說明文字 -->
             <p class="text-[12px] text-gray-500 mb-4 leading-relaxed">本地市集消費活動獲得積分使用，僅於特定活動開啟使用。</p>
             
+            <!-- 掃描器主體 -->
             <div id="qr-reader" class="w-full bg-black rounded-lg overflow-hidden border-2 border-gray-200 mb-4 min-h-[250px] flex items-center justify-center shadow-inner"></div>
+            
+            <!-- 🌟 新增：中繼確認視窗 (防閃退緩衝區) -->
+            <div id="qr-success-buffer" class="hidden w-full bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-4 flex flex-col items-center justify-center min-h-[250px] shadow-inner animate-fade-in-down">
+                <i class="fas fa-check-circle text-5xl text-green-500 mb-4 animate-bounce"></i>
+                <h4 class="text-lg font-black text-green-800 mb-2">條碼解析成功！</h4>
+                <p class="text-xs text-green-600 mb-6 font-bold leading-relaxed">硬體已安全斷電以節省效能<br>請點擊下方按鈕領取獎勵</p>
+                <button id="btn-confirm-scan" class="w-full py-3.5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-black shadow-md transition transform active:scale-95 text-sm tracking-widest outline-none">
+                    <i class="fas fa-hand-pointer mr-2 animate-pulse"></i>確認領取
+                </button>
+            </div>
             
             <p id="qr-scan-status" class="text-xs font-bold text-mori-forest animate-pulse mb-4"><i class="fas fa-spinner fa-spin mr-1"></i> 相機模組啟動中...</p>
             
@@ -823,7 +833,7 @@
 
     <!-- 獨立邏輯區塊 -->
     <script>
-        // 🌟 升級：相機掃描器全域變數與「終極物理截斷保命鎖」
+        // 🌟 升級：相機掃描器全域變數與「中繼緩衝防禦」
         let html5QrcodeScanner = null;
         window.isProcessingScan = false;
         window.isCameraOn = false;
@@ -832,14 +842,14 @@
         window.openScannerModal = function() {
             const modal = document.getElementById('qr-scan-modal');
             const statusEl = document.getElementById('qr-scan-status');
+            const readerEl = document.getElementById('qr-reader');
+            const bufferEl = document.getElementById('qr-success-buffer');
             
-            if (modal) {
-                // 恢復視窗的正常定位與顯示
-                modal.style.position = '';
-                modal.style.top = '';
-                modal.style.opacity = '1';
-                modal.classList.remove('hidden');
-            }
+            if (modal) modal.classList.remove('hidden');
+            
+            // 每次打開時，確保切換回掃描器畫面，隱藏中繼畫面
+            if (readerEl) readerEl.classList.remove('hidden');
+            if (bufferEl) bufferEl.classList.add('hidden');
             
             statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 請求相機權限中...';
             window.isProcessingScan = false; 
@@ -859,37 +869,34 @@
                     if (window.isProcessingScan) return;
                     window.isProcessingScan = true;
 
-                    if (statusEl) {
-                        statusEl.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i> 掃描成功！結算中...';
-                    }
-
-                    // 🚨 終極物理防護：直接對原生 <video> 標籤拔插頭
-                    // 不依賴套件的 stop()，直接關閉硬體軌道 (MediaStreamTrack)，瞬間斷電免除崩潰！
+                    // 1. 物理凍結相機，立刻拔除資源
                     try {
                         const videoEl = document.querySelector('#qr-reader video');
                         if (videoEl && videoEl.srcObject) {
-                            videoEl.pause(); // 瞬間凍結畫面
-                            const tracks = videoEl.srcObject.getTracks();
-                            tracks.forEach(track => track.stop()); // 物理關閉鏡頭亮燈
-                            videoEl.srcObject = null;
+                            videoEl.pause(); 
+                            videoEl.srcObject.getTracks().forEach(track => track.stop()); 
                         }
-                    } catch(e) {
-                        console.error("硬體強制中斷失敗", e);
-                    }
+                    } catch(e) {}
 
-                    // 🚨 視覺幽靈化防護：將視窗丟到畫面外，絕對避免 display:none 造成的 GPU 重繪崩潰
-                    if (modal) {
-                        modal.style.position = 'absolute';
-                        modal.style.top = '-9999px';
-                        modal.style.opacity = '0';
+                    // 2. 徹底關閉相機套件底層
+                    if (html5QrcodeScanner) {
+                        html5QrcodeScanner.stop().catch(e=>{});
                     }
+                    window.isCameraOn = false;
+                    window.isCameraStarting = false;
 
-                    const scanText = decodedText.trim();
-                    
-                    // 獨立的給分與 UI 渲染邏輯
-                    const executeRewards = () => {
-                        window.isCameraOn = false;
-                        window.isCameraStarting = false;
+                    // 3. 畫面切換：隱藏相機框，顯示中繼確認視窗 (完全不觸碰外層 Modal 的 hidden，免除 GPU 崩潰)
+                    if (readerEl) readerEl.classList.add('hidden');
+                    if (bufferEl) bufferEl.classList.remove('hidden');
+                    if (statusEl) statusEl.innerHTML = '<i class="fas fa-power-off text-green-500 mr-1"></i> 相機已安全休眠';
+
+                    // 4. 將給分邏輯綁定至「玩家手動點擊」的中繼按鈕上
+                    const btnConfirm = document.getElementById('btn-confirm-scan');
+                    btnConfirm.onclick = () => {
+                        const scanText = decodedText.trim();
+                        
+                        // 隱藏整個掃描 modal
+                        if (modal) modal.classList.add('hidden');
 
                         if (scanText === '2026051110star') {
                             state.totalScore += 10; window.addLog('掃描專屬條碼獲得 10 積分'); window.updateDisplays(); window.saveData(); window.showToast('✅ 掃描成功！獲得 10 點永續積分');
@@ -906,17 +913,7 @@
                             window.showToast('✅ 掃描成功！已自動帶入消費品項');
                             setTimeout(() => window.openModal('green-consumption-modal'), 100);
                         }
-
-                        // 背景清理套件殘留的 interval，此時硬體已斷電，不會閃退
-                        if (html5QrcodeScanner) {
-                            html5QrcodeScanner.stop().catch(e => {}).finally(() => {
-                                try { html5QrcodeScanner.clear(); } catch(e){}
-                            });
-                        }
                     };
-
-                    // 給予瀏覽器 150ms 喘息時間後再渲染 UI，徹底避開死結
-                    setTimeout(executeRewards, 150);
                 },
                 (errorMessage) => {
                     // 背景尋找條碼中，不印出錯誤避免洗版
@@ -942,44 +939,23 @@
             const statusEl = document.getElementById('qr-scan-status');
             if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 正在關閉相機...';
             
-            // 1. 視覺幽靈化
-            if (modal) {
-                modal.style.position = 'absolute';
-                modal.style.top = '-9999px';
-                modal.style.opacity = '0';
-            }
-
-            // 2. 原生物理拔插頭
             try {
                 const videoEl = document.querySelector('#qr-reader video');
                 if (videoEl && videoEl.srcObject) {
                     videoEl.pause();
                     videoEl.srcObject.getTracks().forEach(track => track.stop());
-                    videoEl.srcObject = null;
                 }
             } catch(e) {}
 
-            // 3. 背景非同步清理套件
             const doCleanUp = () => {
                 window.isCameraOn = false;
                 window.isCameraStarting = false;
                 if (html5QrcodeScanner) {
                     html5QrcodeScanner.stop().catch(e => {}).finally(() => {
-                        try { html5QrcodeScanner.clear(); } catch(e){}
-                        if (modal) {
-                            modal.classList.add('hidden'); // 完全清理完畢後再徹底隱藏
-                            modal.style.position = '';
-                            modal.style.top = '';
-                            modal.style.opacity = '1';
-                        }
+                        if (modal) modal.classList.add('hidden');
                     });
                 } else {
-                    if (modal) {
-                        modal.classList.add('hidden');
-                        modal.style.position = '';
-                        modal.style.top = '';
-                        modal.style.opacity = '1';
-                    }
+                    if (modal) modal.classList.add('hidden');
                 }
             };
 
