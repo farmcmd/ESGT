@@ -320,6 +320,12 @@
                                 </div>
                             </div>
                             
+                            <!-- 🌟 補齊升級：指導單位與協辦單位輸入欄位 -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="text" id="host-proj-supervisor" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="指導單位">
+                                <input type="text" id="host-proj-coorganizer" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="協辦單位">
+                            </div>
+                            
                             <div class="grid grid-cols-2 gap-3">
                                 <input type="text" id="host-proj-organizer" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="主辦單位">
                                 <input type="text" id="host-proj-executor" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="執行單位">
@@ -557,7 +563,7 @@
 
                 state.lotteryTickets.forEach(t => {
                     if (t.deadline && t.deadline !== '未定') {
-                        const expDate = new Date(t.deadline.replace(/-/g, '/') + ' 23:59:59');
+                        const expDate = new Date(t.deadline.replace(/-/g, '/'));
                         expDate.setDate(expDate.getDate() + 7); // 7 天寬限期
                         if (now > expDate) {
                             hasExpired = true; // 已超過寬限期，準備銷毀
@@ -580,7 +586,7 @@
                         ticketList.innerHTML = state.lotteryTickets.map(t => {
                             let isWaitingToExpire = false;
                             if (t.deadline && t.deadline !== '未定') {
-                                const exactExpDate = new Date(t.deadline.replace(/-/g, '/') + ' 23:59:59');
+                                const exactExpDate = new Date(t.deadline.replace(/-/g, '/'));
                                 if (now > exactExpDate) isWaitingToExpire = true; 
                             }
 
@@ -838,7 +844,7 @@
             }
             
             if (govContainer) {
-                const govData = [ { title: '一、 課程與活動內容', qs: ['1. 主題契合度：本次活動主題與您的預期或需求是否相符？', '2. 內容豐富度：課程或導覽的內容安排是否充實、具啟發性？', '3. 專業展現：講師或導覽人員的專業度及表達能力是否良好？'] }, { title: '二、 計畫效益與價值獲得', qs: ['4. 核心知能增進：參與活動後，是否有效提升您對相關議題的了解？', '5. 實務應用性：活動獲得的資訊，對您未來生活或工作是否有實質幫助？', '6. 計畫願景認同：您是否認同本計畫欲傳達的核心價值(如：永續、在地化)？'] }, { title: '三、 行政流程與服務滿意度', qs: ['7. 報名與資訊傳達：活動前的報名系統或資訊公告是否即時且清楚？', '8. 現場服務品質：活動期間工作人員的服務態度及問題解決效率？', '9. 時間與節奏規劃：課程或活動流程的時間分配與節奏安排是否適當？'] }, { title: '四、 綜合評價', qs: ['10. 整體活動滿意度：綜合以上各項，您對本次活動的總體評價。', '11. 持續參與意願：未來若舉辦相關後續活動，您參與或推薦他人的意願。'] } ];
+                const govData = [ { title: '一、 課程與活動內容', qs: ['1. 主題契合度：本次活動主題與您的預期或需求是否相符？', '2. 內容豐富度：課程或導覽的內容安排是否充實、具啟發性？', '3. 專業展現：講師或導覽人員 the 專業度及表達能力是否良好？'] }, { title: '二、 計畫效益與價值獲得', qs: ['4. 核心知能增進：參與活動後，是否有效提升您對相關議題的了解？', '5. 實務應用性：活動獲得的資訊，對您未來生活或工作是否有實質幫助？', '6. 計畫願景認同：您是否認同本計畫欲傳達的核心價值(如：永續、在地化)？'] }, { title: '三、 行政流程與服務滿意度', qs: ['7. 報名與資訊傳達：活動前的報名系統或資訊公告是否即時且清楚？', '8. 現場服務品質：活動期間工作人員的服務態度及問題解決效率？', '9. 時間與節奏規劃：課程或活動流程的時間分配與節奏安排是否適當？'] }, { title: '四、 綜合評價', qs: ['10. 整體活動滿意度：綜合以上各項，您對本次活動的總體評價。', '11. 持續參與意願：未來若舉辦相關後續活動，您參與或推薦他人的意願。'] } ];
                 let qIndex = 1; 
                 
                 let govHtml = '';
@@ -2303,6 +2309,8 @@
                 if(typeof renderGovDashboard === 'function') renderGovDashboard(); window.showToast('✅ (離線) 政府計畫建立成功！');
             }
             document.getElementById('host-proj-serial').value = ''; nameInput.value = ''; eventInput.value = ''; 
+            if(document.getElementById('host-proj-supervisor')) document.getElementById('host-proj-supervisor').value = '';
+            if(document.getElementById('host-proj-coorganizer')) document.getElementById('host-proj-coorganizer').value = '';
             if(document.getElementById('host-proj-start-date')) document.getElementById('host-proj-start-date').value = '';
             if(document.getElementById('host-proj-end-date')) document.getElementById('host-proj-end-date').value = '';
         });
