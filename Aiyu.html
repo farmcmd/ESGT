@@ -383,6 +383,18 @@ body {
                             將愛玉籽放入濾袋，在含有礦物質的冷開水中輕輕搓揉約10分鐘，直到感覺水變得黏稠、籽失去滑膩感。接著靜置常溫30分鐘即可凝固。冷藏保存最佳，但一兩天內會自然化水。
                         </div>
                     </div>
+                    
+                    <!-- AI 創意食譜生成器 -->
+                    <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--accent); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left;">
+                        <h3 style="color: var(--accent); margin-bottom: 8px; font-size: 1.1rem;">✨ AI 愛玉百搭食譜主廚</h3>
+                        <p style="font-size: 0.85rem; margin-bottom: 10px;">家裡還有什麼食材？告訴 AI 幫你特製專屬甜點！</p>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="recipe-ingredients" placeholder="例如：蜂蜜、百香果、汽水..." style="flex-grow: 1; padding: 8px; border-radius: 5px; border: none; outline: none; font-family: inherit;">
+                            <button id="generate-recipe-btn" style="background: var(--accent); color: #1B5E20; font-weight: bold; border: none; padding: 0 15px; border-radius: 5px; cursor: pointer; transition: 0.2s;">✨ 生成</button>
+                        </div>
+                        <div id="recipe-output" style="margin-top: 10px; font-size: 0.9rem; line-height: 1.5; color: #fff; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; display: none;"></div>
+                    </div>
+
                     <div class="game-container" id="game-7"></div>
                 </div>
             </section>
@@ -405,6 +417,25 @@ body {
                 <div id="tube-content"></div>
             </div>
             <div class="tube-label">愛玉碗</div>
+        </div>
+
+        <!-- ✨ AI 愛玉知識小幫手 (懸浮按鈕與聊天室) -->
+        <button id="ai-chat-btn" style="position: fixed; bottom: 25px; left: 25px; width: 55px; height: 55px; border-radius: 50%; background: var(--accent); border: 2px solid white; font-size: 1.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 5000; cursor: pointer; transition: transform 0.3s; display: flex; justify-content: center; align-items: center;" title="呼叫 AI 小幫手">✨</button>
+        
+        <div id="ai-chat-modal" class="hidden" style="position: fixed; bottom: 90px; left: 25px; width: 320px; max-width: calc(100vw - 50px); height: 420px; background: rgba(26,37,30,0.95); border: 2px solid var(--accent); border-radius: 15px; z-index: 5000; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(8px); overflow: hidden;">
+            <div style="padding: 12px 15px; background: var(--accent); color: #1B5E20; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 1.1rem;">✨ 愛玉知識小幫手</span>
+                <span id="close-chat-btn" style="cursor: pointer; font-size: 1.2rem; line-height: 1;">✖</span>
+            </div>
+            <div id="chat-history" style="flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; font-size: 0.95rem;">
+                <div style="background: rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 15px 15px 15px 0; align-self: flex-start; max-width: 85%; margin-bottom: 10px; line-height: 1.4;">
+                    你好！我是 AI 愛玉小幫手。👋<br>對愛玉的歷史、生態、或洗滌方式有什麼好奇的嗎？隨時問我！
+                </div>
+            </div>
+            <div style="padding: 12px; background: rgba(0,0,0,0.3); display: flex; gap: 8px;">
+                <input type="text" id="chat-input" placeholder="輸入你想問的問題..." style="flex-grow: 1; padding: 10px; border-radius: 8px; border: none; outline: none; font-family: inherit; font-size: 0.95rem;">
+                <button id="send-chat-btn" style="background: var(--accent); color: #1B5E20; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; font-weight: bold; font-size: 0.95rem;">傳送</button>
+            </div>
         </div>
     </div>
 
@@ -465,7 +496,7 @@ window.addLayerToJar = function(layerId, colorHex, score) {
     setTimeout(() => { layerDiv.style.height = finalHeight + '%'; }, 50);
 };
 
-// --- 修改區塊：在第 1~7 章的簡報內容中插入對應的圖片 ---
+// --- 修改區塊：在第 1~7 章的簡報內容中插入對應的圖片，以及最後一頁加入 AIYU11.jpg ---
 const slidesData = [
     // 前導 (0-3)
     { title: "沁涼台灣愛玉", content: "台灣特有種的生態奇蹟與消暑聖品<br><br><span style='font-size:1.2rem; color:#ccc;'>從高山藤蔓到餐桌果凍的食農之旅</span>", type: "title-slide" },
@@ -473,44 +504,44 @@ const slidesData = [
     { title: "愛玉七部曲", content: "<ul><li>1. <span class='highlight'>歷史</span>：發現歷史與真假分辨</li><li>2. <span class='highlight'>品種</span>：台灣特有變種與近親薜荔</li><li>3. <span class='highlight'>栽培</span>：攀附大樹的高山藤蔓</li><li>4. <span class='highlight'>生態</span>：愛玉小蜂(台灣特有)的絕對共生</li><li>5. <span class='highlight'>科學</span>：果膠與礦物質的交聯反應</li><li>6. <span class='highlight'>加工</span>：冒險採收與日曬翻轉</li><li>7. <span class='highlight'>手做</span>：DIY洗愛玉與保存要領</li></ul>" },
     { title: "防詐與資安提醒", content: "<ul><li>愛玉籽為高經濟價值農產。</li><li>網路常有<span class='highlight'>「一頁式廣告」以極低價(如百元)促銷</span>，多為假冒或混充果膠稀少的薜荔籽。</li><li>請認明農會或產銷履歷(TAP)購買，若有疑慮請撥打165防詐騙專線！</li></ul>" },
     
-    // Chapter 1 (4-7) (加入 AIYU1)
+    // Chapter 1 (4-7)
     { title: "【第一章】歷史與真偽分辨", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU1.jpg' class='ppt-img' alt='歷史與真偽' onerror=\"this.style.display='none'\"><ul><li>相傳清朝道光年間，有商人在嘉義山區飲水時，發現水面結凍。</li><li>商人將此果實交由女兒「愛玉」揉洗販售，故得名。</li></ul>" },
-    { title: "真假愛玉對決", content: "<ul><li><span class='highlight'>真愛玉：</span>外觀微濁，口感軟嫩。遇熱水<span class='highlight'>不會融化</span>。放久了會滲出水分(離水現象)。</li><li><span class='highlight'>假愛玉：</span>外觀透明清澈，口感極脆彈。由洋菜或化學果膠製成，遇熱水會融解，不會離水。</li></ul>" },
-    { title: "互動環節：真假愛玉分類", content: "<ul><li>在互動遊戲中：</li><li>接住真愛玉的特性（微濁、不融化、離水）。</li><li>避開假愛玉的陷阱（透明、遇熱融化）！</li></ul>", gameTarget: "layer-1" },
+    { title: "真假愛玉對決", content: "<ul><li><span class='highlight'>真愛玉：</span>外觀微濁有愛玉果絨，口感軟嫩。遇熱水<span class='highlight'>不會融化</span>。放久了會滲出水分(離水現象)。</li><li><span class='highlight'>假愛玉：</span>外觀透明清澈，口感極脆彈。由洋菜或化學果膠製成，遇熱水會融解，不會離水。</li></ul>" },
+    { title: "互動環節：真假愛玉分類", content: "<ul><li>在互動遊戲中：</li><li>接住真愛玉的特性（微濁有愛玉果絨、不融化、離水）。</li><li>避開假愛玉的陷阱（透明、遇熱融化）！</li></ul>", gameTarget: "layer-1" },
 
-    // Chapter 2 (8-10) (加入 AIYU10)
+    // Chapter 2 (8-10)
     { title: "【第二章】台灣特有品種", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU10.jpg' class='ppt-img' alt='台灣特有品種' onerror=\"this.style.display='none'\"><ul><li>學名：<i>Ficus pumila</i> var. <i>awkeotsang</i>。</li><li>全世界只有台灣的氣候與特殊的小蜂能孕育出愛玉。</li></ul>" },
     { title: "愛玉與近親「薜荔」", content: "<ul><li>薜荔 (<i>Ficus pumila</i>) 是平地常見的爬藤植物。</li><li><span class='highlight'>差異：</span>愛玉果實長橢圓，果膠極多；薜荔果實圓小，果膠極少，洗不出凍。</li><li>不良商人有時會用便宜的薜荔籽混充愛玉籽販售。</li></ul>" },
     { title: "互動環節：採集正宗愛玉", content: "<ul><li>在互動遊戲中：</li><li>點擊收集大顆的綠色愛玉果實。</li><li>避開小顆圓形的薜荔果！</li></ul>", gameTarget: "layer-2" },
 
-    // Chapter 3 (11-13) (加入 AIYU7)
+    // Chapter 3 (11-13)
     { title: "【第三章】生長環境與栽培", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU7.jpg' class='ppt-img' alt='生長環境與栽培' onerror=\"this.style.display='none'\"><ul><li>野生愛玉多生長於中低海拔（800~1800公尺）山區。</li><li>屬於<span class='highlight'>藤本植物</span>，莖部會長出不定根。</li></ul>" },
     { title: "攀附高樹的特性", content: "<ul><li>愛玉必須依附在闊葉大樹或岩壁上生長。</li><li>要爬到樹冠層，接收充足的陽光，才會開花結果。</li><li>因此早期原住民採摘時往往需要爬上數層樓高的大樹，極其危險。</li></ul>" },
     { title: "互動環節：讓愛玉爬上樹", content: "<ul><li>在互動遊戲中：</li><li>連續點擊，幫助愛玉藤蔓快速生長爬上大樹。</li><li>避開樹幹上的害蟲！</li></ul>", gameTarget: "layer-3" },
 
-    // Chapter 4 (14-17) (加入 AIYU4)
+    // Chapter 4 (14-17)
     { title: "【第四章】愛玉小蜂(台灣特有)的共生奇蹟", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU4.jpg' class='ppt-img' alt='小蜂共生奇蹟' onerror=\"this.style.display='none'\"><ul><li>愛玉是「雌雄異株」，且花朵長在果實內部（隱頭花序）。</li><li>蜜蜂、蝴蝶等無法幫它授粉，只能靠<span class='highlight'>愛玉小蜂(台灣特有)</span>。</li></ul>" },
     { title: "絕對互利共生", content: "<ul><li><span class='highlight'>公愛玉：</span>裡面沒有果膠，是提供給小蜂產卵、孵化的「育嬰房」。</li><li><span class='highlight'>母愛玉：</span>小蜂孵化後沾滿花粉飛出，鑽入母果底部的小孔(小孔苞片)授粉，母果才能結出含有果膠的愛玉籽。</li></ul>" },
     { title: "無農藥的堅持", content: "<ul><li>愛玉小蜂(台灣特有)極度脆弱，對環境要求極高。</li><li>只要有一點點農藥，小蜂就會死亡，愛玉就無法結果。</li><li>因此愛玉是<span class='highlight'>天然的綠色環保指標作物</span>！</li></ul>" },
     { title: "互動環節：小蜂授粉迷宮", content: "<ul><li>在互動遊戲中：</li><li>引導愛玉小蜂從<span class='highlight'>公果</span>飛出。</li><li>躲避致命的<span class='highlight'>農藥攻擊</span>，找到正確的母果底孔進入授粉！</li></ul>", gameTarget: "layer-4" },
 
-    // Chapter 5 (18-20) (加入 AIYU9)
-    { title: "【第五章】果膠科學與營養", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU9.jpg' class='ppt-img' alt='果膠科學與營養' onerror=\"this.style.display='none'\"><ul><li>愛玉籽富含膳食纖維，熱量極低（幾乎為0），是健康的消暑聖品。</li><li>結凍的科學秘密在於<span class='highlight'>果膠酯酶與鈣離子</span>。</li></ul>" },
+    // Chapter 5 (18-20)
+    { title: "【第五章】果膠科學與營養", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU9.jpg' class='ppt-img' alt='果膠科學與營養' onerror=\"this.style.display='none'\"><ul><li>愛玉籽富含膳食纖維，熱量極低（每100克約 <span class='highlight'>1大卡</span>），是健康的消暑聖品。</li><li>結凍的科學秘密在於<span class='highlight'>果膠酯酶與鈣離子</span>。</li></ul>" },
     { title: "水質是成敗關鍵", content: "<ul><li>洗愛玉的水中，必須含有<span class='highlight'>鈣離子 (礦物質)</span> 才能產生交聯反應結凍。</li><li><span class='highlight'>禁忌一：</span>不能用 RO 逆滲透水、純水、蒸餾水 (缺乏礦物質)。</li><li><span class='highlight'>禁忌二：</span>容器不能有油汙，雙手不能塗護手霜，否則會破壞果膠結構。</li></ul>" },
     { title: "互動環節：接取正確的水源", content: "<ul><li>在互動遊戲中：</li><li>接住含有礦物質的水滴 (Ca2+)。</li><li>避開 RO純水 與 油汙！</li></ul>", gameTarget: "layer-5" },
 
-    // Chapter 6 (21-23) (加入 AIYU6)
-    { title: "【第六章】採收與加工製程", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU6.jpg' class='ppt-img' alt='採收與加工製程' onerror=\"this.style.display='none'\"><ul><li>採收後的愛玉果實是綠色的，不能直接洗。</li><li>必須經過繁複的加工步驟才能保存與使用。</li></ul>" },
+    // Chapter 6 (21-23)
+    { title: "【第六章】採收與加工製程", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU6.jpg' class='ppt-img' alt='採收與加工製程' onerror=\"this.style.display='none'\"><ul><li>愛玉是<span class='highlight'>隱花果</span>，愛玉籽長在果實內，採收的愛玉果實不能直接洗(果膠)。</li><li>必須經過繁複的加工步驟才能保存與使用。</li></ul>" },
     { title: "削皮、翻轉與日曬", content: "<ul><li>1. <span class='highlight'>削皮：</span>去除外皮，流出白色的黏液。</li><li>2. <span class='highlight'>剖半翻轉：</span>將果實對半切開，由內向外翻轉，讓內部的瘦果(籽)暴露出來。</li><li>3. <span class='highlight'>日曬乾燥：</span>利用陽光曝曬數日，直到變為金黃色且乾燥。</li></ul>" },
     { title: "互動環節：日曬翻轉大師", content: "<ul><li>在互動遊戲中：</li><li>將畫面上的綠色愛玉剖開翻轉，並在陽光下曬乾。</li></ul>", gameTarget: "layer-6" },
 
-    // Chapter 7 (24-26) (加入 AIYU5)
+    // Chapter 7 (24-26)
     { title: "【第七章】DIY手洗體驗與保存", content: "<img src='https://farmcmd.github.io/ESGT/images/AIYU5.jpg' class='ppt-img' alt='DIY手洗體驗' onerror=\"this.style.display='none'\"><ul><li>比例：10克的愛玉籽，大約配 600~800 cc 的冷礦泉水（或煮沸放涼的自來水）。</li></ul>" },
     { title: "手洗與保存要領", content: "<ul><li><span class='highlight'>搓揉：</span>將籽放入棉袋綁緊，在水中輕輕搓揉約 5-10 分鐘，擠出黏液。</li><li><span class='highlight'>靜置：</span>常溫靜置 30 分鐘，過程中<span class='highlight'>千萬不要搖晃容器</span>。</li><li><span class='highlight'>保存：</span>結凍後放冰箱冷藏，請在1~2天內食用完畢，否則會離水化成液體。</li></ul>" },
     { title: "互動環節：模擬洗愛玉", content: "<ul><li>在互動遊戲中：</li><li>用滑鼠或手指在水盆中左右來回滑動，搓洗出果膠，完成你的愛玉凍！</li></ul>", gameTarget: "layer-7" },
 
     // 總結 (27)
-    { title: "愛玉食農結業", content: "<div style='text-align:center; font-size:2rem; margin-top:50px; color:#FBC02D;'>感謝參與！</div><br><div style='text-align:center;'>下次吃愛玉時，別忘了這份來自台灣森林的珍貴禮物。</div>", type: "title-slide" }
+    { title: "愛玉食農結業", content: "<div style='text-align:center; font-size:2rem; margin-top:20px; color:#FBC02D;'>感謝參與！</div><div style='text-align:center; margin-bottom: 20px;'>下次吃愛玉時，別忘了這份來自台灣森林的珍貴禮物。</div><img src='https://farmcmd.github.io/ESGT/images/AIYU11.jpg' alt='愛玉食農結業' style='max-width: 80%; max-height: 300px; border-radius: 15px; border: 3px solid var(--accent); box-shadow: 0 5px 15px rgba(0,0,0,0.5); margin: 0 auto; display: block; object-fit: cover;' onerror=\"this.style.display='none'\">", type: "title-slide" }
 ];
 
 let pptCurrentPage = 0;
@@ -1407,8 +1438,10 @@ function initGame7() {
         </div>
         <div id="final-overlay" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:5000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;padding:20px;">
             <h1 style="color:#FFCA28;font-size:2.5rem;">🎉 恭喜完成愛玉食農教育 🎉</h1>
-            <p style="margin:20px 0; font-size:1.2rem; line-height:1.6;">你已經掌握了台灣特有愛玉的知識與洗滌技巧！<br>下次購買時，記得認明產銷履歷，拒絕低價不明粉末！</p>
-            <button onclick="location.reload()" style="padding:12px 25px;font-size:1.2rem;background:#4CAF50;color:white;border:none;border-radius:30px;cursor:pointer;">🔄 重新體驗</button>
+            <p style="margin:20px 0; font-size:1.2rem; line-height:1.6;">你已經掌握了台灣特有愛玉的知識與洗滌技巧！<br>
+                <a href="https://www.facebook.com/SunShuiLi/" target="_blank" style="display:inline-block; margin-top:20px; padding:12px 25px; background:rgba(255, 202, 40, 0.2); color:#FFCA28; text-decoration:none; font-weight:bold; border-radius:30px; border:2px solid #FFCA28; font-size:1.3rem; transition:all 0.3s; box-shadow:0 4px 15px rgba(255, 202, 40, 0.3);">👉 到農夫的粉專看看 👈</a>
+            </p>
+            <button onclick="location.reload()" style="padding:10px 20px;font-size:1.1rem;background:#4CAF50;color:white;border:none;border-radius:30px;cursor:pointer;margin-top:10px;">🔄 重新體驗</button>
         </div>
     `;
     const area = document.getElementById('g7-area'); const bag = document.getElementById('g7-bag');
@@ -1562,6 +1595,98 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('touchmove', draw, {passive: false});
     window.addEventListener('touchend', stopDraw);
     // --- 畫筆修復結束 ---
+
+    // --- ✨ Gemini API 整合 (食譜生成與問答小幫手) ---
+    const apiKey = "";
+    
+    async function callGeminiAPI(prompt, sysInstruction) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            systemInstruction: { parts: [{ text: sysInstruction }] }
+        };
+        
+        let delays = [1000, 2000, 4000, 8000, 16000];
+        
+        for (let i = 0; i < 5; i++) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error("API Error");
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "（AI 暫時無法回應）";
+            } catch (error) {
+                if (i === 4) return "抱歉，AI 連線發生異常，請稍後再試。";
+                await new Promise(r => setTimeout(r, delays[i]));
+            }
+        }
+    }
+
+    // AI 食譜生成邏輯
+    const recipeBtn = document.getElementById('generate-recipe-btn');
+    if (recipeBtn) {
+        recipeBtn.addEventListener('click', async () => {
+            const input = document.getElementById('recipe-ingredients').value.trim();
+            if (!input) return;
+            const output = document.getElementById('recipe-output');
+            output.style.display = 'block';
+            output.innerHTML = '<i>✨ AI 主廚正在為您構思特製食譜...</i>';
+            recipeBtn.disabled = true;
+            recipeBtn.style.opacity = '0.7';
+            
+            const sys = "你是一位充滿創意的台灣甜點主廚。請用輕鬆活潑的語氣，運用使用者提供的食材搭配『天然愛玉凍』，寫出一份大約80字的創意食譜，必須包含一個好聽的甜點名稱。請使用繁體中文。";
+            const prompt = `我有這些食材：${input}。請給我一個專屬的愛玉食譜。`;
+            
+            const result = await callGeminiAPI(prompt, sys);
+            output.innerHTML = result.replace(/\n/g, '<br>');
+            recipeBtn.disabled = false;
+            recipeBtn.style.opacity = '1';
+        });
+    }
+
+    // AI 聊天小幫手邏輯
+    const chatBtn = document.getElementById('ai-chat-btn');
+    const chatModal = document.getElementById('ai-chat-modal');
+    if (chatBtn && chatModal) {
+        chatBtn.addEventListener('click', () => {
+            chatModal.classList.toggle('hidden');
+            chatBtn.style.transform = chatModal.classList.contains('hidden') ? 'scale(1)' : 'scale(1.1)';
+        });
+        document.getElementById('close-chat-btn').addEventListener('click', () => {
+            chatModal.classList.add('hidden');
+            chatBtn.style.transform = 'scale(1)';
+        });
+        
+        document.getElementById('send-chat-btn').addEventListener('click', sendChat);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') sendChat();
+        });
+
+        async function sendChat() {
+            const inputEl = document.getElementById('chat-input');
+            const text = inputEl.value.trim();
+            if(!text) return;
+            
+            const history = document.getElementById('chat-history');
+            history.innerHTML += `<div style="background: rgba(255,202,40,0.9); color: #1B5E20; padding: 10px 15px; border-radius: 15px 15px 0 15px; align-self: flex-end; max-width: 85%; margin-bottom: 10px; line-height: 1.4; font-weight: bold;">${text}</div>`;
+            inputEl.value = '';
+            history.scrollTop = history.scrollHeight;
+            
+            const loadId = 'loading-' + Date.now();
+            history.innerHTML += `<div id="${loadId}" style="background: rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 15px 15px 15px 0; align-self: flex-start; max-width: 85%; margin-bottom: 10px;"><i>✨ AI 查詢中...</i></div>`;
+            history.scrollTop = history.scrollHeight;
+            
+            const sys = "你是一位熱情的台灣愛玉專家。請簡短回答(50字內為主)關於愛玉的歷史、品種、生態、加工或洗滌知識。語氣友善親切，使用繁體中文。若問題與愛玉或食農教育無關，請委婉拉回主題。";
+            const result = await callGeminiAPI(text, sys);
+            
+            document.getElementById(loadId).remove();
+            history.innerHTML += `<div style="background: rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 15px 15px 15px 0; align-self: flex-start; max-width: 85%; line-height: 1.5; margin-bottom: 10px;">${result.replace(/\n/g, '<br>')}</div>`;
+            history.scrollTop = history.scrollHeight;
+        }
+    }
 
     initGame1(); initGame2(); initGame3(); initGame4(); initGame5(); initGame6(); initGame7();
 });
