@@ -31,12 +31,6 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
         
-        /* 🌟 新增：抽獎列專屬高質感橫向捲軸 */
-        .ticket-scrollbar::-webkit-scrollbar { height: 6px; }
-        .ticket-scrollbar::-webkit-scrollbar-track { background: rgba(254, 240, 138, 0.4); border-radius: 10px; }
-        .ticket-scrollbar::-webkit-scrollbar-thumb { background-color: #FBBF24; border-radius: 10px; cursor: pointer; }
-        .ticket-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #F59E0B; }
-
         .modal-overlay { backdrop-filter: blur(4px); transition: opacity 0.3s ease; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
         .modal-content { background: white; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 1.5rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -47,10 +41,10 @@
         /* 🌟 新增：中獎序號瘋狂閃爍特效 */
         @keyframes jackpot-flash {
             0% { transform: scale(1); background-color: #ffffff; border-color: #fde047; box-shadow: 0 0 0 rgba(250,204,21,0); }
-            20% { transform: scale(1.15) rotate(-3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
-            40% { transform: scale(1.15) rotate(3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
-            60% { transform: scale(1.15) rotate(-3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
-            80% { transform: scale(1.15) rotate(3deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            20% { transform: scale(1.05) rotate(-2deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            40% { transform: scale(1.05) rotate(2deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            60% { transform: scale(1.05) rotate(-2deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
+            80% { transform: scale(1.05) rotate(2deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
             100% { transform: scale(1); background-color: #fef08a; border-color: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.5); color: #b91c1c; }
         }
         .jackpot-winner {
@@ -125,19 +119,20 @@
                     </div>
                 </div>
 
-                <!-- 🌟 升級：抽獎序號常駐顯示列，附帶最新雲端活動推播 -->
+                <!-- 🌟 升級：抽獎序號改為點擊彈窗檢視 -->
                 <div id="lottery-ticket-bar" class="flex items-center justify-between bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200 shadow-sm overflow-hidden animate-fade-in-down w-full gap-2">
-                    <div class="flex items-center overflow-hidden flex-1">
+                    <button id="my-tickets-btn" onclick="window.openModal('my-tickets-modal')" class="flex items-center overflow-hidden flex-1 group active:scale-95 transition-all text-left outline-none rounded-lg py-1 px-1">
                         <div class="flex items-center shrink-0 mr-2 sm:mr-3 border-r border-yellow-200 pr-2 sm:pr-3">
-                            <i class="fas fa-ticket-alt text-yellow-500 text-sm md:text-base mr-1.5"></i>
-                            <span class="text-[11px] md:text-xs font-black text-yellow-800 tracking-wide">序號</span>
+                            <i class="fas fa-ticket-alt text-yellow-500 text-sm md:text-base mr-1.5 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-[11px] md:text-xs font-black text-yellow-800 tracking-wide">我的抽獎券</span>
                         </div>
-                        <div id="lottery-ticket-list" class="flex gap-2 overflow-x-auto ticket-scrollbar pb-1.5 items-center flex-1">
-                            <span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>
+                        <div class="flex items-center flex-1">
+                            <span id="ticket-count-badge" class="bg-yellow-100 text-yellow-700 px-2.5 py-0.5 rounded-full shadow-sm text-xs font-bold border border-yellow-300">0 張</span>
+                            <span id="ticket-hint-text" class="text-[10px] text-gray-400 ml-2 group-hover:text-yellow-600 transition-colors hidden sm:inline">(點擊檢視詳細序號)</span>
                         </div>
-                    </div>
-                    <!-- 🌟 升級：後台推播最新活動按鈕 -->
-                    <button onclick="window.openLatestEventsModal()" class="shrink-0 flex items-center bg-white/95 px-3 py-1.5 rounded-lg border-2 border-yellow-300 shadow-sm hover:shadow hover:bg-yellow-50 transition-all group active:scale-95 cursor-pointer">
+                    </button>
+                    <!-- 🌟 後台推播最新活動按鈕 -->
+                    <button onclick="window.openLatestEventsModal()" class="shrink-0 flex items-center bg-white/95 px-3 py-1.5 rounded-lg border-2 border-yellow-300 shadow-sm hover:shadow hover:bg-yellow-50 transition-all group active:scale-95 cursor-pointer outline-none">
                         <i class="fas fa-gift text-red-500 mr-1.5 group-hover:animate-bounce text-[12px]"></i>
                         <span class="text-[10px] md:text-[11px] font-black text-red-600 tracking-wide mr-1.5 whitespace-nowrap">活動列表</span>
                         <div class="h-3.5 w-px bg-yellow-200 mx-1.5"></div>
@@ -320,7 +315,6 @@
                                 </div>
                             </div>
                             
-                            <!-- 🌟 補齊升級：指導單位與協辦單位輸入欄位 -->
                             <div class="grid grid-cols-2 gap-3">
                                 <input type="text" id="host-proj-supervisor" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="指導單位">
                                 <input type="text" id="host-proj-coorganizer" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="協辦單位">
@@ -352,6 +346,22 @@
     <!-- 模態框區域 (Modals) -->
     <!-- ============================================== -->
     
+    <!-- 🌟 我的抽獎券庫 Modal (新增) -->
+    <div id="my-tickets-modal" class="modal-overlay hidden" style="z-index: 9999;">
+        <div class="modal-content max-w-md p-6 bg-white border-t-8 border-yellow-400 relative shadow-2xl flex flex-col h-[75vh]">
+            <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('my-tickets-modal')"><i class="fas fa-times text-xl"></i></button>
+            <div class="p-2 border-b border-gray-100 flex-shrink-0 mb-4 text-center">
+                <h3 class="text-2xl font-black text-yellow-800 tracking-wide"><i class="fas fa-ticket-alt text-yellow-500 mr-2"></i>我的專屬抽獎券庫</h3>
+                <p class="text-[11px] text-gray-500 mt-1.5">點擊主畫面「活動列表」也可查看最新開獎動態</p>
+            </div>
+            <div class="flex-grow overflow-y-auto custom-scrollbar p-3 bg-gray-50 rounded-xl shadow-inner border border-gray-100">
+                <div id="modal-ticket-list" class="flex flex-col gap-3">
+                    <!-- JS 動態產生序號大卡片 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 企業問卷 Modal -->
     <div id="ent-eval-modal" class="modal-overlay hidden"><div class="modal-content max-w-2xl p-6 border-t-8 border-mori-wood relative"><button class="close-button absolute top-4 right-4 text-gray-400" onclick="window.closeModal('ent-eval-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-2xl font-bold text-center text-mori-forest mb-4">企業 ESG 行動評鑑</h3><div class="bg-green-50 p-4 rounded-xl border-2 border-green-300 mb-6 relative overflow-hidden"><p class="text-sm font-bold text-green-800 mb-1">即將歸戶至：<span id="ent-eval-target-name" class="text-green-700 ml-1"></span></p><div class="flex gap-4 text-sm font-bold mt-2 mb-3"><span class="bg-white px-2 py-1 rounded text-mori-forest shadow-sm">消耗減碳: <span id="ent-eval-target-carbon">0</span>g</span><span class="bg-white px-2 py-1 rounded text-blue-600 shadow-sm">提供綠消: $<span id="ent-eval-target-green">0</span></span></div><p class="text-[10px] text-red-500 font-bold mt-2"><i class="fas fa-exclamation-triangle"></i> 注意：歸戶後，您本機的積分與減碳量將會扣除並轉移給該企業。</p></div><div id="ent-eval-questions-container" class="space-y-8 mt-2"></div><div class="mt-6 bg-white p-4 rounded-xl border border-gray-200"><textarea id="ent-eval-feedback" class="w-full p-3 border border-gray-200 rounded-lg text-sm" placeholder="永續心得(選填)"></textarea></div><div class="flex justify-end gap-3 mt-4"><button id="quick-fill-ent-stars-btn" class="text-xs text-mori-forest font-bold mt-2 underline">快速填滿 5 分</button></div><button id="submit-ent-eval-btn" class="w-full py-4 bg-mori-forest hover:bg-mori-dark text-white rounded-xl font-black text-lg mt-3 shadow-md transition-colors">確認結算並送出</button></div></div>
     
@@ -554,9 +564,14 @@
                 if (entBadge) { entBadge.classList.add('hidden'); entBadge.classList.remove('flex'); }
             }
 
-            const ticketList = document.getElementById('lottery-ticket-list');
+            // 🌟 升級：轉移至 Modal 內渲染大字體卡片
+            const ticketList = document.getElementById('modal-ticket-list');
+            const countBadge = document.getElementById('ticket-count-badge');
+            const ticketBtn = document.getElementById('my-tickets-btn');
+            const hintText = document.getElementById('ticket-hint-text');
+            
             if (state.lotteryTickets && state.lotteryTickets.length > 0) {
-                // 🌟 升級：自動清除過期彩卷邏輯 (加入 7 天對獎寬限期)
+                // 自動清除過期彩卷邏輯 (加入 7 天對獎寬限期)
                 const now = new Date();
                 const validTickets = [];
                 let hasExpired = false;
@@ -580,31 +595,71 @@
                     try { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
                 }
 
+                // 🌟 升級：動態強視覺提示 (有票時)
+                if (countBadge) {
+                    countBadge.textContent = `${state.lotteryTickets.length} 張`;
+                    countBadge.className = 'bg-red-500 text-white px-2.5 py-0.5 rounded-full shadow-sm text-[11px] font-black border border-red-600 animate-pulse tracking-wider';
+                }
+                if (hintText) {
+                    hintText.textContent = '👉 點擊查看序號';
+                    hintText.className = 'text-[11px] text-red-600 ml-2 font-black animate-bounce inline-block';
+                }
+                if (ticketBtn) ticketBtn.classList.add('ring-2', 'ring-yellow-400', 'bg-yellow-100/50');
+
                 if (ticketList) {
                     if (state.lotteryTickets.length > 0) {
-                        // 🌟 升級：根據狀態給予不同視覺 (中獎：金底紅框 / 待開獎寬限期：灰底 / 正常：白底黃框)
                         ticketList.innerHTML = state.lotteryTickets.map(t => {
                             let isWaitingToExpire = false;
                             if (t.deadline && t.deadline !== '未定') {
-                                const exactExpDate = new Date(t.deadline.replace(/-/g, '/'));
+                                const exactExpDate = new Date(t.deadline.replace(/-/g, '/') + ' 23:59:59');
                                 if (now > exactExpDate) isWaitingToExpire = true; 
                             }
 
                             if (t.isWinner) {
-                                return `<span id="ticket-ui-${t.serial}" class="bg-gradient-to-r from-yellow-200 to-yellow-400 border-2 border-red-500 text-red-700 px-2 py-0.5 rounded shadow-md text-[10px] sm:text-[11px] font-black font-mono tracking-widest shrink-0 transition-all duration-300 flex items-center gap-1" title="${t.eventName} (已中獎)"><i class="fas fa-crown text-red-600"></i>#${t.serial}</span>`;
+                                return `<div id="ticket-ui-${t.serial}" class="bg-gradient-to-r from-yellow-100 to-yellow-300 border-2 border-red-500 p-4 rounded-xl shadow-md flex justify-between items-center transition-all duration-300 relative overflow-hidden group">
+                                            <div class="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-bl-lg font-bold"><i class="fas fa-crown mr-1"></i>已中獎</div>
+                                            <div class="flex flex-col relative z-10">
+                                                <span class="text-xs font-bold text-red-700 mb-1">${t.eventName}</span>
+                                                <span class="text-xl md:text-2xl font-black text-red-600 font-mono tracking-widest drop-shadow-sm">${t.serial}</span>
+                                            </div>
+                                            <i class="fas fa-gift text-4xl text-red-500/40 relative z-10 group-hover:scale-110 transition-transform"></i>
+                                        </div>`;
                             } else if (isWaitingToExpire) {
-                                return `<span id="ticket-ui-${t.serial}" class="bg-gray-100 border border-gray-300 text-gray-400 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName} (已結束，等待開獎)"><i class="fas fa-hourglass-half mr-1 opacity-50"></i>#${t.serial}</span>`;
+                                return `<div id="ticket-ui-${t.serial}" class="bg-gray-100 border-2 border-gray-200 p-4 rounded-xl shadow-sm flex justify-between items-center transition-all duration-300 grayscale opacity-80">
+                                            <div class="flex flex-col">
+                                                <span class="text-xs font-bold text-gray-500 mb-1 flex items-center"><i class="fas fa-hourglass-half mr-1"></i>${t.eventName} (活動結束)</span>
+                                                <span class="text-xl md:text-2xl font-black text-gray-600 font-mono tracking-widest">${t.serial}</span>
+                                            </div>
+                                            <i class="fas fa-ticket-alt text-4xl text-gray-300"></i>
+                                        </div>`;
                             } else {
-                                return `<span id="ticket-ui-${t.serial}" class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0 transition-all duration-300" title="${t.eventName}">#${t.serial}</span>`;
+                                return `<div id="ticket-ui-${t.serial}" class="bg-white border-2 border-yellow-300 p-4 rounded-xl shadow-sm flex justify-between items-center transition-all duration-300 hover:border-yellow-400 hover:shadow-md group">
+                                            <div class="flex flex-col">
+                                                <span class="text-xs font-bold text-yellow-700 mb-1 flex items-center"><i class="fas fa-star mr-1 text-yellow-400"></i>${t.eventName}</span>
+                                                <span class="text-xl md:text-2xl font-black text-yellow-800 font-mono tracking-widest">${t.serial}</span>
+                                            </div>
+                                            <i class="fas fa-ticket-alt text-4xl text-yellow-100 group-hover:text-yellow-200 transition-colors"></i>
+                                        </div>`;
                             }
                         }).join('');
                     } else {
-                        ticketList.innerHTML = `<span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>`;
+                        ticketList.innerHTML = `<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-box-open text-4xl mb-3 opacity-30"></i><br>目前沒有任何序號</div>`;
                     }
                 }
             } else {
+                // 🌟 恢復預設視覺 (無票時)
+                if (countBadge) {
+                    countBadge.textContent = `0 張`;
+                    countBadge.className = 'bg-yellow-100 text-yellow-700 px-2.5 py-0.5 rounded-full shadow-sm text-xs font-bold border border-yellow-300';
+                }
+                if (hintText) {
+                    hintText.textContent = '(點擊檢視詳細序號)';
+                    hintText.className = 'text-[10px] text-gray-400 ml-2 group-hover:text-yellow-600 transition-colors hidden sm:inline';
+                }
+                if (ticketBtn) ticketBtn.classList.remove('ring-2', 'ring-yellow-400', 'bg-yellow-100/50');
+
                 if (ticketList) {
-                    ticketList.innerHTML = `<span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>`;
+                    ticketList.innerHTML = `<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-box-open text-4xl mb-3 opacity-30"></i><br>目前沒有任何序號</div>`;
                 }
             }
         };
@@ -983,23 +1038,28 @@
                                 myWinningTicket.isWinner = true;
                                 window.saveData(); 
                                 
-                                // 重新抓取渲染後的新 DOM 元素來掛載閃爍特效
-                                const ticketEl = document.getElementById(`ticket-ui-${winnerSerial}`);
-                                if (ticketEl) {
-                                    // 加入瘋狂閃爍特效
-                                    ticketEl.classList.add('jackpot-winner');
-                                    // 自動將畫面捲動到該序號
-                                    ticketEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                                }
+                                // 🌟 升級：自動打開彈窗以展示放大版的中獎卡片
+                                window.openModal('my-tickets-modal');
                                 
-                                // 觸發特製音效與恭喜訊息
-                                window.playJackpotSound();
-                                window.showToast(`🎉 天啊恭喜！您的序號 #${winnerSerial} 抽中「${data.drawData.prizeName}」！`);
-                                
-                                // 特效持續 15 秒後自動移除，恢復正常 (但因為存檔了，所以金底紅框會永久保留)
                                 setTimeout(() => {
-                                    if(ticketEl) ticketEl.classList.remove('jackpot-winner');
-                                }, 15000);
+                                    // 重新抓取渲染後的新 DOM 元素來掛載閃爍特效
+                                    const ticketEl = document.getElementById(`ticket-ui-${winnerSerial}`);
+                                    if (ticketEl) {
+                                        // 加入瘋狂閃爍特效
+                                        ticketEl.classList.add('jackpot-winner');
+                                        // 自動將畫面捲動到該序號
+                                        ticketEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                                    }
+                                    
+                                    // 觸發特製音效與恭喜訊息
+                                    window.playJackpotSound();
+                                    window.showToast(`🎉 天啊恭喜！您的序號 #${winnerSerial} 抽中「${data.drawData.prizeName}」！`);
+                                    
+                                    // 特效持續 15 秒後自動移除，恢復正常 (但因為存檔了，所以金底紅框會永久保留)
+                                    setTimeout(() => {
+                                        if(ticketEl) ticketEl.classList.remove('jackpot-winner');
+                                    }, 15000);
+                                }, 300); // 延遲讓 Modal 顯示完畢再捲動
                             }
                         }, 3600);
                     }
@@ -1509,7 +1569,7 @@
                             <div class="bg-white p-3.5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden group hover:border-green-300 transition-colors">
                                 <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
                                 <div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black tracking-wide">總計減碳</p><span class="bg-green-50 text-green-600 text-[10px] px-1.5 py-0.5 rounded flex items-center"><i class="fas fa-arrow-trend-up"></i></span></div>
-                                <div class="flex justify-between items-end"><p class="font-black text-gray-700 text-xl flex items-baseline gap-1">${Math.round(Number(proj.carbon) || 0).toLocaleString()} <span class="text-[10px] text-gray-400 font-normal ml-0.5">g/CO2e</span></p></div>
+                                <div class="flex justify-between items-end"><p class="font-black text-gray-700 text-xl flex items-baseline gap-0.5">${Math.round(Number(proj.carbon) || 0).toLocaleString()} <span class="text-[10px] text-gray-400 font-normal ml-0.5">g/CO2e</span></p></div>
                             </div>
                             <div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-colors">
                                 <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
@@ -1709,7 +1769,7 @@
             if(govGen) govGen.onclick = () => {
                 if (summaryState.govSelected.size === 0) return window.showToast('請至少選擇一張活動卡片');
                 window.customPrompt("📝 請輸入本次總承報表的計畫名稱：", "【專案總結】計畫執行綜合績效", (customTitle) => {
-                    if (customTitle === null) return; window.showToast('🔄 報表生成中...'); const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【專案總結】計畫執行綜合績效";
+                    if (customTitle === null) return window.showToast('🔄 報表生成中...'); const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【專案總結】計畫執行綜合績效";
                     let combined = { name: finalTitle, event: `共彙整 ${summaryState.govSelected.size} 個計畫活動`, eval_count: 0, total_score: 0, carbon: 0, green: 0, budget: 0, sroi: 1, feedbacks: [] };
                     let sroiSum = 0; let includedProjectsList = [];
 
