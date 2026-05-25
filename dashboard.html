@@ -611,18 +611,22 @@
                         ticketList.innerHTML = state.lotteryTickets.map(t => {
                             let isWaitingToExpire = false;
                             if (t.deadline && t.deadline !== '未定') {
-                                const exactExpDate = new Date(t.deadline.replace(/-/g, '/') + ' 23:59:59');
+                                const exactExpDate = new Date(t.deadline.replace(/-/g, '/'));
                                 if (now > exactExpDate) isWaitingToExpire = true; 
                             }
 
                             if (t.isWinner) {
-                                return `<div id="ticket-ui-${t.serial}" class="bg-gradient-to-r from-yellow-100 to-yellow-300 border-2 border-red-500 p-4 rounded-xl shadow-md flex justify-between items-center transition-all duration-300 relative overflow-hidden group">
+                                return `<div id="ticket-ui-${t.serial}" class="bg-gradient-to-r from-yellow-100 to-yellow-300 border-2 border-red-500 p-4 rounded-xl shadow-md transition-all duration-300 relative overflow-hidden group">
                                             <div class="absolute top-0 right-0 bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-bl-lg font-bold"><i class="fas fa-crown mr-1"></i>已中獎</div>
+                                            <i class="fas fa-gift text-6xl text-red-500/10 absolute right-[-10px] bottom-[-10px] group-hover:scale-110 transition-transform z-0"></i>
                                             <div class="flex flex-col relative z-10">
                                                 <span class="text-xs font-bold text-red-700 mb-1">${t.eventName}</span>
                                                 <span class="text-xl md:text-2xl font-black text-red-600 font-mono tracking-widest drop-shadow-sm">${t.serial}</span>
+                                                <div class="mt-2 inline-flex items-center bg-white/70 border border-red-200 px-2.5 py-1 rounded shadow-sm w-max">
+                                                    <span class="text-sm font-black text-red-800"><i class="fas fa-gift mr-1.5 text-red-500"></i>${t.prizeName || '恭喜中獎'}</span>
+                                                </div>
+                                                <span class="text-[9px] text-red-500 font-bold mt-1.5 opacity-90"><i class="fas fa-info-circle mr-0.5"></i>獎項配發及兌換，請以主辦單位中獎公告為主</span>
                                             </div>
-                                            <i class="fas fa-gift text-4xl text-red-500/40 relative z-10 group-hover:scale-110 transition-transform"></i>
                                         </div>`;
                             } else if (isWaitingToExpire) {
                                 return `<div id="ticket-ui-${t.serial}" class="bg-gray-100 border-2 border-gray-200 p-4 rounded-xl shadow-sm flex justify-between items-center transition-all duration-300 grayscale opacity-80">
@@ -1034,8 +1038,9 @@
                             // 檢查自己身上有沒有這張中獎序號
                             const myWinningTicket = state.lotteryTickets.find(t => t.serial === winnerSerial);
                             if (myWinningTicket) {
-                                // 🌟 升級：永久標記中獎狀態並存檔，這會觸發重新渲染套用金底紅框
+                                // 🌟 升級：永久標記中獎狀態、寫入獎項名稱並存檔
                                 myWinningTicket.isWinner = true;
+                                myWinningTicket.prizeName = data.drawData.prizeName || '神秘大獎';
                                 window.saveData(); 
                                 
                                 // 🌟 升級：自動打開彈窗以展示放大版的中獎卡片
@@ -2459,7 +2464,7 @@
             });
         }
 
-        // 啟動系統
+        // 啟 কথ系統
         document.addEventListener('DOMContentLoaded', () => {
             window.loadLocalData();
             initFirebase();
