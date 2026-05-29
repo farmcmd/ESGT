@@ -626,7 +626,7 @@
                                                 <div class="mt-2 inline-flex items-center bg-white/70 border border-red-200 px-2.5 py-1 rounded shadow-sm w-max">
                                                     <span class="text-sm font-black text-red-800"><i class="fas fa-gift mr-1.5 text-red-500"></i>${t.prizeName || '恭喜中獎'}</span>
                                                 </div>
-                                                <span class="text-[9px] text-red-500 font-bold mt-1.5 opacity-90"><i class="fas fa-info-circle mr-0.5"></i>獎項配發及兌換，以主辦單位中獎公告為主</span>
+                                                <span class="text-[9px] text-red-500 font-bold mt-1.5 opacity-90"><i class="fas fa-info-circle mr-0.5"></i>獎項配發及兌換，請以主辦單位中獎公告為主</span>
                                             </div>
                                         </div>`;
                             } else if (isWaitingToExpire) {
@@ -2193,18 +2193,21 @@
                 });
             }
 
+            const isOnline = navigator.onLine;
+
             if (!isOfflineMode && db && !projId.startsWith('mock_')) {
-                try {
-                    const updates = { carbon: increment(carb), green: increment(totalGreen), eval_count: increment(1), total_score: increment(evalTotalScore), score_e: increment(scoreE), score_s: increment(scoreS), score_g: increment(scoreG), updatedAt: serverTimestamp() };
-                    if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
-                    await setDoc(doc(db, 'ent_projects', projId), updates, { merge: true });
-                    await setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(carb), green: increment(totalGreen), [`daily_${window.getTodayKey()}_carbon`]: increment(carb) }, { merge: true });
-                    
-                    // 🌟 一鍵將本次所有產生的抽獎卷投遞至雲端票箱
-                    if (ticketsToUpload.length > 0) {
-                        await Promise.all(ticketsToUpload.map(ticket => addDoc(collection(db, 'lottery_tickets'), ticket)));
-                    }
-                } catch(e) { window.showToast(`🚨 雲端歸戶失敗: ${e.message}`); return; }
+                const updates = { carbon: increment(carb), green: increment(totalGreen), eval_count: increment(1), total_score: increment(evalTotalScore), score_e: increment(scoreE), score_s: increment(scoreS), score_g: increment(scoreG), updatedAt: serverTimestamp() };
+                if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
+                
+                // 🌟 升級：移除 await 卡頓封印，Fire-and-forget 直接交給 Firebase 背景離線佇列
+                setDoc(doc(db, 'ent_projects', projId), updates, { merge: true }).catch(e => console.warn("背景同步稍後重試", e));
+                setDoc(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(carb), green: increment(totalGreen), [`daily_${window.getTodayKey()}_carbon`]: increment(carb) }, { merge: true }).catch(e => console.warn("背景同步稍後重試", e));
+                
+                if (ticketsToUpload.length > 0) {
+                    ticketsToUpload.forEach(ticket => {
+                        addDoc(collection(db, 'lottery_tickets'), ticket).catch(e => console.warn("票券背景同步稍後重試", e));
+                    });
+                }
             } else if (p) {
                  p.carbon = (p.carbon || 0) + carb; p.green = (p.green || 0) + totalGreen; p.eval_count = (p.eval_count || 0) + 1; p.total_score = (p.total_score || 0) + evalTotalScore; p.score_e = (p.score_e || 0) + scoreE; p.score_s = (p.score_s || 0) + scoreS; p.score_g = (p.score_g || 0) + scoreG;
                  if(currentFeedback) { if(!p.feedbacks) p.feedbacks = []; p.feedbacks.push(currentFeedback); }
@@ -2220,7 +2223,13 @@
             window.resetPlayerStats();
 
             if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard();
-            if(newTicketsCount > 0) window.showToast(`🎉 歸戶成功！並兌換了 ${newTicketsCount} 張專屬抽獎卷！`); else window.showToast('✅ 企業歸戶成功！');
+            
+            // 🌟 升級：智能網路狀態偵測提示
+            if (isOnline) {
+                if(newTicketsCount > 0) window.showToast(`🎉 歸戶成功！並兌換了 ${newTicketsCount} 張專屬抽獎卷！`); else window.showToast('✅ 企業歸戶成功！');
+            } else {
+                window.showToast(`⚠️ 網路連線不穩！已暫存歸戶與 ${newTicketsCount} 張抽獎卷，等待網路恢復後將自動補齊數據！`, true);
+            }
 
             window.closeModal('ent-eval-modal');
 
@@ -2282,17 +2291,20 @@
                 });
             }
 
+            const isOnline = navigator.onLine;
+
             if (!isOfflineMode && db && !projId.startsWith('mock_')) {
-                try {
-                    const updates = { carbon: increment(carb), green: increment(totalGreen), eval_count: increment(1), total_score: increment(evalTotalScore), updatedAt: serverTimestamp() };
-                    if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
-                    await setDoc(doc(db, 'gov_projects', projId), updates, { merge: true });
-                    
-                    // 🌟 上傳雲端票箱
-                    if (ticketsToUpload.length > 0) {
-                        await Promise.all(ticketsToUpload.map(ticket => addDoc(collection(db, 'lottery_tickets'), ticket)));
-                    }
-                } catch(e) { window.showToast(`🚨 雲端歸戶失敗: ${e.message}`); return; }
+                const updates = { carbon: increment(carb), green: increment(totalGreen), eval_count: increment(1), total_score: increment(evalTotalScore), updatedAt: serverTimestamp() };
+                if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
+                
+                // 🌟 升級：移除 await 卡頓封印，Fire-and-forget 直接交給 Firebase 背景離線佇列
+                setDoc(doc(db, 'gov_projects', projId), updates, { merge: true }).catch(e => console.warn("背景同步稍後重試", e));
+                
+                if (ticketsToUpload.length > 0) {
+                    ticketsToUpload.forEach(ticket => {
+                        addDoc(collection(db, 'lottery_tickets'), ticket).catch(e => console.warn("票券背景同步稍後重試", e));
+                    });
+                }
             } else if (p) {
                  p.carbon = (p.carbon || 0) + carb; p.green = (p.green || 0) + totalGreen; p.eval_count = (p.eval_count || 0) + 1; p.total_score = (p.total_score || 0) + evalTotalScore;
                  if(currentFeedback) { if(!p.feedbacks) p.feedbacks = []; p.feedbacks.push(currentFeedback); }
@@ -2307,7 +2319,13 @@
             window.resetPlayerStats();
 
             if(typeof renderGovDashboard === 'function') renderGovDashboard();
-            if(newTicketsCount > 0) window.showToast(`🎉 歸戶成功！並兌換了 ${newTicketsCount} 張專屬抽獎卷！`); else window.showToast('✅ 計畫歸戶成功！');
+            
+            // 🌟 升級：智能網路狀態偵測提示
+            if (isOnline) {
+                if(newTicketsCount > 0) window.showToast(`🎉 歸戶成功！並兌換了 ${newTicketsCount} 張專屬抽獎卷！`); else window.showToast('✅ 計畫歸戶成功！');
+            } else {
+                window.showToast(`⚠️ 網路連線不穩！已暫存歸戶與 ${newTicketsCount} 張抽獎卷，等待網路恢復後將自動補齊數據！`, true);
+            }
 
             window.closeModal('gov-eval-modal');
 
@@ -2473,6 +2491,14 @@
             if (typeof bindSummaryEvents === 'function') bindSummaryEvents();
             if (typeof bindEditSaveEvents === 'function') bindEditSaveEvents();
 
+            // 🌟 新增：全域網路狀態監聽器
+            window.addEventListener('online', () => {
+                window.showToast('📶 網路已恢復通暢！暫存數據將自動上傳雲端。');
+            });
+            window.addEventListener('offline', () => {
+                window.showToast('⚠️ 偵測到網路斷線，系統已自動切換為「離線暫存模式」。', true);
+            });
+
             // 🌟 跨網域通訊與活動接收器
             window.addEventListener('message', (event) => {
                 if (event.data && event.data.action === 'SWITCH_TAB') {
@@ -2480,7 +2506,7 @@
                     else document.getElementById('tab-btn-ent')?.click();
                 }
 
-                // 🌟 新增：讓主網頁能強制傳送 Hash 進行定位
+                // 🌟 讓主網頁能強制傳送 Hash 進行定位
                 if (event.data && event.data.action === 'LOCATE_BOARD') {
                     window.hasAutoLocated = false;
                     window.checkHashAndLocate(event.data.hash);
@@ -2494,7 +2520,7 @@
                             if (typeof window.loadLocalData === 'function') window.loadLocalData();
                             if (typeof window.updateTopDisplays === 'function') window.updateTopDisplays();
                         }
-                        // 🌟 接住跨網域空投的活動清單
+                        // 接住跨網域空投的活動清單
                         if (event.data.events) {
                             window.globalLotteryEvents = event.data.events;
                         }
