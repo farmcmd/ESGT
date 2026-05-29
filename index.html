@@ -1757,11 +1757,19 @@
         };
 
         window.processTripCompletion=async function(distKm,carbon){
+            // 🛡️ 防呆核心鎖：確保此趟旅程有效，並且尚未被處理過
+            if(!pendingTrip.isValid) return; 
+            // 🔒 瞬間上鎖，徹底杜絕非同步傳輸期間的任何連點行為
+            pendingTrip.isValid = false; 
+
             window.showToast('🔄 正在同步數據至雲端...');
             const success=await window.addToGlobalTotal(carbon,0);
             if(success){
                 state.totalMileage+=(distKm*1000);state.totalCarbon+=carbon;const pts=Math.round(carbon/10);state.totalScore+=pts;
                 window.updateDisplays();window.saveData();window.addLog(`完成旅程: ${distKm.toFixed(1)}km, 獲得減碳 ${carbon}g`);window.showToast('✅ 積分已記錄！');
+            } else {
+                // 🔓 若雲端連線失敗，則重新解鎖讓玩家可以再試一次
+                pendingTrip.isValid = true; 
             }
         };
 
@@ -1803,8 +1811,39 @@
                 this.classList.replace('bg-mori-sage','bg-gray-500');this.classList.replace('hover:bg-mori-forest','hover:bg-gray-600');
             });
 
-            document.getElementById('reward-verify-full-btn')?.addEventListener('click',async()=>{const codeInput=document.getElementById('reward-verify-code');if(codeInput&&codeInput.value.length>0){await window.processTripCompletion(pendingTrip.distKm,pendingTrip.reduction);if(codeInput)codeInput.value='';window.closeModal('reward-verification-modal');}else{window.showToast('請輸入密碼',true);}});
-            document.getElementById('reward-verify-tenth-btn')?.addEventListener('click',async()=>{await window.processTripCompletion(pendingTrip.distKm,Math.round(pendingTrip.reduction/10));window.closeModal('reward-verification-modal');});
+            // 🛡️ 升級：100% 防護 - 驗證送出按鈕加上 Disabled 狀態與 Loading 視覺
+            document.getElementById('reward-verify-full-btn')?.addEventListener('click', async function() {
+                const codeInput=document.getElementById('reward-verify-code');
+                if(codeInput && codeInput.value.length > 0) {
+                    if (!pendingTrip.isValid) return; // 二次攔截
+                    const btn = this; const origHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 驗證中...';
+                    btn.classList.add('opacity-75', 'cursor-not-allowed');
+                    btn.disabled = true;
+
+                    await window.processTripCompletion(pendingTrip.distKm, pendingTrip.reduction);
+                    
+                    if(codeInput) codeInput.value = '';
+                    btn.innerHTML = origHtml; btn.classList.remove('opacity-75', 'cursor-not-allowed'); btn.disabled = false;
+                    window.closeModal('reward-verification-modal');
+                } else {
+                    window.showToast('請輸入密碼', true);
+                }
+            });
+
+            // 🛡️ 升級：10% 體驗按鈕同樣加上 Disabled 與 Loading 防護
+            document.getElementById('reward-verify-tenth-btn')?.addEventListener('click', async function() {
+                if (!pendingTrip.isValid) return; // 二次攔截
+                const btn = this; const origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 處理中...';
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+                btn.disabled = true;
+
+                await window.processTripCompletion(pendingTrip.distKm, Math.round(pendingTrip.reduction / 10));
+                
+                btn.innerHTML = origHtml; btn.classList.remove('opacity-75', 'cursor-not-allowed'); btn.disabled = false;
+                window.closeModal('reward-verification-modal');
+            });
 
             document.getElementById('preview-trip-button')?.addEventListener('click',()=>{
                 const status=document.getElementById('trip-calculation-status');const confirmBtn=document.getElementById('confirm-trip-button');
