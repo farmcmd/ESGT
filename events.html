@@ -377,7 +377,7 @@
                 document.execCommand('copy');
                 window.showToast('📋 網址已複製！請貼到 Chrome 或 Safari 開啟');
             } catch (err) {
-                window.showToast('🚨 複製失敗，請手動複製網址');
+                window.showToast('🚨 複製失敗，請手手複製網址');
             }
             document.body.removeChild(dummy);
         };
@@ -1009,12 +1009,21 @@
                     }
                 }
 
+                // ✨ 新增：動態渲染辦理時間 (如果有值才顯示)
+                const timeHtml = ev.time ? `<p><i class="far fa-clock mr-2 text-blue-400"></i> <strong>辦理時間:</strong> ${ev.time}</p>` : '';
+                
+                // ✨ 新增：動態渲染活動流程 (如果有值才顯示)
+                const flowHtml = ev.flow ? `<div class="mt-2.5 pt-2.5 border-t border-gray-100 text-gray-600 leading-relaxed break-words whitespace-pre-line"><i class="fas fa-list-ol mr-1.5 opacity-80 text-emerald-500"></i><strong class="mr-1 text-emerald-600">活動流程:</strong><div class="mt-1 pl-5 border-l-2 border-emerald-200 text-[13px] font-medium text-gray-500">${ev.flow}</div></div>` : '';
+
                 // ✨ 統一資訊區塊模板：將基本資訊與新欄位優雅整合
+                // 🐛 BUG 修復：加入對 ev.exec 的支援，相容網頁版後台存入的變數名稱
                 const infoBlockHtml = `
                 <div class="space-y-2 text-[14px] text-gray-600 mb-6 border-l-4 border-yellow-400 pl-4 py-1">
-                    <p><i class="fas fa-sitemap mr-2 opacity-60"></i> <strong>執行單位:</strong> ${ev.executor || '里山團隊'}</p>
+                    <p><i class="fas fa-sitemap mr-2 opacity-60"></i> <strong>執行單位:</strong> ${ev.exec || ev.executor || '里山團隊'}</p>
+                    ${timeHtml}
                     <p><i class="fas fa-map-marker-alt mr-2 text-red-400"></i> <strong>活動地點:</strong> ${ev.location || '水里里山基地'}</p>
                     <p><i class="fas fa-hourglass-half mr-2 text-orange-400"></i> <strong>截止日期:</strong> <span class="text-red-500 font-bold">${ev.deadline || '請見詳情'}</span></p>
+                    ${flowHtml}
                     ${remarkHtml}
                     ${regMethodExtraHtml}
                 </div>
