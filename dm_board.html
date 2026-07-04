@@ -77,15 +77,16 @@
         import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==========================================
-        // 🔧 步驟一：請確認這裡的 Config 與 APP.py 所用的專案相同
+        // 🔧 您的真實 Firebase Config 設定
         // ==========================================
         const firebaseConfig = {
-            apiKey: "這裡換成您的真實_API_KEY",
-            authDomain: "這裡換成您的真實_AUTH_DOMAIN",
-            projectId: "這裡換成您的真實_PROJECT_ID",
-            storageBucket: "這裡換成您的真實_STORAGE_BUCKET",
-            messagingSenderId: "這裡換成您的真實_MESSAGING_SENDER_ID",
-            appId: "這裡換成您的真實_APP_ID"
+            apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ",
+            authDomain: "sustainable-tourism-65025.firebaseapp.com",
+            projectId: "sustainable-tourism-65025",
+            storageBucket: "sustainable-tourism-65025.firebasestorage.app",
+            messagingSenderId: "781325465882",
+            appId: "1:781325465882:web:9435b02bd618f0c16814a3",
+            measurementId: "G-SZJ1RX5QS4"
         };
 
         // 初始化 Firebase
@@ -99,7 +100,8 @@
         async function fetchDMs() {
             try {
                 console.log("🔄 開始從 Firebase 獲取看板資料...");
-                const q = query(collection(db, "dm_boards"), orderBy("createdAt", "desc"));
+                // 🚨 修正核心：移除 orderBy 條件，避免因部分資料缺少 createdAt 欄位而遭 Firebase 靜默過濾
+                const q = query(collection(db, "dm_boards"));
                 const querySnapshot = await getDocs(q);
                 
                 dms = [];
@@ -107,11 +109,24 @@
                     dms.push({ id: doc.id, ...doc.data() });
                 });
                 
+                // 🌟 修正核心：改由前端 JavaScript 進行降冪排序，確保所有海報都能顯示
+                dms.sort((a, b) => {
+                    const timeA = a.createdAt && a.createdAt.seconds ? a.createdAt.seconds : 0;
+                    const timeB = b.createdAt && b.createdAt.seconds ? b.createdAt.seconds : 0;
+                    return timeB - timeA;
+                });
+                
                 console.log(`✅ 成功獲取 ${dms.length} 筆活動 DM 資料！`, dms);
                 renderNav();
             } catch (error) {
                 console.error("❌ 無法載入看板資料:", error);
-                showError("雲端資料庫連線失敗", "請確認 Firebase 設定檔是否正確，或按下 F12 查看錯誤日誌。");
+                
+                // 🌟 新增：針對權限錯誤給予友善提示
+                if (error.code === 'permission-denied') {
+                    showError("資料庫權限不足", "請至 Firebase 控制台 > Firestore > 規則，確保已設定 allow read: if true; 且設定已發布。");
+                } else {
+                    showError("雲端資料庫連線失敗", "請確認 Firebase 設定檔是否正確，或按下 F12 查看錯誤日誌。");
+                }
             }
         }
 
