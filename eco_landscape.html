@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>生態棲地小偵探 - 認證證書版</title>
+    <title>生態棲地小偵探 - 文化地景擴充版</title>
     <style>
         :root {
             --primary-dark: #14532d;
@@ -14,23 +14,15 @@
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
+            margin: 0; padding: 0; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #000;
-            touch-action: none; 
-            color: var(--text-dark);
+            background-color: #000; touch-action: none; color: var(--text-dark);
         }
 
-        #canvas-wrapper {
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden;
-        }
-        canvas {
-            display: block; width: 100%; height: 100%; touch-action: none; background: #c5e1a5;
-        }
+        #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #c5e1a5; }
 
-        /* 浮動按鈕與折疊面板 */
+        /* 浮動面板 */
         .floating-panel {
             position: absolute; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 600px; background: var(--panel-bg);
@@ -54,62 +46,52 @@
         #bottom-panel { bottom: 15px; }
         
         .creature-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        
+        /* 生物卡牌 (方形) 與 文化卡牌 (圓形) */
         .creature-card {
             width: var(--card-size); height: var(--card-size);
             background: #ffffff; border: 2px solid #9ca3af; border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); touch-action: none; position: relative;
         }
+        .culture-card {
+            border-radius: 50%; border: 3px solid #f59e0b; background: #fffbeb;
+        }
+
         .c-icon { font-size: 26px; pointer-events: none; }
         .c-name { font-size: 11px; font-weight: bold; color: #4b5563; pointer-events: none; margin-top: -2px; }
 
         .answer-box { font-size: 14px; line-height: 1.6; }
         .answer-box h4 { margin: 0 0 10px 0; color: #ea580c; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
         .score-display { font-size: 24px; font-weight: bold; color: var(--primary-light); text-align: center; margin-top: 15px;}
-
-        /* 證書預覽圖樣式 */
-        #cert-preview {
-            width: 100%; border-radius: 8px; margin-top: 15px; border: 1px solid #ccc;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none;
-        }
+        #cert-preview { width: 100%; border-radius: 8px; margin-top: 15px; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; }
 
         /* 啟動覆蓋層 */
         #start-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(20, 83, 45, 0.95); z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
-            overflow-y: auto;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; overflow-y: auto;
         }
         .start-box {
             background: white; color: var(--text-dark); padding: 25px; border-radius: 16px;
             text-align: center; width: 90%; max-width: 400px; margin: 20px 0;
         }
-        .form-group {
-            margin-bottom: 15px; text-align: left;
-        }
-        .form-group label {
-            display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555;
-        }
-        .form-input {
-            width: 100%; padding: 10px; font-size: 15px; border: 2px solid #ccc; border-radius: 6px; box-sizing: border-box;
-        }
-        .start-box button {
-            background: var(--primary-light); color: white; border: none; padding: 15px 30px;
-            font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%;
-        }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .form-input { width: 100%; padding: 10px; font-size: 15px; border: 2px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .btn-primary { background: var(--primary-light); color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%; }
+        .btn-secondary { background: #f59e0b; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%; }
+        .btn-danger { background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 10px 30px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; width: 100%; }
 
         #drag-clone {
             position: fixed; width: var(--card-size); height: var(--card-size);
             background: rgba(255, 255, 255, 1); border: 2px solid var(--primary-light);
-            border-radius: 12px; display: none; flex-direction: column; align-items: center;
-            justify-content: center; pointer-events: none; z-index: 1000;
-            transform: translate(-50%, -50%); box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            pointer-events: none; z-index: 1000; transform: translate(-50%, -50%); box-shadow: 0 10px 25px rgba(0,0,0,0.4);
         }
         #alert-box {
             position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
-            background: rgba(234, 88, 12, 0.9); color: white; padding: 12px 25px;
-            border-radius: 30px; font-size: 16px; font-weight: bold; pointer-events: none;
-            opacity: 0; transition: opacity 0.3s; z-index: 2000; white-space: nowrap;
+            background: rgba(234, 88, 12, 0.9); color: white; padding: 12px 25px; border-radius: 30px; font-size: 16px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000; white-space: nowrap;
         }
         #compass {
             position: absolute; bottom: 80px; left: 20px; width: 60px; height: 60px;
@@ -127,71 +109,54 @@
     <div id="start-overlay">
         <div class="start-box">
             <h2 style="color: var(--primary-dark); margin-top: 0; margin-bottom: 10px;">探探里山永續旅遊</h2>
-            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">請填寫任務資訊，完成後將為您核發專屬證書。</p>
-            
-            <div class="form-group">
-                <label>偵探名稱 (必填)</label>
-                <input type="text" id="player-name" class="form-input" placeholder="請輸入姓名">
+            <div id="new-game-form">
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">完成棲地營造任務，領取專屬證書。<br>(提示：圓形文化卡可隨意放置於地圖任何位置)</p>
+                <div class="form-group"><label>偵探名稱 (必填)</label><input type="text" id="player-name" class="form-input" placeholder="請輸入姓名"></div>
+                <div class="form-group"><label>活動名稱 (非必填)</label><input type="text" id="event-name" class="form-input" placeholder="例如：春季生態營"></div>
+                <div class="form-group">
+                    <label>探索場域 (必填)</label>
+                    <select id="location-select" class="form-input" onchange="toggleCustomLocation()">
+                        <option value="酪酪找生態">1. 酪酪找生態</option>
+                        <option value="瓜呱報生態">2. 瓜呱報生態</option>
+                        <option value="林近里山">3. 林近里山</option>
+                        <option value="校園">4. 校園</option>
+                        <option value="社區">5. 社區</option>
+                        <option value="河岸">6. 河岸</option>
+                        <option value="淺山步道">7. 淺山步道</option>
+                        <option value="custom">8. 其他 (自行填寫)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="custom-location-group" style="display: none;"><label>請輸入自訂場域</label><input type="text" id="custom-location" class="form-input" placeholder="填寫場域名稱"></div>
+                <button class="btn-primary" onclick="startGame(false)">儲存並出發探索</button>
             </div>
-            <div class="form-group">
-                <label>活動名稱 (非必填)</label>
-                <input type="text" id="event-name" class="form-input" placeholder="例如：春季生態營">
+            <div id="resume-game-section" style="display: none; border-top: 2px dashed #eee; margin-top: 20px; padding-top: 20px;">
+                <p style="font-size: 14px; font-weight: bold; color: #ea580c; margin-bottom: 10px;">偵測到未完成的生態任務！</p>
+                <button class="btn-secondary" onclick="startGame(true)">🚀 繼續上次探索</button>
+                <button class="btn-danger" onclick="clearSaveData()">🗑️ 清除進度重新開始</button>
             </div>
-            <div class="form-group">
-                <label>探索場域 (必填)</label>
-                <select id="location-select" class="form-input" onchange="toggleCustomLocation()">
-                    <option value="酪酪找生態">1. 酪酪找生態</option>
-                    <option value="瓜呱報生態">2. 瓜呱報生態</option>
-                    <option value="林近里山">3. 林近里山</option>
-                    <option value="校園">4. 校園</option>
-                    <option value="社區">5. 社區</option>
-                    <option value="河岸">6. 河岸</option>
-                    <option value="淺山步道">7. 淺山步道</option>
-                    <option value="custom">8. 其他 (自行填寫)</option>
-                </select>
-            </div>
-            <div class="form-group" id="custom-location-group" style="display: none;">
-                <label>請輸入自訂場域</label>
-                <input type="text" id="custom-location" class="form-input" placeholder="填寫場域名稱">
-            </div>
-
-            <button onclick="startGame()">儲存並出發探索</button>
         </div>
     </div>
 
-    <div id="canvas-wrapper">
-        <canvas id="gameCanvas"></canvas>
-    </div>
-
+    <div id="canvas-wrapper"><canvas id="gameCanvas"></canvas></div>
     <div id="compass"><div id="compass-arrow"></div></div>
 
-    <!-- 頂部浮動：背包面板 -->
     <div id="top-panel" class="floating-panel">
-        <div class="panel-header" onclick="togglePanel('top-panel')">
-            <span>🎒 生態卡牌背包 (<span id="backpack-count">0</span>)</span>
-            <span class="toggle-icon">▼</span>
-        </div>
+        <div class="panel-header" onclick="togglePanel('top-panel')"><span>🎒 生態卡牌背包 (<span id="backpack-count">0</span>)</span><span class="toggle-icon">▼</span></div>
         <div class="panel-content">
             <div class="creature-container" id="creature-list">
-                <div style="font-size: 13px; color: #888; width: 100%; text-align: center;">請走動探索，這裡會收集到隨機出現的生物卡牌。</div>
+                <div style="font-size: 13px; color: #888; width: 100%; text-align: center;">請走動探索，收集生物與文化卡牌。</div>
             </div>
         </div>
     </div>
 
-    <!-- 底部浮動：結算面板 -->
     <div id="bottom-panel" class="floating-panel">
-        <div class="panel-header" onclick="togglePanel('bottom-panel')">
-            <span>📜 結算與證書核發</span>
-            <span class="toggle-icon">▲</span>
-        </div>
+        <div class="panel-header" onclick="togglePanel('bottom-panel')"><span>📜 結算與證書核發</span><span class="toggle-icon">▲</span></div>
         <div class="panel-content">
             <div class="answer-box">
                 <h4>🎯 任務結算報告</h4>
                 <div id="score-details">點擊下方按鈕結算您佈置的生態棲地分數！</div>
                 <button id="calc-btn" onclick="calculateScore()" style="width: 100%; padding: 12px; margin-top: 10px; background: var(--primary-dark); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">立即結算分數</button>
                 <div class="score-display" id="final-score"></div>
-                
-                <!-- 證書下載區 -->
                 <img id="cert-preview" alt="結業證書預覽">
                 <a id="cert-download-link" style="display:none; width: 100%; text-decoration: none;">
                     <button style="width: 100%; padding: 12px; margin-top: 10px; background: var(--primary-light); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">📥 下載精美證書</button>
@@ -200,42 +165,80 @@
         </div>
     </div>
 
-    <div id="drag-clone">
-        <div class="c-icon" id="drag-icon"></div>
-        <div class="c-name" id="drag-name"></div>
-    </div>
+    <div id="drag-clone"><div class="c-icon" id="drag-icon"></div><div class="c-name" id="drag-name"></div></div>
     <div id="alert-box">提示訊息</div>
 
     <script>
-        // --- 1. 生態數據庫 ---
+        // --- 1. 生態與文化數據庫 (大量擴充) ---
         const ECO_DATA = [
-            { id: 'c1', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12'] }, 
-            { id: 'c2', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5'] }, 
-            { id: 'c3', name: '鼬獾', icon: '🦡', validHabitats: ['h6', 'h12'] }, 
-            { id: 'c4', name: '蛇類', icon: '🐍', validHabitats: ['h2', 'h7'] }, 
-            { id: 'c5', name: '龜類', icon: '🐢', validHabitats: ['h4', 'h8'] }, 
-            { id: 'c6', name: '雉雞', icon: '🦚', validHabitats: ['h5', 'h6'] }, 
-            { id: 'c7', name: '鳥類', icon: '🐦', validHabitats: ['h6'] }, 
-            { id: 'c8', name: '昆蟲', icon: '🪲', validHabitats: ['h10', 'h1'] }, 
-            { id: 'c9', name: '瓢蟲', icon: '🐞', validHabitats: ['h10', 'h6'] }, 
-            { id: 'c10', name: '蚜蟲', icon: '🐛', validHabitats: ['h5'] }, 
-            { id: 'c11', name: '螞蟻', icon: '🐜', validHabitats: ['h2', 'h5'] }, 
-            { id: 'c12', name: '蛙類', icon: '🐸', validHabitats: ['h7', 'h4', 'h3'] }, 
-            { id: 'c13', name: '金線蛙', icon: '🐸✨', validHabitats: ['h7', 'h4'] }, 
-            { id: 'c14', name: '蝴蝶', icon: '🦋', validHabitats: ['h6', 'h5'] }, 
-            { id: 'c15', name: '蜜蜂', icon: '🐝', validHabitats: ['h10', 'h6'] }, 
-            { id: 'c16', name: '螳螂', icon: '🦗', validHabitats: ['h5', 'h6'] }, 
-            { id: 'c17', name: '本土魚', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] }, 
-            { id: 'c18', name: '大肚魚', icon: '🐠', validHabitats: ['h4', 'h13'] }, 
-            { id: 'c19', name: '七星鯉', icon: '🐟✨', validHabitats: ['h4', 'h9'] }
+            // 原有生物
+            { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12'] }, 
+            { id: 'b2', type: 'bio', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5'] }, 
+            { id: 'b3', type: 'bio', name: '鼬獾', icon: '🦡', validHabitats: ['h6', 'h12'] }, 
+            { id: 'b4', type: 'bio', name: '蛇類', icon: '🐍', validHabitats: ['h2', 'h7'] }, 
+            { id: 'b5', type: 'bio', name: '龜類', icon: '🐢', validHabitats: ['h4', 'h8'] }, 
+            { id: 'b6', type: 'bio', name: '雉雞', icon: '🦚', validHabitats: ['h5', 'h6'] }, 
+            { id: 'b7', type: 'bio', name: '鳥類', icon: '🐦', validHabitats: ['h6'] }, 
+            { id: 'b8', type: 'bio', name: '昆蟲', icon: '🪲', validHabitats: ['h10', 'h1'] }, 
+            { id: 'b9', type: 'bio', name: '瓢蟲', icon: '🐞', validHabitats: ['h10', 'h6'] }, 
+            { id: 'b10', type: 'bio', name: '蚜蟲', icon: '🐛', validHabitats: ['h5'] }, 
+            { id: 'b11', type: 'bio', name: '螞蟻', icon: '🐜', validHabitats: ['h2', 'h5'] }, 
+            { id: 'b12', type: 'bio', name: '蛙類', icon: '🐸', validHabitats: ['h7', 'h4', 'h3'] }, 
+            { id: 'b13', type: 'bio', name: '金線蛙', icon: '🐸✨', validHabitats: ['h7', 'h4'] }, 
+            { id: 'b14', type: 'bio', name: '蝴蝶', icon: '🦋', validHabitats: ['h6', 'h5'] }, 
+            { id: 'b15', type: 'bio', name: '蜜蜂', icon: '🐝', validHabitats: ['h10', 'h6'] }, 
+            { id: 'b16', type: 'bio', name: '螳螂', icon: '🦗', validHabitats: ['h5', 'h6'] }, 
+            { id: 'b17', type: 'bio', name: '本土魚', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] }, 
+            { id: 'b18', type: 'bio', name: '大肚魚', icon: '🐠', validHabitats: ['h4', 'h13'] }, 
+            { id: 'b19', type: 'bio', name: '七星鯉', icon: '🐟✨', validHabitats: ['h4', 'h9'] },
+            // 新增生物清單
+            { id: 'b20', type: 'bio', name: '福壽螺', icon: '🐌', validHabitats: ['h4', 'h7', 'h3', 'h13'] },
+            { id: 'b21', type: 'bio', name: '虎皮蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
+            { id: 'b22', type: 'bio', name: '澤蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
+            { id: 'b23', type: 'bio', name: '泥鰍', icon: '🐟', validHabitats: ['h4', 'h3', 'h13', 'h7'] },
+            { id: 'b24', type: 'bio', name: '田螺', icon: '🐌', validHabitats: ['h4', 'h7', 'h3'] },
+            { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🚁', validHabitats: ['h4', 'h7', 'h9'] },
+            { id: 'b26', type: 'bio', name: '食蟲虻', icon: '🪰', validHabitats: ['h5', 'h6'] },
+            { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h11'] },
+            { id: 'b28', type: 'bio', name: '胡蜂', icon: '🐝', validHabitats: ['h6', 'h1'] },
+            { id: 'b29', type: 'bio', name: '鷺鷥', icon: '🦩', validHabitats: ['h4', 'h7', 'h5'] },
+            { id: 'b30', type: 'bio', name: '紅冠水雞', icon: '🦆', validHabitats: ['h4', 'h7', 'h9'] },
+            { id: 'b31', type: 'bio', name: '秧雞', icon: '🦆', validHabitats: ['h7', 'h5'] },
+            { id: 'b32', type: 'bio', name: '麻雀', icon: '🐦', validHabitats: ['h5', 'h6', 'h1'] },
+            { id: 'b33', type: 'bio', name: '蝸牛', icon: '🐌', validHabitats: ['h5', 'h6', 'h1'] },
+            { id: 'b34', type: 'bio', name: '螢火蟲', icon: '✨', validHabitats: ['h4', 'h7'] },
+            { id: 'b35', type: 'bio', name: '黑冠麻鷺', icon: '🦤', validHabitats: ['h6', 'h5'] },
+            { id: 'b36', type: 'bio', name: '大冠鷲', icon: '🦅', validHabitats: ['h6', 'h12'] },
+            { id: 'b37', type: 'bio', name: '穿山甲', icon: '🦔', validHabitats: ['h6', 'h12', 'h1'] },
+            { id: 'b38', type: 'bio', name: '白鼻心', icon: '🦡', validHabitats: ['h6', 'h12'] },
+            { id: 'b39', type: 'bio', name: '黑翅鳶', icon: '🦅', validHabitats: ['h5', 'h6'] },
+            { id: 'b40', type: 'bio', name: '環頸雉', icon: '🦚', validHabitats: ['h5', 'h6'] },
+            { id: 'b41', type: 'bio', name: '燕子', icon: '🐦', validHabitats: ['h5', 'h4'] }
         ];
+
+        const CULTURE_DATA = [
+            // 文化卡牌 (type: 'culture', 可以放地圖任意位置)
+            { id: 'cu1', type: 'culture', name: '水牛', icon: '🐃' },
+            { id: 'cu2', type: 'culture', name: '燕子', icon: '🐦' },
+            { id: 'cu3', type: 'culture', name: '花浪蛇', icon: '🐍' },
+            { id: 'cu4', type: 'culture', name: '水缸', icon: '🏺' },
+            { id: 'cu5', type: 'culture', name: '土地公拐', icon: '🎋' },
+            { id: 'cu6', type: 'culture', name: '三合院', icon: '🏘️' },
+            { id: 'cu7', type: 'culture', name: '石敢當', icon: '🪨' },
+            { id: 'cu8', type: 'culture', name: '菁仔叢', icon: '🌴' },
+            { id: 'cu9', type: 'culture', name: '香爐', icon: '🪔' },
+            { id: 'cu10', type: 'culture', name: '大榕樹', icon: '🌳' }
+        ];
+
+        // 合併卡池供隨機抽取
+        const CARD_POOL = [...ECO_DATA, ...CULTURE_DATA];
 
         const FOOD_CHAINS = [
-            { id: 'chain1', name: '田野捕食鏈 (蚜蟲➜瓢蟲➜鳥類)', members: ['c10', 'c9', 'c7'] }, 
-            { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['c11', 'c12', 'c4'] }
+            { id: 'chain1', name: '田野捕食鏈 (蚜蟲➜瓢蟲➜鳥類)', members: ['b10', 'b9', 'b7'] }, 
+            { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['b11', 'b12', 'b4'] }
         ];
 
-        const habitats = [
+        let habitats = [
             { id: 'h1', name: '枯木草堆', x: 50, y: 200, w: 120, h: 80, occupants: [] },
             { id: 'h2', name: '石堆', x: 350, y: 100, w: 100, h: 60, occupants: [] },
             { id: 'h3', name: '砌石溝', x: 600, y: 900, w: 150, h: 60, occupants: [] },
@@ -252,8 +255,9 @@
         ];
 
         let inventory = []; 
+        let mapOccupants = []; // 用於儲存隨意放置在地圖上的文化卡牌
 
-        // --- 2. 表單與核心狀態 ---
+        // --- 2. 表單、進度與核心狀態 ---
         let playerName = "小偵探";
         let eventName = "";
         let eventLocation = "";
@@ -261,72 +265,96 @@
         function toggleCustomLocation() {
             const select = document.getElementById('location-select');
             const customGroup = document.getElementById('custom-location-group');
-            if (select.value === 'custom') {
-                customGroup.style.display = 'block';
-            } else {
-                customGroup.style.display = 'none';
-            }
+            customGroup.style.display = (select.value === 'custom') ? 'block' : 'none';
         }
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const MAP_W = 1600; 
-        const MAP_H = 1200;
-        let SCREEN_W = window.innerWidth;
-        let SCREEN_H = window.innerHeight;
+        const MAP_W = 1600; const MAP_H = 1200;
+        let SCREEN_W = window.innerWidth; let SCREEN_H = window.innerHeight;
         let camera = { x: 0, y: 0, detached: false };
-        let isGameRunning = false;
-        let distanceTraveled = 0;
-        
-        let player = {
-            x: MAP_W - 150, y: 150, dirAngle: 0, size: 30, icon: '🕵️' 
-        };
+        let isGameRunning = false; let distanceTraveled = 0;
+        let player = { x: MAP_W - 150, y: 150, dirAngle: 0, size: 30, icon: '🕵️' };
 
         function resizeCanvas() {
-            SCREEN_W = window.innerWidth;
-            SCREEN_H = window.innerHeight;
-            canvas.width = SCREEN_W;
-            canvas.height = SCREEN_H;
+            SCREEN_W = window.innerWidth; SCREEN_H = window.innerHeight;
+            canvas.width = SCREEN_W; canvas.height = SCREEN_H;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
         function togglePanel(panelId) {
             const panel = document.getElementById(panelId);
             const icon = panel.querySelector('.toggle-icon');
             if (panel.classList.contains('open')) {
-                panel.classList.remove('open');
-                icon.innerText = panelId === 'top-panel' ? '▼' : '▲';
+                panel.classList.remove('open'); icon.innerText = panelId === 'top-panel' ? '▼' : '▲';
             } else {
                 document.querySelectorAll('.floating-panel').forEach(p => {
                     p.classList.remove('open');
                     if(p.id === 'top-panel') p.querySelector('.toggle-icon').innerText = '▼';
                     if(p.id === 'bottom-panel') p.querySelector('.toggle-icon').innerText = '▲';
                 });
-                panel.classList.add('open');
-                icon.innerText = '✖';
+                panel.classList.add('open'); icon.innerText = '✖';
             }
         }
 
         function showAlert(msg) {
-            const box = document.getElementById('alert-box');
-            box.innerText = msg;
-            box.style.opacity = 1;
+            const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1;
             setTimeout(() => box.style.opacity = 0, 2500);
         }
 
-        async function startGame() {
-            let pName = document.getElementById('player-name').value.trim();
-            if(!pName) { alert("請填寫偵探名稱！"); return; }
-            playerName = pName;
-            
-            eventName = document.getElementById('event-name').value.trim();
-            
-            let locSelect = document.getElementById('location-select').value;
-            if(locSelect === 'custom') {
-                eventLocation = document.getElementById('custom-location').value.trim() || '未定場域';
+        // --- 存檔系統 (LocalStorage) ---
+        const SAVE_KEY = 'ecoDetective_saveData_v2'; // 更新金鑰確保新版資料結構順利
+
+        function checkExistingSave() {
+            if (localStorage.getItem(SAVE_KEY)) {
+                document.getElementById('resume-game-section').style.display = 'block';
+                document.getElementById('new-game-form').style.display = 'none';
+            }
+        }
+
+        function clearSaveData() {
+            if(confirm("確定要清除進度嗎？所有收集的生物將會遺失。")) {
+                localStorage.removeItem(SAVE_KEY);
+                document.getElementById('resume-game-section').style.display = 'none';
+                document.getElementById('new-game-form').style.display = 'block';
+            }
+        }
+
+        function saveProgress() {
+            if (!isGameRunning) return;
+            localStorage.setItem(SAVE_KEY, JSON.stringify({
+                playerName, eventName, eventLocation, inventory, habitats, mapOccupants,
+                player: { x: player.x, y: player.y, dirAngle: player.dirAngle }
+            }));
+        }
+
+        function loadProgress() {
+            const savedData = localStorage.getItem(SAVE_KEY);
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    playerName = data.playerName; eventName = data.eventName; eventLocation = data.eventLocation;
+                    inventory = data.inventory || []; habitats = data.habitats || habitats; 
+                    mapOccupants = data.mapOccupants || []; // 相容處理
+                    player.x = data.player.x; player.y = data.player.y; player.dirAngle = data.player.dirAngle;
+                    renderInventory(); return true;
+                } catch (e) { console.error("讀取存檔失敗", e); return false; }
+            }
+            return false;
+        }
+        window.onload = checkExistingSave;
+
+        // --- 啟動遊戲 ---
+        async function startGame(isResume = false) {
+            if (isResume) {
+                if(!loadProgress()) { alert("讀取進度失敗，請重新開始。"); return; }
             } else {
-                eventLocation = locSelect;
+                let pName = document.getElementById('player-name').value.trim();
+                if(!pName) { alert("請填寫偵探名稱！"); return; }
+                playerName = pName; eventName = document.getElementById('event-name').value.trim();
+                let locSelect = document.getElementById('location-select').value;
+                eventLocation = locSelect === 'custom' ? (document.getElementById('custom-location').value.trim() || '未定場域') : locSelect;
+                saveProgress();
             }
 
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -334,40 +362,32 @@
                     let p1 = await DeviceOrientationEvent.requestPermission();
                     let p2 = typeof DeviceMotionEvent !== 'undefined' ? await DeviceMotionEvent.requestPermission() : 'granted';
                     if (p1 === 'granted' && p2 === 'granted') {
-                        window.addEventListener('deviceorientation', handleOrientation);
-                        window.addEventListener('devicemotion', handleMotion);
+                        window.addEventListener('deviceorientation', handleOrientation); window.addEventListener('devicemotion', handleMotion);
                     }
                 } catch (e) { console.error(e); }
             } else {
-                window.addEventListener('deviceorientation', handleOrientation);
-                window.addEventListener('devicemotion', handleMotion);
+                window.addEventListener('deviceorientation', handleOrientation); window.addEventListener('devicemotion', handleMotion);
             }
 
             window.addEventListener('keydown', (e) => {
                 const speed = 15; 
                 if(e.key==='ArrowUp') {
-                    player.x += Math.sin(player.dirAngle) * speed;
-                    player.y -= Math.cos(player.dirAngle) * speed;
-                    checkMovement(speed);
-                    camera.detached = false;
+                    player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed;
+                    checkMovement(speed); camera.detached = false;
                 }
                 if(e.key==='ArrowLeft') player.dirAngle -= 0.2;
                 if(e.key==='ArrowRight') player.dirAngle += 0.2;
             });
 
             document.getElementById('start-overlay').style.display = 'none';
-            isGameRunning = true;
-            requestAnimationFrame(gameLoop);
+            isGameRunning = true; requestAnimationFrame(gameLoop);
         }
 
         // --- 感測與移動邏輯 ---
         function handleOrientation(e) {
             if (!isGameRunning) return;
-            let dx = e.gamma || 0; 
-            let dy = e.beta || 0;  
-            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-                player.dirAngle = Math.atan2(dx, -dy);
-            }
+            let dx = e.gamma || 0; let dy = e.beta || 0;  
+            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) player.dirAngle = Math.atan2(dx, -dy);
             document.getElementById('compass-arrow').style.transform = `translateY(-10px) rotate(${player.dirAngle}rad)`;
         }
 
@@ -377,34 +397,31 @@
             let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
             if (mag > 2.0) {
                 const stepSize = 6;
-                player.x += Math.sin(player.dirAngle) * stepSize;
-                player.y -= Math.cos(player.dirAngle) * stepSize; 
+                player.x += Math.sin(player.dirAngle) * stepSize; player.y -= Math.cos(player.dirAngle) * stepSize; 
                 player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x));
                 player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
-                checkMovement(stepSize);
-                camera.detached = false;
+                checkMovement(stepSize); camera.detached = false;
             }
         }
 
         function checkMovement(dist) {
             distanceTraveled += dist;
             if (distanceTraveled > 150) { 
-                distanceTraveled = 0;
+                distanceTraveled = 0; saveProgress();
                 if (Math.random() < 0.20) triggerEncounter();
             }
         }
 
         function triggerEncounter() {
-            let randomTemplate = ECO_DATA[Math.floor(Math.random() * ECO_DATA.length)];
+            let randomTemplate = CARD_POOL[Math.floor(Math.random() * CARD_POOL.length)];
             let instance = { ...randomTemplate, uniqueId: 'inst_' + Date.now() + Math.floor(Math.random()*1000) };
             inventory.push(instance);
-            renderInventory();
-            showAlert(`👣 發現了【${instance.name}】！`);
+            renderInventory(); saveProgress();
+            showAlert(`👣 發現了${instance.type==='culture'?'文化地景':'生態物種'}【${instance.name}】！`);
             
             const panel = document.getElementById('top-panel');
             if (!panel.classList.contains('open')) {
-                panel.style.borderColor = "var(--primary-light)";
-                setTimeout(()=> panel.style.borderColor = "rgba(255,255,255,0.5)", 500);
+                panel.style.borderColor = "var(--primary-light)"; setTimeout(()=> panel.style.borderColor = "rgba(255,255,255,0.5)", 500);
             }
         }
 
@@ -420,7 +437,8 @@
             container.innerHTML = '';
             inventory.forEach(c => {
                 const div = document.createElement('div');
-                div.className = 'creature-card';
+                // 套用不同的形狀樣式
+                div.className = c.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
                 div.id = c.uniqueId;
                 div.innerHTML = `<div class="c-icon">${c.icon}</div><div class="c-name">${c.name}</div>`;
                 div.addEventListener('pointerdown', (e) => handleDragStart(e, c, div));
@@ -429,53 +447,47 @@
         }
 
         // --- 拖曳邏輯 ---
-        let draggingInstance = null;
-        let isPanningMap = false;
-        let lastPanX = 0, lastPanY = 0;
+        let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0;
         const dragClone = document.getElementById('drag-clone');
 
-        function getLogicalCoords(e) {
-            return { x: e.clientX + camera.x, y: e.clientY + camera.y };
-        }
+        function getLogicalCoords(e) { return { x: e.clientX + camera.x, y: e.clientY + camera.y }; }
 
         canvas.addEventListener('pointerdown', (e) => {
             if (!isGameRunning) return;
             const coords = getLogicalCoords(e);
-            let clickedCreature = false;
             
+            // 1. 檢查點擊地圖上的散落文化卡牌
+            for (let i = mapOccupants.length - 1; i >= 0; i--) {
+                let occ = mapOccupants[i];
+                if (occ.renderBox && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w &&
+                    coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                    draggingInstance = occ; mapOccupants.splice(i, 1);
+                    setupDrag(e, occ); return; 
+                }
+            }
+
+            // 2. 檢查棲地內的卡牌
             for (let h of habitats) {
                 if (h.occupants.length > 0) {
                     for (let i = h.occupants.length - 1; i >= 0; i--) {
                         let occ = h.occupants[i];
-                        if (occ.renderBox && 
-                            coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w &&
+                        if (occ.renderBox && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w &&
                             coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
-                            clickedCreature = true; draggingInstance = occ;
-                            h.occupants.splice(i, 1);
-                            
-                            dragClone.style.display = 'flex';
-                            dragClone.querySelector('#drag-icon').innerText = occ.icon;
-                            dragClone.querySelector('#drag-name').innerText = occ.name;
-                            moveDragClone(e);
-                            document.addEventListener('pointermove', handleDragMove);
-                            document.addEventListener('pointerup', handleDragEnd);
-                            e.preventDefault(); return; 
+                            draggingInstance = occ; h.occupants.splice(i, 1);
+                            setupDrag(e, occ); return; 
                         }
                     }
                 }
             }
 
-            if (!clickedCreature) {
-                isPanningMap = true; camera.detached = true; 
-                lastPanX = e.clientX; lastPanY = e.clientY;
-                canvas.setPointerCapture(e.pointerId);
-            }
+            // 進入平移模式
+            isPanningMap = true; camera.detached = true; 
+            lastPanX = e.clientX; lastPanY = e.clientY; canvas.setPointerCapture(e.pointerId);
         });
 
         canvas.addEventListener('pointermove', (e) => {
             if (isPanningMap) {
-                camera.x -= (e.clientX - lastPanX);
-                camera.y -= (e.clientY - lastPanY);
+                camera.x -= (e.clientX - lastPanX); camera.y -= (e.clientY - lastPanY);
                 lastPanX = e.clientX; lastPanY = e.clientY; e.preventDefault();
             }
         });
@@ -484,40 +496,47 @@
             if (isPanningMap) { isPanningMap = false; canvas.releasePointerCapture(e.pointerId); }
         });
 
-        function handleDragStart(e, instance, el) {
-            draggingInstance = instance;
+        function setupDrag(e, instance) {
+            dragClone.className = instance.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
             dragClone.style.display = 'flex';
             dragClone.querySelector('#drag-icon').innerText = instance.icon;
             dragClone.querySelector('#drag-name').innerText = instance.name;
             moveDragClone(e);
-            document.addEventListener('pointermove', handleDragMove);
-            document.addEventListener('pointerup', handleDragEnd);
+            document.addEventListener('pointermove', handleDragMove); document.addEventListener('pointerup', handleDragEnd);
             e.preventDefault();
         }
 
+        function handleDragStart(e, instance, el) { draggingInstance = instance; setupDrag(e, instance); }
         function handleDragMove(e) { if (draggingInstance) moveDragClone(e); }
         function moveDragClone(e) { dragClone.style.left = e.clientX + 'px'; dragClone.style.top = e.clientY + 'px'; }
 
         function handleDragEnd(e) {
             if (!draggingInstance) return;
-            document.removeEventListener('pointermove', handleDragMove);
-            document.removeEventListener('pointerup', handleDragEnd);
+            document.removeEventListener('pointermove', handleDragMove); document.removeEventListener('pointerup', handleDragEnd);
             dragClone.style.display = 'none';
 
             const coords = getLogicalCoords(e);
             let droppedHabitat = habitats.find(h => coords.x >= h.x && coords.x <= h.x + h.w && coords.y >= h.y && coords.y <= h.y + h.h);
 
+            // 若放置在棲地
             if (droppedHabitat) {
                 droppedHabitat.occupants.push(draggingInstance);
                 inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
                 showAlert(`已安置於【${droppedHabitat.name}】。`);
             } else {
-                if (!inventory.find(i => i.uniqueId === draggingInstance.uniqueId)) {
-                    inventory.push(draggingInstance);
+                // 若未放於棲地：文化卡可放置於地圖任意位置，生物卡退回背包
+                if (draggingInstance.type === 'culture') {
+                    draggingInstance.x = coords.x; draggingInstance.y = coords.y;
+                    mapOccupants.push(draggingInstance);
+                    inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
+                    showAlert(`文化地景【${draggingInstance.name}】已佈置於地圖。`);
+                } else {
+                    if (!inventory.find(i => i.uniqueId === draggingInstance.uniqueId)) { inventory.push(draggingInstance); }
+                    showAlert(`【${draggingInstance.name}】已退回背包。`);
                 }
-                showAlert(`已退回背包。`);
             }
-            renderInventory(); draggingInstance = null;
+            
+            renderInventory(); saveProgress(); draggingInstance = null;
         }
 
         // --- 7. 結算與證書生成系統 ---
@@ -526,14 +545,25 @@
             let logHTML = "<ul style='padding-left: 20px; color: #4b5563;'>";
             let successfullyPlacedIds = new Set();
 
+            // 計算棲地內的得分
             habitats.forEach(h => {
                 h.occupants.forEach(occ => {
-                    if (occ.validHabitats.includes(h.id)) {
-                        totalScore += 1;
-                        successfullyPlacedIds.add(occ.id); 
+                    if (occ.type === 'culture') {
+                        totalScore += 1; // 文化卡在棲地也+1
+                        logHTML += `<li><span style="color:green">✔</span> 文化景觀 ${occ.name} 融入 ${h.name} (+1)</li>`;
+                    } else if (occ.validHabitats.includes(h.id)) {
+                        totalScore += 1; successfullyPlacedIds.add(occ.id); 
                         logHTML += `<li><span style="color:green">✔</span> ${occ.name} 於 ${h.name} (+1)</li>`;
+                    } else {
+                        logHTML += `<li><span style="color:red">✖</span> ${occ.name} 不太適應 ${h.name}</li>`;
                     }
                 });
+            });
+
+            // 計算地圖散落文化卡的得分
+            mapOccupants.forEach(occ => {
+                totalScore += 1;
+                logHTML += `<li><span style="color:green">✔</span> 文化景觀 ${occ.name} 融入地圖自由區 (+1)</li>`;
             });
 
             FOOD_CHAINS.forEach(chain => {
@@ -547,122 +577,47 @@
             logHTML += "</ul>";
             document.getElementById('score-details').innerHTML = logHTML;
             document.getElementById('final-score').innerText = `🏆 總成績：${totalScore} 分`;
-            
             document.getElementById('calc-btn').style.display = 'none';
-            
-            // 觸發證書繪製
             generateCertificate(totalScore);
         }
 
         function generateCertificate(score) {
-            const certCanvas = document.createElement('canvas');
-            certCanvas.width = 1200;
-            certCanvas.height = 800;
-            const ctx = certCanvas.getContext('2d');
+            const certCanvas = document.createElement('canvas'); certCanvas.width = 1200; certCanvas.height = 800; const ctx = certCanvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 800); gradient.addColorStop(0, '#f0fdf4'); gradient.addColorStop(1, '#dcfce7');
+            ctx.fillStyle = gradient; ctx.fillRect(0, 0, 1200, 800);
+            ctx.strokeStyle = '#14532d'; ctx.lineWidth = 20; ctx.strokeRect(30, 30, 1140, 740);
+            ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 4; ctx.strokeRect(60, 60, 1080, 680);
+            ctx.fillStyle = '#14532d'; ctx.fillRect(50, 50, 40, 40); ctx.fillRect(1110, 50, 40, 40); ctx.fillRect(50, 710, 40, 40); ctx.fillRect(1110, 710, 40, 40);
+            ctx.fillStyle = '#14532d'; ctx.textAlign = 'center'; ctx.font = 'bold 56px "Segoe UI", sans-serif'; ctx.fillText('探探里山永續旅遊', 600, 200);
+            ctx.font = 'bold 42px "Segoe UI", sans-serif'; ctx.fillStyle = '#16a34a'; ctx.fillText('農田微棲地生態導覽 結業證書', 600, 270);
+            ctx.fillStyle = '#1f2937'; ctx.font = '32px "Segoe UI", sans-serif'; ctx.fillText(`茲證明`, 600, 380);
+            ctx.font = 'bold 46px "Segoe UI", sans-serif'; ctx.fillStyle = '#000'; ctx.fillText(`${playerName}`, 600, 450);
+            ctx.font = '30px "Segoe UI", sans-serif'; ctx.fillStyle = '#4b5563'; ctx.fillText(`成功完成生態棲地營造任務，特發此證以資鼓勵。`, 600, 520);
 
-            // 繪製背景 (淺綠漸層)
-            const gradient = ctx.createLinearGradient(0, 0, 1200, 800);
-            gradient.addColorStop(0, '#f0fdf4');
-            gradient.addColorStop(1, '#dcfce7');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 1200, 800);
-
-            // 外框線
-            ctx.strokeStyle = '#14532d';
-            ctx.lineWidth = 20;
-            ctx.strokeRect(30, 30, 1140, 740);
-            
-            // 內框線 (裝飾)
-            ctx.strokeStyle = '#22c55e';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(60, 60, 1080, 680);
-
-            // 裝飾角標
-            ctx.fillStyle = '#14532d';
-            ctx.fillRect(50, 50, 40, 40); ctx.fillRect(1110, 50, 40, 40);
-            ctx.fillRect(50, 710, 40, 40); ctx.fillRect(1110, 710, 40, 40);
-
-            // 標題
-            ctx.fillStyle = '#14532d';
-            ctx.textAlign = 'center';
-            ctx.font = 'bold 56px "Segoe UI", sans-serif';
-            ctx.fillText('探探里山永續旅遊', 600, 200);
-            
-            ctx.font = 'bold 42px "Segoe UI", sans-serif';
-            ctx.fillStyle = '#16a34a';
-            ctx.fillText('農田微棲地生態導覽 結業證書', 600, 270);
-
-            // 內容區
-            ctx.fillStyle = '#1f2937';
-            ctx.font = '32px "Segoe UI", sans-serif';
-            ctx.fillText(`茲證明`, 600, 380);
-            
-            ctx.font = 'bold 46px "Segoe UI", sans-serif';
-            ctx.fillStyle = '#000';
-            ctx.fillText(`${playerName}`, 600, 450);
-
-            ctx.font = '30px "Segoe UI", sans-serif';
-            ctx.fillStyle = '#4b5563';
-            ctx.fillText(`成功完成生態棲地營造任務，特發此證以資鼓勵。`, 600, 520);
-
-            // 活動細節
-            ctx.font = 'bold 24px "Segoe UI", sans-serif';
-            let detailY = 620;
-            if(eventName) {
-                ctx.fillText(`活動名稱：${eventName}`, 600, detailY);
-                detailY += 40;
-            }
+            ctx.font = 'bold 24px "Segoe UI", sans-serif'; let detailY = 620;
+            if(eventName) { ctx.fillText(`活動名稱：${eventName}`, 600, detailY); detailY += 40; }
             ctx.fillText(`任務場域：${eventLocation}  |  評測成績：${score} 分`, 600, detailY);
 
-            // 隨機防偽編號與日期 (右下角)
-            const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const dateStr = new Date().toLocaleDateString('zh-TW');
-            
-            ctx.textAlign = 'right';
-            ctx.font = '20px monospace';
-            ctx.fillStyle = '#6b7280';
-            ctx.fillText(`證書編號: ESG-${randomId}`, 1100, 680);
-            ctx.fillText(`核發日期: ${dateStr}`, 1100, 710);
+            const randomId = Math.random().toString(36).substring(2, 8).toUpperCase(); const dateStr = new Date().toLocaleDateString('zh-TW');
+            ctx.textAlign = 'right'; ctx.font = '20px monospace'; ctx.fillStyle = '#6b7280'; ctx.fillText(`證書編號: ESG-${randomId}`, 1100, 680); ctx.fillText(`核發日期: ${dateStr}`, 1100, 710);
+            ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif'; ctx.fillText(`🌿 生態棲地環境小偵探 計畫`, 90, 700);
 
-            // 左下角官方標記
-            ctx.textAlign = 'left';
-            ctx.fillStyle = '#16a34a';
-            ctx.font = 'bold 24px "Segoe UI", sans-serif';
-            ctx.fillText(`🌿 生態棲地環境小偵探 計畫`, 90, 700);
-
-            // 輸出圖片至 UI
             const imgDataUrl = certCanvas.toDataURL("image/png");
-            
-            const previewImg = document.getElementById('cert-preview');
-            previewImg.src = imgDataUrl;
-            previewImg.style.display = 'block';
-
-            const downloadLink = document.getElementById('cert-download-link');
-            downloadLink.href = imgDataUrl;
-            downloadLink.download = `生態小偵探證書_${playerName}_${randomId}.png`;
-            downloadLink.style.display = 'block';
+            const previewImg = document.getElementById('cert-preview'); previewImg.src = imgDataUrl; previewImg.style.display = 'block';
+            const downloadLink = document.getElementById('cert-download-link'); downloadLink.href = imgDataUrl; downloadLink.download = `生態小偵探證書_${playerName}_${randomId}.png`; downloadLink.style.display = 'block';
         }
 
         // --- 8. Canvas 渲染迴圈 ---
         function updateCamera() {
-            if (!camera.detached) {
-                camera.x = player.x - SCREEN_W / 2; camera.y = player.y - SCREEN_H / 2;
-            }
-            camera.x = Math.max(0, Math.min(Math.max(0, MAP_W - SCREEN_W), camera.x));
-            camera.y = Math.max(0, Math.min(Math.max(0, MAP_H - SCREEN_H), camera.y));
+            if (!camera.detached) { camera.x = player.x - SCREEN_W / 2; camera.y = player.y - SCREEN_H / 2; }
+            camera.x = Math.max(0, Math.min(Math.max(0, MAP_W - SCREEN_W), camera.x)); camera.y = Math.max(0, Math.min(Math.max(0, MAP_H - SCREEN_H), camera.y));
         }
 
         function gameLoop() {
-            if (!isGameRunning) return;
-            updateCamera();
-            ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
-            ctx.save();
-            ctx.translate(-camera.x, -camera.y);
-            
-            drawMap(); drawHabitats(); drawPlayer();
-            
-            ctx.restore();
-            requestAnimationFrame(gameLoop);
+            if (!isGameRunning) return; updateCamera(); ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
+            ctx.save(); ctx.translate(-camera.x, -camera.y);
+            drawMap(); drawHabitats(); drawMapOccupants(); drawPlayer();
+            ctx.restore(); requestAnimationFrame(gameLoop);
         }
 
         function drawMap() {
@@ -680,31 +635,49 @@
             const iconSize = 40; const padding = 5;
             habitats.forEach(h => {
                 ctx.save(); ctx.lineWidth = 2;
-                if (h.occupants.length > 0) {
-                    ctx.strokeStyle = '#4caf50'; ctx.fillStyle = 'rgba(76, 175, 80, 0.2)'; ctx.setLineDash([]);
-                } else {
-                    ctx.strokeStyle = 'rgba(244, 67, 54, 0.6)'; ctx.fillStyle = 'rgba(244, 67, 54, 0.1)'; ctx.setLineDash([5, 5]);
-                }
+                if (h.occupants.length > 0) { ctx.strokeStyle = '#4caf50'; ctx.fillStyle = 'rgba(76, 175, 80, 0.2)'; ctx.setLineDash([]); } 
+                else { ctx.strokeStyle = 'rgba(244, 67, 54, 0.6)'; ctx.fillStyle = 'rgba(244, 67, 54, 0.1)'; ctx.setLineDash([5, 5]); }
                 ctx.beginPath(); ctx.roundRect(h.x, h.y, h.w, h.h, 4); ctx.fill(); ctx.stroke();
                 
                 if (h.occupants.length > 0) {
                     const maxCols = Math.max(1, Math.floor((h.w - padding * 2) / iconSize));
                     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    
                     h.occupants.forEach((occ, index) => {
                         let col = index % maxCols; let row = Math.floor(index / maxCols);
                         let px = h.x + padding + col * iconSize + iconSize/2; let py = h.y + padding + row * iconSize + iconSize/2;
                         
-                        ctx.fillStyle = 'rgba(255, 255, 255, 1)'; ctx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
-                        ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1; ctx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
+                        ctx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff';
+                        ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af';
+                        ctx.lineWidth = occ.type === 'culture' ? 2 : 1;
+
+                        if (occ.type === 'culture') {
+                            ctx.beginPath(); ctx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                        } else {
+                            ctx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
+                            ctx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
+                        }
+
                         ctx.font = '26px Arial'; ctx.fillStyle = '#000'; ctx.fillText(occ.icon, px, py + 2);
-                        
                         occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
                     });
                 } else {
                     ctx.font = '14px Arial'; ctx.fillStyle = '#b71c1c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(h.name, h.x + h.w/2, h.y + h.h/2);
                 }
                 ctx.restore();
+            });
+        }
+
+        // 獨立繪製散落於地圖的文化卡牌
+        function drawMapOccupants() {
+            const r = 20; // 圓形半徑
+            mapOccupants.forEach(occ => {
+                ctx.save();
+                ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.arc(occ.x, occ.y, r, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.font = '26px Arial'; ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(occ.icon, occ.x, occ.y + 2);
+                ctx.restore();
+                occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
             });
         }
 
