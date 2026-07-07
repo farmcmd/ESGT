@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>生態棲地小偵探 - 體感計步與折疊面板版</title>
+    <title>生態棲地小偵探 - 完整視野與自由佈置版</title>
     <style>
         :root {
             --primary-dark: #14532d;
@@ -18,21 +18,28 @@
             padding: 0;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #000;
+            background-color: #111; /* 留白邊界的顏色 */
             touch-action: none;
             color: var(--text-dark);
         }
 
-        /* 遊戲畫布：佔滿全螢幕背景 */
+        /* 遊戲畫布：確保等比例縮放且不被裁切 */
         #canvas-wrapper {
             position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #c5e1a5;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         canvas {
-            display: block;
-            width: 100%; height: 100%;
-            object-fit: cover;
+            max-width: 100%; 
+            max-height: 100%;
+            width: auto; 
+            height: auto;
+            background: #c5e1a5;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            /* 禁用原生反鋸齒，確保像素邊界清晰 */
+            image-rendering: optimizeSpeed; 
         }
 
         /* 浮動按鈕與折疊面板共用樣式 */
@@ -71,7 +78,7 @@
             padding: 0 15px;
         }
         .floating-panel.open .panel-content {
-            max-height: 300px; /* 展開高度 */
+            max-height: 300px;
             padding: 15px;
             overflow-y: auto;
             border-bottom-color: #e5e7eb;
@@ -89,13 +96,12 @@
 
         .creature-card {
             width: var(--card-size); height: var(--card-size);
-            background: #f3f4f6; border: 2px solid #9ca3af;
+            background: #ffffff; border: 2px solid #9ca3af;
             border-radius: 12px; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             touch-action: none; position: relative;
         }
-        .creature-card.placed { display: none; /* 放置後從背包隱藏 */ }
         .c-icon { font-size: 26px; pointer-events: none; }
         .c-name { font-size: 11px; font-weight: bold; color: #4b5563; pointer-events: none; margin-top: -2px; }
 
@@ -123,7 +129,7 @@
         /* 拖曳虛擬卡與系統提示 */
         #drag-clone {
             position: fixed; width: var(--card-size); height: var(--card-size);
-            background: rgba(255, 255, 255, 0.9); border: 2px solid var(--primary-light);
+            background: rgba(255, 255, 255, 1); border: 2px solid var(--primary-light);
             border-radius: 12px; display: none; flex-direction: column; align-items: center;
             justify-content: center; pointer-events: none; z-index: 1000;
             transform: translate(-50%, -50%); box-shadow: 0 10px 25px rgba(0,0,0,0.4);
@@ -135,7 +141,7 @@
             opacity: 0; transition: opacity 0.3s; z-index: 2000; white-space: nowrap;
         }
 
-        /* 左下角：陀螺儀方向指示儀 (Debug/視覺輔助) */
+        /* 左下角：陀螺儀方向指示儀 */
         #compass {
             position: absolute; bottom: 80px; left: 20px; width: 60px; height: 60px;
             background: rgba(255,255,255,0.7); border-radius: 50%; border: 3px solid #ccc;
@@ -155,18 +161,18 @@
             <h2 style="color: var(--primary-dark); margin-top: 0;">生態棲地小偵探</h2>
             <p style="font-size: 14px; text-align: left; line-height: 1.5; color: #555;">
                 <strong>🎮 體感操作說明：</strong><br>
-                1. 📱 <b>手機平放</b>：前後左右傾斜可轉動「角色方向」。<br>
-                2. 🚶 <b>身體走動</b>：手機感受到上下震動時，角色會往面向的方向前進！<br>
-                3. 🎒 <b>收集與佈局</b>：踩地雷獲得生物，展開上方背包拖曳至棲地（可複數放置）。
+                1. 📱 <b>方向調整</b>：手機平放，傾斜可轉動角色的面向。<br>
+                2. 🚶 <b>身體走動</b>：手機感受走路微震動時，會自動前進！<br>
+                3. 🎒 <b>自由佈局</b>：踩地雷收集卡牌，拖曳至地圖。<b>放錯隨時可從地圖上點選並拖回背包或轉移！</b>
             </p>
             <input type="text" id="player-name" placeholder="輸入偵探名稱" style="width:90%; padding:10px; font-size:16px; text-align:center; border:2px solid #ccc; border-radius:6px;">
             <button onclick="startGame()">允許感測並出發</button>
         </div>
     </div>
 
-    <!-- 遊戲畫布 -->
+    <!-- 遊戲畫布：鎖定 1200x700 邏輯解析度 -->
     <div id="canvas-wrapper">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" width="1200" height="700"></canvas>
     </div>
 
     <div id="compass"><div id="compass-arrow"></div></div>
@@ -208,25 +214,25 @@
     <div id="alert-box">提示訊息</div>
 
     <script>
-        // --- 1. 生態數據庫 (設定正確棲地，用於給分) ---
+        // --- 1. 生態數據庫 ---
         const ECO_DATA = [
-            { id: 'c1', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12'] }, // 淺山/灌木欉, 涵洞護道
-            { id: 'c2', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5'] }, // 枯木草堆, 灌木欉, 田埂草帶
+            { id: 'c1', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12'] }, 
+            { id: 'c2', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5'] }, 
             { id: 'c3', name: '鼬獾', icon: '🦡', validHabitats: ['h6', 'h12'] }, 
-            { id: 'c4', name: '蛇類', icon: '🐍', validHabitats: ['h2', 'h7'] }, // 石堆, 濕地
-            { id: 'c5', name: '龜類', icon: '🐢', validHabitats: ['h4', 'h8'] }, // 水塘, 護岸
+            { id: 'c4', name: '蛇類', icon: '🐍', validHabitats: ['h2', 'h7'] }, 
+            { id: 'c5', name: '龜類', icon: '🐢', validHabitats: ['h4', 'h8'] }, 
             { id: 'c6', name: '雉雞', icon: '🦚', validHabitats: ['h5', 'h6'] }, 
             { id: 'c7', name: '鳥類', icon: '🐦', validHabitats: ['h6'] }, 
-            { id: 'c8', name: '昆蟲', icon: '🪲', validHabitats: ['h10', 'h1'] }, // 昆蟲旅館, 枯木草堆
+            { id: 'c8', name: '昆蟲', icon: '🪲', validHabitats: ['h10', 'h1'] }, 
             { id: 'c9', name: '瓢蟲', icon: '🐞', validHabitats: ['h10', 'h6'] }, 
-            { id: 'c10', name: '蚜蟲', icon: '🐛', validHabitats: ['h5'] }, // 田埂草帶
-            { id: 'c11', name: '螞蟻', icon: '🐜', validHabitats: ['h2', 'h5'] }, // 石堆, 田埂草帶
-            { id: 'c12', name: '蛙類', icon: '🐸', validHabitats: ['h7', 'h4', 'h3'] }, // 濕地, 水塘, 砌石溝
+            { id: 'c10', name: '蚜蟲', icon: '🐛', validHabitats: ['h5'] }, 
+            { id: 'c11', name: '螞蟻', icon: '🐜', validHabitats: ['h2', 'h5'] }, 
+            { id: 'c12', name: '蛙類', icon: '🐸', validHabitats: ['h7', 'h4', 'h3'] }, 
             { id: 'c13', name: '金線蛙', icon: '🐸✨', validHabitats: ['h7', 'h4'] }, 
             { id: 'c14', name: '蝴蝶', icon: '🦋', validHabitats: ['h6', 'h5'] }, 
             { id: 'c15', name: '蜜蜂', icon: '🐝', validHabitats: ['h10', 'h6'] }, 
             { id: 'c16', name: '螳螂', icon: '🦗', validHabitats: ['h5', 'h6'] }, 
-            { id: 'c17', name: '本土魚', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] }, // 水塘, 漂浮草帶, 深溝護道
+            { id: 'c17', name: '本土魚', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] }, 
             { id: 'c18', name: '大肚魚', icon: '🐠', validHabitats: ['h4', 'h13'] }, 
             { id: 'c19', name: '七星鯉', icon: '🐟✨', validHabitats: ['h4', 'h9'] }
         ];
@@ -236,7 +242,7 @@
             { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['c11', 'c12', 'c4'] }
         ];
 
-        // 棲地支援複數生物 occupant -> occupants: []
+        // 棲地陣列 (加入座標)
         const habitats = [
             { id: 'h1', name: '枯木草堆', x: 20, y: 150, w: 100, h: 60, occupants: [] },
             { id: 'h2', name: '石堆', x: 250, y: 80, w: 80, h: 50, occupants: [] },
@@ -253,34 +259,25 @@
             { id: 'h13', name: '深溝護道', x: 60, y: 550, w: 50, h: 120, occupants: [] }
         ];
 
-        // 玩家背包儲存已翻開的生物實體
         let inventory = []; 
 
         // --- 2. 核心狀態與 Canvas 初始化 ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let GAME_W = window.innerWidth;
-        let GAME_H = window.innerHeight;
+        const LOGICAL_W = 1200;
+        const LOGICAL_H = 700;
         
         let isGameRunning = false;
         let playerName = "";
         let distanceTraveled = 0;
         
         let player = {
-            x: 0, y: 0, // 將在 startGame 初始化
-            dirAngle: 0, // 面向角度 (弧度)
-            size: 24, // 放大表情符號
-            icon: '🕵️' // 人形偵探 emoji
+            x: LOGICAL_W - 80, 
+            y: 100, 
+            dirAngle: 0, 
+            size: 28, 
+            icon: '🕵️' 
         };
-
-        function resizeCanvas() {
-            GAME_W = window.innerWidth;
-            GAME_H = window.innerHeight;
-            canvas.width = GAME_W;
-            canvas.height = GAME_H;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
         // --- 3. UI 面板操作 ---
         function togglePanel(panelId) {
@@ -290,7 +287,6 @@
                 panel.classList.remove('open');
                 icon.innerText = panelId === 'top-panel' ? '▼' : '▲';
             } else {
-                // 關閉另一個確保畫面乾淨
                 document.querySelectorAll('.floating-panel').forEach(p => {
                     p.classList.remove('open');
                     if(p.id === 'top-panel') p.querySelector('.toggle-icon').innerText = '▼';
@@ -311,9 +307,7 @@
         // --- 4. 體感感測與啟動 ---
         async function startGame() {
             playerName = document.getElementById('player-name').value || '小偵探';
-            player.x = GAME_W - 80;
-            player.y = 100;
-
+            
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     let p1 = await DeviceOrientationEvent.requestPermission();
@@ -322,7 +316,7 @@
                         window.addEventListener('deviceorientation', handleOrientation);
                         window.addEventListener('devicemotion', handleMotion);
                     } else {
-                        alert('需允許權限，已啟用鍵盤方向鍵備用操作。');
+                        alert('已啟用鍵盤方向鍵備用操作。');
                     }
                 } catch (e) { console.error(e); }
             } else {
@@ -330,9 +324,9 @@
                 window.addEventListener('devicemotion', handleMotion);
             }
 
-            // 電腦端鍵盤備用測試
+            // 鍵盤備用
             window.addEventListener('keydown', (e) => {
-                const speed = 8;
+                const speed = 10;
                 if(e.key==='ArrowUp') {
                     player.x += Math.sin(player.dirAngle) * speed;
                     player.y -= Math.cos(player.dirAngle) * speed;
@@ -347,71 +341,51 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // 手機平放傾斜決定「面向方向」
         function handleOrientation(e) {
             if (!isGameRunning) return;
-            // gamma (左右傾斜), beta (前後傾斜)
-            let dx = e.gamma || 0; // -90 to 90
-            let dy = e.beta || 0;  // -180 to 180
-
-            // 限制平放範圍的映射，當平放時 beta, gamma 約為 0
+            let dx = e.gamma || 0; 
+            let dy = e.beta || 0;  
             if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-                // 計算角度 (Math.atan2 y 軸朝下)
                 player.dirAngle = Math.atan2(dx, -dy);
             }
-
-            // 更新左下角羅盤視覺
             document.getElementById('compass-arrow').style.transform = `translateY(-10px) rotate(${player.dirAngle}rad)`;
         }
 
-        // 手機上下震動 (走路) 決定「前進」
         function handleMotion(e) {
             if (!isGameRunning) return;
             let acc = e.acceleration || {x:0, y:0, z:0};
-            // 偵測 Z 軸或整體的震動幅度 (排除重力加速度)
             let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
             
-            // 走路時會產生超過 1.5 ~ 2.0 的加速度
             if (mag > 2.0) {
                 const stepSize = 4;
                 player.x += Math.sin(player.dirAngle) * stepSize;
-                player.y -= Math.cos(player.dirAngle) * stepSize; // Canvas Y 軸向下所以減
+                player.y -= Math.cos(player.dirAngle) * stepSize; 
                 
-                // 邊界限制
-                player.x = Math.max(player.size, Math.min(GAME_W - player.size, player.x));
-                player.y = Math.max(player.size, Math.min(GAME_H - player.size, player.y));
+                player.x = Math.max(player.size, Math.min(LOGICAL_W - player.size, player.x));
+                player.y = Math.max(player.size, Math.min(LOGICAL_H - player.size, player.y));
 
                 checkMovement(stepSize);
             }
         }
 
-        // --- 5. 隨機遇敵與生成卡牌 ---
         function checkMovement(dist) {
             distanceTraveled += dist;
-            if (distanceTraveled > 150) { // 累積移動 150 像素觸發一次判定
+            if (distanceTraveled > 150) { 
                 distanceTraveled = 0;
-                if (Math.random() < 0.20) { // 20% 機率踩到生態地雷
-                    triggerEncounter();
-                }
+                if (Math.random() < 0.20) triggerEncounter();
             }
         }
 
         function triggerEncounter() {
-            // 從數據庫隨機抓一隻
             let randomTemplate = ECO_DATA[Math.floor(Math.random() * ECO_DATA.length)];
-            
-            // 建立獨一無二的實體 (因為可以重複獲得同一種生物)
             let instance = { ...randomTemplate, uniqueId: 'inst_' + Date.now() + Math.floor(Math.random()*1000) };
             inventory.push(instance);
             
-            // 更新 UI
             renderInventory();
-            showAlert(`👣 踩到生態地雷！發現了【${instance.name}】！已收入背包。`);
+            showAlert(`👣 踩到生態地雷！發現了【${instance.name}】！`);
             
-            // 如果背包沒打開，提示打開
             const panel = document.getElementById('top-panel');
             if (!panel.classList.contains('open')) {
-                document.getElementById('backpack-count').innerText = inventory.length;
                 panel.style.borderColor = "var(--primary-light)";
                 setTimeout(()=> panel.style.borderColor = "rgba(255,255,255,0.5)", 500);
             }
@@ -419,13 +393,14 @@
 
         function renderInventory() {
             const container = document.getElementById('creature-list');
-            if (inventory.length === 0) {
-                container.innerHTML = `<div style="font-size: 13px; color: #888; width: 100%; text-align: center;">請走動探索，這裡會收集到隨機出現的生物卡牌。</div>`;
-                return;
-            }
-            container.innerHTML = '';
             document.getElementById('backpack-count').innerText = inventory.length;
 
+            if (inventory.length === 0) {
+                container.innerHTML = `<div style="font-size: 13px; color: #888; width: 100%; text-align: center;">背包空空如也，請繼續走動探索！</div>`;
+                return;
+            }
+            
+            container.innerHTML = '';
             inventory.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'creature-card';
@@ -436,10 +411,52 @@
             });
         }
 
-        // --- 6. 拖曳機制 (複數放置) ---
+        // --- 6. 進階拖曳機制 (支援從 Canvas 反向拖曳) ---
         let draggingInstance = null;
         const dragClone = document.getElementById('drag-clone');
 
+        function getLogicalCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        // 監聽 Canvas 上點擊已放置的生物
+        canvas.addEventListener('pointerdown', (e) => {
+            const coords = getLogicalCoords(e);
+            
+            for (let h of habitats) {
+                if (h.occupants.length > 0) {
+                    for (let i = h.occupants.length - 1; i >= 0; i--) {
+                        let occ = h.occupants[i];
+                        if (occ.renderBox && 
+                            coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w &&
+                            coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                            
+                            // 成功抓取！從棲地中移除並進入拖曳狀態
+                            draggingInstance = occ;
+                            h.occupants.splice(i, 1);
+                            
+                            dragClone.style.display = 'flex';
+                            dragClone.querySelector('#drag-icon').innerText = occ.icon;
+                            dragClone.querySelector('#drag-name').innerText = occ.name;
+                            moveDragClone(e);
+                            
+                            document.addEventListener('pointermove', handleDragMove);
+                            document.addEventListener('pointerup', handleDragEnd);
+                            e.preventDefault();
+                            return; // 找到一個就停止
+                        }
+                    }
+                }
+            }
+        });
+
+        // 監聽 HTML 背包內的卡牌拖曳
         function handleDragStart(e, instance, el) {
             draggingInstance = instance;
             dragClone.style.display = 'flex';
@@ -456,6 +473,7 @@
             if (!draggingInstance) return;
             moveDragClone(e);
         }
+        
         function moveDragClone(e) {
             dragClone.style.left = e.clientX + 'px';
             dragClone.style.top = e.clientY + 'px';
@@ -467,50 +485,41 @@
             document.removeEventListener('pointerup', handleDragEnd);
             dragClone.style.display = 'none';
 
-            // 取得 Canvas 內座標 (直接等同 client 因為 canvas 佔滿全螢幕)
-            const cx = e.clientX;
-            const cy = e.clientY;
+            const coords = getLogicalCoords(e);
 
-            // 檢查掉落在哪個棲地
-            let droppedHabitat = habitats.find(h => cx >= h.x && cx <= h.x + h.w && cy >= h.y && cy <= h.y + h.h);
+            // 檢查是否掉落在棲地上
+            let droppedHabitat = habitats.find(h => coords.x >= h.x && coords.x <= h.x + h.w && coords.y >= h.y && coords.y <= h.y + h.h);
 
             if (droppedHabitat) {
-                // 將生物實體加入該棲地
                 droppedHabitat.occupants.push(draggingInstance);
-                
-                // 從背包移除
                 inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
-                renderInventory();
-                
                 showAlert(`已將【${draggingInstance.name}】安置於【${droppedHabitat.name}】。`);
+            } else {
+                // 如果沒有掉在任何棲地上，退回背包
+                if (!inventory.find(i => i.uniqueId === draggingInstance.uniqueId)) {
+                    inventory.push(draggingInstance);
+                }
+                showAlert(`【${draggingInstance.name}】已退回背包。`);
             }
+            
+            renderInventory();
             draggingInstance = null;
         }
 
-        // --- 7. 結算系統 (分數與食物鏈) ---
+        // --- 7. 結算系統 ---
         function calculateScore() {
             let totalScore = 0;
             let logHTML = "<ul style='padding-left: 20px; color: #4b5563;'>";
+            let successfullyPlacedIds = new Set();
 
-            // 1. 計算棲地基礎分
             habitats.forEach(h => {
                 h.occupants.forEach(occ => {
                     if (occ.validHabitats.includes(h.id)) {
                         totalScore += 1;
+                        successfullyPlacedIds.add(occ.id); 
                         logHTML += `<li><span style="color:green">✔</span> ${occ.name} 在 ${h.name} 適應良好 (+1)</li>`;
                     } else {
                         logHTML += `<li><span style="color:red">✖</span> ${occ.name} 不太適應 ${h.name} (無加分)</li>`;
-                    }
-                });
-            });
-
-            // 2. 計算食物鏈加成 (跨棲地全域檢查：只要在正確棲地上存在該物種即可)
-            // 先搜集所有「被放置在正確棲地」的物種 ID
-            let successfullyPlacedIds = new Set();
-            habitats.forEach(h => {
-                h.occupants.forEach(occ => {
-                    if (occ.validHabitats.includes(h.id)) {
-                        successfullyPlacedIds.add(occ.id); // 原始類別 ID
                     }
                 });
             });
@@ -524,13 +533,11 @@
             });
 
             logHTML += "</ul>";
-
-            const details = document.getElementById('score-details');
-            details.innerHTML = logHTML;
+            document.getElementById('score-details').innerHTML = logHTML;
             document.getElementById('final-score').innerText = `🏆 總成績：${totalScore} 分`;
         }
 
-        // --- 8. Canvas 渲染迴圈 (包含複數生物渲染) ---
+        // --- 8. Canvas 渲染迴圈 ---
         function gameLoop() {
             if (!isGameRunning) return;
             drawMap();
@@ -540,20 +547,21 @@
         }
 
         function drawMap() {
-            // 背景
-            ctx.fillStyle = '#c5e1a5'; ctx.fillRect(0, 0, GAME_W, GAME_H);
+            ctx.fillStyle = '#c5e1a5'; ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
             
-            // 地形比例稍微適應螢幕寬度，此處使用固定座標為求範例展示
             ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(300,0); ctx.lineTo(250,250); ctx.lineTo(0,250); ctx.fill(); drawTextBg('森林', 100, 100, '#1b5e20');
             ctx.fillStyle = '#558b2f'; ctx.beginPath(); ctx.moveTo(300,0); ctx.lineTo(800,0); ctx.quadraticCurveTo(850,150,750,250); ctx.lineTo(250,250); ctx.fill(); drawTextBg('淺山', 500, 100, '#33691e');
-            ctx.fillStyle = '#757575'; ctx.fillRect(0, 250, Math.max(1200, GAME_W), 60); drawTextBg('山邊道路', 150, 280, '#424242');
+            ctx.fillStyle = '#757575'; ctx.fillRect(0, 250, LOGICAL_W, 60); drawTextBg('山邊道路', 150, 280, '#424242');
             ctx.fillStyle = '#424242'; ctx.fillRect(430, 240, 40, 80); drawTextBg('涵洞', 450, 280, '#212121');
-            ctx.fillStyle = '#4fc3f7'; ctx.beginPath(); ctx.moveTo(850, 310); ctx.lineTo(950, 310); ctx.lineTo(1050, GAME_H); ctx.lineTo(950, GAME_H); ctx.fill(); drawTextBg('溪流', 930, 450, '#0277bd');
+            ctx.fillStyle = '#4fc3f7'; ctx.beginPath(); ctx.moveTo(850, 310); ctx.lineTo(950, 310); ctx.lineTo(1050, LOGICAL_H); ctx.lineTo(950, LOGICAL_H); ctx.fill(); drawTextBg('溪流', 930, 450, '#0277bd');
             ctx.fillStyle = '#fff59d'; ctx.fillRect(150, 350, 350, 180); drawTextBg('農田', 320, 440, '#f57f17');
             ctx.fillStyle = '#29b6f6'; ctx.beginPath(); ctx.ellipse(970, 600, 120, 70, 0, 0, Math.PI * 2); ctx.fill(); drawTextBg('水塘', 970, 600, '#0277bd');
         }
 
         function drawHabitats() {
+            const iconSize = 34; // 擴大生物卡牌在畫布上的顯示尺寸
+            const padding = 5;
+
             habitats.forEach(h => {
                 ctx.save();
                 ctx.lineWidth = 2;
@@ -563,7 +571,7 @@
                     ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
                     ctx.setLineDash([]);
                 } else {
-                    ctx.strokeStyle = 'rgba(244, 67, 54, 0.5)';
+                    ctx.strokeStyle = 'rgba(244, 67, 54, 0.6)';
                     ctx.fillStyle = 'rgba(244, 67, 54, 0.1)';
                     ctx.setLineDash([5, 5]);
                 }
@@ -572,17 +580,37 @@
                 ctx.fill(); ctx.stroke();
                 
                 if (h.occupants.length > 0) {
-                    // 將複數生物排列在區域內
-                    const iconSize = 20;
-                    const maxCols = Math.floor((h.w - 10) / iconSize);
-                    ctx.font = '18px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    // 精確計算網格，保證不重疊
+                    const maxCols = Math.max(1, Math.floor((h.w - padding * 2) / iconSize));
+                    
+                    ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'middle';
                     
                     h.occupants.forEach((occ, index) => {
                         let col = index % maxCols;
                         let row = Math.floor(index / maxCols);
-                        let px = h.x + 15 + col * iconSize;
-                        let py = h.y + 15 + row * iconSize;
-                        ctx.fillText(occ.icon, px, py);
+                        let px = h.x + padding + col * iconSize + iconSize/2;
+                        let py = h.y + padding + row * iconSize + iconSize/2;
+                        
+                        // 繪製白色不透明底框
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                        ctx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
+                        ctx.strokeStyle = '#9ca3af';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
+
+                        // 繪製 Emoji
+                        ctx.font = '24px Arial';
+                        ctx.fillStyle = '#000';
+                        ctx.fillText(occ.icon, px, py + 2);
+
+                        // 儲存實際碰撞框，供後續點擊拖曳判定
+                        occ.renderBox = {
+                            x: px - iconSize/2 + 2,
+                            y: py - iconSize/2 + 2,
+                            w: iconSize - 4,
+                            h: iconSize - 4
+                        };
                     });
                 } else {
                     ctx.font = '12px Arial'; ctx.fillStyle = '#b71c1c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -596,27 +624,18 @@
             ctx.save();
             ctx.translate(player.x, player.y);
             
-            // 繪製頭像 ( Emoji )
             ctx.font = `${player.size}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // 面向旋轉
             ctx.rotate(player.dirAngle);
             ctx.fillText(player.icon, 0, 0);
 
-            // 繪製面向提示的小指標 (在角色前方)
+            // 前方紅點指示器
             ctx.fillStyle = '#ef4444';
-            ctx.beginPath();
-            ctx.arc(0, -18, 4, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(0, -22, 4, 0, Math.PI * 2); ctx.fill();
 
             ctx.restore();
-
-            // 玩家名稱
-            ctx.fillStyle = '#111';
-            ctx.font = 'bold 12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(playerName, player.x, player.y + 25);
+            ctx.fillStyle = '#111'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.fillText(playerName, player.x, player.y + 25);
         }
 
         function drawTextBg(text, x, y, bgColor) {
