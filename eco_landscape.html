@@ -202,8 +202,9 @@
         <div class="panel-content">
             <div id="backpack-info" style="background: #e0f2fe; border-left: 4px solid #3b82f6; padding: 10px; font-size: 12px; margin-bottom: 10px; color: #0369a1; border-radius: 4px; text-align: left; line-height: 1.5;">
                 💡 <b>棲地演化提示：</b><br>
-                • <b>擴增棲地：</b>在同一棲地放入 <b>3張正確</b> 的生物卡，將觸發藍白虛線的「新生棲地」！<br>
-                • <b>環境危機：</b>放入 <b>3張錯誤</b> 的卡片，將引發黑白虛線的「危機地帶」(如路殺、水源汙染)。危機地帶若放入生物，結算將<b>倒扣 1 分</b>！
+                • <b>擴增棲地：</b>在同一棲地放入 <b>3張正確</b> 的生物卡，將觸發藍白虛線的「新生棲地」，該處可自由繼續培育生物！<br>
+                • <b>環境危機：</b>放入 <b>3張錯誤</b> 的卡片，將引發黑白虛線的「危機地帶」(如路殺、水源汙染)。<br>
+                • ☠️ <b>生態陷阱：</b><span style="color:#b91c1c;">拖曳卡片時若不慎「路過」危機地帶，生物會被強制吸入並死亡(卡片變灰無法移出)，結算將倒扣 1 分！</span>
             </div>
             <div class="creature-container" id="creature-list">
                 <div style="font-size: 13px; color: #888; width: 100%; text-align: center;">請走動探索，收集生物與文化卡牌。</div>
@@ -235,7 +236,7 @@
     <div id="alert-box">提示訊息</div>
 
     <script>
-        // --- 1. 生態數據庫 (修正蜻蜓與環頸雉 Emoji) ---
+        // --- 1. 生態數據庫 (修正 Dragonfly 等 Emoji) ---
         const ECO_DATA = [
             { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12'] }, 
             { id: 'b2', type: 'bio', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5'] }, 
@@ -261,7 +262,7 @@
             { id: 'b22', type: 'bio', name: '澤蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
             { id: 'b23', type: 'bio', name: '泥鰍', icon: '🐟', validHabitats: ['h4', 'h3', 'h13', 'h7'] },
             { id: 'b24', type: 'bio', name: '田螺', icon: '🐚', validHabitats: ['h4', 'h7', 'h3'] }, 
-            { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🦟', validHabitats: ['h4', 'h7', 'h9'] }, // 以飛蟲取代直升機
+            { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🦟', validHabitats: ['h4', 'h7', 'h9'] }, 
             { id: 'b26', type: 'bio', name: '食蟲虻', icon: '🪰', validHabitats: ['h5', 'h6'] },
             { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h11'] },
             { id: 'b28', type: 'bio', name: '胡蜂', icon: '🐝', validHabitats: ['h6', 'h1'] },
@@ -276,7 +277,7 @@
             { id: 'b37', type: 'bio', name: '穿山甲', icon: '🦔', validHabitats: ['h6', 'h12', 'h1'] }, 
             { id: 'b38', type: 'bio', name: '白鼻心', icon: '🦡', validHabitats: ['h6', 'h12'] },
             { id: 'b39', type: 'bio', name: '黑翅鳶', icon: '🦅', validHabitats: ['h5', 'h6'] },
-            { id: 'b40', type: 'bio', name: '環頸雉', icon: '🦃', validHabitats: ['h5', 'h6'] }, // 以火雞取代孔雀
+            { id: 'b40', type: 'bio', name: '環頸雉', icon: '🦃', validHabitats: ['h5', 'h6'] }, 
             { id: 'b41', type: 'bio', name: '燕子', icon: '🐦', validHabitats: ['h5', 'h4'] },
             { id: 'b42', type: 'bio', name: '藍鵲', icon: '🐦', validHabitats: ['h6'] }, 
             { id: 'b43', type: 'bio', name: '竹雞', icon: '🐔', validHabitats: ['h6', 'h5'] }, 
@@ -409,8 +410,8 @@
             const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1; setTimeout(() => box.style.opacity = 0, 3000);
         }
 
-        // --- 存檔系統 (LocalStorage) v5 ---
-        const SAVE_KEY = 'ecoDetective_saveData_v5';
+        // --- 存檔系統 (LocalStorage) ---
+        const SAVE_KEY = 'ecoDetective_saveData_v6';
 
         function checkExistingSave() {
             if (localStorage.getItem(SAVE_KEY)) {
@@ -502,23 +503,30 @@
             distanceTraveled += dist;
             if (distanceTraveled > 150) { 
                 distanceTraveled = 0; saveProgress(); 
-                if (Math.random() < 0.10) triggerEncounter(); // 降低為 10% 掉落率
+                if (Math.random() < 0.10) triggerEncounter();
             }
         }
 
         function triggerEncounter() {
             let randomTemplate = CARD_POOL[Math.floor(Math.random() * CARD_POOL.length)];
-            let instance = { ...randomTemplate, uniqueId: 'inst_' + Date.now() + Math.floor(Math.random()*1000) };
+            let instance = { ...randomTemplate, uniqueId: 'inst_' + Date.now() + Math.floor(Math.random()*1000), dead: false };
             inventory.push(instance); renderInventory(); saveProgress();
             showAlert(`👣 發現了${instance.type==='culture'?'文化地景':'生態物種'}【${instance.name}】！`);
+            
+            const infoBlock = document.getElementById('backpack-info');
+            if (infoBlock) infoBlock.style.display = 'none';
+
             const panel = document.getElementById('top-panel');
             if (!panel.classList.contains('open')) { panel.style.borderColor = "var(--primary-light)"; setTimeout(()=> panel.style.borderColor = "rgba(255,255,255,0.5)", 500); }
         }
 
-        // 包含堆疊演算法 (Stacking) 的背包渲染
         function renderInventory() {
             const container = document.getElementById('creature-list'); 
             document.getElementById('backpack-count').innerText = inventory.length;
+            
+            const infoBlock = document.getElementById('backpack-info');
+            if (infoBlock) infoBlock.style.display = inventory.length > 0 ? 'none' : 'block';
+
             if (inventory.length === 0) { container.innerHTML = `<div style="font-size: 13px; color: #888; width: 100%; text-align: center;">背包空空如也，請繼續走動探索！</div>`; return; }
             
             container.innerHTML = '';
@@ -551,17 +559,17 @@
 
             for (let i = mapOccupants.length - 1; i >= 0; i--) {
                 let occ = mapOccupants[i];
-                if (occ.renderBox && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                if (occ.renderBox && !occ.dead && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
                     draggingInstance = occ; mapOccupants.splice(i, 1); setupDrag(e, occ); return; 
                 }
             }
             
-            // 檢查是否從危機地帶中抓取生物
             for (let cz of crisisZones) {
                 if (cz.occupants.length > 0) {
                     for (let i = cz.occupants.length - 1; i >= 0; i--) {
                         let occ = cz.occupants[i];
-                        if (occ.renderBox && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                        // 死亡狀態禁止抓取
+                        if (occ.renderBox && !occ.dead && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
                             draggingInstance = occ; cz.occupants.splice(i, 1); setupDrag(e, occ); return; 
                         }
                     }
@@ -572,7 +580,7 @@
                 if (h.occupants.length > 0) {
                     for (let i = h.occupants.length - 1; i >= 0; i--) {
                         let occ = h.occupants[i];
-                        if (occ.renderBox && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                        if (occ.renderBox && !occ.dead && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
                             draggingInstance = occ; h.occupants.splice(i, 1); setupDrag(e, occ); return; 
                         }
                     }
@@ -584,6 +592,29 @@
         canvas.addEventListener('pointermove', (e) => {
             if (isDrawingMode && currentPath) { currentPath.points.push(getLogicalCoords(e)); e.preventDefault(); return; }
             if (isPanningMap) { camera.x -= (e.clientX - lastPanX); camera.y -= (e.clientY - lastPanY); lastPanX = e.clientX; lastPanY = e.clientY; e.preventDefault(); }
+            
+            // 引力引擎：拖曳途中經過危機地帶
+            if (draggingInstance) {
+                moveDragClone(e); e.preventDefault();
+                const coords = getLogicalCoords(e);
+                
+                for (let cz of crisisZones) {
+                    // 吸附半徑稍微比視覺圓框大一點 (cz.r + 20)
+                    if (Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r + 20) {
+                        // 強制中斷拖曳
+                        draggingInstance.dead = true; // 標記死亡狀態
+                        cz.occupants.push(draggingInstance);
+                        inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
+                        
+                        document.removeEventListener('pointermove', handleDragMove); document.removeEventListener('pointerup', handleDragEnd); 
+                        dragClone.style.display = 'none';
+                        
+                        showAlert(`☠️ 生態陷阱！【${draggingInstance.name}】被強制吸入了【${cz.name}】並已喪失生命力！`);
+                        renderInventory(); saveProgress(); draggingInstance = null;
+                        break;
+                    }
+                }
+            }
         }, { passive: false });
 
         canvas.addEventListener('pointerup', (e) => { 
@@ -601,13 +632,12 @@
         function handleDragMove(e) { if (draggingInstance) { moveDragClone(e); e.preventDefault(); } }
         function moveDragClone(e) { dragClone.style.left = e.clientX + 'px'; dragClone.style.top = e.clientY + 'px'; }
 
-        // 棲地演化檢查
         function checkHabitatEvolution(h) {
-            if (h.isBonus) return; // 擴增棲地不再演化
+            if (h.isBonus) return;
 
             let correct = 0, incorrect = 0;
             h.occupants.forEach(occ => {
-                if (occ.type === 'bio') {
+                if (occ.type === 'bio' && !occ.dead) {
                     if (occ.validHabitats.includes(h.id)) correct++; else incorrect++;
                 }
             });
@@ -637,16 +667,16 @@
 
             const coords = getLogicalCoords(e);
             
-            // 先檢查是否落入危機地帶
+            // 放手時檢查是否落在危機地帶內
             let droppedCrisis = crisisZones.find(cz => Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r);
             if (droppedCrisis) {
+                draggingInstance.dead = true;
                 droppedCrisis.occupants.push(draggingInstance);
                 inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
-                showAlert(`⚠️ 警告！【${draggingInstance.name}】掉入了危機地帶【${droppedCrisis.name}】！`);
+                showAlert(`☠️ 警告！【${draggingInstance.name}】掉入了危機地帶【${droppedCrisis.name}】並已喪失生命力！`);
                 renderInventory(); saveProgress(); draggingInstance = null; return;
             }
 
-            // 再檢查棲地
             let droppedHabitat = habitats.find(h => coords.x >= h.x && coords.x <= h.x + h.w && coords.y >= h.y && coords.y <= h.y + h.h);
 
             if (droppedHabitat) {
@@ -683,6 +713,8 @@
 
             habitats.forEach(h => {
                 h.occupants.forEach(occ => {
+                    if (occ.dead) return; // 死亡卡片不列入正常計分
+                    
                     if (h.isBonus && occ.type === 'bio') {
                         totalScore += 1; successfullyPlacedIds.add(occ.id); logHTML += `<li><span style="color:green">✔</span> ${occ.name} 於 新生自然棲地 拓展成功 (+1)</li>`;
                     } else if (occ.type === 'culture') {
@@ -785,7 +817,6 @@
             habitats.forEach(h => {
                 ctx.save(); ctx.lineWidth = 3;
                 
-                // 動態判定框線樣式
                 if (h.isBonus) {
                     ctx.strokeStyle = '#3b82f6'; ctx.fillStyle = 'rgba(59, 130, 246, 0.1)'; ctx.setLineDash([8, 8]);
                 } else if (h.occupants.length > 0) { 
@@ -795,7 +826,6 @@
                 }
                 
                 ctx.beginPath(); ctx.roundRect(h.x, h.y, h.w, h.h, 4); ctx.fill(); ctx.stroke();
-                // 產生藍白虛線效果
                 if (h.isBonus && h.occupants.length === 0) { ctx.strokeStyle = '#fff'; ctx.lineDashOffset = 8; ctx.stroke(); }
                 
                 if (h.occupants.length > 0) {
@@ -809,11 +839,14 @@
                         ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af';
                         ctx.lineWidth = occ.type === 'culture' ? 2 : 1;
 
+                        if (occ.dead) { ctx.filter = 'grayscale(100%)'; ctx.globalAlpha = 0.6; }
+
                         if (occ.type === 'culture') { ctx.beginPath(); ctx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } 
                         else { ctx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); ctx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
                         
                         ctx.font = '26px Arial'; ctx.fillStyle = '#000'; ctx.fillText(occ.icon, px, py + 2);
                         occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
+                        ctx.filter = 'none'; ctx.globalAlpha = 1.0;
                     });
                 } else {
                     ctx.font = '14px Arial'; ctx.fillStyle = h.isBonus ? '#1d4ed8' : '#b71c1c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(h.name, h.x + h.w/2, h.y + h.h/2);
@@ -828,7 +861,6 @@
                 ctx.save(); ctx.lineWidth = 3;
                 ctx.strokeStyle = '#111'; ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.setLineDash([8, 8]);
                 ctx.beginPath(); ctx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                // 產生黑白虛線效果
                 ctx.strokeStyle = '#fff'; ctx.lineDashOffset = 8; ctx.stroke();
 
                 ctx.font = 'bold 12px Arial'; ctx.fillStyle = '#ef4444'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -841,12 +873,16 @@
                         let col = index % maxCols; let row = Math.floor(index / maxCols);
                         let px = startX + col * iconSize + iconSize/2; let py = startY + row * iconSize + iconSize/2;
                         
+                        // 死亡狀態強制灰階
+                        ctx.filter = 'grayscale(100%)'; ctx.globalAlpha = 0.6;
+                        
                         ctx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#ef4444'; ctx.lineWidth = 2;
                         if (occ.type === 'culture') { ctx.beginPath(); ctx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } 
                         else { ctx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); ctx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
                         
                         ctx.font = '26px Arial'; ctx.fillStyle = '#000'; ctx.fillText(occ.icon, px, py + 2);
                         occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
+                        ctx.filter = 'none'; ctx.globalAlpha = 1.0;
                     });
                 }
                 ctx.restore();
@@ -856,10 +892,16 @@
         function drawMapOccupants() {
             const r = 20;
             mapOccupants.forEach(occ => {
-                ctx.save(); ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.arc(occ.x, occ.y, r, 0, Math.PI*2); ctx.fill();
+                ctx.save(); 
+                if (occ.dead) { ctx.filter = 'grayscale(100%)'; ctx.globalAlpha = 0.6; }
+                
+                ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.arc(occ.x, occ.y, r, 0, Math.PI*2); ctx.fill();
                 ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
                 ctx.font = '26px Arial'; ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(occ.icon, occ.x, occ.y + 2);
-                ctx.restore(); occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
+                
+                occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
+                ctx.filter = 'none'; ctx.globalAlpha = 1.0;
+                ctx.restore(); 
             });
         }
 
