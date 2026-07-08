@@ -118,12 +118,12 @@
         }
         #compass {
             position: absolute; bottom: 80px; left: 20px; width: 60px; height: 60px;
-            background: rgba(255,255,255,0.7); border-radius: 50%; border: 3px solid #ccc;
-            z-index: 50; display: flex; justify-content: center; align-items: center; pointer-events: none;
+            background: rgba(255,255,255,0.9); border-radius: 50%; border: 3px solid #ccc;
+            z-index: 50; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         #compass-arrow {
             width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent;
-            border-bottom: 20px solid #ef4444; transform: translateY(-10px); transition: transform 0.1s;
+            border-bottom: 20px solid #ef4444; transform: translateY(-10px); transition: transform 0.1s; pointer-events: none;
         }
         
         .quiz-question { margin-bottom: 15px; text-align: left; font-size: 13px; color: #333; }
@@ -218,7 +218,8 @@
 
     <!-- 畫布與操作 UI -->
     <div id="canvas-wrapper"><canvas id="gameCanvas"></canvas></div>
-    <div id="compass"><div id="compass-arrow"></div></div>
+    <!-- 修改指南針，加入 onclick 事件以利手動置中 -->
+    <div id="compass" onclick="recenterCamera()" title="點擊對齊小偵探視角"><div id="compass-arrow"></div></div>
 
     <!-- 畫筆工具列 -->
     <div id="draw-tools">
@@ -355,7 +356,8 @@
             { id: 'cu7', type: 'culture', name: '石敢當', icon: '🪨' },
             { id: 'cu8', type: 'culture', name: '菁仔叢', icon: '🌴' },
             { id: 'cu9', type: 'culture', name: '香爐', icon: '🪔' },
-            { id: 'cu10', type: 'culture', name: '大榕樹', icon: '🌳' }
+            { id: 'cu10', type: 'culture', name: '大榕樹', icon: '🌳' },
+            { id: 'cu11', type: 'culture', name: '紅包', icon: '🧧' }
         ];
 
         const CARD_POOL = [...ECO_DATA, ...CULTURE_DATA];
@@ -409,7 +411,8 @@
         const QUIZ_DATA = [
             { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
             { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
-            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 }
+            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 },
+            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費及低碳里程產品", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
         ];
         let quizCompleted = false; let quizScore = 0;
 
@@ -482,7 +485,7 @@
             } return false;
         }
         window.onload = checkExistingSave;
-
+        // --- 啟動遊戲 ---
         async function startGame(isResume = false) {
             requestWakeLock(); 
             if (isResume) {
@@ -507,12 +510,18 @@
 
             window.addEventListener('keydown', (e) => {
                 const speed = 15; 
-                if(e.key==='ArrowUp') { player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed; checkMovement(speed); camera.detached = false; }
+                if(e.key==='ArrowUp') { player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed; checkMovement(speed); }
                 if(e.key==='ArrowLeft') player.dirAngle -= 0.2; if(e.key==='ArrowRight') player.dirAngle += 0.2;
             });
 
             document.getElementById('start-overlay').style.display = 'none';
             isGameRunning = true; requestAnimationFrame(gameLoop);
+        }
+
+        // 新增手動置中視角功能
+        function recenterCamera() {
+            camera.detached = false;
+            showAlert("📍 視角已對齊小偵探");
         }
 
         // --- 感測與移動邏輯 ---
@@ -527,7 +536,8 @@
             if (mag > 2.0) {
                 const stepSize = 6; player.x += Math.sin(player.dirAngle) * stepSize; player.y -= Math.cos(player.dirAngle) * stepSize; 
                 player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x)); player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
-                checkMovement(stepSize); camera.detached = false;
+                checkMovement(stepSize); 
+                // 移除 camera.detached = false; 讓玩家平移地圖找地點時不會自動跳回原地
             }
         }
 
@@ -808,10 +818,12 @@
             ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 4; ctx.strokeRect(60, 60, 1080, 680);
             ctx.fillStyle = '#14532d'; ctx.fillRect(50, 50, 40, 40); ctx.fillRect(1110, 50, 40, 40); ctx.fillRect(50, 710, 40, 40); ctx.fillRect(1110, 710, 40, 40);
             ctx.fillStyle = '#14532d'; ctx.textAlign = 'center'; ctx.font = 'bold 50px "Segoe UI", sans-serif'; ctx.fillText('探探里山永續生態與農村風俗文化導覽', 600, 200);
-            ctx.font = 'bold 42px "Segoe UI", sans-serif'; ctx.fillStyle = '#16a34a'; ctx.fillText('生態棲地營造 結業證書', 600, 270);
+            ctx.font = 'bold 42px "Segoe UI", sans-serif'; ctx.fillStyle = '#16a34a'; ctx.fillText('結業證書', 600, 270);
             ctx.fillStyle = '#1f2937'; ctx.font = '32px "Segoe UI", sans-serif'; ctx.fillText(`茲證明`, 600, 380);
             ctx.font = 'bold 46px "Segoe UI", sans-serif'; ctx.fillStyle = '#000'; ctx.fillText(`${playerName}`, 600, 450);
-            ctx.font = '30px "Segoe UI", sans-serif'; ctx.fillStyle = '#4b5563'; ctx.fillText(`成功完成生態棲地營造與加分測驗任務，特發此證以資鼓勵。`, 600, 520);
+            ctx.font = '28px "Segoe UI", sans-serif'; ctx.fillStyle = '#4b5563'; 
+            ctx.fillText(`在生態導覽與農村風俗文化導覽活動中，認真學習，`, 600, 510);
+            ctx.fillText(`獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。`, 600, 550);
 
             const routeMapping = { "酪酪找生態": "湧健酪梨園/梅園+槑休閒農業區", "瓜呱報生態": "雨社山下農場+阿爾喜農場", "林近里山": "蛇窯文化園區+指令教育農場+明揚養蜂" };
             let displayLocation = routeMapping[eventLocation] ? `${eventLocation} (${routeMapping[eventLocation]})` : eventLocation;
@@ -828,8 +840,12 @@
 
             setTimeout(() => {
                 const sourceToDraw = qrTemp.querySelector('canvas') || qrTemp.querySelector('img');
-                if(sourceToDraw) ctx.drawImage(sourceToDraw, 85, 650, 75, 75);
-                ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif'; ctx.fillText(`🌿 探探里山`, 175, 695);
+                // 修改處：將 QR Code 的 X 座標從 85 改為 110，向右平移避開邊角方塊
+                if(sourceToDraw) ctx.drawImage(sourceToDraw, 110, 650, 75, 75);
+                
+                // 修改處：將標語文字的 X 座標從 175 改為 200，與 QR Code 保持等距
+                ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif'; ctx.fillText(`🌿 探探里山`, 200, 695);
+                
                 const imgDataUrl = certCanvas.toDataURL("image/png");
                 const previewImg = document.getElementById('cert-preview'); previewImg.src = imgDataUrl; previewImg.style.display = 'block';
                 const downloadLink = document.getElementById('cert-download-link'); downloadLink.href = imgDataUrl; downloadLink.download = `里山導覽證書_${playerName}_${randomId}.png`; downloadLink.style.display = 'block';
@@ -845,8 +861,154 @@
         function gameLoop() {
             if (!isGameRunning) return; updateCamera(); ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
             ctx.save(); ctx.translate(-camera.x, -camera.y);
+            // 傳入 ctx 確保渲染
             drawMap(ctx); drawHabitats(ctx); drawCrisisZones(ctx); drawMapOccupants(ctx); drawDrawings(ctx); drawPlayer(ctx);
             ctx.restore(); requestAnimationFrame(gameLoop);
+        }
+
+        // 修改所有繪圖函數，接收 targetCtx 以支援截圖功能與保留文字
+        function drawDrawings(targetCtx) {
+            let tCtx = targetCtx || ctx;
+            drawings.forEach(d => {
+                tCtx.strokeStyle = d.color; tCtx.lineWidth = 4; tCtx.lineJoin = 'round'; tCtx.lineCap = 'round';
+                tCtx.beginPath();
+                if(d.points.length > 0) { tCtx.moveTo(d.points[0].x, d.points[0].y); for(let i = 1; i < d.points.length; i++) tCtx.lineTo(d.points[i].x, d.points[i].y); tCtx.stroke(); }
+            });
+        }
+
+        function drawMap(targetCtx) {
+            let tCtx = targetCtx || ctx;
+            tCtx.fillStyle = '#c5e1a5'; tCtx.fillRect(0, 0, MAP_W, MAP_H);
+            tCtx.fillStyle = '#2e7d32'; tCtx.beginPath(); tCtx.moveTo(0,0); tCtx.lineTo(400,0); tCtx.lineTo(300,350); tCtx.lineTo(0,350); tCtx.fill(); drawTextBg(tCtx, '森林', 150, 150, '#1b5e20');
+            tCtx.fillStyle = '#558b2f'; tCtx.beginPath(); tCtx.moveTo(400,0); tCtx.lineTo(1100,0); tCtx.quadraticCurveTo(1150,200,1050,350); tCtx.lineTo(300,350); tCtx.fill(); drawTextBg(tCtx, '淺山', 700, 150, '#33691e');
+            tCtx.fillStyle = '#757575'; tCtx.fillRect(0, 350, MAP_W, 100); drawTextBg(tCtx, '山邊道路', 200, 400, '#424242');
+            tCtx.fillStyle = '#424242'; tCtx.fillRect(550, 340, 60, 120); drawTextBg(tCtx, '涵洞', 580, 400, '#212121');
+            tCtx.fillStyle = '#4fc3f7'; tCtx.beginPath(); tCtx.moveTo(1100, 450); tCtx.lineTo(1250, 450); tCtx.lineTo(1400, MAP_H); tCtx.lineTo(1250, MAP_H); tCtx.fill(); drawTextBg(tCtx, '溪流', 1230, 650, '#0277bd');
+            tCtx.fillStyle = '#fff59d'; tCtx.fillRect(200, 550, 450, 250); drawTextBg(tCtx, '農田', 420, 670, '#f57f17');
+            tCtx.fillStyle = '#29b6f6'; tCtx.beginPath(); tCtx.ellipse(1300, 950, 180, 100, 0, 0, Math.PI * 2); tCtx.fill(); drawTextBg(tCtx, '水塘', 1300, 950, '#0277bd');
+        }
+
+        function drawHabitats(targetCtx) {
+            let tCtx = targetCtx || ctx;
+            const iconSize = 40; const padding = 5;
+            habitats.forEach(h => {
+                tCtx.save(); tCtx.lineWidth = 3;
+                
+                if (h.isBonus) {
+                    tCtx.strokeStyle = '#3b82f6'; tCtx.fillStyle = 'rgba(59, 130, 246, 0.1)'; tCtx.setLineDash([8, 8]);
+                } else if (h.occupants.length > 0) { 
+                    tCtx.strokeStyle = '#4caf50'; tCtx.fillStyle = 'rgba(76, 175, 80, 0.2)'; tCtx.setLineDash([]); 
+                } else { 
+                    tCtx.strokeStyle = 'rgba(244, 67, 54, 0.6)'; tCtx.fillStyle = 'rgba(244, 67, 54, 0.1)'; tCtx.setLineDash([5, 5]); 
+                }
+                
+                tCtx.beginPath(); tCtx.roundRect(h.x, h.y, h.w, h.h, 4); tCtx.fill(); tCtx.stroke();
+                if (h.isBonus && h.occupants.length === 0) { tCtx.strokeStyle = '#fff'; tCtx.lineDashOffset = 8; tCtx.stroke(); }
+                
+                if (h.occupants.length > 0) {
+                    const maxCols = Math.max(1, Math.floor((h.w - padding * 2) / iconSize));
+                    tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+                    h.occupants.forEach((occ, index) => {
+                        let col = index % maxCols; let row = Math.floor(index / maxCols);
+                        let px = h.x + padding + col * iconSize + iconSize/2; let py = h.y + padding + row * iconSize + iconSize/2;
+                        
+                        tCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff';
+                        tCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af';
+                        tCtx.lineWidth = occ.type === 'culture' ? 2 : 1;
+
+                        if (occ.dead) { tCtx.filter = 'grayscale(100%)'; tCtx.globalAlpha = 0.6; }
+
+                        if (occ.type === 'culture') { tCtx.beginPath(); tCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); tCtx.fill(); tCtx.stroke(); } 
+                        else { tCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); tCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
+                        
+                        // 保留圖示與名稱
+                        tCtx.font = '20px Arial'; tCtx.fillStyle = '#000'; tCtx.fillText(occ.icon, px, py - 4);
+                        tCtx.font = 'bold 10px "Segoe UI", sans-serif'; tCtx.fillStyle = '#14532d'; tCtx.fillText(occ.name, px, py + 14);
+
+                        occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
+                        tCtx.filter = 'none'; tCtx.globalAlpha = 1.0;
+                    });
+                } else {
+                    tCtx.font = '14px Arial'; tCtx.fillStyle = h.isBonus ? '#1d4ed8' : '#b71c1c'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle'; tCtx.fillText(h.name, h.x + h.w/2, h.y + h.h/2);
+                }
+                tCtx.restore();
+            });
+        }
+
+        function drawCrisisZones(targetCtx) {
+            let tCtx = targetCtx || ctx;
+            const iconSize = 40;
+            crisisZones.forEach(cz => {
+                tCtx.save(); tCtx.lineWidth = 3;
+                tCtx.strokeStyle = '#111'; tCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; tCtx.setLineDash([8, 8]);
+                tCtx.beginPath(); tCtx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); tCtx.fill(); tCtx.stroke();
+                tCtx.strokeStyle = '#fff'; tCtx.lineDashOffset = 8; tCtx.stroke();
+
+                tCtx.font = 'bold 12px Arial'; tCtx.fillStyle = '#ef4444'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+                tCtx.fillText("⚠️" + cz.name, cz.x, cz.y - cz.r + 15);
+
+                if (cz.occupants.length > 0) {
+                    const boxW = cz.r * 1.4; const maxCols = Math.max(1, Math.floor(boxW / iconSize));
+                    let startX = cz.x - boxW/2; let startY = cz.y - boxW/2 + 20;
+                    cz.occupants.forEach((occ, index) => {
+                        let col = index % maxCols; let row = Math.floor(index / maxCols);
+                        let px = startX + col * iconSize + iconSize/2; let py = startY + row * iconSize + iconSize/2;
+                        
+                        tCtx.filter = 'grayscale(100%)'; tCtx.globalAlpha = 0.6;
+                        
+                        tCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; tCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#ef4444'; tCtx.lineWidth = 2;
+                        if (occ.type === 'culture') { tCtx.beginPath(); tCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); tCtx.fill(); tCtx.stroke(); } 
+                        else { tCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); tCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
+                        
+                        // 保留圖示與名稱
+                        tCtx.font = '20px Arial'; tCtx.fillStyle = '#000'; tCtx.fillText(occ.icon, px, py - 4);
+                        tCtx.font = 'bold 10px "Segoe UI", sans-serif'; tCtx.fillStyle = '#14532d'; tCtx.fillText(occ.name, px, py + 14);
+
+                        occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
+                        tCtx.filter = 'none'; tCtx.globalAlpha = 1.0;
+                    });
+                }
+                tCtx.restore();
+            });
+        }
+
+        function drawMapOccupants(targetCtx) {
+            let tCtx = targetCtx || ctx;
+            const r = 20;
+            mapOccupants.forEach(occ => {
+                tCtx.save(); 
+                if (occ.dead) { tCtx.filter = 'grayscale(100%)'; tCtx.globalAlpha = 0.6; }
+                
+                tCtx.fillStyle = '#fffbeb'; tCtx.beginPath(); tCtx.arc(occ.x, occ.y, r, 0, Math.PI*2); tCtx.fill();
+                tCtx.strokeStyle = '#f59e0b'; tCtx.lineWidth = 2; tCtx.stroke();
+                
+                // 保留圖示與名稱
+                tCtx.font = '20px Arial'; tCtx.fillStyle = '#000'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle'; 
+                tCtx.fillText(occ.icon, occ.x, occ.y - 4);
+                tCtx.font = 'bold 10px "Segoe UI", sans-serif'; tCtx.fillStyle = '#14532d'; 
+                tCtx.fillText(occ.name, occ.x, occ.y + 14);
+                
+                occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
+                tCtx.filter = 'none'; tCtx.globalAlpha = 1.0;
+                tCtx.restore(); 
+            });
+        }
+
+        function drawPlayer(targetCtx) {
+            let tCtx = targetCtx || ctx;
+            tCtx.save(); tCtx.translate(player.x, player.y);
+            tCtx.font = `${player.size}px Arial`; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+            tCtx.rotate(player.dirAngle); tCtx.fillText(player.icon, 0, 0);
+            tCtx.fillStyle = '#ef4444'; tCtx.beginPath(); tCtx.arc(0, -22, 4, 0, Math.PI * 2); tCtx.fill();
+            tCtx.restore();
+            tCtx.fillStyle = '#111'; tCtx.font = 'bold 15px Arial'; tCtx.textAlign = 'center'; tCtx.fillText(playerName, player.x, player.y + 25);
+        }
+
+        function drawTextBg(targetCtx, text, x, y, bgColor) {
+            let tCtx = targetCtx || ctx;
+            tCtx.fillStyle = bgColor; tCtx.font = '14px Arial'; const w = tCtx.measureText(text).width + 12;
+            tCtx.beginPath(); tCtx.roundRect(x - w/2, y - 10, w, 20, 6); tCtx.fill();
+            tCtx.fillStyle = '#fff'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle'; tCtx.fillText(text, x, y);
         }
 
         function drawDrawings(targetCtx) {
