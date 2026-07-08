@@ -130,6 +130,22 @@
         .quiz-question p { margin: 0 0 8px 0; font-weight: bold; color: #1f2937; }
         .quiz-option { display: block; margin-bottom: 6px; cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; }
         .quiz-option:hover { background: #f3f4f6; }
+
+        /* 新增：確認放置彈窗樣式 */
+        #confirm-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); z-index: 10000;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .confirm-box {
+            background: white; padding: 25px; border-radius: 12px; text-align: center;
+            width: 85%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .confirm-text { font-size: 16px; font-weight: bold; margin-bottom: 20px; color: #1f2937; line-height: 1.5; }
+        .confirm-btn-group { display: flex; gap: 10px; justify-content: center; }
+        .confirm-btn-group button { flex: 1; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; }
+        .btn-yes { background: var(--primary-light); color: white; }
+        .btn-no { background: #e5e7eb; color: #374151; }
     </style>
 </head>
 <body>
@@ -235,8 +251,19 @@
     <div id="drag-clone"><div class="c-icon" id="drag-icon"></div><div class="c-name" id="drag-name"></div></div>
     <div id="alert-box">提示訊息</div>
 
+    <!-- 新增：確認放置彈窗 HTML -->
+    <div id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-text" id="confirm-msg">確認放置？</div>
+            <div class="confirm-btn-group">
+                <button class="btn-no" onclick="cancelPlacement()">取消</button>
+                <button class="btn-yes" onclick="confirmPlacement()">確定放置</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- 1. 生態數據庫 (修正 Dragonfly 等 Emoji) ---
+        // --- 1. 生態數據庫 (修正蜻蜓與環頸雉 Emoji) ---
         const ECO_DATA = [
             { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12'] }, 
             { id: 'b2', type: 'bio', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5'] }, 
@@ -349,8 +376,12 @@
         let wakeLock = null;
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
-                try { wakeLock = await navigator.wakeLock.request('screen'); } 
-                catch (err) { console.log(`螢幕防休眠提示: ${err.message} (不影響遊戲進行)`); }
+                try { 
+                    wakeLock = await navigator.wakeLock.request('screen'); 
+                    wakeLock.addEventListener('release', () => { console.log('Screen Wake Lock released'); });
+                } catch (err) { 
+                    console.log(`螢幕防休眠提示: ${err.message} (不影響遊戲進行)`); 
+                }
             }
         }
         document.addEventListener('visibilitychange', () => {
@@ -410,7 +441,7 @@
             const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1; setTimeout(() => box.style.opacity = 0, 3000);
         }
 
-        // --- 存檔系統 (LocalStorage) ---
+        // --- 存檔系統 (LocalStorage) v6 ---
         const SAVE_KEY = 'ecoDetective_saveData_v6';
 
         function checkExistingSave() {
@@ -503,7 +534,7 @@
             distanceTraveled += dist;
             if (distanceTraveled > 150) { 
                 distanceTraveled = 0; saveProgress(); 
-                if (Math.random() < 0.10) triggerEncounter();
+                if (Math.random() < 0.10) triggerEncounter(); 
             }
         }
 
@@ -548,6 +579,8 @@
 
         // --- 拖曳、畫筆與棲地動態演化邏輯 ---
         let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0; const dragClone = document.getElementById('drag-clone');
+        let pendingPlacement = null; // 暫存準備放置的目標與實體
+
         function getLogicalCoords(e) { return { x: e.clientX + camera.x, y: e.clientY + camera.y }; }
 
         canvas.addEventListener('pointerdown', (e) => {
@@ -568,7 +601,6 @@
                 if (cz.occupants.length > 0) {
                     for (let i = cz.occupants.length - 1; i >= 0; i--) {
                         let occ = cz.occupants[i];
-                        // 死亡狀態禁止抓取
                         if (occ.renderBox && !occ.dead && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
                             draggingInstance = occ; cz.occupants.splice(i, 1); setupDrag(e, occ); return; 
                         }
@@ -593,16 +625,13 @@
             if (isDrawingMode && currentPath) { currentPath.points.push(getLogicalCoords(e)); e.preventDefault(); return; }
             if (isPanningMap) { camera.x -= (e.clientX - lastPanX); camera.y -= (e.clientY - lastPanY); lastPanX = e.clientX; lastPanY = e.clientY; e.preventDefault(); }
             
-            // 引力引擎：拖曳途中經過危機地帶
             if (draggingInstance) {
                 moveDragClone(e); e.preventDefault();
                 const coords = getLogicalCoords(e);
                 
                 for (let cz of crisisZones) {
-                    // 吸附半徑稍微比視覺圓框大一點 (cz.r + 20)
                     if (Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r + 20) {
-                        // 強制中斷拖曳
-                        draggingInstance.dead = true; // 標記死亡狀態
+                        draggingInstance.dead = true; 
                         cz.occupants.push(draggingInstance);
                         inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
                         
@@ -666,9 +695,9 @@
             document.removeEventListener('pointermove', handleDragMove); document.removeEventListener('pointerup', handleDragEnd); dragClone.style.display = 'none';
 
             const coords = getLogicalCoords(e);
+            const tolerance = 20; 
             
-            // 放手時檢查是否落在危機地帶內
-            let droppedCrisis = crisisZones.find(cz => Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r);
+            let droppedCrisis = crisisZones.find(cz => Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r + tolerance);
             if (droppedCrisis) {
                 draggingInstance.dead = true;
                 droppedCrisis.occupants.push(draggingInstance);
@@ -677,13 +706,12 @@
                 renderInventory(); saveProgress(); draggingInstance = null; return;
             }
 
-            let droppedHabitat = habitats.find(h => coords.x >= h.x && coords.x <= h.x + h.w && coords.y >= h.y && coords.y <= h.y + h.h);
+            let droppedHabitat = habitats.find(h => coords.x >= h.x - tolerance && coords.x <= h.x + h.w + tolerance && coords.y >= h.y - tolerance && coords.y <= h.y + h.h + tolerance);
 
             if (droppedHabitat) {
-                droppedHabitat.occupants.push(draggingInstance); 
-                inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId); 
-                showAlert(`已安置於【${droppedHabitat.name}】。`);
-                checkHabitatEvolution(droppedHabitat);
+                pendingPlacement = { habitat: droppedHabitat, instance: draggingInstance };
+                document.getElementById('confirm-msg').innerText = `確認是否將【${draggingInstance.name}】放置到「${droppedHabitat.name}」棲地？`;
+                document.getElementById('confirm-modal').style.display = 'flex';
             } else {
                 if (draggingInstance.type === 'culture') {
                     draggingInstance.x = coords.x; draggingInstance.y = coords.y; mapOccupants.push(draggingInstance);
@@ -691,8 +719,34 @@
                 } else {
                     if (!inventory.find(i => i.uniqueId === draggingInstance.uniqueId)) { inventory.push(draggingInstance); } showAlert(`【${draggingInstance.name}】已退回背包。`);
                 }
+                renderInventory(); saveProgress(); draggingInstance = null;
             }
-            renderInventory(); saveProgress(); draggingInstance = null;
+        }
+
+        function confirmPlacement() {
+            if (!pendingPlacement) return;
+            let h = pendingPlacement.habitat; let inst = pendingPlacement.instance;
+            
+            h.occupants.push(inst); 
+            inventory = inventory.filter(i => i.uniqueId !== inst.uniqueId); 
+            showAlert(`已安置於【${h.name}】。`);
+            checkHabitatEvolution(h);
+
+            document.getElementById('confirm-modal').style.display = 'none';
+            pendingPlacement = null; draggingInstance = null;
+            renderInventory(); saveProgress();
+        }
+
+        function cancelPlacement() {
+            if (!pendingPlacement) return;
+            let inst = pendingPlacement.instance;
+
+            if (!inventory.find(i => i.uniqueId === inst.uniqueId)) { inventory.push(inst); }
+            showAlert(`已取消，【${inst.name}】退回背包。`);
+
+            document.getElementById('confirm-modal').style.display = 'none';
+            pendingPlacement = null; draggingInstance = null;
+            renderInventory(); saveProgress();
         }
 
         // --- 7. 結算與證書生成系統 ---
@@ -713,7 +767,7 @@
 
             habitats.forEach(h => {
                 h.occupants.forEach(occ => {
-                    if (occ.dead) return; // 死亡卡片不列入正常計分
+                    if (occ.dead) return;
                     
                     if (h.isBonus && occ.type === 'bio') {
                         totalScore += 1; successfullyPlacedIds.add(occ.id); logHTML += `<li><span style="color:green">✔</span> ${occ.name} 於 新生自然棲地 拓展成功 (+1)</li>`;
@@ -873,7 +927,6 @@
                         let col = index % maxCols; let row = Math.floor(index / maxCols);
                         let px = startX + col * iconSize + iconSize/2; let py = startY + row * iconSize + iconSize/2;
                         
-                        // 死亡狀態強制灰階
                         ctx.filter = 'grayscale(100%)'; ctx.globalAlpha = 0.6;
                         
                         ctx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#ef4444'; ctx.lineWidth = 2;
