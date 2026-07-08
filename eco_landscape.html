@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>探探里山永續生態與農村風俗文化導覽</title>
-    <!-- 引入 qrcode.js 工具庫用於前端產生 QR Code -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -18,11 +17,28 @@
         body {
             margin: 0; padding: 0; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #000; touch-action: none; color: var(--text-dark);
+            background-color: #000; color: var(--text-dark);
+            /* 嚴格防止手機瀏覽器的預設下拉更新與滑動 */
+            touch-action: none; 
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #c5e1a5; }
+
+        /* 畫筆工具列 (左上角) */
+        #draw-tools {
+            position: absolute; top: 15px; left: 15px; z-index: 150;
+            display: flex; flex-direction: column; gap: 8px; align-items: center;
+        }
+        .tool-btn {
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid #ccc;
+            background: white; font-size: 20px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
 
         /* 浮動面板 */
         .floating-panel {
@@ -56,12 +72,14 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); touch-action: none; position: relative;
         }
-        .culture-card {
-            border-radius: 50%; border: 3px solid #f59e0b; background: #fffbeb;
-        }
+        .culture-card { border-radius: 50%; border: 3px solid #f59e0b; background: #fffbeb; }
 
         .c-icon { font-size: 26px; pointer-events: none; }
         .c-name { font-size: 11px; font-weight: bold; color: #4b5563; pointer-events: none; margin-top: -2px; }
+        .c-badge {
+            position: absolute; top: -6px; right: -6px; background: #ef4444; color: white;
+            font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 2px solid white; z-index: 10;
+        }
 
         .answer-box { font-size: 14px; line-height: 1.6; }
         .answer-box h4 { margin: 0 0 10px 0; color: #ea580c; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
@@ -79,7 +97,6 @@
             text-align: center; width: 90%; max-width: 450px; margin: 20px 0;
         }
         
-        /* 安全警語區塊 */
         .warning-box {
             background: #fffbeb; border-left: 5px solid #f59e0b; padding: 12px;
             margin-bottom: 20px; font-size: 12px; color: #92400e; text-align: left; line-height: 1.6; border-radius: 0 6px 6px 0;
@@ -116,7 +133,6 @@
             border-bottom: 20px solid #ef4444; transform: translateY(-10px); transition: transform 0.1s;
         }
         
-        /* 測驗區塊樣式 */
         .quiz-question { margin-bottom: 15px; text-align: left; font-size: 13px; color: #333; }
         .quiz-question p { margin: 0 0 8px 0; font-weight: bold; color: #1f2937; }
         .quiz-option { display: block; margin-bottom: 6px; cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; }
@@ -125,6 +141,7 @@
 </head>
 <body>
 
+    <!-- 開場與表單 -->
     <div id="start-overlay">
         <div class="start-box">
             <h2 style="color: var(--primary-dark); margin-top: 0; margin-bottom: 10px; font-size: 22px;">探探里山永續生態與<br>農村風俗文化導覽</h2>
@@ -172,8 +189,20 @@
         </div>
     </div>
 
+    <!-- 畫布與操作 UI -->
     <div id="canvas-wrapper"><canvas id="gameCanvas"></canvas></div>
     <div id="compass"><div id="compass-arrow"></div></div>
+
+    <!-- 新增：畫筆工具列 -->
+    <div id="draw-tools">
+        <button id="draw-btn" class="tool-btn" onclick="toggleDrawMode()" title="啟用/關閉畫筆">🖌️</button>
+        <div id="color-palette" style="display: none; flex-direction: column; gap: 6px; margin-top: 5px;">
+            <button class="color-btn" onclick="setDrawColor('#3b82f6')" style="background: #3b82f6;"></button>
+            <button class="color-btn" onclick="setDrawColor('#eab308')" style="background: #eab308;"></button>
+            <button class="color-btn" onclick="setDrawColor('#ffffff')" style="background: #ffffff; border-color:#ccc;"></button>
+            <button class="tool-btn" onclick="clearDrawings()" style="width: 30px; height: 30px; font-size:12px; color:#ef4444; font-weight:bold;">✖</button>
+        </div>
+    </div>
 
     <div id="top-panel" class="floating-panel">
         <div class="panel-header" onclick="togglePanel('top-panel')"><span>🎒 生態卡牌背包 (<span id="backpack-count">0</span>)</span><span class="toggle-icon">▼</span></div>
@@ -187,13 +216,10 @@
     <div id="bottom-panel" class="floating-panel">
         <div class="panel-header" onclick="togglePanel('bottom-panel')"><span>📜 測驗結算與證書核發</span><span class="toggle-icon">▲</span></div>
         <div class="panel-content">
-            
-            <!-- 加分測驗區塊 -->
             <div id="quiz-section" style="margin-bottom: 15px;">
                 <h4 style="margin: 0 0 10px 0; color: #14532d; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px;">📝 加分任務小測驗</h4>
                 <div id="quiz-container"></div>
             </div>
-
             <div class="answer-box" id="result-section" style="display:none;">
                 <h4>🎯 任務結算報告</h4>
                 <div id="score-details"></div>
@@ -203,7 +229,6 @@
                     <button style="width: 100%; padding: 12px; margin-top: 10px; background: var(--primary-light); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">📥 下載精美證書</button>
                 </a>
             </div>
-
             <button id="calc-btn" onclick="calculateScore()" style="width: 100%; padding: 12px; margin-top: 10px; background: var(--primary-dark); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">提交測驗並結算分數</button>
         </div>
     </div>
@@ -212,19 +237,18 @@
     <div id="alert-box">提示訊息</div>
 
     <script>
-        // --- 1. 生態數據庫 ---
+        // --- 1. 生態數據庫 (修正與擴充 Emoji) ---
         const ECO_DATA = [
-            // 原有生物
             { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12'] }, 
             { id: 'b2', type: 'bio', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5'] }, 
             { id: 'b3', type: 'bio', name: '鼬獾', icon: '🦡', validHabitats: ['h6', 'h12'] }, 
             { id: 'b4', type: 'bio', name: '蛇類', icon: '🐍', validHabitats: ['h2', 'h7'] }, 
             { id: 'b5', type: 'bio', name: '龜類', icon: '🐢', validHabitats: ['h4', 'h8'] }, 
-            { id: 'b6', type: 'bio', name: '雉雞', icon: '🦚', validHabitats: ['h5', 'h6'] }, 
+            { id: 'b6', type: 'bio', name: '雉雞', icon: '🐓', validHabitats: ['h5', 'h6'] }, // Phasianus colchicus
             { id: 'b7', type: 'bio', name: '鳥類', icon: '🐦', validHabitats: ['h6'] }, 
             { id: 'b8', type: 'bio', name: '昆蟲', icon: '🪲', validHabitats: ['h10', 'h1'] }, 
             { id: 'b9', type: 'bio', name: '瓢蟲', icon: '🐞', validHabitats: ['h10', 'h6'] }, 
-            { id: 'b10', type: 'bio', name: '蚜蟲', icon: '🐛', validHabitats: ['h5'] }, 
+            { id: 'b10', type: 'bio', name: '蚜蟲', icon: '🦠', validHabitats: ['h5'] }, // Aphidoidea
             { id: 'b11', type: 'bio', name: '螞蟻', icon: '🐜', validHabitats: ['h2', 'h5'] }, 
             { id: 'b12', type: 'bio', name: '蛙類', icon: '🐸', validHabitats: ['h7', 'h4', 'h3'] }, 
             { id: 'b13', type: 'bio', name: '金線蛙', icon: '🐸✨', validHabitats: ['h7', 'h4'] }, 
@@ -232,19 +256,18 @@
             { id: 'b15', type: 'bio', name: '蜜蜂', icon: '🐝', validHabitats: ['h10', 'h6'] }, 
             { id: 'b16', type: 'bio', name: '螳螂', icon: '🦗', validHabitats: ['h5', 'h6'] }, 
             { id: 'b17', type: 'bio', name: '本土魚', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] }, 
-            { id: 'b18', type: 'bio', name: '大肚魚', icon: '🐠', validHabitats: ['h4', 'h13'] }, 
+            { id: 'b18', type: 'bio', name: '大肚魚', icon: '🐟', validHabitats: ['h4', 'h13'] }, // Gambusia affinis
             { id: 'b19', type: 'bio', name: '七星鯉', icon: '🐟✨', validHabitats: ['h4', 'h9'] },
-            // 擴充與修正圖案生物
-            { id: 'b20', type: 'bio', name: '福壽螺', icon: '🐌', validHabitats: ['h4', 'h7', 'h3', 'h13'] },
+            { id: 'b20', type: 'bio', name: '福壽螺', icon: '🐌', validHabitats: ['h4', 'h7', 'h3', 'h13'] }, // Pomacea canaliculata
             { id: 'b21', type: 'bio', name: '虎皮蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
             { id: 'b22', type: 'bio', name: '澤蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
             { id: 'b23', type: 'bio', name: '泥鰍', icon: '🐟', validHabitats: ['h4', 'h3', 'h13', 'h7'] },
-            { id: 'b24', type: 'bio', name: '田螺', icon: '🐌', validHabitats: ['h4', 'h7', 'h3'] },
-            { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🪲', validHabitats: ['h4', 'h7', 'h9'] }, 
+            { id: 'b24', type: 'bio', name: '田螺', icon: '🐚', validHabitats: ['h4', 'h7', 'h3'] }, // Viviparidae
+            { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🪰', validHabitats: ['h4', 'h7', 'h9'] }, // Libellulidae (無蜻蜓Emoji，以雙翅目代替直升機)
             { id: 'b26', type: 'bio', name: '食蟲虻', icon: '🪰', validHabitats: ['h5', 'h6'] },
             { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h11'] },
             { id: 'b28', type: 'bio', name: '胡蜂', icon: '🐝', validHabitats: ['h6', 'h1'] },
-            { id: 'b29', type: 'bio', name: '鷺鷥', icon: '🦢', validHabitats: ['h4', 'h7', 'h5'] }, 
+            { id: 'b29', type: 'bio', name: '鷺鷥', icon: '🦢', validHabitats: ['h4', 'h7', 'h5'] }, // Ardea alba (以天鵝代表白色水鳥)
             { id: 'b30', type: 'bio', name: '紅冠水雞', icon: '🦆', validHabitats: ['h4', 'h7', 'h9'] },
             { id: 'b31', type: 'bio', name: '秧雞', icon: '🦆', validHabitats: ['h7', 'h5'] },
             { id: 'b32', type: 'bio', name: '麻雀', icon: '🐦', validHabitats: ['h5', 'h6', 'h1'] },
@@ -256,7 +279,12 @@
             { id: 'b38', type: 'bio', name: '白鼻心', icon: '🦡', validHabitats: ['h6', 'h12'] },
             { id: 'b39', type: 'bio', name: '黑翅鳶', icon: '🦅', validHabitats: ['h5', 'h6'] },
             { id: 'b40', type: 'bio', name: '環頸雉', icon: '🦚', validHabitats: ['h5', 'h6'] },
-            { id: 'b41', type: 'bio', name: '燕子', icon: '🐦', validHabitats: ['h5', 'h4'] }
+            { id: 'b41', type: 'bio', name: '燕子', icon: '🐦', validHabitats: ['h5', 'h4'] },
+            { id: 'b42', type: 'bio', name: '藍鵲', icon: '🐦', validHabitats: ['h6'] }, // Urocissa caerulea
+            { id: 'b43', type: 'bio', name: '竹雞', icon: '🐔', validHabitats: ['h6', 'h5'] }, // Bambusicola sonorivox
+            { id: 'b44', type: 'bio', name: '山豬', icon: '🐗', validHabitats: ['h6', 'h12'] }, // Sus scrofa taivanus
+            { id: 'b45', type: 'bio', name: '台灣獼猴', icon: '🐒', validHabitats: ['h6'] }, // Macaca cyclopis
+            { id: 'b46', type: 'bio', name: '食蛇龜', icon: '🐢', validHabitats: ['h2', 'h4', 'h7'] } // Cuora flavomarginata
         ];
 
         const CULTURE_DATA = [
@@ -298,26 +326,50 @@
         let inventory = []; 
         let mapOccupants = []; 
 
-        // --- 1.5 測驗題庫與狀態 ---
-        const QUIZ_DATA = [
-            {
-                q: "請問在農田維持多孔隙微棲地對作物有什麼好處?",
-                opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"],
-                ans: 3
-            },
-            {
-                q: "多孔隙微棲地對周遭生態有什麼樣的影響?",
-                opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"],
-                ans: 3
-            },
-            {
-                q: "您認為讓農業永續的耕作有那些好處?",
-                opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"],
-                ans: 3
+        // --- 1.2 畫筆系統 ---
+        let isDrawingMode = false;
+        let currentDrawColor = '#3b82f6'; 
+        let drawings = []; // [ { color: '', points: [{x,y}] } ]
+        let currentPath = null;
+
+        function toggleDrawMode() {
+            isDrawingMode = !isDrawingMode;
+            const btn = document.getElementById('draw-btn');
+            const pal = document.getElementById('color-palette');
+            if (isDrawingMode) {
+                btn.style.background = '#e2e8f0'; btn.style.borderColor = '#16a34a'; pal.style.display = 'flex';
+                showAlert("🖌️ 已開啟畫布標註功能");
+            } else {
+                btn.style.background = 'white'; btn.style.borderColor = '#ccc'; pal.style.display = 'none';
             }
+        }
+        function setDrawColor(c) { currentDrawColor = c; }
+        function clearDrawings() { if(confirm("確定要清除所有畫布線條嗎？")) { drawings = []; saveProgress(); } }
+
+        // --- 1.5 螢幕防休眠 Wake Lock ---
+        let wakeLock = null;
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { console.log('Screen Wake Lock released'); });
+                } catch (err) { 
+                    // 攔截並忽略 NotAllowedError，避免在 iframe 預覽環境中報錯
+                    console.log(`螢幕防休眠提示: ${err.message} (不影響遊戲進行)`); 
+                }
+            }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock();
+        });
+
+        // --- 1.6 測驗題庫與狀態 ---
+        const QUIZ_DATA = [
+            { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
+            { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
+            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 }
         ];
-        let quizCompleted = false;
-        let quizScore = 0;
+        let quizCompleted = false; let quizScore = 0;
 
         function renderQuiz() {
             const container = document.getElementById('quiz-container');
@@ -325,13 +377,10 @@
                 container.innerHTML = `<div style="padding: 12px; background: #dcfce7; color: #166534; border-radius: 6px; font-size: 14px; text-align: center; font-weight: bold; border: 1px solid #bbf7d0;">✨ 您已完成測驗，測驗加分：${quizScore} 分 ✨</div>`;
                 return;
             }
-
             let html = '';
             QUIZ_DATA.forEach((q, i) => {
                 html += `<div class="quiz-question"><p>Q${i+1}. ${q.q}</p>`;
-                q.opts.forEach((opt, j) => {
-                    html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${j+1}. ${opt}</label>`;
-                });
+                q.opts.forEach((opt, j) => { html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${j+1}. ${opt}</label>`; });
                 html += `</div>`;
             });
             container.innerHTML = html;
@@ -374,8 +423,8 @@
             const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1; setTimeout(() => box.style.opacity = 0, 2500);
         }
 
-        // --- 存檔系統 (LocalStorage) v3 ---
-        const SAVE_KEY = 'ecoDetective_saveData_v3';
+        // --- 存檔系統 (LocalStorage) v4 ---
+        const SAVE_KEY = 'ecoDetective_saveData_v4';
 
         function checkExistingSave() {
             if (localStorage.getItem(SAVE_KEY)) {
@@ -396,7 +445,7 @@
             if (!isGameRunning) return;
             localStorage.setItem(SAVE_KEY, JSON.stringify({
                 playerName, eventName, eventLocation, inventory, habitats, mapOccupants,
-                quizCompleted, quizScore,
+                quizCompleted, quizScore, drawings,
                 player: { x: player.x, y: player.y, dirAngle: player.dirAngle }
             }));
         }
@@ -408,6 +457,7 @@
                     const data = JSON.parse(savedData);
                     playerName = data.playerName; eventName = data.eventName; eventLocation = data.eventLocation;
                     inventory = data.inventory || []; habitats = data.habitats || habitats; mapOccupants = data.mapOccupants || []; 
+                    drawings = data.drawings || [];
                     quizCompleted = data.quizCompleted || false; quizScore = data.quizScore || 0;
                     player.x = data.player.x; player.y = data.player.y; player.dirAngle = data.player.dirAngle;
                     renderInventory(); renderQuiz(); return true;
@@ -419,6 +469,8 @@
 
         // --- 啟動遊戲 ---
         async function startGame(isResume = false) {
+            requestWakeLock(); // 啟動螢幕防休眠
+            
             if (isResume) {
                 if(!loadProgress()) { alert("讀取進度失敗，請重新開始。"); return; }
             } else {
@@ -467,7 +519,11 @@
 
         function checkMovement(dist) {
             distanceTraveled += dist;
-            if (distanceTraveled > 150) { distanceTraveled = 0; saveProgress(); if (Math.random() < 0.20) triggerEncounter(); }
+            if (distanceTraveled > 150) { 
+                distanceTraveled = 0; saveProgress(); 
+                // 將掉落率從 20% 下降至 10%
+                if (Math.random() < 0.10) triggerEncounter(); 
+            }
         }
 
         function triggerEncounter() {
@@ -479,24 +535,55 @@
             if (!panel.classList.contains('open')) { panel.style.borderColor = "var(--primary-light)"; setTimeout(()=> panel.style.borderColor = "rgba(255,255,255,0.5)", 500); }
         }
 
+        // 包含堆疊演算法 (Stacking) 的背包渲染
         function renderInventory() {
-            const container = document.getElementById('creature-list'); document.getElementById('backpack-count').innerText = inventory.length;
+            const container = document.getElementById('creature-list'); 
+            document.getElementById('backpack-count').innerText = inventory.length;
             if (inventory.length === 0) { container.innerHTML = `<div style="font-size: 13px; color: #888; width: 100%; text-align: center;">背包空空如也，請繼續走動探索！</div>`; return; }
+            
             container.innerHTML = '';
+            
+            // 依據生物/文化 ID 分群堆疊
+            let grouped = {};
             inventory.forEach(c => {
-                const div = document.createElement('div'); div.className = c.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
-                div.id = c.uniqueId; div.innerHTML = `<div class="c-icon">${c.icon}</div><div class="c-name">${c.name}</div>`;
-                div.addEventListener('pointerdown', (e) => handleDragStart(e, c, div)); container.appendChild(div);
+                if(!grouped[c.id]) grouped[c.id] = [];
+                grouped[c.id].push(c);
+            });
+
+            Object.values(grouped).forEach(group => {
+                const c = group[0]; // 拿第一張作代表
+                const count = group.length;
+
+                const div = document.createElement('div'); 
+                div.className = c.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
+                div.innerHTML = `
+                    <div class="c-icon">${c.icon}</div><div class="c-name">${c.name}</div>
+                    ${count > 1 ? `<div class="c-badge">x${count}</div>` : ''}
+                `;
+                
+                // 拖曳該群組的「最後一張」實體
+                div.addEventListener('pointerdown', (e) => {
+                    handleDragStart(e, group[group.length - 1], div);
+                }); 
+                container.appendChild(div);
             });
         }
 
-        // --- 拖曳邏輯 ---
+        // --- 拖曳與畫筆邏輯 (防重疊與滾動干擾) ---
         let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0; const dragClone = document.getElementById('drag-clone');
         function getLogicalCoords(e) { return { x: e.clientX + camera.x, y: e.clientY + camera.y }; }
 
         canvas.addEventListener('pointerdown', (e) => {
             if (!isGameRunning) return; const coords = getLogicalCoords(e);
             
+            // 畫筆模式優先
+            if (isDrawingMode) {
+                currentPath = { color: currentDrawColor, points: [coords] };
+                drawings.push(currentPath);
+                canvas.setPointerCapture(e.pointerId);
+                return;
+            }
+
             for (let i = mapOccupants.length - 1; i >= 0; i--) {
                 let occ = mapOccupants[i];
                 if (occ.renderBox && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
@@ -516,19 +603,27 @@
             isPanningMap = true; camera.detached = true; lastPanX = e.clientX; lastPanY = e.clientY; canvas.setPointerCapture(e.pointerId);
         });
 
+        // 綁定 passive: false 確保 e.preventDefault() 成功運作防原生滑動
         canvas.addEventListener('pointermove', (e) => {
+            if (isDrawingMode && currentPath) {
+                currentPath.points.push(getLogicalCoords(e)); e.preventDefault(); return;
+            }
             if (isPanningMap) { camera.x -= (e.clientX - lastPanX); camera.y -= (e.clientY - lastPanY); lastPanX = e.clientX; lastPanY = e.clientY; e.preventDefault(); }
+        }, { passive: false });
+
+        canvas.addEventListener('pointerup', (e) => { 
+            if (isDrawingMode && currentPath) { currentPath = null; saveProgress(); canvas.releasePointerCapture(e.pointerId); return; }
+            if (isPanningMap) { isPanningMap = false; canvas.releasePointerCapture(e.pointerId); } 
         });
-        canvas.addEventListener('pointerup', (e) => { if (isPanningMap) { isPanningMap = false; canvas.releasePointerCapture(e.pointerId); } });
 
         function setupDrag(e, instance) {
             dragClone.className = instance.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
             dragClone.style.display = 'flex'; dragClone.querySelector('#drag-icon').innerText = instance.icon; dragClone.querySelector('#drag-name').innerText = instance.name;
-            moveDragClone(e); document.addEventListener('pointermove', handleDragMove); document.addEventListener('pointerup', handleDragEnd); e.preventDefault();
+            moveDragClone(e); document.addEventListener('pointermove', handleDragMove, {passive: false}); document.addEventListener('pointerup', handleDragEnd); e.preventDefault();
         }
 
         function handleDragStart(e, instance, el) { draggingInstance = instance; setupDrag(e, instance); }
-        function handleDragMove(e) { if (draggingInstance) moveDragClone(e); }
+        function handleDragMove(e) { if (draggingInstance) { moveDragClone(e); e.preventDefault(); } }
         function moveDragClone(e) { dragClone.style.left = e.clientX + 'px'; dragClone.style.top = e.clientY + 'px'; }
 
         function handleDragEnd(e) {
@@ -553,7 +648,6 @@
 
         // --- 7. 結算與證書生成系統 ---
         function calculateScore() {
-            // 處理測驗
             if (!quizCompleted) {
                 let qScore = 0; let allAnswered = true;
                 for (let i = 0; i < QUIZ_DATA.length; i++) {
@@ -565,10 +659,7 @@
                 quizScore = qScore; quizCompleted = true; renderQuiz();
             }
 
-            let totalScore = quizScore;
-            let logHTML = "<ul style='padding-left: 20px; color: #4b5563;'>";
-            let successfullyPlacedIds = new Set();
-
+            let totalScore = quizScore; let logHTML = "<ul style='padding-left: 20px; color: #4b5563;'>"; let successfullyPlacedIds = new Set();
             if (quizScore > 0) logHTML += `<li><strong style="color:#16a34a">📝 測驗加分：+${quizScore} 分</strong></li>`;
 
             habitats.forEach(h => {
@@ -577,9 +668,7 @@
                         totalScore += 1; logHTML += `<li><span style="color:green">✔</span> 文化景觀 ${occ.name} 融入 ${h.name} (+1)</li>`;
                     } else if (occ.validHabitats.includes(h.id)) {
                         totalScore += 1; successfullyPlacedIds.add(occ.id); logHTML += `<li><span style="color:green">✔</span> ${occ.name} 於 ${h.name} (+1)</li>`;
-                    } else {
-                        logHTML += `<li><span style="color:red">✖</span> ${occ.name} 不太適應 ${h.name}</li>`;
-                    }
+                    } else { logHTML += `<li><span style="color:red">✖</span> ${occ.name} 不太適應 ${h.name}</li>`; }
                 });
             });
 
@@ -591,13 +680,9 @@
             });
 
             logHTML += "</ul>";
-            document.getElementById('score-details').innerHTML = logHTML;
-            document.getElementById('final-score').innerText = `🏆 總成績：${totalScore} 分`;
-            document.getElementById('result-section').style.display = 'block';
-            document.getElementById('calc-btn').style.display = 'none';
-            
-            saveProgress();
-            generateCertificate(totalScore);
+            document.getElementById('score-details').innerHTML = logHTML; document.getElementById('final-score').innerText = `🏆 總成績：${totalScore} 分`;
+            document.getElementById('result-section').style.display = 'block'; document.getElementById('calc-btn').style.display = 'none';
+            saveProgress(); generateCertificate(totalScore);
         }
 
         function generateCertificate(score) {
@@ -613,13 +698,8 @@
             ctx.font = 'bold 46px "Segoe UI", sans-serif'; ctx.fillStyle = '#000'; ctx.fillText(`${playerName}`, 600, 450);
             ctx.font = '30px "Segoe UI", sans-serif'; ctx.fillStyle = '#4b5563'; ctx.fillText(`成功完成生態棲地營造與加分測驗任務，特發此證以資鼓勵。`, 600, 520);
 
-            const routeMapping = {
-                "酪酪找生態": "湧健酪梨園/梅園+槑休閒農業區",
-                "瓜呱報生態": "雨社山下農場+阿爾喜農場",
-                "林近里山": "蛇窯文化園區+指令教育農場+明揚養蜂"
-            };
+            const routeMapping = { "酪酪找生態": "湧健酪梨園/梅園+槑休閒農業區", "瓜呱報生態": "雨社山下農場+阿爾喜農場", "林近里山": "蛇窯文化園區+指令教育農場+明揚養蜂" };
             let displayLocation = routeMapping[eventLocation] ? `${eventLocation} (${routeMapping[eventLocation]})` : eventLocation;
-
             ctx.font = 'bold 24px "Segoe UI", sans-serif'; let detailY = 620;
             if(eventName) { ctx.fillText(`活動名稱：${eventName}`, 600, detailY); detailY += 40; }
             ctx.fillText(`路線(場域)：${displayLocation}  |  評測總成績：${score} 分`, 600, detailY);
@@ -627,36 +707,14 @@
             const randomId = Math.random().toString(36).substring(2, 8).toUpperCase(); const dateStr = new Date().toLocaleDateString('zh-TW');
             ctx.textAlign = 'right'; ctx.font = '20px monospace'; ctx.fillStyle = '#6b7280'; ctx.fillText(`證書編號: ESG-${randomId}`, 1100, 680); ctx.fillText(`核發日期: ${dateStr}`, 1100, 710);
             
-            // 動態創建 QR Code 暫存區，避免 DOM 不存在導致異常
-            let qrTemp = document.getElementById('qrcode-temp');
-            if (!qrTemp) {
-                qrTemp = document.createElement('div');
-                qrTemp.id = 'qrcode-temp';
-                qrTemp.style.display = 'none';
-                document.body.appendChild(qrTemp);
-            }
+            let qrTemp = document.getElementById('qrcode-temp'); if (!qrTemp) { qrTemp = document.createElement('div'); qrTemp.id = 'qrcode-temp'; qrTemp.style.display = 'none'; document.body.appendChild(qrTemp); }
             qrTemp.innerHTML = ''; 
-            
-            new QRCode(qrTemp, {
-                text: "https://farmcmd.github.io/ESGT/",
-                width: 80, height: 80,
-                colorDark : "#14532d", colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.L
-            });
+            new QRCode(qrTemp, { text: "https://farmcmd.github.io/ESGT/", width: 80, height: 80, colorDark : "#14532d", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L });
 
-            // 確保 QR Code 渲染完成後再行輸出
             setTimeout(() => {
-                const qrImage = qrTemp.querySelector('img');
-                const qrCanvasElement = qrTemp.querySelector('canvas');
-                let sourceToDraw = qrCanvasElement || qrImage;
-
-                if(sourceToDraw) {
-                    ctx.drawImage(sourceToDraw, 85, 650, 75, 75);
-                }
-                
-                ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif';
-                ctx.fillText(`🌿 探探里山`, 175, 695);
-
+                const sourceToDraw = qrTemp.querySelector('canvas') || qrTemp.querySelector('img');
+                if(sourceToDraw) ctx.drawImage(sourceToDraw, 85, 650, 75, 75);
+                ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif'; ctx.fillText(`🌿 探探里山`, 175, 695);
                 const imgDataUrl = certCanvas.toDataURL("image/png");
                 const previewImg = document.getElementById('cert-preview'); previewImg.src = imgDataUrl; previewImg.style.display = 'block';
                 const downloadLink = document.getElementById('cert-download-link'); downloadLink.href = imgDataUrl; downloadLink.download = `里山導覽證書_${playerName}_${randomId}.png`; downloadLink.style.display = 'block';
@@ -672,8 +730,20 @@
         function gameLoop() {
             if (!isGameRunning) return; updateCamera(); ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
             ctx.save(); ctx.translate(-camera.x, -camera.y);
-            drawMap(); drawHabitats(); drawMapOccupants(); drawPlayer();
+            drawMap(); drawHabitats(); drawMapOccupants(); drawDrawings(); drawPlayer();
             ctx.restore(); requestAnimationFrame(gameLoop);
+        }
+
+        function drawDrawings() {
+            drawings.forEach(d => {
+                ctx.strokeStyle = d.color; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+                ctx.beginPath();
+                if(d.points.length > 0) {
+                    ctx.moveTo(d.points[0].x, d.points[0].y);
+                    for(let i = 1; i < d.points.length; i++) ctx.lineTo(d.points[i].x, d.points[i].y);
+                    ctx.stroke();
+                }
+            });
         }
 
         function drawMap() {
@@ -706,12 +776,9 @@
                         ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af';
                         ctx.lineWidth = occ.type === 'culture' ? 2 : 1;
 
-                        if (occ.type === 'culture') {
-                            ctx.beginPath(); ctx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                        } else {
-                            ctx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
-                            ctx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4);
-                        }
+                        if (occ.type === 'culture') { ctx.beginPath(); ctx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } 
+                        else { ctx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); ctx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
+                        
                         ctx.font = '26px Arial'; ctx.fillStyle = '#000'; ctx.fillText(occ.icon, px, py + 2);
                         occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
                     });
