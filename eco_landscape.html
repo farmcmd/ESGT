@@ -521,7 +521,10 @@
 
             window.addEventListener('keydown', (e) => {
                 const speed = 15; 
-                if(e.key==='ArrowUp') { player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed; checkMovement(speed); }
+                if(e.key==='ArrowUp') { 
+                    player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed; checkMovement(speed); 
+                    camera.detached = false; // 恢復：按上鍵移動時，鏡頭自動恢復跟隨人物
+                }
                 if(e.key==='ArrowLeft') player.dirAngle -= 0.2; if(e.key==='ArrowRight') player.dirAngle += 0.2;
             });
 
@@ -537,12 +540,20 @@
         }
 
         function handleMotion(e) {
-            if (!isGameRunning) return; let acc = e.acceleration || {x:0, y:0, z:0}; let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
-            if (mag > 2.0) {
+            if (!isGameRunning) return; 
+            
+            // 新增智慧防干擾：當玩家正在「滑動地圖」、「拖曳卡片」或「開啟確認視窗」時，
+            // 暫時忽略手機的體感震動，確保鏡頭絕對不會亂跳回主角身上
+            if (isPanningMap || draggingInstance || pendingPlacement) return;
+
+            let acc = e.acceleration || {x:0, y:0, z:0}; let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+            
+            // 稍微提高體感步行的觸發閾值 (從 2.0 調升至 2.5)，降低單純手持時的微震動干擾
+            if (mag > 2.5) {
                 const stepSize = 6; player.x += Math.sin(player.dirAngle) * stepSize; player.y -= Math.cos(player.dirAngle) * stepSize; 
                 player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x)); player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
                 checkMovement(stepSize);
-                // 移除原有的 camera.detached = false，避免干擾手動平移
+                camera.detached = false; // 恢復：玩家真正走路時，鏡頭會自動切換回主角身上
             }
         }
 
