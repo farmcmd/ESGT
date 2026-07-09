@@ -25,6 +25,7 @@
         #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #c5e1a5; }
 
+        /* 畫筆工具列 */
         #draw-tools {
             position: absolute; top: 15px; left: 15px; z-index: 150;
             display: flex; flex-direction: column; gap: 8px; align-items: center;
@@ -36,6 +37,7 @@
         }
         .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
 
+        /* 浮動面板 */
         .floating-panel {
             position: absolute; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 600px; background: var(--panel-bg);
@@ -116,10 +118,13 @@
             position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
             background: rgba(234, 88, 12, 0.9); color: white; padding: 12px 25px; border-radius: 30px; font-size: 16px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000; white-space: nowrap;
         }
+        
+        /* 點擊指南針可重新對齊鏡頭 */
         #compass {
             position: absolute; bottom: 80px; left: 20px; width: 60px; height: 60px;
-            background: rgba(255,255,255,0.9); border-radius: 50%; border: 3px solid #ccc;
-            z-index: 50; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.7); border-radius: 50%; border: 3px solid #ccc;
+            z-index: 50; display: flex; justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         #compass-arrow {
             width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent;
@@ -127,7 +132,7 @@
         }
         
         .quiz-question { margin-bottom: 15px; text-align: left; font-size: 13px; color: #333; }
-        .quiz-question p { margin: 0 0 8px 0; font-weight: bold; color: #1f2937; }
+        .quiz-question p { margin: 0 0 8px 0; font-weight: bold; color: #1f2937; line-height: 1.4; }
         .quiz-option { display: block; margin-bottom: 6px; cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; }
         .quiz-option:hover { background: #f3f4f6; }
 
@@ -151,7 +156,7 @@
 
     <!-- 開場與表單 -->
     <div id="start-overlay">
-        <!-- 新增：右上角 QR Code 分享按鈕 -->
+        <!-- 右上角 QR Code 分享按鈕 -->
         <div style="position: absolute; top: 15px; right: 15px; z-index: 10001;">
             <button onclick="showShareQR()" style="background: white; border: 2px solid var(--primary-light); padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; color: var(--primary-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📱 掃碼分享</button>
         </div>
@@ -174,7 +179,6 @@
                     • 指令教育農場：第七屆百大青農 陳宏瑋<br>
                     • 阿爾喜農場：第七屆百大青農 范振育<br>
                     • 明揚養蜂：第七屆百大青農 黃志揚
-                    <!-- 新增：開發者資訊 -->
                     <div style="margin-top: 10px; font-size: 11px; color: #166534; border-top: 1px solid #bbf7d0; padding-top: 5px;">
                         系統開發： farmcmd@gmail.com (陳宏瑋)
                     </div>
@@ -206,7 +210,7 @@
         </div>
     </div>
 
-    <!-- 新增：分享專用 QR 彈窗 -->
+    <!-- 分享專用 QR 彈窗 -->
     <div id="share-qr-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10002; flex-direction: column; justify-content:center; align-items:center;">
         <div style="background: white; padding: 25px; border-radius: 12px; text-align: center; width: 80%; max-width: 300px;">
             <h3 style="margin-top: 0; color: var(--primary-dark);">掃描分享本頁</h3>
@@ -218,8 +222,8 @@
 
     <!-- 畫布與操作 UI -->
     <div id="canvas-wrapper"><canvas id="gameCanvas"></canvas></div>
-    <!-- 修改指南針，加入 onclick 事件以利手動置中 -->
-    <div id="compass" onclick="recenterCamera()" title="點擊對齊小偵探視角"><div id="compass-arrow"></div></div>
+    <!-- 點擊指南針可重新對齊鏡頭 -->
+    <div id="compass" onclick="recenterCamera()" title="點擊找回小偵探"><div id="compass-arrow"></div></div>
 
     <!-- 畫筆工具列 -->
     <div id="draw-tools">
@@ -239,7 +243,8 @@
                 💡 <b>棲地演化提示：</b><br>
                 • <b>擴增棲地：</b>在同一棲地放入 <b>3張正確</b> 的生物卡，將觸發藍白虛線的「新生棲地」，該處可自由繼續培育生物！<br>
                 • <b>環境危機：</b>放入 <b>3張錯誤</b> 的卡片，將引發黑白虛線的「危機地帶」(如路殺、水源汙染)。<br>
-                • ☠️ <b>生態陷阱：</b><span style="color:#b91c1c;">拖曳卡片時若不慎「路過」危機地帶，生物會被強制吸入並死亡(卡片變灰無法移出)，結算將倒扣 1 分！</span>
+                • ☠️ <b>生態陷阱：</b><span style="color:#b91c1c;">拖曳卡片時若不慎「路過」危機地帶，生物會被強制吸入並死亡(卡片變灰無法移出)，結算將倒扣 1 分！</span><br>
+                • 📍 <b>迷路了？</b>點擊左下角「指南針」即可找回小偵探！
             </div>
             <div class="creature-container" id="creature-list">
                 <div style="font-size: 13px; color: #888; width: 100%; text-align: center;">請走動探索，收集生物與文化卡牌。</div>
@@ -259,7 +264,6 @@
                 <div id="score-details"></div>
                 <div class="score-display" id="final-score"></div>
                 
-                <!-- 下載區塊 -->
                 <a id="map-download-link" style="display:none; width: 100%; text-decoration: none;">
                     <button style="width: 100%; padding: 12px; margin-top: 15px; background: #0ea5e9; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖紀錄</button>
                 </a>
@@ -346,6 +350,7 @@
             { id: 'b46', type: 'bio', name: '食蛇龜', icon: '🐢', validHabitats: ['h2', 'h4', 'h7'] } 
         ];
 
+        // 加入文化卡：紅包
         const CULTURE_DATA = [
             { id: 'cu1', type: 'culture', name: '水牛', icon: '🐃' },
             { id: 'cu2', type: 'culture', name: '燕子', icon: '🐦' },
@@ -398,6 +403,12 @@
         function setDrawColor(c) { currentDrawColor = c; }
         function clearDrawings() { if(confirm("清除所有畫布線條嗎？")) { drawings = []; saveProgress(); } }
 
+        // 重新對齊鏡頭
+        function recenterCamera() {
+            camera.detached = false;
+            showAlert("📍 已將視角重新對齊小偵探");
+        }
+
         // --- 1.5 螢幕防休眠 ---
         let wakeLock = null;
         async function requestWakeLock() {
@@ -407,12 +418,12 @@
         }
         document.addEventListener('visibilitychange', () => { if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock(); });
 
-        // --- 1.6 測驗題庫 ---
+        // --- 1.6 測驗題庫 (新增第4題) ---
         const QUIZ_DATA = [
             { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
             { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
             { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 },
-            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費及低碳里程產品", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
+            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
         ];
         let quizCompleted = false; let quizScore = 0;
 
@@ -434,7 +445,7 @@
             document.getElementById('custom-location-group').style.display = (document.getElementById('location-select').value === 'custom') ? 'block' : 'none';
         }
 
-        const canvas = document.getElementById('gameCanvas'); let ctx = canvas.getContext('2d'); // 改為 let 以利全景截圖切換
+        const canvas = document.getElementById('gameCanvas'); let ctx = canvas.getContext('2d');
         const MAP_W = 1600; const MAP_H = 1200;
         let SCREEN_W = window.innerWidth; let SCREEN_H = window.innerHeight;
         let camera = { x: 0, y: 0, detached: false };
@@ -458,7 +469,7 @@
             const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1; setTimeout(() => box.style.opacity = 0, 3000);
         }
 
-        const SAVE_KEY = 'ecoDetective_saveData_v7';
+        const SAVE_KEY = 'ecoDetective_saveData_v8';
         function checkExistingSave() { if (localStorage.getItem(SAVE_KEY)) { document.getElementById('resume-game-section').style.display = 'block'; document.getElementById('new-game-form').style.display = 'none'; } }
         function clearSaveData() { if(confirm("確定要清除進度嗎？")) { localStorage.removeItem(SAVE_KEY); document.getElementById('resume-game-section').style.display = 'none'; document.getElementById('new-game-form').style.display = 'block'; } }
         
@@ -485,7 +496,7 @@
             } return false;
         }
         window.onload = checkExistingSave;
-        // --- 啟動遊戲 ---
+
         async function startGame(isResume = false) {
             requestWakeLock(); 
             if (isResume) {
@@ -518,12 +529,6 @@
             isGameRunning = true; requestAnimationFrame(gameLoop);
         }
 
-        // 新增手動置中視角功能
-        function recenterCamera() {
-            camera.detached = false;
-            showAlert("📍 視角已對齊小偵探");
-        }
-
         // --- 感測與移動邏輯 ---
         function handleOrientation(e) {
             if (!isGameRunning) return; let dx = e.gamma || 0; let dy = e.beta || 0;  
@@ -536,8 +541,8 @@
             if (mag > 2.0) {
                 const stepSize = 6; player.x += Math.sin(player.dirAngle) * stepSize; player.y -= Math.cos(player.dirAngle) * stepSize; 
                 player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x)); player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
-                checkMovement(stepSize); 
-                // 移除 camera.detached = false; 讓玩家平移地圖找地點時不會自動跳回原地
+                checkMovement(stepSize);
+                // 移除原有的 camera.detached = false，避免干擾手動平移
             }
         }
 
@@ -781,20 +786,17 @@
             
             saveProgress(); 
             generateCertificate(totalScore);
-            generateMapScreenshot(totalScore); // 觸發全景地圖輸出
+            generateMapScreenshot(totalScore); 
         }
 
-        // --- 全景地圖背景輸出引擎 ---
+        // --- 全景地圖背景輸出引擎 (傳入 targetCtx 確保塗鴉匯出) ---
         function generateMapScreenshot(totalScore) {
             const snapCanvas = document.createElement('canvas');
-            // 高度多預留 80px 用來放底部的成績浮水印
             snapCanvas.width = MAP_W; snapCanvas.height = MAP_H + 80; 
             const sCtx = snapCanvas.getContext('2d');
 
-            // 利用 Target Context 重新繪製整張 1600x1200 的地圖
             drawMap(sCtx); drawHabitats(sCtx); drawCrisisZones(sCtx); drawMapOccupants(sCtx); drawDrawings(sCtx);
 
-            // 繪製底部成績條
             sCtx.fillStyle = '#14532d'; sCtx.fillRect(0, MAP_H, MAP_W, 80);
             sCtx.fillStyle = '#fff'; sCtx.font = 'bold 28px "Segoe UI", sans-serif';
             sCtx.textAlign = 'left'; sCtx.textBaseline = 'middle';
@@ -818,9 +820,12 @@
             ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 4; ctx.strokeRect(60, 60, 1080, 680);
             ctx.fillStyle = '#14532d'; ctx.fillRect(50, 50, 40, 40); ctx.fillRect(1110, 50, 40, 40); ctx.fillRect(50, 710, 40, 40); ctx.fillRect(1110, 710, 40, 40);
             ctx.fillStyle = '#14532d'; ctx.textAlign = 'center'; ctx.font = 'bold 50px "Segoe UI", sans-serif'; ctx.fillText('探探里山永續生態與農村風俗文化導覽', 600, 200);
+            
+            // 修正證書名稱與文字
             ctx.font = 'bold 42px "Segoe UI", sans-serif'; ctx.fillStyle = '#16a34a'; ctx.fillText('結業證書', 600, 270);
             ctx.fillStyle = '#1f2937'; ctx.font = '32px "Segoe UI", sans-serif'; ctx.fillText(`茲證明`, 600, 380);
             ctx.font = 'bold 46px "Segoe UI", sans-serif'; ctx.fillStyle = '#000'; ctx.fillText(`${playerName}`, 600, 450);
+            
             ctx.font = '28px "Segoe UI", sans-serif'; ctx.fillStyle = '#4b5563'; 
             ctx.fillText(`在生態導覽與農村風俗文化導覽活動中，認真學習，`, 600, 510);
             ctx.fillText(`獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。`, 600, 550);
@@ -840,10 +845,8 @@
 
             setTimeout(() => {
                 const sourceToDraw = qrTemp.querySelector('canvas') || qrTemp.querySelector('img');
-                // 修改處：將 QR Code 的 X 座標從 85 改為 110，向右平移避開邊角方塊
+                // QR Code 向右平移避開邊框
                 if(sourceToDraw) ctx.drawImage(sourceToDraw, 110, 650, 75, 75);
-                
-                // 修改處：將標語文字的 X 座標從 175 改為 200，與 QR Code 保持等距
                 ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif'; ctx.fillText(`🌿 探探里山`, 200, 695);
                 
                 const imgDataUrl = certCanvas.toDataURL("image/png");
@@ -852,7 +855,7 @@
             }, 150);
         }
 
-        // --- 8. Canvas 渲染迴圈 (支援外部 Context 傳入以供截圖) ---
+        // --- 8. Canvas 渲染迴圈 ---
         function updateCamera() {
             if (!camera.detached) { camera.x = player.x - SCREEN_W / 2; camera.y = player.y - SCREEN_H / 2; }
             camera.x = Math.max(0, Math.min(Math.max(0, MAP_W - SCREEN_W), camera.x)); camera.y = Math.max(0, Math.min(Math.max(0, MAP_H - SCREEN_H), camera.y));
@@ -861,154 +864,9 @@
         function gameLoop() {
             if (!isGameRunning) return; updateCamera(); ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
             ctx.save(); ctx.translate(-camera.x, -camera.y);
-            // 傳入 ctx 確保渲染
+            // 將 ctx 作為參數傳入，確保畫面與截圖渲染邏輯一致
             drawMap(ctx); drawHabitats(ctx); drawCrisisZones(ctx); drawMapOccupants(ctx); drawDrawings(ctx); drawPlayer(ctx);
             ctx.restore(); requestAnimationFrame(gameLoop);
-        }
-
-        // 修改所有繪圖函數，接收 targetCtx 以支援截圖功能與保留文字
-        function drawDrawings(targetCtx) {
-            let tCtx = targetCtx || ctx;
-            drawings.forEach(d => {
-                tCtx.strokeStyle = d.color; tCtx.lineWidth = 4; tCtx.lineJoin = 'round'; tCtx.lineCap = 'round';
-                tCtx.beginPath();
-                if(d.points.length > 0) { tCtx.moveTo(d.points[0].x, d.points[0].y); for(let i = 1; i < d.points.length; i++) tCtx.lineTo(d.points[i].x, d.points[i].y); tCtx.stroke(); }
-            });
-        }
-
-        function drawMap(targetCtx) {
-            let tCtx = targetCtx || ctx;
-            tCtx.fillStyle = '#c5e1a5'; tCtx.fillRect(0, 0, MAP_W, MAP_H);
-            tCtx.fillStyle = '#2e7d32'; tCtx.beginPath(); tCtx.moveTo(0,0); tCtx.lineTo(400,0); tCtx.lineTo(300,350); tCtx.lineTo(0,350); tCtx.fill(); drawTextBg(tCtx, '森林', 150, 150, '#1b5e20');
-            tCtx.fillStyle = '#558b2f'; tCtx.beginPath(); tCtx.moveTo(400,0); tCtx.lineTo(1100,0); tCtx.quadraticCurveTo(1150,200,1050,350); tCtx.lineTo(300,350); tCtx.fill(); drawTextBg(tCtx, '淺山', 700, 150, '#33691e');
-            tCtx.fillStyle = '#757575'; tCtx.fillRect(0, 350, MAP_W, 100); drawTextBg(tCtx, '山邊道路', 200, 400, '#424242');
-            tCtx.fillStyle = '#424242'; tCtx.fillRect(550, 340, 60, 120); drawTextBg(tCtx, '涵洞', 580, 400, '#212121');
-            tCtx.fillStyle = '#4fc3f7'; tCtx.beginPath(); tCtx.moveTo(1100, 450); tCtx.lineTo(1250, 450); tCtx.lineTo(1400, MAP_H); tCtx.lineTo(1250, MAP_H); tCtx.fill(); drawTextBg(tCtx, '溪流', 1230, 650, '#0277bd');
-            tCtx.fillStyle = '#fff59d'; tCtx.fillRect(200, 550, 450, 250); drawTextBg(tCtx, '農田', 420, 670, '#f57f17');
-            tCtx.fillStyle = '#29b6f6'; tCtx.beginPath(); tCtx.ellipse(1300, 950, 180, 100, 0, 0, Math.PI * 2); tCtx.fill(); drawTextBg(tCtx, '水塘', 1300, 950, '#0277bd');
-        }
-
-        function drawHabitats(targetCtx) {
-            let tCtx = targetCtx || ctx;
-            const iconSize = 40; const padding = 5;
-            habitats.forEach(h => {
-                tCtx.save(); tCtx.lineWidth = 3;
-                
-                if (h.isBonus) {
-                    tCtx.strokeStyle = '#3b82f6'; tCtx.fillStyle = 'rgba(59, 130, 246, 0.1)'; tCtx.setLineDash([8, 8]);
-                } else if (h.occupants.length > 0) { 
-                    tCtx.strokeStyle = '#4caf50'; tCtx.fillStyle = 'rgba(76, 175, 80, 0.2)'; tCtx.setLineDash([]); 
-                } else { 
-                    tCtx.strokeStyle = 'rgba(244, 67, 54, 0.6)'; tCtx.fillStyle = 'rgba(244, 67, 54, 0.1)'; tCtx.setLineDash([5, 5]); 
-                }
-                
-                tCtx.beginPath(); tCtx.roundRect(h.x, h.y, h.w, h.h, 4); tCtx.fill(); tCtx.stroke();
-                if (h.isBonus && h.occupants.length === 0) { tCtx.strokeStyle = '#fff'; tCtx.lineDashOffset = 8; tCtx.stroke(); }
-                
-                if (h.occupants.length > 0) {
-                    const maxCols = Math.max(1, Math.floor((h.w - padding * 2) / iconSize));
-                    tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
-                    h.occupants.forEach((occ, index) => {
-                        let col = index % maxCols; let row = Math.floor(index / maxCols);
-                        let px = h.x + padding + col * iconSize + iconSize/2; let py = h.y + padding + row * iconSize + iconSize/2;
-                        
-                        tCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff';
-                        tCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af';
-                        tCtx.lineWidth = occ.type === 'culture' ? 2 : 1;
-
-                        if (occ.dead) { tCtx.filter = 'grayscale(100%)'; tCtx.globalAlpha = 0.6; }
-
-                        if (occ.type === 'culture') { tCtx.beginPath(); tCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); tCtx.fill(); tCtx.stroke(); } 
-                        else { tCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); tCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
-                        
-                        // 保留圖示與名稱
-                        tCtx.font = '20px Arial'; tCtx.fillStyle = '#000'; tCtx.fillText(occ.icon, px, py - 4);
-                        tCtx.font = 'bold 10px "Segoe UI", sans-serif'; tCtx.fillStyle = '#14532d'; tCtx.fillText(occ.name, px, py + 14);
-
-                        occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
-                        tCtx.filter = 'none'; tCtx.globalAlpha = 1.0;
-                    });
-                } else {
-                    tCtx.font = '14px Arial'; tCtx.fillStyle = h.isBonus ? '#1d4ed8' : '#b71c1c'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle'; tCtx.fillText(h.name, h.x + h.w/2, h.y + h.h/2);
-                }
-                tCtx.restore();
-            });
-        }
-
-        function drawCrisisZones(targetCtx) {
-            let tCtx = targetCtx || ctx;
-            const iconSize = 40;
-            crisisZones.forEach(cz => {
-                tCtx.save(); tCtx.lineWidth = 3;
-                tCtx.strokeStyle = '#111'; tCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; tCtx.setLineDash([8, 8]);
-                tCtx.beginPath(); tCtx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); tCtx.fill(); tCtx.stroke();
-                tCtx.strokeStyle = '#fff'; tCtx.lineDashOffset = 8; tCtx.stroke();
-
-                tCtx.font = 'bold 12px Arial'; tCtx.fillStyle = '#ef4444'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
-                tCtx.fillText("⚠️" + cz.name, cz.x, cz.y - cz.r + 15);
-
-                if (cz.occupants.length > 0) {
-                    const boxW = cz.r * 1.4; const maxCols = Math.max(1, Math.floor(boxW / iconSize));
-                    let startX = cz.x - boxW/2; let startY = cz.y - boxW/2 + 20;
-                    cz.occupants.forEach((occ, index) => {
-                        let col = index % maxCols; let row = Math.floor(index / maxCols);
-                        let px = startX + col * iconSize + iconSize/2; let py = startY + row * iconSize + iconSize/2;
-                        
-                        tCtx.filter = 'grayscale(100%)'; tCtx.globalAlpha = 0.6;
-                        
-                        tCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; tCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#ef4444'; tCtx.lineWidth = 2;
-                        if (occ.type === 'culture') { tCtx.beginPath(); tCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); tCtx.fill(); tCtx.stroke(); } 
-                        else { tCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); tCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
-                        
-                        // 保留圖示與名稱
-                        tCtx.font = '20px Arial'; tCtx.fillStyle = '#000'; tCtx.fillText(occ.icon, px, py - 4);
-                        tCtx.font = 'bold 10px "Segoe UI", sans-serif'; tCtx.fillStyle = '#14532d'; tCtx.fillText(occ.name, px, py + 14);
-
-                        occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
-                        tCtx.filter = 'none'; tCtx.globalAlpha = 1.0;
-                    });
-                }
-                tCtx.restore();
-            });
-        }
-
-        function drawMapOccupants(targetCtx) {
-            let tCtx = targetCtx || ctx;
-            const r = 20;
-            mapOccupants.forEach(occ => {
-                tCtx.save(); 
-                if (occ.dead) { tCtx.filter = 'grayscale(100%)'; tCtx.globalAlpha = 0.6; }
-                
-                tCtx.fillStyle = '#fffbeb'; tCtx.beginPath(); tCtx.arc(occ.x, occ.y, r, 0, Math.PI*2); tCtx.fill();
-                tCtx.strokeStyle = '#f59e0b'; tCtx.lineWidth = 2; tCtx.stroke();
-                
-                // 保留圖示與名稱
-                tCtx.font = '20px Arial'; tCtx.fillStyle = '#000'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle'; 
-                tCtx.fillText(occ.icon, occ.x, occ.y - 4);
-                tCtx.font = 'bold 10px "Segoe UI", sans-serif'; tCtx.fillStyle = '#14532d'; 
-                tCtx.fillText(occ.name, occ.x, occ.y + 14);
-                
-                occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
-                tCtx.filter = 'none'; tCtx.globalAlpha = 1.0;
-                tCtx.restore(); 
-            });
-        }
-
-        function drawPlayer(targetCtx) {
-            let tCtx = targetCtx || ctx;
-            tCtx.save(); tCtx.translate(player.x, player.y);
-            tCtx.font = `${player.size}px Arial`; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
-            tCtx.rotate(player.dirAngle); tCtx.fillText(player.icon, 0, 0);
-            tCtx.fillStyle = '#ef4444'; tCtx.beginPath(); tCtx.arc(0, -22, 4, 0, Math.PI * 2); tCtx.fill();
-            tCtx.restore();
-            tCtx.fillStyle = '#111'; tCtx.font = 'bold 15px Arial'; tCtx.textAlign = 'center'; tCtx.fillText(playerName, player.x, player.y + 25);
-        }
-
-        function drawTextBg(targetCtx, text, x, y, bgColor) {
-            let tCtx = targetCtx || ctx;
-            tCtx.fillStyle = bgColor; tCtx.font = '14px Arial'; const w = tCtx.measureText(text).width + 12;
-            tCtx.beginPath(); tCtx.roundRect(x - w/2, y - 10, w, 20, 6); tCtx.fill();
-            tCtx.fillStyle = '#fff'; tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle'; tCtx.fillText(text, x, y);
         }
 
         function drawDrawings(targetCtx) {
@@ -1019,15 +877,127 @@
             });
         }
 
+        // 優化版的地圖渲染 (包含樹木、房屋、水紋)
         function drawMap(targetCtx) {
+            // 基礎地皮
             targetCtx.fillStyle = '#c5e1a5'; targetCtx.fillRect(0, 0, MAP_W, MAP_H);
-            targetCtx.fillStyle = '#2e7d32'; targetCtx.beginPath(); targetCtx.moveTo(0,0); targetCtx.lineTo(400,0); targetCtx.lineTo(300,350); targetCtx.lineTo(0,350); targetCtx.fill(); drawTextBg(targetCtx, '森林', 150, 150, '#1b5e20');
-            targetCtx.fillStyle = '#558b2f'; targetCtx.beginPath(); targetCtx.moveTo(400,0); targetCtx.lineTo(1100,0); targetCtx.quadraticCurveTo(1150,200,1050,350); targetCtx.lineTo(300,350); targetCtx.fill(); drawTextBg(targetCtx, '淺山', 700, 150, '#33691e');
-            targetCtx.fillStyle = '#757575'; targetCtx.fillRect(0, 350, MAP_W, 100); drawTextBg(targetCtx, '山邊道路', 200, 400, '#424242');
-            targetCtx.fillStyle = '#424242'; targetCtx.fillRect(550, 340, 60, 120); drawTextBg(targetCtx, '涵洞', 580, 400, '#212121');
-            targetCtx.fillStyle = '#4fc3f7'; targetCtx.beginPath(); targetCtx.moveTo(1100, 450); targetCtx.lineTo(1250, 450); targetCtx.lineTo(1400, MAP_H); targetCtx.lineTo(1250, MAP_H); targetCtx.fill(); drawTextBg(targetCtx, '溪流', 1230, 650, '#0277bd');
-            targetCtx.fillStyle = '#fff59d'; targetCtx.fillRect(200, 550, 450, 250); drawTextBg(targetCtx, '農田', 420, 670, '#f57f17');
-            targetCtx.fillStyle = '#29b6f6'; targetCtx.beginPath(); targetCtx.ellipse(1300, 950, 180, 100, 0, 0, Math.PI * 2); targetCtx.fill(); drawTextBg(targetCtx, '水塘', 1300, 950, '#0277bd');
+            
+            // 森林
+            targetCtx.fillStyle = '#2e7d32'; targetCtx.beginPath(); targetCtx.moveTo(0,0); targetCtx.lineTo(400,0); targetCtx.lineTo(300,350); targetCtx.lineTo(0,350); targetCtx.fill(); 
+            
+            // 淺山
+            targetCtx.fillStyle = '#558b2f'; targetCtx.beginPath(); targetCtx.moveTo(400,0); targetCtx.lineTo(1100,0); targetCtx.quadraticCurveTo(1150,200,1050,350); targetCtx.lineTo(300,350); targetCtx.fill(); 
+            
+            // 山邊道路與虛線
+            targetCtx.fillStyle = '#757575'; targetCtx.fillRect(0, 350, MAP_W, 100); 
+            targetCtx.save(); targetCtx.strokeStyle = '#E0E0E0'; targetCtx.lineWidth = 6; targetCtx.setLineDash([30, 30]);
+            targetCtx.beginPath(); targetCtx.moveTo(0, 400); targetCtx.lineTo(MAP_W, 400); targetCtx.stroke(); targetCtx.restore();
+
+            // 涵洞
+            targetCtx.fillStyle = '#424242'; targetCtx.fillRect(550, 340, 60, 120); 
+
+            // 溪流與水紋
+            targetCtx.fillStyle = '#4fc3f7'; targetCtx.beginPath(); targetCtx.moveTo(1100, 450); targetCtx.lineTo(1250, 450); targetCtx.lineTo(1400, MAP_H); targetCtx.lineTo(1250, MAP_H); targetCtx.fill(); 
+            targetCtx.save(); targetCtx.strokeStyle = 'rgba(255,255,255,0.4)'; targetCtx.lineWidth = 3;
+            targetCtx.beginPath(); targetCtx.moveTo(1150, 500); targetCtx.lineTo(1220, 700); targetCtx.stroke();
+            targetCtx.beginPath(); targetCtx.moveTo(1200, 550); targetCtx.lineTo(1320, 900); targetCtx.stroke();
+            targetCtx.beginPath(); targetCtx.moveTo(1250, 800); targetCtx.lineTo(1350, 1100); targetCtx.stroke(); targetCtx.restore();
+
+            // 農田與作物線條
+            targetCtx.fillStyle = '#fff59d'; targetCtx.fillRect(200, 550, 450, 250); 
+            targetCtx.save(); targetCtx.strokeStyle = '#d4e157'; targetCtx.lineWidth = 4;
+            for(let cy = 570; cy < 800; cy += 30) { targetCtx.beginPath(); targetCtx.moveTo(210, cy); targetCtx.lineTo(640, cy); targetCtx.stroke(); }
+            targetCtx.restore();
+
+            // 水塘與浮萍
+            targetCtx.fillStyle = '#29b6f6'; targetCtx.beginPath(); targetCtx.ellipse(1300, 950, 180, 100, 0, 0, Math.PI * 2); targetCtx.fill(); 
+            targetCtx.save(); targetCtx.fillStyle = '#66BB6A';
+            [[1250, 920], [1350, 910], [1400, 980]].forEach(pos => { targetCtx.beginPath(); targetCtx.arc(pos[0], pos[1], 15, 0, Math.PI*1.8); targetCtx.fill(); });
+            targetCtx.restore();
+
+            // 裝飾物件副程式
+            const drawTree = (x, y, scale, type) => {
+                targetCtx.save(); targetCtx.translate(x, y);
+                targetCtx.fillStyle = '#5D4037'; targetCtx.fillRect(-4 * scale, 0, 8 * scale, 20 * scale); // 樹幹
+                if (type === 'pine') {
+                    targetCtx.fillStyle = '#1B5E20';
+                    targetCtx.beginPath(); targetCtx.moveTo(0, -30 * scale); targetCtx.lineTo(-20 * scale, 5 * scale); targetCtx.lineTo(20 * scale, 5 * scale); targetCtx.fill();
+                    targetCtx.beginPath(); targetCtx.moveTo(0, -15 * scale); targetCtx.lineTo(-25 * scale, 15 * scale); targetCtx.lineTo(25 * scale, 15 * scale); targetCtx.fill();
+                } else {
+                    targetCtx.fillStyle = '#33691E';
+                    targetCtx.beginPath(); targetCtx.arc(0, -15 * scale, 20 * scale, 0, Math.PI * 2); targetCtx.fill();
+                    targetCtx.beginPath(); targetCtx.arc(-15 * scale, -5 * scale, 15 * scale, 0, Math.PI * 2); targetCtx.fill();
+                    targetCtx.beginPath(); targetCtx.arc(15 * scale, -5 * scale, 15 * scale, 0, Math.PI * 2); targetCtx.fill();
+                }
+                targetCtx.restore();
+            };
+
+            const drawHouse = (x, y) => {
+                targetCtx.save(); targetCtx.translate(x, y);
+                targetCtx.fillStyle = '#F5F5F5'; targetCtx.fillRect(-40, -25, 80, 50); // 屋體
+                targetCtx.fillStyle = '#D32F2F'; targetCtx.beginPath(); targetCtx.moveTo(-45, -25); targetCtx.lineTo(0, -60); targetCtx.lineTo(45, -25); targetCtx.fill(); // 紅屋頂
+                targetCtx.fillStyle = '#795548'; targetCtx.fillRect(-10, 5, 20, 20); // 木門
+                targetCtx.fillStyle = '#81D4FA'; targetCtx.fillRect(-30, -10, 15, 15); targetCtx.fillRect(15, -10, 15, 15); // 窗戶
+                targetCtx.restore();
+            };
+
+            // 繪製樹林與建築
+            [[80,80], [180,150], [280,60], [120,260], [60,320], [200,220], [320,160], [40,180]].forEach(pos => drawTree(pos[0], pos[1], 1.2, 'pine'));
+            [[450,100], [550,200], [680,80], [800,220], [950,120], [1020,250], [880,70], [750,280], [600,120], [1050, 150]].forEach(pos => drawTree(pos[0], pos[1], 1.0, 'round'));
+            drawHouse(750, 600); drawHouse(880, 630);
+
+            // 繪製棲地底部裝飾
+            targetCtx.save(); targetCtx.translate(110, 240); 
+            targetCtx.fillStyle = '#795548'; targetCtx.fillRect(-30, -5, 60, 8); targetCtx.fillRect(-20, 5, 40, 6); targetCtx.fillRect(-15, -12, 35, 6);
+            targetCtx.fillStyle = '#D4E157'; targetCtx.beginPath(); targetCtx.moveTo(-15, 5); targetCtx.lineTo(-25, -25); targetCtx.lineTo(-5, 0); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.moveTo(15, 5); targetCtx.lineTo(25, -20); targetCtx.lineTo(5, 0); targetCtx.fill();
+            targetCtx.restore();
+
+            targetCtx.save(); targetCtx.translate(400, 130);
+            targetCtx.fillStyle = '#9E9E9E'; targetCtx.beginPath(); targetCtx.arc(-15, 5, 14, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.fillStyle = '#757575'; targetCtx.beginPath(); targetCtx.arc(12, 8, 18, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.fillStyle = '#BDBDBD'; targetCtx.beginPath(); targetCtx.arc(0, -10, 12, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.fillStyle = '#616161'; targetCtx.beginPath(); targetCtx.arc(-5, 12, 10, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.restore();
+
+            targetCtx.save(); targetCtx.fillStyle = '#9E9E9E'; 
+            for(let i=0; i<6; i++) { targetCtx.fillRect(605 + i*25, 905, 20, 12); targetCtx.fillRect(605 + i*25, 943, 20, 12); }
+            targetCtx.restore();
+
+            targetCtx.save(); targetCtx.fillStyle = '#8BC34A';
+            for(let i=0; i<8; i++) { targetCtx.beginPath(); targetCtx.moveTo(270 + i*35, 590); targetCtx.lineTo(260 + i*35, 560); targetCtx.lineTo(280 + i*35, 560); targetCtx.fill(); }
+            targetCtx.restore();
+
+            targetCtx.save(); targetCtx.fillStyle = '#8BC34A';
+            for(let i=0; i<8; i++) { targetCtx.beginPath(); targetCtx.arc(1080, 470 + i*35, 18, 0, Math.PI*2); targetCtx.fill(); }
+            targetCtx.restore();
+
+            targetCtx.save(); targetCtx.fillStyle = '#4CAF50'; targetCtx.beginPath(); targetCtx.ellipse(1300, 980, 45, 25, 0, 0, Math.PI*2); targetCtx.fill(); targetCtx.restore();
+
+            targetCtx.save(); targetCtx.translate(840, 640);
+            targetCtx.fillStyle = '#8D6E63'; targetCtx.fillRect(-25, -30, 50, 60); 
+            targetCtx.fillStyle = '#5D4037'; targetCtx.fillRect(-20, -25, 15, 20); targetCtx.fillRect(5, -25, 15, 20); targetCtx.fillRect(-20, 5, 40, 20);
+            targetCtx.fillStyle = '#D32F2F'; targetCtx.beginPath(); targetCtx.moveTo(-35, -30); targetCtx.lineTo(0, -45); targetCtx.lineTo(35, -30); targetCtx.fill(); 
+            targetCtx.restore();
+
+            targetCtx.save(); targetCtx.strokeStyle = '#BCAAA4'; targetCtx.lineWidth = 2;
+            for(let i=0; i<=100; i+=20) { targetCtx.beginPath(); targetCtx.moveTo(900+i, 350); targetCtx.lineTo(900+i, 400); targetCtx.stroke(); }
+            for(let i=0; i<=50; i+=12.5) { targetCtx.beginPath(); targetCtx.moveTo(900, 350+i); targetCtx.lineTo(1000, 350+i); targetCtx.stroke(); }
+            targetCtx.restore();
+
+            targetCtx.save(); targetCtx.fillStyle = '#0288D1'; targetCtx.fillRect(90, 810, 60, 160);
+            targetCtx.strokeStyle = 'rgba(255,255,255,0.4)'; targetCtx.lineWidth = 2;
+            targetCtx.beginPath(); targetCtx.moveTo(100, 830); targetCtx.lineTo(100, 950); targetCtx.stroke();
+            targetCtx.beginPath(); targetCtx.moveTo(130, 850); targetCtx.lineTo(130, 920); targetCtx.stroke();
+            targetCtx.restore();
+
+            drawTextBg(targetCtx, '森林', 150, 150, '#1b5e20');
+            drawTextBg(targetCtx, '淺山', 700, 150, '#33691e');
+            drawTextBg(targetCtx, '山邊道路', 200, 400, '#424242');
+            drawTextBg(targetCtx, '涵洞', 580, 400, '#212121');
+            drawTextBg(targetCtx, '溪流', 1230, 650, '#0277bd');
+            drawTextBg(targetCtx, '農田', 420, 670, '#f57f17');
+            drawTextBg(targetCtx, '水塘', 1300, 950, '#0277bd');
         }
 
         function drawHabitats(targetCtx) {
@@ -1035,9 +1005,13 @@
             habitats.forEach(h => {
                 targetCtx.save(); targetCtx.lineWidth = 3;
                 
-                if (h.isBonus) { targetCtx.strokeStyle = '#3b82f6'; targetCtx.fillStyle = 'rgba(59, 130, 246, 0.1)'; targetCtx.setLineDash([8, 8]);
-                } else if (h.occupants.length > 0) { targetCtx.strokeStyle = '#4caf50'; targetCtx.fillStyle = 'rgba(76, 175, 80, 0.2)'; targetCtx.setLineDash([]); 
-                } else { targetCtx.strokeStyle = 'rgba(244, 67, 54, 0.6)'; targetCtx.fillStyle = 'rgba(244, 67, 54, 0.1)'; targetCtx.setLineDash([5, 5]); }
+                if (h.isBonus) {
+                    targetCtx.strokeStyle = '#3b82f6'; targetCtx.fillStyle = 'rgba(59, 130, 246, 0.1)'; targetCtx.setLineDash([8, 8]);
+                } else if (h.occupants.length > 0) { 
+                    targetCtx.strokeStyle = '#4caf50'; targetCtx.fillStyle = 'rgba(76, 175, 80, 0.2)'; targetCtx.setLineDash([]); 
+                } else { 
+                    targetCtx.strokeStyle = 'rgba(244, 67, 54, 0.6)'; targetCtx.fillStyle = 'rgba(244, 67, 54, 0.1)'; targetCtx.setLineDash([5, 5]); 
+                }
                 
                 targetCtx.beginPath(); targetCtx.roundRect(h.x, h.y, h.w, h.h, 4); targetCtx.fill(); targetCtx.stroke();
                 if (h.isBonus && h.occupants.length === 0) { targetCtx.strokeStyle = '#fff'; targetCtx.lineDashOffset = 8; targetCtx.stroke(); }
@@ -1049,17 +1023,37 @@
                         let col = index % maxCols; let row = Math.floor(index / maxCols);
                         let px = h.x + padding + col * iconSize + iconSize/2; let py = h.y + padding + row * iconSize + iconSize/2;
                         
-                        targetCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; targetCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af'; targetCtx.lineWidth = occ.type === 'culture' ? 2 : 1;
+                        targetCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff';
+                        targetCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af';
+                        targetCtx.lineWidth = occ.type === 'culture' ? 2 : 1;
+
                         if (occ.dead) { targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6; }
+
                         if (occ.type === 'culture') { targetCtx.beginPath(); targetCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke(); } 
                         else { targetCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); targetCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
                         
-                        targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.fillText(occ.icon, px, py + 2);
+                        targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.fillText(occ.icon, px, py - 4);
+                        targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; targetCtx.fillText(occ.name, px, py + 16);
+                        
                         occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
                         targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
                     });
                 } else {
-                    targetCtx.font = '14px Arial'; targetCtx.fillStyle = h.isBonus ? '#1d4ed8' : '#b71c1c'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; targetCtx.fillText(h.name, h.x + h.w/2, h.y + h.h/2);
+                    // 加入半透明白色背景框，解決文字與複雜地景重疊不清的問題
+                    const text = h.name;
+                    targetCtx.font = 'bold 14px Arial'; 
+                    const w = targetCtx.measureText(text).width + 16;
+                    const cx = h.x + h.w/2;
+                    const cy = h.y + h.h/2;
+                    
+                    targetCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                    targetCtx.beginPath(); 
+                    targetCtx.roundRect(cx - w/2, cy - 12, w, 24, 6); 
+                    targetCtx.fill();
+                    
+                    targetCtx.fillStyle = h.isBonus ? '#1d4ed8' : '#b71c1c'; 
+                    targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; 
+                    targetCtx.fillText(text, cx, cy);
                 }
                 targetCtx.restore();
             });
@@ -1068,10 +1062,13 @@
         function drawCrisisZones(targetCtx) {
             const iconSize = 40;
             crisisZones.forEach(cz => {
-                targetCtx.save(); targetCtx.lineWidth = 3; targetCtx.strokeStyle = '#111'; targetCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; targetCtx.setLineDash([8, 8]);
+                targetCtx.save(); targetCtx.lineWidth = 3;
+                targetCtx.strokeStyle = '#111'; targetCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; targetCtx.setLineDash([8, 8]);
                 targetCtx.beginPath(); targetCtx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
                 targetCtx.strokeStyle = '#fff'; targetCtx.lineDashOffset = 8; targetCtx.stroke();
-                targetCtx.font = 'bold 12px Arial'; targetCtx.fillStyle = '#ef4444'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; targetCtx.fillText("⚠️" + cz.name, cz.x, cz.y - cz.r + 15);
+
+                targetCtx.font = 'bold 12px Arial'; targetCtx.fillStyle = '#ef4444'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
+                targetCtx.fillText("⚠️" + cz.name, cz.x, cz.y - cz.r + 15);
 
                 if (cz.occupants.length > 0) {
                     const boxW = cz.r * 1.4; const maxCols = Math.max(1, Math.floor(boxW / iconSize));
@@ -1080,11 +1077,16 @@
                         let col = index % maxCols; let row = Math.floor(index / maxCols);
                         let px = startX + col * iconSize + iconSize/2; let py = startY + row * iconSize + iconSize/2;
                         
-                        targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6; targetCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; targetCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#ef4444'; targetCtx.lineWidth = 2;
+                        targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6;
+                        
+                        targetCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; targetCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#ef4444'; targetCtx.lineWidth = 2;
                         if (occ.type === 'culture') { targetCtx.beginPath(); targetCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke(); } 
                         else { targetCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); targetCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
                         
-                        targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.fillText(occ.icon, px, py + 2);
+                        // 繪製卡牌圖示與名稱
+                        targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.fillText(occ.icon, px, py - 4);
+                        targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; targetCtx.fillText(occ.name, px, py + 16);
+
                         occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
                         targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
                     });
@@ -1098,9 +1100,15 @@
             mapOccupants.forEach(occ => {
                 targetCtx.save(); 
                 if (occ.dead) { targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6; }
+                
                 targetCtx.fillStyle = '#fffbeb'; targetCtx.beginPath(); targetCtx.arc(occ.x, occ.y, r, 0, Math.PI*2); targetCtx.fill();
                 targetCtx.strokeStyle = '#f59e0b'; targetCtx.lineWidth = 2; targetCtx.stroke();
-                targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; targetCtx.fillText(occ.icon, occ.x, occ.y + 2);
+                
+                // 繪製卡牌圖示與名稱
+                targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; 
+                targetCtx.fillText(occ.icon, occ.x, occ.y - 4);
+                targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; 
+                targetCtx.fillText(occ.name, occ.x, occ.y + 14);
                 
                 occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
                 targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
@@ -1118,8 +1126,8 @@
         }
 
         function drawTextBg(targetCtx, text, x, y, bgColor) {
-            targetCtx.fillStyle = bgColor; targetCtx.font = '14px Arial'; const w = targetCtx.measureText(text).width + 12;
-            targetCtx.beginPath(); targetCtx.roundRect(x - w/2, y - 10, w, 20, 6); targetCtx.fill();
+            targetCtx.fillStyle = bgColor; targetCtx.font = 'bold 14px Arial'; const w = targetCtx.measureText(text).width + 16;
+            targetCtx.beginPath(); targetCtx.roundRect(x - w/2, y - 12, w, 24, 6); targetCtx.fill();
             targetCtx.fillStyle = '#fff'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; targetCtx.fillText(text, x, y);
         }
     </script>
