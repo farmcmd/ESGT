@@ -176,8 +176,9 @@
                     <!-- 在地景點 -->
                     <div class="accordion-item shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"><button class="accordion-header w-full p-4 font-bold text-gray-700 flex justify-between items-center text-left focus:outline-none bg-gray-50 hover:bg-gray-100 transition"><span class="text-[15px]"><i class="fas fa-map-marker-alt mr-2 text-mori-forest"></i>在地景點列表</span><i class="fas fa-chevron-down transition-transform duration-300 transform rotate-180"></i></button><div class="accordion-content p-4 pt-2 block">
                         <!-- 加入開啟外部景點庫的按鈕 -->
-                        <button onclick="window.openExternalPoiModal()" class="w-full py-3 mb-3 bg-gradient-to-r from-mori-sage to-mori-forest hover:from-mori-forest hover:to-mori-dark text-white rounded-xl shadow-md font-bold text-sm tracking-wide transition-all transform active:scale-95 flex items-center justify-center group outline-none">
-                            <i class="fas fa-book-open mr-2 group-hover:scale-110 transition-transform animate-pulse"></i> 探索完整景點圖鑑
+                        <button onclick="window.openExternalPoiModal()" class="w-full py-3 mb-3 bg-gradient-to-r from-mori-sage to-mori-forest hover:from-mori-forest hover:to-mori-dark text-white rounded-xl shadow-md transition-all transform active:scale-95 flex flex-col items-center justify-center group outline-none border border-mori-forest/50">
+                            <span class="font-black text-[15px] tracking-widest mb-0.5"><i class="fas fa-map-marked-alt mr-2 group-hover:scale-110 transition-transform text-yellow-300"></i>探探里山永續廊道</span>
+                            <span class="text-[11px] text-mori-light font-medium tracking-wide opacity-90">探索完整景點圖鑑</span>
                         </button>
                         <div id="poi-list-container" class="space-y-4 max-h-[45vh] overflow-y-auto pr-2 custom-scrollbar"></div><div class="mt-4 pt-3 border-t border-dashed border-gray-200"><p class="text-xs font-bold text-mori-forest mb-1.5"><i class="fas fa-search-location mr-1"></i> 景點不夠嗎？</p><p class="text-[11px] text-gray-500 leading-relaxed">在地圖中找尋 <span class="text-green-600 font-bold"><i class="fas fa-map-marker-alt"></i> 綠色座標</span> 或許會有驚喜！<br>還有 <span class="text-blue-500 font-bold"><i class="fas fa-map-marker-alt"></i> 藍色座標</span> 中有哪些活動與市集？</p></div></div></div>
                     
@@ -475,7 +476,7 @@
     <div id="external-poi-modal" class="modal-overlay hidden" style="z-index: 9950;">
         <div class="modal-content w-full max-w-4xl h-[92vh] md:h-[88vh] p-0 overflow-hidden relative bg-[#F9FAFB] rounded-2xl shadow-2xl border-t-4 border-mori-forest flex flex-col">
             <div class="bg-gradient-to-r from-mori-forest to-mori-sage text-white p-3.5 flex justify-between items-center shrink-0 shadow-md z-10">
-                <h3 class="font-bold tracking-wide flex items-center text-sm md:text-base"><i class="fas fa-map-marked-alt mr-2 text-yellow-300"></i>探索在地景點圖鑑</h3>
+                <h3 class="font-bold tracking-wide flex items-center text-sm md:text-base"><i class="fas fa-map-marked-alt mr-2 text-yellow-300"></i>探探里山永續廊道</h3>
                 <button class="text-white/80 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-mori-dark outline-none" onclick="window.closeModal('external-poi-modal')">
                     <i class="fas fa-times text-lg"></i>
                 </button>
@@ -641,6 +642,17 @@
         // ==========================================
         // 🚨 修正：確保事件綁定不會因為生命週期問題遺失
         // ==========================================
+        window.triggerConfirmTrip = function() {
+            if (window.pendingTrip && window.pendingTrip.isValid) {
+                const codeInput = document.getElementById('reward-verify-code');
+                if (codeInput) codeInput.value = '';
+                window.openModal('reward-verification-modal');
+                document.getElementById('confirm-trip-button').classList.add('hidden');
+            } else {
+                window.showToast('請先完成路線預覽與計算', true);
+            }
+        };
+
         function attachConfirmTripListeners() {
             // 這邊我們使用全域事件委派 (Event Delegation) 的方式，直接綁定在 body 上，
             // 如此一來，不論按鈕是何時被動態產生 (innerHTML) 的，都可以正確攔截到點擊！
@@ -836,8 +848,8 @@
         window.openExternalPoiModal=function(){
             const iframe = document.getElementById('external-poi-iframe');
             if (iframe && !iframe.dataset.loaded) {
-                // 🛑 使用相對路徑，這樣在畫布預覽或放在 GitHub 相同資料夾下都不會產生 404 錯誤
-                iframe.src = `./spot.html?t=${Date.now()}`;
+                // 🛑 使用真實線上網址以確保在畫布中能被 iframe 讀取
+                iframe.src = `https://farmcmd.github.io/ESGT/spot.html?t=${Date.now()}`;
                 iframe.dataset.loaded = "true";
             }
             window.openModal('external-poi-modal');
