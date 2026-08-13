@@ -531,7 +531,7 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
-        const transportData={walk_bike:{name:'步行/單車',icon:'🚶🚲',reduction:950,mode:'WALKING'},bus_train:{name:'共乘巴士',icon:'🚌',reduction:400,mode:'TRANSIT'},carpool_2_moto:{name:'機車/2人',icon:'🛵',reduction:150,mode:'DRIVING'},carpool_3:{name:'3人共乘',icon:'🚗',reduction:350,mode:'DRIVING'},carpool_4:{name:'4人共乘',icon:'🚗',reduction:400,mode:'DRIVING'},carpool_5:{name:'5人共乘',icon:'🚐',reduction:450,mode:'DRIVING'},thsr:{name:'搭乘高鐵',icon:'🚆',reduction:650,mode:'TRANSIT'},drive_alone:{name:'單人自駕',icon:'🚘',reduction:0,mode:'DRIVING'}};
+        const transportData={walk_bike:{name:'步行/單車',icon:'🚶🚲',reduction:950,mode:'WALKING'},bus_train:{name:'共乘巴士',icon:'🚌',reduction:400,mode:'TRANSIT'},carpool_2_moto:{name:'機車/2人',icon:'🛵',reduction:150,mode:'DRIVING'},carpool_2_car:{name:'2人共乘(汽車)',icon:'🚗',reduction:300,mode:'DRIVING'},carpool_3:{name:'3人共乘',icon:'🚗',reduction:350,mode:'DRIVING'},carpool_4:{name:'4人共乘',icon:'🚗',reduction:400,mode:'DRIVING'},carpool_5:{name:'5人共乘',icon:'🚐',reduction:450,mode:'DRIVING'},thsr:{name:'搭乘高鐵',icon:'🚆',reduction:650,mode:'TRANSIT'},drive_alone:{name:'單人自駕',icon:'🚘',reduction:0,mode:'DRIVING'}};
         const sroiUnits=[{name:'指令教育農場',weight:1.95},{name:'阿爾喜',weight:1.95},{name:'雨社山下',weight:1.58},{name:'明揚養蜂',weight:1.58},{name:'湧健酪梨園',weight:2.66},{name:'里山餐桌團隊',weight:3.40}];
         const taiwanCities=[{name:'基隆市',lat:25.1276,lng:121.7392},{name:'臺北市',lat:25.0330,lng:121.5654},{name:'新北市',lat:25.0110,lng:121.4653},{name:'桃園市',lat:24.9936,lng:121.3010},{name:'新竹市',lat:24.8138,lng:120.9675},{name:'新竹縣',lat:24.8298,lng:121.0126},{name:'苗栗縣',lat:24.5602,lng:120.8214},{name:'臺中市',lat:24.1477,lng:120.6736},{name:'彰化縣',lat:24.0518,lng:120.5393},{name:'南投縣',lat:23.9037,lng:120.6839},{name:'雲林縣',lat:23.7092,lng:120.4313},{name:'嘉義市',lat:23.4801,lng:120.4491},{name:'嘉義縣',lat:23.4518,lng:120.2555},{name:'臺南市',lat:22.9997,lng:120.2270},{name:'高雄市',lat:22.6273,lng:120.3014},{name:'屏東縣',lat:22.6828,lng:120.5132},{name:'宜蘭縣',lat:24.7021,lng:121.7378},{name:'花蓮縣',lat:23.9872,lng:121.6016},{name:'臺東縣',lat:22.7583,lng:121.1444},{name:'澎湖縣',lat:23.5711,lng:119.5793},{name:'金門縣',lat:24.4327,lng:118.3125},{name:'連江縣',lat:26.1505,lng:119.9360}];
         
@@ -1548,6 +1548,13 @@
                 document.getElementById('preview-trip-button').classList.remove('hidden');
             }
             if(window.mapsApiReady)window.renderMap();else window.loadGoogleMaps();
+            
+            // 手機版切換時，自動捲動定位到「官方活動列表」
+            setTimeout(() => {
+                const listContainer = document.querySelector('.accordion-item.shrink-0.bg-white.relative.z-30');
+                if(listContainer) listContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                else document.getElementById('mission-page').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         };
 
         window.initMap=function(){window.mapsApiReady=true;if(document.getElementById('mission-page')&&!document.getElementById('mission-page').classList.contains('hidden')){window.renderMap();}};
