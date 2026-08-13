@@ -144,46 +144,9 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
                 <!-- 地圖顯示區 (包含浮動面板) -->
                 <div class="lg:col-span-2 flex flex-col gap-4 relative">
-                    <div class="relative bg-white p-2 rounded-xl shadow-md border border-gray-200 h-[600px] w-full overflow-hidden">
-                         <div id="map" class="w-full h-full rounded-lg bg-gray-200"></div>
-                         
-                         <!-- 🗺️ 覆蓋在地圖上的載入遮罩 -->
-                         <div id="map-overlay" class="absolute inset-0 bg-gray-100 flex flex-col justify-center items-center z-10 transition-opacity duration-500 rounded-lg"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-mori-forest mb-4"></div><p class="text-mori-dark font-bold text-sm" id="map-loading-text">地圖準備中...</p></div>
-                         
-                         <!-- 🌟 浮動路線控制面板 (Backdrop Blur) -->
-                         <div class="absolute top-4 right-4 md:top-6 md:right-6 w-[280px] md:w-[320px] bg-white/50 hover:bg-white/75 backdrop-blur-md p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/40 z-20 transition-all duration-300">
-                             <div class="flex flex-col gap-2">
-                                 <div class="flex justify-between items-center mb-1 border-b border-gray-200/60 pb-2">
-                                     <p class="text-[12px] text-gray-700 font-black tracking-wide"><i class="fas fa-route text-mori-forest mr-1.5"></i>加入多點或兩點間計算</p>
-                                     <button onclick="window.clearRoute()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100 transition shadow-sm border border-red-100 shrink-0 outline-none"><i class="fas fa-trash-alt mr-1"></i>清空</button>
-                                 </div>
-                                 
-                                 <!-- Route List -->
-                                 <div id="route-points-list" class="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mt-1">
-                                     <div class="text-[11px] font-bold text-gray-400 text-center py-3 bg-white/50 rounded-lg border border-dashed border-gray-300 leading-relaxed px-1">請從右側列表或地圖點選，<br>依序加入路線站點</div>
-                                 </div>
-                                 
-                                 <button id="add-return-btn" onclick="window.addReturnPoint()" class="hidden w-full py-1.5 bg-white/80 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50 transition shadow-sm mt-1 outline-none"><i class="fas fa-undo-alt mr-1"></i> 返回起始點 (形成環線)</button>
-
-                                 <div class="flex flex-col gap-2 mt-2 pt-3 border-t border-gray-200/60">
-                                     <div id="trip-calculation-status" class="text-[12px] font-bold text-mori-wood bg-[#F0F7F4]/80 p-2.5 rounded-lg border border-mori-light/50 text-center min-h-[40px] flex items-center justify-center backdrop-blur-sm">
-                                         請加入至少兩個站點
-                                     </div>
-                                     <div class="grid grid-cols-2 gap-2 mt-1">
-                                         <button id="preview-trip-button" class="hidden py-2 bg-mori-forest text-white rounded-lg shadow-md font-bold text-[12px] hover:bg-mori-dark transition outline-none transform active:scale-95"><i class="fas fa-calculator mr-1.5"></i>計算路線</button>
-                                         <button id="confirm-trip-button" onclick="window.triggerConfirmTrip()" class="hidden py-2 bg-yellow-500 text-white rounded-lg shadow-md font-bold text-[12px] animate-pulse cursor-pointer hover:bg-yellow-600 transition-colors outline-none"><i class="fas fa-check-circle mr-1"></i>獲取積分</button>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-                    </div>
-                </div>
-
-                <!-- 側邊欄控制區 -->
-                <div class="lg:col-span-1 flex flex-col gap-3 overflow-y-auto max-h-[80vh] no-scrollbar pb-24">
                     
-                    <!-- 🌟 永續低碳基地夥伴/官方活動列表 (移至最上方) -->
-                    <div class="accordion-item shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <!-- 🌟 永續低碳基地夥伴/官方活動列表 (移至地圖上方) -->
+                    <div class="accordion-item shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative z-30">
                         <button class="accordion-header w-full p-4 font-bold text-gray-700 flex justify-between items-center text-left focus:outline-none bg-gray-50 hover:bg-gray-100 transition">
                             <span class="text-[15px]"><i class="fas fa-map-marker-alt mr-2 text-mori-forest"></i>永續低碳基地夥伴/官方活動列表</span>
                             <i class="fas fa-chevron-down transition-transform duration-300 transform rotate-180"></i>
@@ -209,6 +172,44 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="relative bg-white p-2 rounded-xl shadow-md border border-gray-200 h-[600px] w-full overflow-hidden">
+                         <div id="map" class="w-full h-full rounded-lg bg-gray-200"></div>
+                         
+                         <!-- 🗺️ 覆蓋在地圖上的載入遮罩 -->
+                         <div id="map-overlay" class="absolute inset-0 bg-gray-100 flex flex-col justify-center items-center z-10 transition-opacity duration-500 rounded-lg"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-mori-forest mb-4"></div><p class="text-mori-dark font-bold text-sm" id="map-loading-text">地圖準備中...</p></div>
+                         
+                         <!-- 🌟 浮動路線控制面板 (Backdrop Blur) -->
+                         <div class="absolute top-4 right-4 md:top-6 md:right-6 w-[280px] md:w-[320px] bg-white/50 hover:bg-white/75 backdrop-blur-md p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/40 z-20 transition-all duration-300">
+                             <div class="flex flex-col gap-2">
+                                 <div class="flex justify-between items-center mb-1 border-b border-gray-200/60 pb-2">
+                                     <p class="text-[12px] text-gray-700 font-black tracking-wide"><i class="fas fa-route text-mori-forest mr-1.5"></i>加入「多點」行程或是「兩點」之間計算里程</p>
+                                     <button onclick="window.clearRoute()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100 transition shadow-sm border border-red-100 shrink-0 outline-none"><i class="fas fa-trash-alt mr-1"></i>清空</button>
+                                 </div>
+                                 
+                                 <!-- Route List -->
+                                 <div id="route-points-list" class="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mt-1">
+                                     <div class="text-[11px] font-bold text-gray-400 text-center py-3 bg-white/50 rounded-lg border border-dashed border-gray-300 leading-relaxed px-1">請從探探里山永續廊道或下方「專案活動」中，<br>依序選擇地點加入路線</div>
+                                 </div>
+                                 
+                                 <button id="add-return-btn" onclick="window.addReturnPoint()" class="hidden w-full py-1.5 bg-white/80 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50 transition shadow-sm mt-1 outline-none"><i class="fas fa-undo-alt mr-1"></i> 返回起始點 (形成環線)</button>
+
+                                 <div class="flex flex-col gap-2 mt-2 pt-3 border-t border-gray-200/60">
+                                     <div id="trip-calculation-status" class="text-[11px] font-bold text-mori-wood bg-[#F0F7F4]/80 p-2.5 rounded-lg border border-mori-light/50 text-center min-h-[40px] flex items-center justify-center backdrop-blur-sm">
+                                         請加入至少兩個站點
+                                     </div>
+                                     <div class="grid grid-cols-2 gap-2 mt-1">
+                                         <button id="preview-trip-button" class="hidden py-2 bg-mori-forest text-white rounded-lg shadow-md font-bold text-[12px] hover:bg-mori-dark transition outline-none transform active:scale-95"><i class="fas fa-calculator mr-1.5"></i>計算路線</button>
+                                         <button id="confirm-trip-button" onclick="window.triggerConfirmTrip()" class="hidden py-2 bg-yellow-500 text-white rounded-lg shadow-md font-bold text-[12px] animate-pulse cursor-pointer hover:bg-yellow-600 transition-colors outline-none"><i class="fas fa-check-circle mr-1"></i>獲取積分</button>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+
+                <!-- 側邊欄控制區 -->
+                <div class="lg:col-span-1 flex flex-col gap-3 overflow-y-auto max-h-[80vh] no-scrollbar pb-24">
                     
                     <!-- 跨縣市設定 -->
                     <div class="accordion-item shrink-0 bg-blue-50/50 rounded-xl shadow-sm border border-blue-100 overflow-hidden"><button class="accordion-header w-full p-4 font-bold text-blue-800 flex justify-between items-center text-left focus:outline-none hover:bg-blue-100/50 transition"><span class="text-[15px]"><i class="fas fa-map-marked-alt mr-2"></i>跨縣市大眾運輸起訖</span><i class="fas fa-chevron-down transition-transform duration-300"></i></button><div class="accordion-content p-4 pt-2 hidden"><div class="flex flex-col gap-2"><select id="city-select" class="w-full p-2 border border-blue-200 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-400"></select><div class="flex gap-2 mt-1"><button id="add-city-route-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm transition hover:bg-blue-700 shadow-sm"><i class="fas fa-plus mr-1"></i> 加入至旅遊路線</button></div></div></div></div>
