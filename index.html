@@ -182,17 +182,19 @@
                          <!-- 🌟 浮動路線控制面板 (Backdrop Blur) -->
                          <div class="absolute top-4 right-4 md:top-6 md:right-6 w-[280px] md:w-[320px] bg-white/50 hover:bg-white/75 backdrop-blur-md p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/40 z-20 transition-all duration-300">
                              <div class="flex flex-col gap-2">
-                                 <div class="flex justify-between items-center mb-1 border-b border-gray-200/60 pb-2">
-                                     <p class="text-[12px] text-gray-700 font-black tracking-wide"><i class="fas fa-route text-mori-forest mr-1.5"></i>加入「多點」行程或是「兩點」之間計算里程</p>
-                                     <button onclick="window.clearRoute()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100 transition shadow-sm border border-red-100 shrink-0 outline-none"><i class="fas fa-trash-alt mr-1"></i>清空</button>
+                                 <div class="flex justify-between items-center mb-1 border-b border-gray-200/60 pb-2 cursor-pointer group" onclick="document.getElementById('route-points-container').classList.toggle('hidden'); document.getElementById('route-chevron').classList.toggle('rotate-180');">
+                                     <p class="text-[12px] text-gray-700 font-black tracking-wide flex items-center group-hover:text-mori-forest transition-colors"><i class="fas fa-route text-mori-forest mr-1.5"></i>加入多點行程/計算里程<i id="route-chevron" class="fas fa-chevron-up ml-2 text-[10px] text-gray-400 transition-transform duration-300"></i></p>
+                                     <button onclick="event.stopPropagation(); window.clearRoute()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100 transition shadow-sm border border-red-100 shrink-0 outline-none"><i class="fas fa-trash-alt mr-1"></i>清空</button>
                                  </div>
                                  
-                                 <!-- Route List -->
-                                 <div id="route-points-list" class="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mt-1">
-                                     <div class="text-[11px] font-bold text-gray-400 text-center py-3 bg-white/50 rounded-lg border border-dashed border-gray-300 leading-relaxed px-1">請從探探里山永續廊道或下方「專案活動」中，<br>依序選擇地點加入路線</div>
+                                 <!-- Route List Container (Collapsible) -->
+                                 <div id="route-points-container" class="transition-all duration-300 origin-top">
+                                     <div id="route-points-list" class="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mt-1">
+                                         <div class="text-[11px] font-bold text-gray-400 text-center py-3 bg-white/50 rounded-lg border border-dashed border-gray-300 leading-relaxed px-1">請從探探里山永續廊道或下方「專案活動」中，<br>依序選擇地點加入路線</div>
+                                     </div>
+                                     
+                                     <button id="add-return-btn" onclick="window.addReturnPoint()" class="hidden w-full py-1.5 bg-white/80 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50 transition shadow-sm mt-1 outline-none"><i class="fas fa-undo-alt mr-1"></i> 返回起始點 (形成環線)</button>
                                  </div>
-                                 
-                                 <button id="add-return-btn" onclick="window.addReturnPoint()" class="hidden w-full py-1.5 bg-white/80 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50 transition shadow-sm mt-1 outline-none"><i class="fas fa-undo-alt mr-1"></i> 返回起始點 (形成環線)</button>
 
                                  <div class="flex flex-col gap-2 mt-2 pt-3 border-t border-gray-200/60">
                                      <div id="trip-calculation-status" class="text-[11px] font-bold text-mori-wood bg-[#F0F7F4]/80 p-2.5 rounded-lg border border-mori-light/50 text-center min-h-[40px] flex items-center justify-center backdrop-blur-sm">
@@ -796,6 +798,8 @@
             const status = document.getElementById('trip-calculation-status');
             const confirmBtn = document.getElementById('confirm-trip-button');
             const previewBtn = document.getElementById('preview-trip-button');
+            const routeContainer = document.getElementById('route-points-container');
+            const routeChevron = document.getElementById('route-chevron');
             
             if (confirmBtn) confirmBtn.classList.add('hidden');
             window.pendingTrip = { isValid: false };
@@ -831,6 +835,15 @@
                     if (status) status.innerHTML = `總路網距離 ${distKm.toFixed(1)}km | 預估減碳: <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
                     if (confirmBtn) confirmBtn.classList.remove('hidden');
                     if (previewBtn) previewBtn.classList.add('hidden');
+                    
+                    // 計算成功後自動摺疊清單
+                    if (routeContainer && routeChevron) {
+                        routeContainer.classList.add('hidden');
+                        routeChevron.classList.add('rotate-180');
+                        routeChevron.classList.remove('fa-chevron-up');
+                        routeChevron.classList.add('fa-chevron-down');
+                    }
+
                 } else {
                     window.directionsRenderer.setMap(null);
                     let distMeters = 0;
@@ -851,6 +864,14 @@
                     if (status) status.innerHTML = `<span class="block text-[11px] text-yellow-600 mb-0.5"><i class="fas fa-magic mr-1"></i>採用直線估算</span>${distKm.toFixed(1)}km | 減碳 <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
                     if (confirmBtn) confirmBtn.classList.remove('hidden');
                     if (previewBtn) previewBtn.classList.add('hidden');
+                    
+                    // 計算成功後自動摺疊清單
+                    if (routeContainer && routeChevron) {
+                        routeContainer.classList.add('hidden');
+                        routeChevron.classList.add('rotate-180');
+                        routeChevron.classList.remove('fa-chevron-up');
+                        routeChevron.classList.add('fa-chevron-down');
+                    }
                 }
             });
         };
