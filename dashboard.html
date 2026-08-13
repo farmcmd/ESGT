@@ -31,6 +31,11 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
         
+        .ticket-scrollbar::-webkit-scrollbar { height: 6px; }
+        .ticket-scrollbar::-webkit-scrollbar-track { background: rgba(254, 240, 138, 0.4); border-radius: 10px; }
+        .ticket-scrollbar::-webkit-scrollbar-thumb { background-color: #FBBF24; border-radius: 10px; cursor: pointer; }
+        .ticket-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #F59E0B; }
+
         .modal-overlay { backdrop-filter: blur(4px); transition: opacity 0.3s ease; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
         .modal-content { background: white; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 1.5rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -38,7 +43,6 @@
         .gold-shine { background: linear-gradient(90deg, #F59E0B, #FCD34D, #F59E0B); background-size: 200% 100%; color: white; animation: shine 3s infinite linear; }
         @keyframes shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
         
-        /* 🌟 新增：中獎序號瘋狂閃爍特效 */
         @keyframes jackpot-flash {
             0% { transform: scale(1); background-color: #ffffff; border-color: #fde047; box-shadow: 0 0 0 rgba(250,204,21,0); }
             20% { transform: scale(1.05) rotate(-2deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
@@ -47,11 +51,7 @@
             80% { transform: scale(1.05) rotate(2deg); background-color: #fef08a; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.8); color: #b91c1c; }
             100% { transform: scale(1); background-color: #fef08a; border-color: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.5); color: #b91c1c; }
         }
-        .jackpot-winner {
-            animation: jackpot-flash 0.8s ease-in-out infinite;
-            z-index: 50;
-            position: relative;
-        }
+        .jackpot-winner { animation: jackpot-flash 0.8s ease-in-out infinite; z-index: 50; position: relative; }
 
         #custom-toast { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%) translateY(20px); background-color: rgba(31, 41, 55, 0.95); color: white; padding: 0.8rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); z-index: 2147483647; font-weight: bold; font-size: 0.9rem; opacity: 0; pointer-events: none; text-align: center; white-space: nowrap; backdrop-filter: blur(4px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         #custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -60,12 +60,10 @@
 <body class="font-sans antialiased overflow-x-hidden">
     <div id="custom-toast"></div>
 
-    <!-- 頂部導覽與狀態列 -->
     <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 md:py-3">
             <div class="flex flex-col gap-2.5">
                 <div class="flex justify-start items-center w-full gap-2 sm:gap-4 overflow-hidden">
-                    
                     <h1 class="text-lg font-black text-gray-800 tracking-wide shrink-0 hidden md:block">永續數據歸戶中心</h1>
                     
                     <div class="flex-1 flex items-center bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 shadow-inner overflow-hidden w-full">
@@ -133,9 +131,6 @@
             <button id="tab-btn-gov" class="px-4 py-2 bg-white text-gray-600 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition-all text-sm flex items-center shadow-sm"><i class="fas fa-landmark mr-2"></i> 永續政府計畫儀表板</button>
         </div>
 
-        <!-- ============================================== -->
-        <!-- 🏢 企業永續儀表板區塊 -->
-        <!-- ============================================== -->
         <section id="section-ent" class="block animate-fade-in-down">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div class="lg:col-span-2 flex flex-col gap-6">
@@ -174,12 +169,11 @@
                                 <input type="text" id="ent-create-serial" class="w-1/3 p-2.5 border border-yellow-300 rounded-xl text-sm font-bold text-yellow-800 bg-yellow-50 outline-none uppercase" placeholder="活動序號">
                                 <input type="text" id="ent-create-org" class="w-2/3 p-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-mori-wood" placeholder="企業名稱 (必填)">
                             </div>
-                            <input type="text" id="ent-create-event" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-mori-wood" placeholder="活動企劃名稱 (必填)">
-                            
-                            <div class="grid grid-cols-1 gap-3">
-                                <input type="number" id="ent-create-year" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="執行年度">
-                                <textarea id="ent-create-remark" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-mori-wood custom-scrollbar" placeholder="活動備註說明 (選填)" rows="5"></textarea>
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="text" id="ent-create-year" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none" placeholder="執行年度">
+                                <input type="text" id="ent-create-event" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-mori-wood" placeholder="活動企劃名稱 (必填)">
                             </div>
+                            <textarea id="ent-create-remark" class="w-full p-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-mori-wood custom-scrollbar" placeholder="活動備註說明 (選填)" rows="3"></textarea>
                             
                             <div>
                                 <p class="text-[11px] font-bold text-gray-500 mb-1 ml-1">辦理期間</p>
@@ -214,9 +208,6 @@
             </div>
         </section>
 
-        <!-- ============================================== -->
-        <!-- 🏛️ 政府計畫儀表板區塊 -->
-        <!-- ============================================== -->
         <section id="section-gov" class="hidden animate-fade-in-down">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div class="lg:col-span-2 flex flex-col gap-6">
@@ -295,11 +286,6 @@
         </section>
     </main>
 
-    <!-- ============================================== -->
-    <!-- 模態框區域 (Modals) -->
-    <!-- ============================================== -->
-    
-    <!-- 🌟 我的抽獎券庫 Modal -->
     <div id="my-tickets-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content max-w-md p-6 bg-white border-t-8 border-yellow-400 relative shadow-2xl flex flex-col h-[75vh]">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('my-tickets-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -313,16 +299,12 @@
         </div>
     </div>
 
-    <!-- 企業問卷 Modal -->
     <div id="ent-eval-modal" class="modal-overlay hidden"><div class="modal-content max-w-2xl p-6 border-t-8 border-mori-wood relative"><button class="close-button absolute top-4 right-4 text-gray-400" onclick="window.closeModal('ent-eval-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-2xl font-bold text-center text-mori-forest mb-4">企業 ESG 行動評鑑</h3><div class="bg-green-50 p-4 rounded-xl border-2 border-green-300 mb-6 relative overflow-hidden"><p class="text-sm font-bold text-green-800 mb-1">即將歸戶至：<span id="ent-eval-target-name" class="text-green-700 ml-1"></span></p><div class="flex gap-4 text-sm font-bold mt-2 mb-3"><span class="bg-white px-2 py-1 rounded text-mori-forest shadow-sm">消耗減碳: <span id="ent-eval-target-carbon">0</span>g</span><span class="bg-white px-2 py-1 rounded text-blue-600 shadow-sm">提供綠消: $<span id="ent-eval-target-green">0</span></span></div><p class="text-[10px] text-red-500 font-bold mt-2"><i class="fas fa-exclamation-triangle"></i> 注意：歸戶後，您本機的積分與減碳量將會扣除並轉移給該企業。</p></div><div id="ent-eval-questions-container" class="space-y-8 mt-2"></div><div class="mt-6 bg-white p-4 rounded-xl border border-gray-200"><textarea id="ent-eval-feedback" class="w-full p-3 border border-gray-200 rounded-lg text-sm" placeholder="永續心得(選填)"></textarea></div><div class="flex justify-end gap-3 mt-4"><button id="quick-fill-ent-stars-btn" class="text-xs text-mori-forest font-bold mt-2 underline">快速填滿 5 分</button></div><button id="submit-ent-eval-btn" class="w-full py-4 bg-mori-forest hover:bg-mori-dark text-white rounded-xl font-black text-lg mt-3 shadow-md transition-colors">確認結算並送出</button></div></div>
     
-    <!-- 政府問卷 Modal -->
     <div id="gov-eval-modal" class="modal-overlay hidden"><div class="modal-content max-w-2xl p-6 border-t-8 border-blue-500 relative"><button class="close-button absolute top-4 right-4 text-gray-400" onclick="window.closeModal('gov-eval-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-2xl font-bold text-center text-blue-900 mb-2">政府計畫滿意度評鑑</h3><div class="bg-blue-50 p-4 rounded-xl border-2 border-blue-300 mb-5 relative overflow-hidden"><p class="text-sm font-bold text-blue-800 mb-2">歸戶至：<span id="gov-eval-target-name" class="text-blue-700 ml-1"></span></p><div class="flex gap-3 text-sm font-bold mb-3"><span class="bg-white px-2 py-1 rounded text-mori-forest shadow-sm">消耗減碳: <span id="gov-eval-target-carbon">0</span>g</span><span class="bg-white px-2 py-1 rounded text-blue-600 shadow-sm">提供綠消: $<span id="gov-eval-target-green">0</span></span></div><p class="text-[10px] text-red-500 font-bold mt-2"><i class="fas fa-exclamation-triangle"></i> 注意：歸戶後，您本機的積分與減碳量將會扣除並轉移給該計畫。</p></div><div id="gov-eval-questions-container" class="space-y-6"></div><div class="mt-6 bg-white p-4 rounded-xl border border-gray-200"><textarea id="gov-eval-feedback" class="w-full p-3 border border-gray-200 rounded-lg text-sm" placeholder="永續心得(選填)"></textarea></div><div class="flex justify-end gap-3 mt-4"><button id="quick-fill-gov-stars-btn" class="text-xs text-blue-600 font-bold mt-2 underline">快速填滿 5 分</button></div><button id="submit-gov-eval-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-lg mt-3 shadow-md transition-colors">確認結算並送出</button></div></div>
     
-    <!-- 總承預覽 Modal -->
     <div id="summary-preview-modal" class="modal-overlay hidden"><div class="modal-content max-w-lg p-6 bg-white border-t-4 border-yellow-500 rounded-2xl shadow-2xl relative"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('summary-preview-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-xl font-bold text-gray-800 mb-4 text-center"><i class="fas fa-gem text-yellow-500 mr-2"></i>總承結算卡片預覽</h3><div class="bg-gray-50 p-4 rounded-xl shadow-inner max-h-[60vh] overflow-y-auto no-scrollbar flex justify-center items-start"><div id="summary-card-container" class="w-full max-w-[400px]"></div></div><div class="mt-4 flex justify-end gap-3"><button class="px-5 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-200 transition" onclick="window.closeModal('summary-preview-modal')">關閉</button><button id="download-summary-btn" class="px-5 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center"><i class="fas fa-download mr-2"></i> 匯出圖檔</button></div></div></div>
     
-    <!-- 🌟 證書預覽與下載 Modal -->
     <div id="cert-preview-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content max-w-lg p-6 bg-white border-t-4 border-mori-forest rounded-2xl shadow-2xl relative">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('cert-preview-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -342,7 +324,6 @@
         </div>
     </div>
 
-    <!-- 企業編輯 Modal -->
     <div id="ent-edit-modal" class="modal-overlay hidden" style="z-index: 110;">
         <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-emerald-500 relative shadow-2xl">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('ent-edit-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -352,12 +333,12 @@
                     <input type="text" id="ent-edit-serial" class="w-1/3 p-2 border rounded-lg text-sm font-bold uppercase" placeholder="活動序號">
                     <input type="text" id="ent-edit-org" class="w-2/3 p-2 border rounded-lg text-sm" placeholder="企業名稱">
                 </div>
-                <input type="text" id="ent-edit-event" class="w-full p-2 border rounded-lg text-sm" placeholder="企業活動名稱">
-                <input type="url" id="ent-edit-website" class="w-full p-2 border rounded-lg text-sm" placeholder="企業網站">
-                <div class="grid grid-cols-1 gap-3">
-                    <input type="number" id="ent-edit-year" class="w-full p-2 border rounded-lg text-sm" placeholder="執行年度">
-                    <textarea id="ent-edit-remark" class="w-full p-2 border rounded-lg text-sm outline-none focus:border-mori-wood custom-scrollbar" placeholder="活動備註說明 (選填)" rows="5"></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="ent-edit-year" class="w-full p-2 border rounded-lg text-sm" placeholder="執行年度">
+                    <input type="text" id="ent-edit-event" class="w-full p-2 border rounded-lg text-sm" placeholder="企業活動名稱">
                 </div>
+                <input type="url" id="ent-edit-website" class="w-full p-2 border rounded-lg text-sm" placeholder="企業網站">
+                <textarea id="ent-edit-remark" class="w-full p-2 border rounded-lg text-sm outline-none focus:border-mori-wood custom-scrollbar" placeholder="活動備註說明 (選填)" rows="3"></textarea>
                 <div class="flex items-center gap-2">
                     <input type="date" id="ent-edit-start-date" class="w-full p-2 border rounded-lg text-sm bg-white" title="辦理起日">
                     <span class="text-sm text-gray-500">迄</span>
@@ -382,7 +363,6 @@
         </div>
     </div>
 
-    <!-- 🌟 政府編輯 Modal -->
     <div id="gov-edit-modal" class="modal-overlay hidden" style="z-index: 110;">
         <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-emerald-500 relative shadow-2xl">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('gov-edit-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -420,7 +400,6 @@
         </div>
     </div>
 
-    <!-- 🌟 操作員認證與儀表板管理 Modal -->
     <div id="training-cert-modal" class="modal-overlay hidden" style="z-index: 120;">
         <div class="modal-content w-full max-w-4xl bg-white border-t-4 border-mori-sage rounded-2xl shadow-2xl relative flex flex-col h-[85vh] md:h-[80vh]">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('training-cert-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -433,13 +412,10 @@
         </div>
     </div>
 
-    <!-- 🌟 其他公用 Modal -->
     <div id="auth-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6 bg-white border-t-4 border-red-500 relative text-center shadow-2xl"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('auth-modal')"><i class="fas fa-times text-xl"></i></button><div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-lock text-2xl text-red-500"></i></div></div><h3 id="auth-modal-title" class="text-xl font-bold text-gray-800 mb-2 tracking-wide">管理員權限驗證</h3><p id="auth-modal-desc" class="text-[12px] text-gray-500 mb-5">請輸入授權密碼以繼續操作</p><input type="password" id="auth-pwd-input" class="w-full p-3 border-2 border-gray-200 rounded-lg text-center text-lg font-mono tracking-widest focus:outline-none focus:border-red-500 mb-4 bg-gray-50 placeholder-gray-400" placeholder="輸入密碼"><button id="auth-confirm-btn" class="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-md transition flex items-center justify-center tracking-wide"><i class="fas fa-check-circle mr-2"></i>確認授權</button></div></div>
     <div id="confirm-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6 bg-white border-t-4 border-orange-500 relative text-center shadow-2xl"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('confirm-modal')"><i class="fas fa-times text-xl"></i></button><div class="mb-4 flex justify-center"><div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center shadow-inner"><i class="fas fa-exclamation-triangle text-2xl text-orange-500"></i></div></div><h3 id="confirm-modal-title" class="text-xl font-bold text-gray-800 mb-2 tracking-wide">確認操作</h3><p id="confirm-modal-desc" class="text-[13px] text-gray-600 mb-6 leading-relaxed">您確定要執行此操作嗎？</p><div class="flex gap-3"><button id="confirm-cancel-btn" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition shadow-sm border border-gray-200" onclick="window.closeModal('confirm-modal')">取消</button><button id="confirm-ok-btn" class="flex-1 py-2.5 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition shadow-md">確定</button></div></div></div>
     <div id="share-qrcode-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-500 relative text-center shadow-2xl"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('share-qrcode-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-xl font-bold text-gray-800 mb-2 tracking-wide"><i class="fas fa-qrcode text-blue-500 mr-2"></i>掃描條碼分享</h3><p class="text-[12px] text-gray-500 mb-4">請現場夥伴直接掃描，或點擊複製連結</p><div id="qrcode-container" class="flex justify-center mb-4 p-4 bg-white border-2 border-gray-100 rounded-xl shadow-inner min-h-[180px] items-center"></div><input type="text" id="share-modal-url" class="w-full p-2.5 border-2 border-gray-200 rounded-lg text-xs bg-gray-50 outline-none text-gray-600 mb-3 font-mono" readonly><button id="share-modal-copy-btn" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold shadow-md transition flex items-center justify-center tracking-wide"><i class="fas fa-copy mr-2"></i>複製專屬連結</button></div></div>
     <div id="custom-prompt-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.closeModal('custom-prompt-modal')"><i class="fas fa-times text-xl"></i></button><h3 id="custom-prompt-title" class="text-lg font-bold text-gray-800 mb-4 tracking-wide"></h3><input type="text" id="custom-prompt-input" class="w-full p-3 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-yellow-500 focus:outline-none mb-5 shadow-inner text-gray-700"><div class="flex gap-3"><button id="custom-prompt-cancel" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition shadow-sm border border-gray-200">取消</button><button id="custom-prompt-confirm" class="flex-1 py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-lg font-bold hover:shadow-lg transition shadow-md">確認產出</button></div></div></div>
-
-    <!-- 🌟 最新活動列表 Modal -->
     <div id="latest-events-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content max-w-2xl p-6 bg-white border-t-4 border-red-500 rounded-2xl shadow-2xl relative flex flex-col h-[75vh] md:h-[70vh]">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('latest-events-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -448,9 +424,7 @@
                 <p class="text-xs text-gray-500 mt-1">點擊標題展開活動詳情與規範，完成歸戶即可自動獲取抽獎資格！</p>
             </div>
             <div class="flex-grow overflow-y-auto custom-scrollbar p-2">
-                <div id="latest-events-accordion-container" class="space-y-3">
-                    <!-- JS 動態渲染折疊內容 -->
-                </div>
+                <div id="latest-events-accordion-container" class="space-y-3"></div>
             </div>
             <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end flex-shrink-0">
                 <button class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition shadow-sm" onclick="window.closeModal('latest-events-modal')">關閉</button>
@@ -460,7 +434,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        // 🌟 升級：新增 writeBatch 以支援原子交易防呆
         import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, increment, deleteDoc, updateDoc, arrayUnion, serverTimestamp, enableIndexedDbPersistence, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
@@ -473,7 +446,6 @@
         let db = null, isOfflineMode = false;
         let summaryState = { entMode: false, entSelected: new Set(), govMode: false, govSelected: new Set() };
         
-        // 🌟 新增：記憶目前展開的折疊選單狀態
         window.entOpenGroups = window.entOpenGroups || new Set();
         window.govOpenGroups = window.govOpenGroups || new Set();
 
@@ -738,7 +710,7 @@
                 entContainer.innerHTML = entHtml;
             }
             if (govContainer) {
-                const govData = [ { title: '一、 課程與活動內容', qs: ['1. 主題契合度：本次活動主題與您的預期或需求是否相符？', '2. 內容豐富度：課程或導覽的內容安排是否充實、具啟發性？', '3. 專業展現：講師或導覽人員的專業度及表達能力是否良好？'] }, { title: '二、 計畫效益與價值獲得', qs: ['4. 核心知能增進：參與活動後，是否有效提升您對相關議題的了解？', '5. 實務應用性：活動獲得的資訊，對您未來生活或工作是否有實質幫助？', '6. 計畫願景認同：您是否認同本計畫欲傳達的核心價值(如：永續、在地化)？'] }, { title: '三、 行政流程與服務滿意度', qs: ['7. 報名與資訊傳達：活動前的報名系統或資訊公告是否即時且清楚？', '8. 現場服務品質：活動期間工作人員的服務態度及問題解決效率？', '9. 時間與節奏規劃：課程或活動流程的時間分配與節奏安排是否適當？'] }, { title: '四、 綜合評價', qs: ['10. 整體活動滿意度：綜合以上各項，您對本次活動的總體評價。', '11. 持續參與意願：未來若舉辦相關後續活動，您參與或推薦他人的意願。'] } ];
+                const govData = [ { title: '一、 課程與活動內容', qs: ['1. 主題契合度：本次活動主題與您的預期或需求是否相符？', '2. 內容豐富度：課程或導覽的內容安排是否充實、具啟發性？', '3. 專業展現：講師或導覽人員 的 專業度及表達能力是否良好？'] }, { title: '二、 計畫效益與價值獲得', qs: ['4. 核心知能增進：參與活動後，是否有效提升您對相關議題的了解？', '5. 實務應用性：活動獲得的資訊，對您未來生活或工作是否有實質幫助？', '6. 計畫願景認同：您是否認同本計畫欲傳達的核心價值(如：永續、在地化)？'] }, { title: '三、 行政流程與服務滿意度', qs: ['7. 報名與資訊傳達：活動前的報名系統或資訊公告是否即時且清楚？', '8. 現場服務品質：活動期間工作人員的服務態度及問題解決效率？', '9. 時間與節奏規劃：課程或活動流程的時間分配與節奏安排是否適當？'] }, { title: '四、 綜合評價', qs: ['10. 整體活動滿意度：綜合以上各項，您對本次活動的總體評價。', '11. 持續參與意願：未來若舉辦相關後續活動，您參與或推薦他人的意願。'] } ];
                 let qIndex = 1; let govHtml = '';
                 govData.forEach((sec, idx) => {
                     let qsHtml = ''; sec.qs.forEach(q => { qsHtml += `<div class="gov-eval-q" data-qid="gov-q${qIndex++}"><p class="text-[17px] text-gray-900 mb-3 font-black tracking-wide leading-relaxed">${q}</p><div class="number-rating flex gap-2 justify-center mt-2"></div></div>`; });
@@ -774,7 +746,6 @@
             if(!db) return;
             const errHandler = (err) => { console.warn(err); if(!isOfflineMode) { isOfflineMode = true; loadMockData(); window.showToast('資料庫連線受阻，已切換至展示模式'); } };
             
-            // 🌟 防抖動渲染機制
             let _govRenderTimer = null;
             window.debouncedRenderGov = () => { clearTimeout(_govRenderTimer); _govRenderTimer = setTimeout(() => window.renderGovDashboard(), 300); };
             let _entRenderTimer = null;
@@ -828,7 +799,8 @@
         function loadMockData() {
             globalEntData.projects = [{id:'mock_ent_1', orgName:'測試企業', year:'2026', event:'測試活動', carbon:875, green:168000, eval_count:4, total_score:230, isAuthorized:true}];
             globalGovData.projects = [{id:'mock_gov_1', name:'測試計畫', event:'測試推廣', date:'2026-03-05', carbon:3200, green:15000, eval_count:10, total_score:480, isAuthorized:true}];
-            window.renderGovDashboard(); window.renderEntProjectsDashboard(); 
+            if(typeof window.debouncedRenderGov === 'function') window.debouncedRenderGov(); 
+            if(typeof window.debouncedRenderEnt === 'function') window.debouncedRenderEnt();
         }
 
         window.getEligibleEventsForProject = function(proj, type) {
@@ -849,10 +821,7 @@
             const grid = document.getElementById('enterprise-grid'); 
             const select = document.getElementById('ent-proj-select');
             if(!grid || !select) return; 
-            
-            // 🌟 狀態記憶：保留當前選擇的下拉值
             const currentSelectVal = select.value;
-            
             select.innerHTML = '<option value="">-- 先選擇企業專屬活動儀表板 --</option>'; 
             grid.innerHTML = '';
             
@@ -866,13 +835,12 @@
                 const isUncat = sn === '未分類'; const firstProjName = grouped[sn][0]?.orgName || '未命名企業'; 
                 const groupHeader = document.createElement('div'); 
                 groupHeader.className = `bg-yellow-50/90 p-3.5 rounded-xl font-bold text-yellow-800 cursor-pointer flex justify-between items-center mb-3 shadow-sm border border-yellow-200 hover:bg-yellow-100 transition-colors sticky top-0 z-40 backdrop-blur-md`;
-                groupHeader.innerHTML = `<span><i class="fas ${isUncat ? 'fa-folder-open' : 'fa-building'} mr-2 text-yellow-600"></i>${isUncat ? '一般活動 (未設定序號)' : `<span class="text-[0.55em] opacity-80 font-bold tracking-widest mr-0.5 align-middle">活動序號：</span><span class="font-mono text-yellow-700 bg-white px-1.5 py-0.5 rounded shadow-sm">${sn}</span><span class="ml-2 text-yellow-900 border-l-2 border-yellow-400 pl-2">${firstProjName}</span>`} <span class="text-[11px] font-bold text-white bg-yellow-500 px-2 py-0.5 rounded-full shadow-inner ml-2">${grouped[sn].length} 筆</span></span> <i class="fas fa-chevron-down text-yellow-500 transition-transform" style="transform: rotate(-90deg);"></i>`;
+                groupHeader.innerHTML = `<span><span class="w-5 text-center inline-block mr-1"><i class="fas ${isUncat ? 'fa-folder-open' : 'fa-building'} text-yellow-600"></i></span>${isUncat ? '一般活動 (未設定序號)' : `<span class="text-[0.55em] opacity-80 font-bold tracking-widest mr-0.5 align-middle">活動序號：</span><span class="font-mono text-yellow-700 bg-white px-1.5 py-0.5 rounded shadow-sm">${sn}</span><span class="ml-2 text-yellow-900 border-l-2 border-yellow-400 pl-2">${firstProjName}</span>`} <span class="text-[11px] font-bold text-white bg-yellow-500 px-2 py-0.5 rounded-full shadow-inner ml-2">${grouped[sn].length} 筆</span></span> <i class="fas fa-chevron-down text-yellow-500 transition-transform" style="transform: rotate(-90deg);"></i>`;
                 
                 const groupGrid = document.createElement('div'); 
                 groupGrid.className = `grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 hidden items-start`;
                 groupGrid.id = `ent-group-${sn}`;
                 
-                // 🌟 狀態記憶：還原之前展開的群組
                 if (window.entOpenGroups && window.entOpenGroups.has(sn)) {
                     groupGrid.classList.remove('hidden');
                     const icon = groupHeader.querySelector('.fa-chevron-down');
@@ -987,7 +955,6 @@
                     let optionHtml = `<option value="${proj.id}" ${isExpired ? 'disabled' : ''}>`; optionHtml += !proj.isAuthorized ? '🟡 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 '); optionHtml += `${proj.orgName} ${isExpired ? '(已截止)' : ''}</option>`; select.innerHTML += optionHtml;
                 }); 
             });
-            // 🌟 狀態記憶：還原下拉選單
             if (currentSelectVal) select.value = currentSelectVal;
             window.checkHashAndLocate();
         };
@@ -996,10 +963,7 @@
             const grid = document.getElementById('gov-projects-grid'); 
             const select = document.getElementById('user-proj-select');
             if (!grid || !select) return; 
-            
-            // 🌟 狀態記憶：保留當前選擇的下拉值
             const currentSelectVal = select.value;
-            
             select.innerHTML = '<option value="">-- 請選擇參與計畫 --</option>'; 
             grid.innerHTML = '';
             
@@ -1019,7 +983,6 @@
                 groupGrid.className = `grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 hidden items-start`;
                 groupGrid.id = `gov-group-${sn}`;
                 
-                // 🌟 狀態記憶：還原之前展開的群組
                 if (window.govOpenGroups && window.govOpenGroups.has(sn)) {
                     groupGrid.classList.remove('hidden');
                     const icon = groupHeader.querySelector('.fa-chevron-down');
@@ -1120,127 +1083,41 @@
                     let optionHtml = `<option value="${proj.id}" ${isExpired ? 'disabled' : ''}>`; optionHtml += !proj.isAuthorized ? '🟡 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 '); optionHtml += `${proj.name} ${isExpired ? '(已截止)' : ''}</option>`; select.innerHTML += optionHtml;
                 });
             });
-            // 🌟 狀態記憶：還原下拉選單
             if (currentSelectVal) select.value = currentSelectVal;
             window.checkHashAndLocate();
         };
 
-        function bindSummaryEvents() {
-            const entToggle = document.getElementById('toggle-ent-summary-btn');
-            if(entToggle) entToggle.onclick = () => { summaryState.entMode = true; summaryState.entSelected.clear(); document.getElementById('ent-summary-count').textContent = '0'; document.getElementById('ent-summary-action-bar')?.classList.remove('hidden'); if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard(); };
-            const entCancel = document.getElementById('cancel-ent-summary-btn');
-            if(entCancel) entCancel.onclick = () => { summaryState.entMode = false; summaryState.entSelected.clear(); document.getElementById('ent-summary-action-bar')?.classList.add('hidden'); if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard(); };
-            const entGen = document.getElementById('generate-ent-summary-btn');
-            if(entGen) entGen.onclick = () => {
-                if (summaryState.entSelected.size === 0) return window.showToast('請至少選擇一張活動卡片');
-                window.customPrompt("📝 請輸入本次總承報表的專案名稱：", "【年度總結】企業綜合永續績效", (customTitle) => {
-                    if (customTitle === null) return; window.showToast('🔄 報表生成中...'); const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【年度總結】企業綜合永續績效";
-                    let combined = { orgName: finalTitle, event: `共彙整 ${summaryState.entSelected.size} 個專案活動`, year: new Date().getFullYear(), eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, carbon: 0, green: 0, linkedProject: { type: '綜合社會價值創造', amount: 0, sroiWeight: 1 }, feedbacks: [] };
-                    let sroiSum = 0; let includedProjectsList = []; 
-                    summaryState.entSelected.forEach(id => {
-                        const p = globalEntData.projects.find(x => x.id === id); if(!p) return;
-                        combined.eval_count += (Number(p.eval_count) || 0); combined.total_score += (Number(p.total_score) || 0); combined.score_e += (Number(p.score_e) || 0); combined.score_s += (Number(p.score_s) || 0); combined.score_g += (Number(p.score_g) || 0); combined.carbon += (Number(p.carbon) || 0); combined.green += (Number(p.green) || 0);
-                        let currentSroi = '-';
-                        if(p.linkedProject && p.linkedProject.amount > 0) { currentSroi = p.linkedProject.sroiWeight || 1; combined.linkedProject.amount += p.linkedProject.amount; sroiSum += (p.linkedProject.amount * currentSroi); }
-                        if(p.feedbacks) combined.feedbacks.push(...p.feedbacks); includedProjectsList.push({ name: p.orgName + (p.event ? ` (${p.event})` : ''), date: p.year || '未提供', sroi: currentSroi });
-                    });
-                    if(combined.linkedProject.amount > 0) combined.linkedProject.sroiWeight = Number((sroiSum / combined.linkedProject.amount).toFixed(2));
-                    const ec = combined.eval_count; const totalScore = combined.total_score;
-                    let baseAvgNum = ec > 0 ? (totalScore / (ec * 12)) : 0; baseAvgNum = Math.min(5.0, baseAvgNum); let avgE = baseAvgNum.toFixed(1), avgS = baseAvgNum.toFixed(1), avgG = baseAvgNum.toFixed(1);
-                    const scoreE = combined.score_e, scoreS = combined.score_s, scoreG = combined.score_g, esgSum = scoreE + scoreS + scoreG;
-                    if (esgSum > 0) { const weightE = scoreE / (esgSum / 3), weightS = scoreS / (esgSum / 3), weightG = scoreG / (esgSum / 3); avgE = Math.min(5.0, baseAvgNum * weightE).toFixed(1); avgS = Math.min(5.0, baseAvgNum * weightS).toFixed(1); avgG = Math.min(5.0, baseAvgNum * weightG).toFixed(1); }
-                    const finalOverallNum = (Number(avgE) + Number(avgS) + Number(avgG)) / 3; const avgOverall = finalOverallNum > 0 ? finalOverallNum.toFixed(1) : "0.0"; const avgOverallPercent = finalOverallNum > 0 ? (finalOverallNum / 5) * 100 : 0;
-                    let sroiHtml = ''; 
-                    if (combined.linkedProject.amount > 0) { const sroiTotal = Math.floor(combined.linkedProject.amount * combined.linkedProject.sroiWeight); sroiHtml = `<div class="mt-3 bg-gradient-to-br from-yellow-50 to-amber-50 p-4 pb-5 rounded-xl border-2 border-yellow-200 shadow-sm relative group"><i class="fas fa-crown absolute bottom-1 right-2 text-5xl text-yellow-500/10 data-html2canvas-ignore"></i><div class="flex justify-between items-center mb-3 relative z-10"><div class="flex items-center gap-2"><div class="bg-yellow-100 text-yellow-600 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm"><i class="fas fa-hand-holding-heart"></i></div><span class="text-[12px] font-bold text-yellow-800">${combined.linkedProject.type}</span></div><div class="bg-white px-2 py-0.5 rounded text-[10px] font-bold text-yellow-600 border border-yellow-200 shadow-sm flex items-center"><i class="fas fa-arrow-trend-up mr-1"></i>綜合加權總合計算</div></div><div class="flex justify-between items-end relative z-10"><div><p class="text-[13px] text-yellow-800 font-black tracking-wide mb-1 block">投入預算及綠色消費總合</p><div class="font-bold text-yellow-700 text-sm block leading-normal py-0.5">$${combined.linkedProject.amount.toLocaleString()}</div></div><div class="text-right"><p class="text-[13px] text-yellow-800 font-black tracking-wide mb-1 block">創造價值總合</p><div class="font-black text-yellow-700 text-2xl block tracking-normal leading-normal py-0.5">$${sroiTotal.toLocaleString()}</div></div></div></div>`; }
-                    let feedbackHtml = ''; 
-                    if (combined.feedbacks.length > 0) { const listItems = combined.feedbacks.map(f => `<div class="mb-2 text-[11px] border-b border-gray-100 pb-1.5 last:border-0"><span class="text-gray-400 mr-1">${new Date(f.time).toLocaleDateString('zh-TW')}</span> <span class="font-bold text-gray-700">${f.text}</span></div>`).join(''); feedbackHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm feedback-section"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-yellow-100"><span class="text-xs font-bold text-yellow-700"><i class="fas fa-comments mr-1.5"></i>綜合參與者寶貴意見 (${combined.feedbacks.length})</span></div><div class="feedback-list w-full">${listItems}</div></div>`; }
-                    let projectsListHtml = ''; 
-                    if (includedProjectsList.length > 0) { const listItems = includedProjectsList.map(item => `<div class="flex justify-between items-center text-[11px] mb-1.5 border-b border-gray-50 pb-1.5 last:border-0 last:pb-0 last:mb-0"><div class="flex flex-col flex-1 min-w-0 pr-2"><span class="font-bold text-gray-700 break-words leading-tight">${item.name}</span><span class="text-gray-400 text-[10px] mt-0.5 font-medium"><i class="fas fa-chart-line mr-1 text-mori-sage opacity-70"></i>SROI 加權: <span class="text-mori-forest font-bold">${item.sroi !== '-' ? 'x' + item.sroi : '無'}</span></span></div><span class="text-gray-500 shrink-0 font-mono tracking-tight">${item.date}</span></div>`).join(''); projectsListHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-yellow-100"><span class="text-xs font-bold text-yellow-700"><i class="fas fa-tasks mr-1.5"></i>已整併活動清單 (${includedProjectsList.length})</span></div><div class="w-full">${listItems}</div></div>`; }
-                    const summaryCode = Math.random().toString(36).substring(2, 7).toUpperCase(); const traceUrl = `https://farmcmd.github.io/ESGT/#ESG-board-${summaryCode}`;
-                    const cardHtml = `<div class="relative h-full wrapper-to-export"><div class="bg-gradient-to-br from-white to-yellow-50/50 p-5 rounded-2xl shadow-lg border-2 border-yellow-500 relative flex flex-col h-full"><div class="absolute top-0 left-0 gold-shine text-[11px] font-black px-4 py-1.5 rounded-tl-xl rounded-br-xl shadow-md z-20"><i class="fas fa-crown mr-1"></i>企業專案總結承報</div><div class="flex-grow mt-6 mb-2"><h4 class="text-[18px] font-black text-yellow-900 mb-1.5 leading-snug tracking-wide">${combined.orgName}</h4><p class="text-sm font-bold text-yellow-600 flex items-start mb-2"><i class="fas fa-layer-group mr-1.5 mt-0.5"></i>${combined.event}</p></div><div class="mb-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm"><div class="flex justify-between items-end mb-1.5"><span class="text-[13px] font-black text-gray-700 flex items-center"><i class="fas fa-clipboard-check text-yellow-500 mr-1.5 text-base"></i>綜合 ESG 滿意度 (${ec}人)</span><span class="text-sm font-black text-yellow-600">${avgOverall} <span class="text-[10px] text-gray-400 font-normal">/ 5.0</span></span></div><div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden mb-2.5"><div class="bg-yellow-400 h-1.5 rounded-full" style="width: ${avgOverallPercent}%"></div></div><div class="grid grid-cols-3 gap-2"><div class="bg-green-50 rounded-lg p-1.5 text-center border border-green-100"><p class="text-[9px] text-green-700 font-bold mb-0.5">E 環境</p><p class="text-[13px] font-black text-green-600">${avgE}</p></div><div class="bg-blue-50 rounded-lg p-1.5 text-center border border-blue-100"><p class="text-[9px] text-blue-700 font-bold mb-0.5">S 社會</p><p class="text-[13px] font-black text-blue-600">${avgS}</p></div><div class="bg-amber-50 rounded-lg p-1.5 text-center border border-amber-100"><p class="text-[9px] text-amber-700 font-bold mb-0.5">G 治理</p><p class="text-[13px] font-black text-amber-600">${avgG}</p></div></div></div><div class="grid grid-cols-2 gap-3 mt-2"><div class="bg-white p-3.5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計減碳</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-1">${combined.carbon.toLocaleString()} <span class="text-[10px] text-gray-400 font-normal">g/CO2e</span></p></div><div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計綠消</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-0.5"><span class="text-[12px] text-gray-400 font-normal">$</span>${combined.green.toLocaleString()}</p></div></div>${projectsListHtml}${sroiHtml}${feedbackHtml}<div class="mt-4 pt-3 border-t border-yellow-200/60 flex justify-between items-center text-[10px] text-gray-500 pb-1"><div class="leading-relaxed break-all"><span class="w-4 text-center mr-1 inline-block"><i class="fas fa-link"></i></span>溯源網址: <br class="sm:hidden"> ${traceUrl}</div><div class="shrink-0 ml-2 font-mono font-black text-blue-500 bg-blue-50 border border-blue-100 px-2 py-1 rounded tracking-wider shadow-sm">#${summaryCode}</div></div></div></div>`;
-                    const container = document.getElementById('summary-card-container'); container.innerHTML = cardHtml; const dlBtn = document.getElementById('download-summary-btn'); dlBtn.onclick = () => window.exportDashboardCard(container.querySelector('.wrapper-to-export'), `探探里山_企業總承報表.png`);
-                    summaryState.entMode = false; summaryState.entSelected.clear(); document.getElementById('ent-summary-action-bar')?.classList.add('hidden'); if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard(); window.openModal('summary-preview-modal');
-                });
-            };
+        document.getElementById('log-ent-proj-btn')?.addEventListener('click', () => {
+            const select = document.getElementById('ent-proj-select');
+            if(select && select.value) {
+                const proj = globalEntData.projects.find(p => p.id === select.value);
+                if(document.getElementById('ent-eval-target-name')) document.getElementById('ent-eval-target-name').textContent = proj ? proj.orgName : '';
+                if(document.getElementById('ent-eval-target-carbon')) document.getElementById('ent-eval-target-carbon').textContent = Math.round(state.totalCarbon);
+                if(document.getElementById('ent-eval-target-green')) document.getElementById('ent-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
+                document.querySelectorAll('.ent-eval-q .number-rating i').forEach(i => { i.classList.remove('text-yellow-400', 'drop-shadow-sm'); i.classList.add('text-gray-300'); });
+                if (document.getElementById('ent-eval-feedback')) document.getElementById('ent-eval-feedback').value = '';
+                window.openModal('ent-eval-modal');
+            } else { window.showToast('請先選擇要歸戶的企業'); }
+        });
 
-            const govToggle = document.getElementById('toggle-gov-summary-btn');
-            if(govToggle) govToggle.onclick = () => { summaryState.govMode = true; summaryState.govSelected.clear(); document.getElementById('gov-summary-count').textContent = '0'; document.getElementById('gov-summary-action-bar')?.classList.remove('hidden'); if(typeof renderGovDashboard === 'function') renderGovDashboard(); };
-            const govCancel = document.getElementById('cancel-gov-summary-btn');
-            if(govCancel) govCancel.onclick = () => { summaryState.govMode = false; summaryState.govSelected.clear(); document.getElementById('gov-summary-action-bar')?.classList.add('hidden'); if(typeof renderGovDashboard === 'function') renderGovDashboard(); };
-            const govGen = document.getElementById('generate-gov-summary-btn');
-            if(govGen) govGen.onclick = () => {
-                if (summaryState.govSelected.size === 0) return window.showToast('請至少選擇一張活動卡片');
-                window.customPrompt("📝 請輸入本次總承報表的計畫名稱：", "【專案總結】計畫執行綜合績效", (customTitle) => {
-                    if (customTitle === null) return window.showToast('🔄 報表生成中...'); const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【專案總結】計畫執行綜合績效";
-                    let combined = { name: finalTitle, event: `共彙整 ${summaryState.govSelected.size} 個計畫活動`, eval_count: 0, total_score: 0, carbon: 0, green: 0, budget: 0, sroi: 1, feedbacks: [] };
-                    let sroiSum = 0; let includedProjectsList = [];
-                    summaryState.govSelected.forEach(id => {
-                        const p = globalGovData.projects.find(x => x.id === id); if(!p) return;
-                        combined.eval_count += (Number(p.eval_count) || 0); combined.total_score += (Number(p.total_score) || 0); combined.carbon += (Number(p.carbon) || 0); combined.green += (Number(p.green) || 0);
-                        let currentSroi = '-'; if(p.budget && p.budget > 0) { currentSroi = Number(p.sroi) || 1; const pBudget = Number(p.budget) || 0; combined.budget += pBudget; sroiSum += (pBudget * currentSroi); }
-                        if(p.feedbacks) combined.feedbacks.push(...p.feedbacks); includedProjectsList.push({ name: p.name + (p.event ? ` (${p.event})` : ''), date: p.date || '未提供', sroi: currentSroi });
-                    });
-                    if(combined.budget > 0) combined.sroi = Number((sroiSum / combined.budget).toFixed(2));
-                    const ec = combined.eval_count; const totalScore = combined.total_score; const avg = ec > 0 ? (totalScore / (ec * 11)).toFixed(1) : "0.0"; const avgPercent = ec > 0 ? ((totalScore / (ec * 11)) / 5) * 100 : 0;
-                    let sroiHtml = ''; if (combined.budget > 0) { const sroiTotal = Math.floor(sroiSum); sroiHtml = `<div class="mt-3 bg-gradient-to-br from-yellow-50 to-amber-50 p-4 pb-5 rounded-xl border-2 border-yellow-200 shadow-sm relative group"><i class="fas fa-crown absolute bottom-1 right-2 text-5xl text-yellow-500/10 data-html2canvas-ignore"></i><div class="flex justify-between items-center mb-3 relative z-10"><div class="flex items-center gap-2"><div class="bg-yellow-100 text-yellow-600 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm"><i class="fas fa-chart-line"></i></div><span class="text-[12px] font-bold text-yellow-800">計畫衍生綜合 SROI</span></div><div class="bg-white px-2 py-0.5 rounded text-[10px] font-bold text-yellow-600 border border-yellow-200 shadow-sm flex items-center"><i class="fas fa-arrow-trend-up mr-1"></i>綜合加權總合計算</div></div><div class="flex justify-between items-end relative z-10"><div><p class="text-[10px] text-yellow-600/80 mb-1 font-medium block">投入預算及綠色消費總合</p><div class="font-bold text-yellow-700 text-sm block leading-normal py-0.5">$${combined.budget.toLocaleString()}</div></div><div class="text-right"><p class="text-[11px] text-yellow-600/80 font-bold mb-1 block">創造價值總合</p><div class="font-black text-yellow-700 text-2xl block tracking-normal leading-normal py-0.5">$${sroiTotal.toLocaleString()}</div></div></div></div>`; }
-                    let feedbackHtml = ''; if (combined.feedbacks.length > 0) { const listItems = combined.feedbacks.map(f => `<div class="mb-2 text-[11px] border-b border-gray-100 pb-1.5 last:border-0"><span class="text-gray-400 mr-1">${new Date(f.time).toLocaleDateString('zh-TW')}</span> <span class="font-bold text-gray-700">${f.text}</span></div>`).join(''); feedbackHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm feedback-section"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-yellow-100"><span class="text-xs font-bold text-yellow-700"><i class="fas fa-comments mr-1.5"></i>綜合參與者回饋 (${combined.feedbacks.length})</span></div><div class="feedback-list w-full">${listItems}</div></div>`; }
-                    let projectsListHtml = ''; if (includedProjectsList.length > 0) { const listItems = includedProjectsList.map(item => `<div class="flex justify-between items-start text-[11px] mb-2 border-b border-gray-50 pb-2 last:border-0 last:pb-0 last:mb-0"><div class="flex flex-col flex-1 min-w-0 pr-3"><span class="font-bold text-gray-700 break-words whitespace-normal leading-relaxed">${item.name}</span><span class="text-gray-400 text-[10px] mt-1 font-medium"><i class="fas fa-chart-line mr-1 text-blue-400 opacity-70"></i>SROI 加權: <span class="text-blue-600 font-bold">${item.sroi !== '-' ? 'x' + item.sroi : '無'}</span></span></div><span class="text-gray-500 shrink-0 font-mono tracking-tight pt-0.5">${item.date}</span></div>`).join(''); projectsListHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-blue-200 shadow-sm"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-blue-100"><span class="text-xs font-bold text-blue-800"><i class="fas fa-tasks mr-1.5"></i>已整併計畫清單 (${includedProjectsList.length})</span></div><div class="w-full">${listItems}</div></div>`; }
-                    const summaryCode = Math.random().toString(36).substring(2, 7).toUpperCase(); const traceUrl = `https://farmcmd.github.io/ESGT/#OKR-board-${summaryCode}`;
-                    const cardHtml = `<div class="relative h-full wrapper-to-export"><div class="bg-gradient-to-br from-white to-blue-50/50 p-5 rounded-2xl shadow-lg border-2 border-yellow-500 relative flex flex-col h-full"><div class="absolute top-0 left-0 gold-shine text-[11px] font-black px-4 py-1.5 rounded-tl-xl rounded-br-xl shadow-md z-20"><i class="fas fa-crown mr-1"></i>政府計畫總結承報</div><div class="flex-grow mt-6 mb-2"><h4 class="text-[18px] font-black text-blue-900 mb-1.5 leading-snug tracking-wide">${combined.name}</h4><p class="text-sm font-bold text-blue-600 flex items-start mb-2"><i class="fas fa-layer-group mr-1.5 mt-0.5"></i>${combined.event}</p></div><div class="mb-3 bg-white p-3 rounded-xl border border-blue-200 shadow-sm"><div class="flex justify-between items-end mb-1.5"><span class="text-[13px] font-black text-gray-700 flex items-center"><i class="fas fa-star text-yellow-500 mr-1.5 text-base"></i>綜合活動滿意度 (${ec}人)</span><span class="text-sm font-black text-yellow-600">${avg} <span class="text-[10px] text-gray-400 font-normal">/ 5.0</span></span></div><div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden"><div class="bg-yellow-400 h-1.5 rounded-full" style="width: ${avgPercent}%"></div></div></div><div class="grid grid-cols-2 gap-3 mt-2"><div class="bg-white p-3.5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計減碳</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-1">${combined.carbon.toLocaleString()} <span class="text-[10px] text-gray-400 font-normal">g/CO2e</span></p></div><div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計綠消</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-0.5"><span class="text-[12px] text-gray-400 font-normal">$</span>${combined.green.toLocaleString()}</p></div></div>${projectsListHtml}${sroiHtml}${feedbackHtml}<div class="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-end text-[10px] text-gray-500 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-400"></i>溯源網址: <br class="sm:hidden"> ${traceUrl}<span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-blue-500 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded tracking-wider shadow-sm">#${summaryCode}</span></span><i class="fas fa-qrcode text-gray-300 text-xl flex-shrink-0 mb-0.5"></i></div></div></div>`;
-                    const container = document.getElementById('summary-card-container'); container.innerHTML = cardHtml; const dlBtn = document.getElementById('download-summary-btn'); dlBtn.onclick = () => window.exportDashboardCard(container.querySelector('.wrapper-to-export'), `探探里山_計畫總承報表.png`);
-                    summaryState.govMode = false; summaryState.govSelected.clear(); document.getElementById('gov-summary-action-bar')?.classList.add('hidden'); if(typeof renderGovDashboard === 'function') renderGovDashboard(); window.openModal('summary-preview-modal');
-                });
-            };
-        }
+        document.getElementById('log-user-proj-btn')?.addEventListener('click', () => {
+            const select = document.getElementById('user-proj-select');
+            if(select && select.value) {
+                const proj = globalGovData.projects.find(p => p.id === select.value);
+                if(document.getElementById('gov-eval-target-name')) document.getElementById('gov-eval-target-name').textContent = proj ? proj.name : '';
+                if(document.getElementById('gov-eval-target-carbon')) document.getElementById('gov-eval-target-carbon').textContent = Math.round(state.totalCarbon);
+                if(document.getElementById('gov-eval-target-green')) document.getElementById('gov-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
+                document.querySelectorAll('.gov-eval-q .number-rating i').forEach(i => { i.classList.remove('text-yellow-400', 'drop-shadow-sm'); i.classList.add('text-gray-300'); });
+                if (document.getElementById('gov-eval-feedback')) document.getElementById('gov-eval-feedback').value = '';
+                window.openModal('gov-eval-modal');
+            } else { window.showToast('請先選擇要歸戶的計畫'); }
+        });
 
-        window.autoDownloadCert = async function(targetState) {
-            window.showToast('🔄 歸戶完成！正在為您自動產出永續證書...');
-            let modal = document.getElementById('cert-preview-modal');
-            if (!modal) {
-                modal = document.createElement('div'); modal.id = 'cert-preview-modal'; modal.className = 'modal-overlay hidden'; modal.style.zIndex = '9999';
-                modal.innerHTML = `<div class="modal-content max-w-lg p-6 bg-white border-t-4 border-mori-forest rounded-2xl shadow-2xl relative"><button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('cert-preview-modal')"><i class="fas fa-times text-xl"></i></button><h3 class="text-xl font-bold text-gray-800 mb-4 text-center"><i class="fas fa-award text-yellow-500 mr-2"></i>歸戶成功！您的永續證書</h3><div class="bg-gray-50 p-2 rounded-xl shadow-inner max-h-[50vh] overflow-y-auto no-scrollbar flex justify-center items-center relative min-h-[200px]"><div id="cert-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/90 z-10 rounded-xl"><i class="fas fa-spinner fa-spin text-3xl text-mori-sage mb-3"></i><span class="text-sm font-bold text-gray-500">系統正在繪製專屬證書...</span></div><img id="cert-preview-img" src="" alt="永續證書" class="w-full h-auto rounded shadow-sm opacity-0 transition-opacity duration-500"></div><div class="mt-4 flex flex-col justify-between items-center gap-3"><p class="text-[11px] text-gray-500 hidden md:block w-full text-left"><i class="fas fa-info-circle mr-1"></i>手機用戶可直接長按圖片儲存，或使用下方進階選項</p><div class="flex flex-wrap justify-center md:justify-end gap-2 w-full"><button class="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-200 transition flex-1 md:flex-none" onclick="window.closeModal('cert-preview-modal')">關閉</button><button id="download-cert-btn" disabled class="px-4 py-2.5 bg-gray-300 text-gray-500 rounded-lg text-sm font-bold shadow-sm cursor-not-allowed flex items-center justify-center flex-1 md:flex-none transition-all"><i class="fas fa-spinner fa-spin mr-1.5"></i> 繪製中...</button><button id="email-cert-btn" class="px-4 py-2.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-100 transition flex items-center justify-center flex-1 md:flex-none"><i class="fas fa-envelope mr-1.5"></i>Email 傳送</button><button id="cloud-cert-btn" class="px-4 py-2.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-100 transition flex items-center justify-center flex-1 md:flex-none"><i class="fas fa-cloud-upload-alt mr-1.5"></i>儲存到雲端</button></div></div></div>`;
-                document.body.appendChild(modal);
-            }
-
-            let container = document.getElementById('certificate-dom-container');
-            if (!container) { container = document.createElement('div'); container.id = 'certificate-dom-container'; container.className = 'p-8 w-[800px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans'; document.body.appendChild(container); }
-
-            const d = new Date(); const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-            const safeLogs = Array.isArray(targetState.activityLogs) ? targetState.activityLogs : []; const recentLogs = safeLogs.slice(0, 5).map(l => { const timeStr = (l.time && l.time.split(' ')[0]) ? l.time.split(' ')[0] : dateStr; return `<div class="mb-1.5 text-[11px] text-gray-700 leading-tight"><span class="font-mono text-[#8B9D77] mr-1.5 font-bold">${timeStr}</span> ${l.text || '永續行動'}</div>`; }).join('') || '<div class="text-[11px] text-gray-400 italic">尚無行動紀錄</div>';
-            const safeHistory = Array.isArray(targetState.checkoutHistory) ? targetState.checkoutHistory : []; const recentCheckouts = safeHistory.slice(0, 5).map(c => { const timeStr = (c.time && c.time.split(' ')[0]) ? c.time.split(' ')[0] : dateStr; return `<div class="mb-1.5 text-[11px] text-gray-700 leading-tight"><span class="font-mono text-[#D2B48C] mr-1.5 font-bold">${timeStr}</span> 歸戶至: ${c.target || '未知計畫'} <span class="text-green-600 font-bold ml-1">(${c.carbon || 0}g)</span></div>`; }).join('') || '<div class="text-[11px] text-gray-400 italic">尚無歸戶紀錄</div>';
-
-            container.innerHTML = `<div class="bg-[#F7F4EF] p-6 w-[800px] relative overflow-hidden" style="font-family: 'Noto Sans TC', sans-serif;"><div class="border-4 border-[#4A6741] p-2 h-full rounded-sm relative z-10"><div class="border border-dashed border-[#8B9D77] p-10 h-full relative flex flex-col items-center justify-center bg-white/70 rounded-sm"><i class="fas fa-leaf absolute text-[250px] text-[#8B9D77] opacity-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -z-10"></i><div class="text-center mb-8 relative z-10"><h1 class="text-4xl font-black text-[#2C3E28] tracking-[0.2em] mb-2">永續旅遊證書</h1><p class="text-[11px] font-bold text-[#8B9D77] tracking-[0.3em] uppercase">Certificate of Sustainable Tourism</p></div><div class="w-full max-w-2xl text-center relative z-10 mb-8"><p class="text-lg text-gray-700 font-bold mb-5 tracking-widest">特 此 證 明</p><p class="text-3xl font-black text-[#4A6741] mb-6 pb-2 border-b-2 border-[#8B9D77] inline-block px-12 tracking-widest">${targetState.playerName || '匿名旅者'}</p><p class="text-[15px] text-gray-700 leading-loose tracking-wide mt-2 font-medium">參與 <span class="font-bold text-[#4A6741]">探探里山</span> 永續旅遊行動，<br>透過實踐低碳交通與支持在地綠色消費，<br>為地球環境與里山創生做出卓越貢獻。</p></div><div class="grid grid-cols-4 gap-4 w-full max-w-3xl mb-8 relative z-10"><div class="bg-white/90 p-4 rounded shadow-sm border border-[#E8EFE6] text-center"><div class="w-10 h-10 mx-auto bg-[#F7F4EF] rounded-full flex items-center justify-center mb-2"><i class="fas fa-shoe-prints text-lg text-[#8B9D77]"></i></div><p class="text-[11px] text-gray-500 font-bold mb-1">減碳里程</p><p class="text-lg font-black text-[#2C3E28]">${((targetState.totalMileage || 0) / 1000).toFixed(1)} <span class="text-[10px] font-normal">km</span></p></div><div class="bg-white/90 p-4 rounded shadow-sm border border-[#E8EFE6] text-center"><div class="w-10 h-10 mx-auto bg-[#E8EFE6] rounded-full flex items-center justify-center mb-2"><i class="fas fa-tree text-lg text-[#4A6741]"></i></div><p class="text-[11px] text-gray-500 font-bold mb-1">減少碳排</p><p class="text-lg font-black text-[#2C3E28]">${Math.round(targetState.totalCarbon || 0).toLocaleString()} <span class="text-[10px] font-normal">g</span></p></div><div class="bg-white/90 p-4 rounded shadow-sm border border-[#E8EFE6] text-center"><div class="w-10 h-10 mx-auto bg-yellow-50 rounded-full flex items-center justify-center mb-2"><i class="fas fa-shopping-basket text-lg text-[#D2B48C]"></i></div><p class="text-[11px] text-gray-500 font-bold mb-1">綠色消費</p><p class="text-lg font-black text-[#2C3E28]"><span class="text-[10px] font-normal">$</span>${(targetState.greenProcure || 0).toLocaleString()}</p></div><div class="bg-white/90 p-4 rounded shadow-sm border border-[#E8EFE6] text-center"><div class="w-10 h-10 mx-auto bg-blue-50 rounded-full flex items-center justify-center mb-2"><i class="fas fa-hand-holding-heart text-lg text-blue-500"></i></div><p class="text-[11px] text-gray-500 font-bold mb-1">SROI 價值</p><p class="text-lg font-black text-[#2C3E28]"><span class="text-[10px] font-normal">$</span>${(targetState.sroiProcure || 0).toLocaleString()}</p></div></div><div class="grid grid-cols-2 gap-6 w-full max-w-3xl mb-10 relative z-10 text-left"><div class="bg-white/70 p-4 rounded border border-[#8B9D77]/30 shadow-sm"><p class="text-[12px] font-black text-[#4A6741] mb-2.5 pb-1 border-b border-[#E8EFE6]"><i class="fas fa-list-ul mr-1.5"></i>近期永續行動明細</p>${recentLogs}</div><div class="bg-white/70 p-4 rounded border border-[#D2B48C]/40 shadow-sm"><p class="text-[12px] font-black text-[#A0522D] mb-2.5 pb-1 border-b border-yellow-100"><i class="fas fa-trophy mr-1.5"></i>永續數據歸戶結算明細</p>${recentCheckouts}</div></div><div class="w-full flex justify-between items-end relative z-10 px-6"><div class="bg-white/60 p-3 rounded border border-gray-100 min-w-[200px]"><p class="text-[11px] font-bold text-gray-500 mb-1 tracking-wider">旅者代碼：<span class="font-mono text-[#2C3E28] text-sm">${targetState.playerCode}</span></p><p class="text-[11px] font-bold text-gray-500 tracking-wider">發證日期：<span class="font-mono text-[#2C3E28] text-sm">${dateStr}</span></p>${targetState.enterpriseName ? `<div class="mt-3 pt-3 border-t-2 border-dashed border-gray-300/80"><p class="text-[10px] font-bold text-mori-forest mb-1 tracking-wider"><i class="fas fa-building mr-1"></i>企業 / 團體認證</p><p class="text-[14px] font-black text-[#2C3E28] tracking-wide">${targetState.enterpriseName}</p>${targetState.entEmpId ? `<p class="text-[11px] font-mono font-bold text-gray-500 mt-1 tracking-widest">員編: ${targetState.entEmpId}</p>` : ''}</div>` : ''}</div><div class="text-center relative pr-4"><div class="w-20 h-20 border-4 border-red-600 rounded-full flex flex-col items-center justify-center absolute -top-12 -right-6 transform -rotate-12 opacity-80 shadow-sm bg-white/50 backdrop-blur-sm"><span class="text-red-600 font-black text-xl leading-none tracking-wider">ESG</span><span class="text-red-600 font-bold text-[9px] border-t-2 border-red-600 mt-1 pt-1 tracking-widest">探探里山</span></div><p class="text-sm font-black text-[#2C3E28] tracking-widest mt-4">水里永續共好聯盟</p><p class="text-[10px] text-gray-500 mt-1 tracking-widest">探探里山行動平台 授權核發</p></div></div></div></div></div>`;
-
-            const previewImg = document.getElementById('cert-preview-img'); const dlBtn = document.getElementById('download-cert-btn'); const emailBtn = document.getElementById('email-cert-btn'); const cloudBtn = document.getElementById('cloud-cert-btn'); const loadingOverlay = document.getElementById('cert-loading');
-            if (previewImg) { previewImg.style.opacity = '0'; previewImg.src = ''; }
-            if (dlBtn) { dlBtn.disabled = true; dlBtn.className = 'px-4 py-2.5 bg-gray-300 text-gray-500 rounded-lg text-sm font-bold shadow-sm cursor-not-allowed flex items-center justify-center flex-1 md:flex-none transition-all'; dlBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> 繪製中...'; }
-            if (loadingOverlay) loadingOverlay.classList.remove('hidden');
-            window.openModal('cert-preview-modal');
-
-            try {
-                container.style.position = 'fixed'; container.style.top = '0'; container.style.left = '0'; container.style.zIndex = '-1000'; container.style.opacity = '1'; container.style.display = 'block';
-                await new Promise(r => setTimeout(r, 400)); 
-                const canvasPromise = html2canvas(container.firstElementChild, { scale: 2, backgroundColor: null, logging: false, useCORS: true, allowTaint: true });
-                const canvas = await Promise.race([canvasPromise, new Promise((_, reject) => setTimeout(() => reject(new Error('繪製超時')), 6000))]);
-                const imgDataUrl = canvas.toDataURL('image/png'); 
-                
-                if (previewImg) { previewImg.src = imgDataUrl; previewImg.onload = () => { previewImg.style.opacity = '1'; }; }
-                if (loadingOverlay) loadingOverlay.classList.add('hidden');
-                
-                if (dlBtn) { dlBtn.disabled = false; dlBtn.className = 'px-4 py-2.5 bg-gradient-to-r from-mori-sage to-mori-forest text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center flex-1 md:flex-none'; dlBtn.innerHTML = '<i class="fas fa-download mr-1.5"></i> 儲存證書檔'; dlBtn.onclick = () => { const link = document.createElement('a'); link.download = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; link.href = imgDataUrl; link.click(); window.showToast('✅ 證書下載成功！'); }; }
-                if (emailBtn) { emailBtn.onclick = async () => { const subject = "【我在探探里山完成一趟友善地球的永續旅遊，這是我的永續證明】"; const body = "附件是我的探探里山永續旅遊證書，與您分享我的低碳與綠色消費成就！"; try { const response = await fetch(imgDataUrl); const blob = await response.blob(); const fileName = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; const file = new File([blob], fileName, { type: "image/png" }); if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: subject, text: subject, files: [file] }); window.showToast('✅ 成功開啟傳送介面！'); } else { window.showToast('📧 正在開啟郵件軟體 (受瀏覽器限制，請手動夾帶剛下載的圖片)', true); dlBtn.click(); window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body + '\n\n(請手動將剛下載的「' + fileName + '」加入附件)')}`; } } catch (err) { if (err.name !== 'AbortError') window.showToast('傳送中斷或失敗，請改用下載功能', true); } }; }
-                if (cloudBtn) { cloudBtn.onclick = async () => { try { const response = await fetch(imgDataUrl); const blob = await response.blob(); const fileName = `探探里山_永續證書_${targetState.playerName || '旅者'}.png`; const file = new File([blob], fileName, { type: "image/png" }); if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: "儲存探探里山永續證書至雲端", text: "請選擇您的雲端硬碟 (Google Drive / iCloud 等) 或檔案資料夾進行儲存。", files: [file] }); window.showToast('✅ 成功開啟雲端儲存選單！'); } else if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'PNG 圖片', accept: {'image/png': ['.png']}, }], }); const writable = await handle.createWritable(); await writable.write(blob); await writable.close(); window.showToast('☁️ 證書已成功存入您指定的路徑！'); } else { window.showToast('☁️ 受限於瀏覽器，將為您執行一般下載', true); dlBtn.click(); } } catch (err) { if (err.name !== 'AbortError') window.showToast('儲存中斷或失敗', true); } }; }
-                
-                container.style.zIndex = '0'; container.style.left = '-9999px';
-            } catch(err) { console.error('Certificate Gen Error:', err); if (loadingOverlay) loadingOverlay.innerHTML = '<div class="text-red-500 font-bold flex flex-col items-center text-center p-4"><i class="fas fa-exclamation-triangle text-3xl mb-2"></i><span>產圖超時或受阻<br><span class="text-xs text-gray-500 font-normal">您的歸戶已成功寫入雲端</span></span></div>'; }
-        };
-
-        // 🌟 防呆：加入按鈕連點鎖定與 writeBatch 交易封裝 (企業)
         document.getElementById('submit-ent-eval-btn')?.addEventListener('click', async (e) => {
             const btn = e.currentTarget;
             if (btn.disabled) return;
             const origHtml = btn.innerHTML;
-            
+
             const selectId = 'ent-proj-select'; const projId = document.getElementById(selectId).value;
             if (!projId) return window.showToast('請先選擇歸戶對象');
 
@@ -1249,11 +1126,11 @@
                 const stars = Array.from(qDiv.querySelectorAll('.number-rating i.text-yellow-400'));
                 if (stars.length > 0) { const val = stars.length; evalTotalScore += val; answered++; if(idx < 4) scoreE += val; else if(idx < 8) scoreS += val; else scoreG += val; }
             });
+
             if (answered < 12) return window.showToast('請完成所有 12 題評鑑指標，協助企業精準盤查。');
 
-            // 🌟 啟動按鈕鎖定
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>資料加密上傳中...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>資料封裝中...';
 
             const feedbackText = document.getElementById('ent-eval-feedback').value.trim();
             const currentFeedback = feedbackText ? { text: feedbackText, time: new Date().toISOString() } : null;
@@ -1287,24 +1164,16 @@
 
             if (!isOfflineMode && db && !projId.startsWith('mock_')) {
                 try {
-                    // 🌟 啟動 Firestore writeBatch (原子交易) 保證資料不漏傳不中斷
                     const batch = writeBatch(db);
                     const updates = { carbon: increment(carb), green: increment(totalGreen), eval_count: increment(1), total_score: increment(evalTotalScore), score_e: increment(scoreE), score_s: increment(scoreS), score_g: increment(scoreG), updatedAt: serverTimestamp() };
                     if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
-                    
                     batch.set(doc(db, 'ent_projects', projId), updates, { merge: true });
                     batch.set(doc(db, 'system_stats', 'global_absolute'), { carbon: increment(carb), green: increment(totalGreen), [`daily_${window.getTodayKey()}_carbon`]: increment(carb) }, { merge: true });
-                    
-                    if (ticketsToUpload.length > 0) {
-                        ticketsToUpload.forEach(ticket => { batch.set(doc(collection(db, 'lottery_tickets')), ticket); });
-                    }
-                    
-                    // 射後不理，交給 Firestore 離線排隊
+                    if (ticketsToUpload.length > 0) { ticketsToUpload.forEach(ticket => { batch.set(doc(collection(db, 'lottery_tickets')), ticket); }); }
                     batch.commit().catch(e => console.warn("背景同步稍後重試", e));
                 } catch(e) { 
                     btn.disabled = false; btn.innerHTML = origHtml;
-                    window.showToast(`🚨 雲端歸戶封裝失敗: ${e.message}`); 
-                    return; 
+                    window.showToast(`🚨 雲端歸戶封裝失敗: ${e.message}`); return; 
                 }
             } else if (p) {
                  p.carbon = (p.carbon || 0) + carb; p.green = (p.green || 0) + totalGreen; p.eval_count = (p.eval_count || 0) + 1; p.total_score = (p.total_score || 0) + evalTotalScore; p.score_e = (p.score_e || 0) + scoreE; p.score_s = (p.score_s || 0) + scoreS; p.score_g = (p.score_g || 0) + scoreG;
@@ -1317,20 +1186,17 @@
 
             window.resetPlayerStats();
             
-            // 解除鎖定並收尾
             btn.disabled = false; btn.innerHTML = origHtml;
             window.closeModal('ent-eval-modal');
             
             if (isOnline) {
                 if(newTicketsCount > 0) window.showToast(`🎉 歸戶成功！並兌換了 ${newTicketsCount} 張專屬抽獎卷！`); else window.showToast('✅ 企業歸戶成功！');
             } else {
-                window.showToast(`⚠️ 網路連線不穩！已暫存歸戶與 ${newTicketsCount} 張抽獎卷，等待網路恢復後將自動補齊數據！`, true);
+                window.showToast(`⚠️ 網路連線不穩！已暫存歸戶與 ${newTicketsCount} 張抽獎卷，等待網路恢復後自動補齊！`, true);
             }
-            
             await window.autoDownloadCert(stateSnapshot);
         });
 
-        // 🌟 防呆：加入按鈕連點鎖定與 writeBatch 交易封裝 (政府)
         document.getElementById('submit-gov-eval-btn')?.addEventListener('click', async (e) => {
             const btn = e.currentTarget;
             if (btn.disabled) return;
@@ -1344,11 +1210,11 @@
                 const stars = Array.from(qDiv.querySelectorAll('.number-rating i.text-yellow-400'));
                 if (stars.length > 0) { evalTotalScore += stars.length; answered++; }
             });
+
             if (answered < 11) return window.showToast('請完成所有 11 題滿意度指標，協助提升未來計畫品質。');
 
-            // 🌟 啟動按鈕鎖定
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>資料加密上傳中...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>資料封裝中...';
 
             const feedbackText = document.getElementById('gov-eval-feedback').value.trim();
             const currentFeedback = feedbackText ? { text: feedbackText, time: new Date().toISOString() } : null;
@@ -1382,23 +1248,15 @@
 
             if (!isOfflineMode && db && !projId.startsWith('mock_')) {
                 try {
-                    // 🌟 啟動 Firestore writeBatch (原子交易) 保證資料不漏傳不中斷
                     const batch = writeBatch(db);
                     const updates = { carbon: increment(carb), green: increment(totalGreen), eval_count: increment(1), total_score: increment(evalTotalScore), updatedAt: serverTimestamp() };
                     if (currentFeedback) updates.feedbacks = arrayUnion(currentFeedback);
-                    
                     batch.set(doc(db, 'gov_projects', projId), updates, { merge: true });
-                    
-                    if (ticketsToUpload.length > 0) {
-                        ticketsToUpload.forEach(ticket => { batch.set(doc(collection(db, 'lottery_tickets')), ticket); });
-                    }
-                    
-                    // 射後不理，交給 Firestore 離線排隊
+                    if (ticketsToUpload.length > 0) { ticketsToUpload.forEach(ticket => { batch.set(doc(collection(db, 'lottery_tickets')), ticket); }); }
                     batch.commit().catch(e => console.warn("背景同步稍後重試", e));
                 } catch(e) { 
                     btn.disabled = false; btn.innerHTML = origHtml;
-                    window.showToast(`🚨 雲端歸戶封裝失敗: ${e.message}`); 
-                    return; 
+                    window.showToast(`🚨 雲端歸戶封裝失敗: ${e.message}`); return; 
                 }
             } else if (p) {
                  p.carbon = (p.carbon || 0) + carb; p.green = (p.green || 0) + totalGreen; p.eval_count = (p.eval_count || 0) + 1; p.total_score = (p.total_score || 0) + evalTotalScore;
@@ -1411,95 +1269,146 @@
 
             window.resetPlayerStats();
             
-            // 解除鎖定並收尾
             btn.disabled = false; btn.innerHTML = origHtml;
             window.closeModal('gov-eval-modal');
             
             if (isOnline) {
                 if(newTicketsCount > 0) window.showToast(`🎉 歸戶成功！並兌換了 ${newTicketsCount} 張專屬抽獎卷！`); else window.showToast('✅ 計畫歸戶成功！');
             } else {
-                window.showToast(`⚠️ 網路連線不穩！已暫存歸戶與 ${newTicketsCount} 張抽獎卷，等待網路恢復後將自動補齊數據！`, true);
+                window.showToast(`⚠️ 網路連線不穩！已暫存歸戶與 ${newTicketsCount} 張抽獎卷，等待網路恢復後自動補齊！`, true);
             }
-
             await window.autoDownloadCert(stateSnapshot);
         });
 
-        // ==========================================
-        // 9. 管理員建立儀表板引擎
-        // ==========================================
-        document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
-            const org = document.getElementById('ent-create-org').value.trim(); const event = document.getElementById('ent-create-event').value.trim();
-            if (!org || !event) return window.showToast('請填寫企業名稱與活動名稱');
-            const serialNum = document.getElementById('ent-create-serial')?.value.trim().toUpperCase() || '';
-            const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-            const website = document.getElementById('ent-create-website')?.value.trim() || '';
-            const year = document.getElementById('ent-create-year')?.value.trim() || new Date().getFullYear().toString();
-            const remark = document.getElementById('ent-create-remark')?.value.trim() || '';
-            const deadline = document.getElementById('ent-create-deadline')?.value || null;
-            const startDate = document.getElementById('ent-create-start-date')?.value || '';
-            const endDate = document.getElementById('ent-create-end-date')?.value || '';
-            const pType = document.getElementById('ent-create-proj-type')?.value || '';
-            const pAmt = Number(document.getElementById('ent-create-proj-amount')?.value) || 0;
-            const pSroi = Number(document.getElementById('ent-create-proj-sroi')?.value) || 1.0;
-            const linkedProject = (pType || pAmt > 0) ? { type: pType, amount: pAmt, sroiWeight: pSroi } : null;
+        function bindSummaryEvents() {
+            const entToggle = document.getElementById('toggle-ent-summary-btn');
+            if(entToggle) entToggle.onclick = () => { summaryState.entMode = true; summaryState.entSelected.clear(); document.getElementById('ent-summary-count').textContent = '0'; document.getElementById('ent-summary-action-bar')?.classList.remove('hidden'); if(typeof window.debouncedRenderEnt === 'function') window.debouncedRenderEnt(); };
+            const entCancel = document.getElementById('cancel-ent-summary-btn');
+            if(entCancel) entCancel.onclick = () => { summaryState.entMode = false; summaryState.entSelected.clear(); document.getElementById('ent-summary-action-bar')?.classList.add('hidden'); if(typeof window.debouncedRenderEnt === 'function') window.debouncedRenderEnt(); };
+            const entGen = document.getElementById('generate-ent-summary-btn');
+            if(entGen) entGen.onclick = () => {
+                if (summaryState.entSelected.size === 0) return window.showToast('請至少選擇一張活動卡片');
+                window.customPrompt("📝 請輸入本次總承報表的專案名稱：", "【年度總結】企業綜合永續績效", (customTitle) => {
+                    if (customTitle === null) return; window.showToast('🔄 報表生成中...'); const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【年度總結】企業綜合永續績效";
+                    let combined = { orgName: finalTitle, event: `共彙整 ${summaryState.entSelected.size} 個專案活動`, year: new Date().getFullYear(), eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, carbon: 0, green: 0, linkedProject: { type: '綜合社會價值創造', amount: 0, sroiWeight: 1 }, feedbacks: [] };
+                    let sroiSum = 0; let includedProjectsList = []; 
+                    summaryState.entSelected.forEach(id => {
+                        const p = globalEntData.projects.find(x => x.id === id); if(!p) return;
+                        combined.eval_count += (Number(p.eval_count) || 0); combined.total_score += (Number(p.total_score) || 0); combined.score_e += (Number(p.score_e) || 0); combined.score_s += (Number(p.score_s) || 0); combined.score_g += (Number(p.score_g) || 0); combined.carbon += (Number(p.carbon) || 0); combined.green += (Number(p.green) || 0);
+                        let currentSroi = '-';
+                        if(p.linkedProject && p.linkedProject.amount > 0) { currentSroi = p.linkedProject.sroiWeight || 1; combined.linkedProject.amount += p.linkedProject.amount; sroiSum += (p.linkedProject.amount * currentSroi); }
+                        if(p.feedbacks) combined.feedbacks.push(...p.feedbacks); includedProjectsList.push({ name: p.orgName + (p.event ? ` (${p.event})` : ''), date: p.year || '未提供', sroi: currentSroi });
+                    });
+                    if(combined.linkedProject.amount > 0) combined.linkedProject.sroiWeight = Number((sroiSum / combined.linkedProject.amount).toFixed(2));
+                    const ec = combined.eval_count; const totalScore = combined.total_score;
+                    let baseAvgNum = ec > 0 ? (totalScore / (ec * 12)) : 0; baseAvgNum = Math.min(5.0, baseAvgNum); let avgE = baseAvgNum.toFixed(1), avgS = baseAvgNum.toFixed(1), avgG = baseAvgNum.toFixed(1);
+                    const scoreE = combined.score_e, scoreS = combined.score_s, scoreG = combined.score_g, esgSum = scoreE + scoreS + scoreG;
+                    if (esgSum > 0) { const weightE = scoreE / (esgSum / 3), weightS = scoreS / (esgSum / 3), weightG = scoreG / (esgSum / 3); avgE = Math.min(5.0, baseAvgNum * weightE).toFixed(1); avgS = Math.min(5.0, baseAvgNum * weightS).toFixed(1); avgG = Math.min(5.0, baseAvgNum * weightG).toFixed(1); }
+                    const finalOverallNum = (Number(avgE) + Number(avgS) + Number(avgG)) / 3; const avgOverall = finalOverallNum > 0 ? finalOverallNum.toFixed(1) : "0.0"; const avgOverallPercent = finalOverallNum > 0 ? (finalOverallNum / 5) * 100 : 0;
+                    let sroiHtml = ''; 
+                    if (combined.linkedProject.amount > 0) { const sroiTotal = Math.floor(combined.linkedProject.amount * combined.linkedProject.sroiWeight); sroiHtml = `<div class="mt-3 bg-gradient-to-br from-yellow-50 to-amber-50 p-4 pb-5 rounded-xl border-2 border-yellow-200 shadow-sm relative group"><i class="fas fa-crown absolute bottom-1 right-2 text-5xl text-yellow-500/10 data-html2canvas-ignore"></i><div class="flex justify-between items-center mb-3 relative z-10"><div class="flex items-center gap-2"><div class="bg-yellow-100 text-yellow-600 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm"><i class="fas fa-hand-holding-heart"></i></div><span class="text-[12px] font-bold text-yellow-800">${combined.linkedProject.type}</span></div><div class="bg-white px-2 py-0.5 rounded text-[10px] font-bold text-yellow-600 border border-yellow-200 shadow-sm flex items-center"><i class="fas fa-arrow-trend-up mr-1"></i>綜合加權總合計算</div></div><div class="flex justify-between items-end relative z-10"><div><p class="text-[13px] text-yellow-800 font-black tracking-wide mb-1 block">投入預算及綠色消費總合</p><div class="font-bold text-yellow-700 text-sm block leading-normal py-0.5">$${combined.linkedProject.amount.toLocaleString()}</div></div><div class="text-right"><p class="text-[13px] text-yellow-800 font-black tracking-wide mb-1 block">創造價值總合</p><div class="font-black text-yellow-700 text-2xl block tracking-normal leading-normal py-0.5">$${sroiTotal.toLocaleString()}</div></div></div></div>`; }
+                    let feedbackHtml = ''; 
+                    if (combined.feedbacks.length > 0) { const listItems = combined.feedbacks.map(f => `<div class="mb-2 text-[11px] border-b border-gray-100 pb-1.5 last:border-0"><span class="text-gray-400 mr-1">${new Date(f.time).toLocaleDateString('zh-TW')}</span> <span class="font-bold text-gray-700">${f.text}</span></div>`).join(''); feedbackHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm feedback-section"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-yellow-100"><span class="text-xs font-bold text-yellow-700"><i class="fas fa-comments mr-1.5"></i>綜合參與者寶貴意見 (${combined.feedbacks.length})</span></div><div class="feedback-list w-full">${listItems}</div></div>`; }
+                    let projectsListHtml = ''; 
+                    if (includedProjectsList.length > 0) { const listItems = includedProjectsList.map(item => `<div class="flex justify-between items-center text-[11px] mb-1.5 border-b border-gray-50 pb-1.5 last:border-0 last:pb-0 last:mb-0"><div class="flex flex-col flex-1 min-w-0 pr-2"><span class="font-bold text-gray-700 break-words leading-tight">${item.name}</span><span class="text-gray-400 text-[10px] mt-0.5 font-medium"><i class="fas fa-chart-line mr-1 text-mori-sage opacity-70"></i>SROI 加權: <span class="text-mori-forest font-bold">${item.sroi !== '-' ? 'x' + item.sroi : '無'}</span></span></div><span class="text-gray-500 shrink-0 font-mono tracking-tight">${item.date}</span></div>`).join(''); projectsListHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-yellow-100"><span class="text-xs font-bold text-yellow-700"><i class="fas fa-tasks mr-1.5"></i>已整併活動清單 (${includedProjectsList.length})</span></div><div class="w-full">${listItems}</div></div>`; }
+                    const summaryCode = Math.random().toString(36).substring(2, 7).toUpperCase(); const traceUrl = `https://farmcmd.github.io/ESGT/#ESG-board-${summaryCode}`;
+                    const cardHtml = `<div class="relative h-full wrapper-to-export"><div class="bg-gradient-to-br from-white to-yellow-50/50 p-5 rounded-2xl shadow-lg border-2 border-yellow-500 relative flex flex-col h-full"><div class="absolute top-0 left-0 gold-shine text-[11px] font-black px-4 py-1.5 rounded-tl-xl rounded-br-xl shadow-md z-20"><i class="fas fa-crown mr-1"></i>企業專案總結承報</div><div class="flex-grow mt-6 mb-2"><h4 class="text-[18px] font-black text-yellow-900 mb-1.5 leading-snug tracking-wide">${combined.orgName}</h4><p class="text-sm font-bold text-yellow-600 flex items-start mb-2"><i class="fas fa-layer-group mr-1.5 mt-0.5"></i>${combined.event}</p></div><div class="mb-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm"><div class="flex justify-between items-end mb-1.5"><span class="text-[13px] font-black text-gray-700 flex items-center"><i class="fas fa-clipboard-check text-yellow-500 mr-1.5 text-base"></i>綜合 ESG 滿意度 (${ec}人)</span><span class="text-sm font-black text-yellow-600">${avgOverall} <span class="text-[10px] text-gray-400 font-normal">/ 5.0</span></span></div><div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden mb-2.5"><div class="bg-yellow-400 h-1.5 rounded-full" style="width: ${avgOverallPercent}%"></div></div><div class="grid grid-cols-3 gap-2"><div class="bg-green-50 rounded-lg p-1.5 text-center border border-green-100"><p class="text-[9px] text-green-700 font-bold mb-0.5">E 環境</p><p class="text-[13px] font-black text-green-600">${avgE}</p></div><div class="bg-blue-50 rounded-lg p-1.5 text-center border border-blue-100"><p class="text-[9px] text-blue-700 font-bold mb-0.5">S 社會</p><p class="text-[13px] font-black text-blue-600">${avgS}</p></div><div class="bg-amber-50 rounded-lg p-1.5 text-center border border-amber-100"><p class="text-[9px] text-amber-700 font-bold mb-0.5">G 治理</p><p class="text-[13px] font-black text-amber-600">${avgG}</p></div></div></div><div class="grid grid-cols-2 gap-3 mt-2"><div class="bg-white p-3.5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計減碳</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-1">${combined.carbon.toLocaleString()} <span class="text-[10px] text-gray-400 font-normal">g/CO2e</span></p></div><div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計綠消</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-0.5"><span class="text-[12px] text-gray-400 font-normal">$</span>${combined.green.toLocaleString()}</p></div></div>${projectsListHtml}${sroiHtml}${feedbackHtml}<div class="mt-4 pt-3 border-t border-yellow-200/60 flex justify-between items-center text-[10px] text-gray-500 pb-1"><div class="leading-relaxed break-all"><span class="w-4 text-center mr-1 inline-block"><i class="fas fa-link"></i></span>溯源網址: <br class="sm:hidden"> ${traceUrl}</div><div class="shrink-0 ml-2 font-mono font-black text-blue-500 bg-blue-50 border border-blue-100 px-2 py-1 rounded tracking-wider shadow-sm">#${summaryCode}</div></div></div></div>`;
+                    const container = document.getElementById('summary-card-container'); container.innerHTML = cardHtml; const dlBtn = document.getElementById('download-summary-btn'); dlBtn.onclick = () => window.exportDashboardCard(container.querySelector('.wrapper-to-export'), `探探里山_企業總承報表.png`);
+                    summaryState.entMode = false; summaryState.entSelected.clear(); document.getElementById('ent-summary-action-bar')?.classList.add('hidden'); if(typeof window.debouncedRenderEnt === 'function') window.debouncedRenderEnt(); window.openModal('summary-preview-modal');
+                });
+            };
 
-            const newProj = { serialNumber: serialNum, orgName: org, event: event, year: year, websiteUrl: website, remark: remark, deadline: deadline, startDate: startDate, endDate: endDate, linkedProject: linkedProject, carbon: 0, green: 0, eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, feedbacks: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: false, cardCode: newCardCode };
+            const govToggle = document.getElementById('toggle-gov-summary-btn');
+            if(govToggle) govToggle.onclick = () => { summaryState.govMode = true; summaryState.govSelected.clear(); document.getElementById('gov-summary-count').textContent = '0'; document.getElementById('gov-summary-action-bar')?.classList.remove('hidden'); if(typeof window.debouncedRenderGov === 'function') window.debouncedRenderGov(); };
+            const govCancel = document.getElementById('cancel-gov-summary-btn');
+            if(govCancel) govCancel.onclick = () => { summaryState.govMode = false; summaryState.govSelected.clear(); document.getElementById('gov-summary-action-bar')?.classList.add('hidden'); if(typeof window.debouncedRenderGov === 'function') window.debouncedRenderGov(); };
+            const govGen = document.getElementById('generate-gov-summary-btn');
+            if(govGen) govGen.onclick = () => {
+                if (summaryState.govSelected.size === 0) return window.showToast('請至少選擇一張活動卡片');
+                window.customPrompt("📝 請輸入本次總承報表的計畫名稱：", "【專案總結】計畫執行綜合績效", (customTitle) => {
+                    if (customTitle === null) return window.showToast('🔄 報表生成中...'); const finalTitle = customTitle.trim() !== "" ? customTitle.trim() : "【專案總結】計畫執行綜合績效";
+                    let combined = { name: finalTitle, event: `共彙整 ${summaryState.govSelected.size} 個計畫活動`, eval_count: 0, total_score: 0, carbon: 0, green: 0, budget: 0, sroi: 1, feedbacks: [] };
+                    let sroiSum = 0; let includedProjectsList = [];
+                    summaryState.govSelected.forEach(id => {
+                        const p = globalGovData.projects.find(x => x.id === id); if(!p) return;
+                        combined.eval_count += (Number(p.eval_count) || 0); combined.total_score += (Number(p.total_score) || 0); combined.carbon += (Number(p.carbon) || 0); combined.green += (Number(p.green) || 0);
+                        let currentSroi = '-'; if(p.budget && p.budget > 0) { currentSroi = Number(p.sroi) || 1; const pBudget = Number(p.budget) || 0; combined.budget += pBudget; sroiSum += (pBudget * currentSroi); }
+                        if(p.feedbacks) combined.feedbacks.push(...p.feedbacks); includedProjectsList.push({ name: p.name + (p.event ? ` (${p.event})` : ''), date: p.date || '未提供', sroi: currentSroi });
+                    });
+                    if(combined.budget > 0) combined.sroi = Number((sroiSum / combined.budget).toFixed(2));
+                    const ec = combined.eval_count; const totalScore = combined.total_score; const avg = ec > 0 ? (totalScore / (ec * 11)).toFixed(1) : "0.0"; const avgPercent = ec > 0 ? ((totalScore / (ec * 11)) / 5) * 100 : 0;
+                    let sroiHtml = ''; if (combined.budget > 0) { const sroiTotal = Math.floor(sroiSum); sroiHtml = `<div class="mt-3 bg-gradient-to-br from-yellow-50 to-amber-50 p-4 pb-5 rounded-xl border-2 border-yellow-200 shadow-sm relative group"><i class="fas fa-crown absolute bottom-1 right-2 text-5xl text-yellow-500/10 data-html2canvas-ignore"></i><div class="flex justify-between items-center mb-3 relative z-10"><div class="flex items-center gap-2"><div class="bg-yellow-100 text-yellow-600 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm"><i class="fas fa-chart-line"></i></div><span class="text-[12px] font-bold text-yellow-800">計畫衍生綜合 SROI</span></div><div class="bg-white px-2 py-0.5 rounded text-[10px] font-bold text-yellow-600 border border-yellow-200 shadow-sm flex items-center"><i class="fas fa-arrow-trend-up mr-1"></i>綜合加權總合計算</div></div><div class="flex justify-between items-end relative z-10"><div><p class="text-[10px] text-yellow-600/80 mb-1 font-medium block">投入預算及綠色消費總合</p><div class="font-bold text-yellow-700 text-sm block leading-normal py-0.5">$${combined.budget.toLocaleString()}</div></div><div class="text-right"><p class="text-[11px] text-yellow-600/80 font-bold mb-1 block">創造價值總合</p><div class="font-black text-yellow-700 text-2xl block tracking-normal leading-normal py-0.5">$${sroiTotal.toLocaleString()}</div></div></div></div>`; }
+                    let feedbackHtml = ''; if (combined.feedbacks.length > 0) { const listItems = combined.feedbacks.map(f => `<div class="mb-2 text-[11px] border-b border-gray-100 pb-1.5 last:border-0"><span class="text-gray-400 mr-1">${new Date(f.time).toLocaleDateString('zh-TW')}</span> <span class="font-bold text-gray-700">${f.text}</span></div>`).join(''); feedbackHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-yellow-200 shadow-sm feedback-section"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-yellow-100"><span class="text-xs font-bold text-yellow-700"><i class="fas fa-comments mr-1.5"></i>綜合參與者回饋 (${combined.feedbacks.length})</span></div><div class="feedback-list w-full">${listItems}</div></div>`; }
+                    let projectsListHtml = ''; if (includedProjectsList.length > 0) { const listItems = includedProjectsList.map(item => `<div class="flex justify-between items-start text-[11px] mb-2 border-b border-gray-50 pb-2 last:border-0 last:pb-0 last:mb-0"><div class="flex flex-col flex-1 min-w-0 pr-3"><span class="font-bold text-gray-700 break-words whitespace-normal leading-relaxed">${item.name}</span><span class="text-gray-400 text-[10px] mt-1 font-medium"><i class="fas fa-chart-line mr-1 text-blue-400 opacity-70"></i>SROI 加權: <span class="text-blue-600 font-bold">${item.sroi !== '-' ? 'x' + item.sroi : '無'}</span></span></div><span class="text-gray-500 shrink-0 font-mono tracking-tight pt-0.5">${item.date}</span></div>`).join(''); projectsListHtml = `<div class="mt-3 bg-white p-3 rounded-xl border border-blue-200 shadow-sm"><div class="flex justify-between items-center mb-2 pb-1.5 border-b border-blue-100"><span class="text-xs font-bold text-blue-800"><i class="fas fa-tasks mr-1.5"></i>已整併計畫清單 (${includedProjectsList.length})</span></div><div class="w-full">${listItems}</div></div>`; }
+                    const summaryCode = Math.random().toString(36).substring(2, 7).toUpperCase(); const traceUrl = `https://farmcmd.github.io/ESGT/#OKR-board-${summaryCode}`;
+                    const cardHtml = `<div class="relative h-full wrapper-to-export"><div class="bg-gradient-to-br from-white to-blue-50/50 p-5 rounded-2xl shadow-lg border-2 border-yellow-500 relative flex flex-col h-full"><div class="absolute top-0 left-0 gold-shine text-[11px] font-black px-4 py-1.5 rounded-tl-xl rounded-br-xl shadow-md z-20"><i class="fas fa-crown mr-1"></i>政府計畫總結承報</div><div class="flex-grow mt-6 mb-2"><h4 class="text-[18px] font-black text-blue-900 mb-1.5 leading-snug tracking-wide">${combined.name}</h4><p class="text-sm font-bold text-blue-600 flex items-start mb-2"><i class="fas fa-layer-group mr-1.5 mt-0.5"></i>${combined.event}</p></div><div class="mb-3 bg-white p-3 rounded-xl border border-blue-200 shadow-sm"><div class="flex justify-between items-end mb-1.5"><span class="text-[13px] font-black text-gray-700 flex items-center"><i class="fas fa-star text-yellow-500 mr-1.5 text-base"></i>綜合活動滿意度 (${ec}人)</span><span class="text-sm font-black text-yellow-600">${avg} <span class="text-[10px] text-gray-400 font-normal">/ 5.0</span></span></div><div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden"><div class="bg-yellow-400 h-1.5 rounded-full" style="width: ${avgPercent}%"></div></div></div><div class="grid grid-cols-2 gap-3 mt-2"><div class="bg-white p-3.5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計減碳</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-1">${combined.carbon.toLocaleString()} <span class="text-[10px] text-gray-400 font-normal">g/CO2e</span></p></div><div class="bg-white p-3.5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden"><div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div><div class="flex justify-between items-start mb-2"><p class="text-[13px] text-gray-700 font-black">總計綠消</p></div><p class="font-black text-gray-700 text-xl flex items-baseline gap-0.5"><span class="text-[12px] text-gray-400 font-normal">$</span>${combined.green.toLocaleString()}</p></div></div>${projectsListHtml}${sroiHtml}${feedbackHtml}<div class="mt-4 pt-3 border-t border-blue-200/60 flex justify-between items-end text-[10px] text-gray-500 pb-2"><span class="inline-block leading-relaxed break-all pr-2"><i class="fas fa-link mr-1 text-gray-400"></i>溯源網址: <br class="sm:hidden"> ${traceUrl}<span class="inline-block ml-2 align-middle text-[11px] font-mono font-black text-blue-500 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded tracking-wider shadow-sm">#${summaryCode}</span></span><i class="fas fa-qrcode text-gray-300 text-xl flex-shrink-0 mb-0.5"></i></div></div></div>`;
+                    const container = document.getElementById('summary-card-container'); container.innerHTML = cardHtml; const dlBtn = document.getElementById('download-summary-btn'); dlBtn.onclick = () => window.exportDashboardCard(container.querySelector('.wrapper-to-export'), `探探里山_計畫總承報表.png`);
+                    summaryState.govMode = false; summaryState.govSelected.clear(); document.getElementById('gov-summary-action-bar')?.classList.add('hidden'); if(typeof window.debouncedRenderGov === 'function') window.debouncedRenderGov(); window.openModal('summary-preview-modal');
+                });
+            };
 
-            if (db && !isOfflineMode) {
-                try { await addDoc(collection(db, 'ent_projects'), newProj); window.showToast('✅ 企業儀表板建立成功！(等待授權)'); } catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
-            } else {
-                newProj.id = 'mock_ent_' + Date.now(); globalEntData.projects.push(newProj);
-                if(typeof window.debouncedRenderEnt === 'function') window.debouncedRenderEnt(); window.showToast('✅ (離線) 企業儀表板建立成功！');
-            }
-            document.getElementById('ent-create-serial').value = ''; document.getElementById('ent-create-org').value = ''; document.getElementById('ent-create-event').value = '';
-            if(document.getElementById('ent-create-start-date')) document.getElementById('ent-create-start-date').value = '';
-            if(document.getElementById('ent-create-end-date')) document.getElementById('ent-create-end-date').value = '';
-        });
-        
-        document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
-            const nameInput = document.getElementById('host-proj-name'); const eventInput = document.getElementById('host-proj-event');
-            const name = nameInput ? nameInput.value.trim() : '';
-            if (!name) return window.showToast('請填寫計畫名稱');
-            const serialNum = document.getElementById('host-proj-serial')?.value.trim().toUpperCase() || '';
-            const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-            const eventStr = eventInput ? eventInput.value.trim() : '';
-            const dateTxt = document.getElementById('host-proj-date')?.value || '';
-            const desc = document.getElementById('host-proj-desc')?.value.trim() || '';
-            const sup = document.getElementById('host-proj-supervisor')?.value.trim() || '';
-            const org = document.getElementById('host-proj-organizer')?.value.trim() || '';
-            const coorg = document.getElementById('host-proj-coorganizer')?.value.trim() || '';
-            const exec = document.getElementById('host-proj-executor')?.value.trim() || '';
-            const budget = Number(document.getElementById('host-proj-budget')?.value) || 0;
-            const sroi = Number(document.getElementById('host-proj-sroi')?.value) || 1.0;
-            const deadline = document.getElementById('host-proj-deadline')?.value || null;
-            const startDate = document.getElementById('host-proj-start-date')?.value || '';
-            const endDate = document.getElementById('host-proj-end-date')?.value || '';
+            document.getElementById('create-ent-proj-btn')?.addEventListener('click', async () => {
+                const org = document.getElementById('ent-create-org').value.trim(); const event = document.getElementById('ent-create-event').value.trim();
+                if (!org || !event) return window.showToast('請填寫企業名稱與活動企劃名稱');
+                const serialNum = document.getElementById('ent-create-serial')?.value.trim().toUpperCase() || '';
+                const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                const year = document.getElementById('ent-create-year')?.value.trim() || new Date().getFullYear().toString();
+                const remark = document.getElementById('ent-create-remark')?.value.trim() || '';
+                const deadline = document.getElementById('ent-create-deadline')?.value || null;
+                const startDate = document.getElementById('ent-create-start-date')?.value || '';
+                const endDate = document.getElementById('ent-create-end-date')?.value || '';
+                const pType = document.getElementById('ent-create-proj-type')?.value || '';
+                const pAmt = Number(document.getElementById('ent-create-proj-amount')?.value) || 0;
+                const pSroi = Number(document.getElementById('ent-create-proj-sroi')?.value) || 1.0;
+                const linkedProject = (pType || pAmt > 0) ? { type: pType, amount: pAmt, sroiWeight: pSroi } : null;
 
-            const newProj = { serialNumber: serialNum, name: name, event: eventStr, date: dateTxt, desc: desc, supervisor: sup, organizer: org, coOrganizer: coorg, executor: exec, budget: budget, sroi: sroi, deadline: deadline, startDate: startDate, endDate: endDate, carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: false, cardCode: newCardCode };
+                const newProj = { serialNumber: serialNum, orgName: org, event: event, year: year, websiteUrl: '', remark: remark, deadline: deadline, startDate: startDate, endDate: endDate, linkedProject: linkedProject, carbon: 0, green: 0, eval_count: 0, total_score: 0, score_e: 0, score_s: 0, score_g: 0, feedbacks: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: false, cardCode: newCardCode };
 
-            if (db && !isOfflineMode) {
-                try { await addDoc(collection(db, 'gov_projects'), newProj); window.showToast('✅ 政府計畫建立成功！(等待授權)'); } catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
-            } else {
-                newProj.id = 'mock_gov_' + Date.now(); globalGovData.projects.push(newProj);
-                if(typeof window.debouncedRenderGov === 'function') window.debouncedRenderGov(); window.showToast('✅ (離線) 政府計畫建立成功！');
-            }
-            document.getElementById('host-proj-serial').value = ''; nameInput.value = ''; eventInput.value = ''; 
-            if(document.getElementById('host-proj-supervisor')) document.getElementById('host-proj-supervisor').value = '';
-            if(document.getElementById('host-proj-coorganizer')) document.getElementById('host-proj-coorganizer').value = '';
-            if(document.getElementById('host-proj-start-date')) document.getElementById('host-proj-start-date').value = '';
-            if(document.getElementById('host-proj-end-date')) document.getElementById('host-proj-end-date').value = '';
-        });
+                if (db && !isOfflineMode) {
+                    try { await addDoc(collection(db, 'ent_projects'), newProj); window.showToast('✅ 企業儀表板建立成功！(等待授權)'); } catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
+                } else {
+                    newProj.id = 'mock_ent_' + Date.now(); globalEntData.projects.push(newProj);
+                    if(typeof window.debouncedRenderEnt === 'function') window.debouncedRenderEnt(); window.showToast('✅ (離線) 企業儀表板建立成功！');
+                }
+                document.getElementById('ent-create-serial').value = ''; document.getElementById('ent-create-org').value = ''; document.getElementById('ent-create-event').value = '';
+            });
 
-        // ==========================================
-        // 10. 管理員編輯儀表板引擎 (修改與儲存)
-        // ==========================================
+            document.getElementById('create-proj-btn')?.addEventListener('click', async () => {
+                const nameInput = document.getElementById('host-proj-name'); const eventInput = document.getElementById('host-proj-event');
+                const name = nameInput ? nameInput.value.trim() : '';
+                if (!name) return window.showToast('請填寫計畫名稱');
+                const serialNum = document.getElementById('host-proj-serial')?.value.trim().toUpperCase() || '';
+                const newCardCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                const eventStr = eventInput ? eventInput.value.trim() : '';
+                const dateTxt = document.getElementById('host-proj-date')?.value || '';
+                const sup = document.getElementById('host-proj-supervisor')?.value.trim() || '';
+                const org = document.getElementById('host-proj-organizer')?.value.trim() || '';
+                const coorg = document.getElementById('host-proj-coorganizer')?.value.trim() || '';
+                const exec = document.getElementById('host-proj-executor')?.value.trim() || '';
+                const budget = Number(document.getElementById('host-proj-budget')?.value) || 0;
+                const sroi = Number(document.getElementById('host-proj-sroi')?.value) || 1.0;
+                const deadline = document.getElementById('host-proj-deadline')?.value || null;
+                const startDate = document.getElementById('host-proj-start-date')?.value || '';
+                const endDate = document.getElementById('host-proj-end-date')?.value || '';
+
+                const newProj = { serialNumber: serialNum, name: name, event: eventStr, date: dateTxt, desc: '', supervisor: sup, organizer: org, coOrganizer: coorg, executor: exec, budget: budget, sroi: sroi, deadline: deadline, startDate: startDate, endDate: endDate, carbon: 0, green: 0, eval_count: 0, total_score: 0, feedbacks: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isAuthorized: false, cardCode: newCardCode };
+
+                if (db && !isOfflineMode) {
+                    try { await addDoc(collection(db, 'gov_projects'), newProj); window.showToast('✅ 政府計畫建立成功！(等待授權)'); } catch(e) { window.showToast('❌ 建立失敗，請檢查網路連線'); }
+                } else {
+                    newProj.id = 'mock_gov_' + Date.now(); globalGovData.projects.push(newProj);
+                    if(typeof window.debouncedRenderGov === 'function') window.debouncedRenderGov(); window.showToast('✅ (離線) 政府計畫建立成功！');
+                }
+                document.getElementById('host-proj-serial').value = ''; nameInput.value = ''; eventInput.value = ''; 
+            });
+        }
+
         function bindEditSaveEvents() {
             document.getElementById('save-ent-edit-btn')?.addEventListener('click', async () => {
                 if (!window.editingEntId) return window.showToast('找不到編輯目標');
                 const btn = document.getElementById('save-ent-edit-btn');
                 const origHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 儲存中...';
-                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 儲存中...'; btn.disabled = true;
 
                 const pType = document.getElementById('ent-edit-proj-type')?.value || '';
                 const pAmt = Number(document.getElementById('ent-edit-proj-amount')?.value) || 0;
@@ -1521,13 +1430,10 @@
                 };
 
                 if (db && !isOfflineMode && !window.editingEntId.startsWith('mock_')) {
-                    try {
-                        await updateDoc(doc(db, 'ent_projects', window.editingEntId), updates);
-                        window.showToast('✅ 企業活動修改成功！');
-                    } catch(e) { window.showToast('❌ 儲存失敗: ' + e.message); }
+                    try { await updateDoc(doc(db, 'ent_projects', window.editingEntId), updates); window.showToast('✅ 企業活動修改成功！'); } catch(e) { window.showToast('❌ 儲存失敗: ' + e.message); }
                 } else {
                     const p = globalEntData.projects.find(x => x.id === window.editingEntId);
-                    if (p) { Object.assign(p, updates); p.deadline = updates.deadline; p.startDate = updates.startDate; p.endDate = updates.endDate; p.linkedProject = updates.linkedProject; }
+                    if (p) { Object.assign(p, updates); }
                     window.showToast('✅ (離線) 修改成功！');
                 }
                 if(typeof window.debouncedRenderEnt === 'function') window.debouncedRenderEnt();
@@ -1538,8 +1444,7 @@
                 if (!window.editingGovId) return window.showToast('找不到編輯目標');
                 const btn = document.getElementById('save-gov-edit-btn');
                 const origHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 儲存中...';
-                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 儲存中...'; btn.disabled = true;
 
                 const updates = {
                     serialNumber: document.getElementById('gov-edit-serial').value.trim().toUpperCase(),
@@ -1560,13 +1465,10 @@
                 };
 
                 if (db && !isOfflineMode && !window.editingGovId.startsWith('mock_')) {
-                    try {
-                        await updateDoc(doc(db, 'gov_projects', window.editingGovId), updates);
-                        window.showToast('✅ 政府計畫修改成功！');
-                    } catch(e) { window.showToast('❌ 儲存失敗: ' + e.message); }
+                    try { await updateDoc(doc(db, 'gov_projects', window.editingGovId), updates); window.showToast('✅ 政府計畫修改成功！'); } catch(e) { window.showToast('❌ 儲存失敗: ' + e.message); }
                 } else {
                     const p = globalGovData.projects.find(x => x.id === window.editingGovId);
-                    if (p) { Object.assign(p, updates); p.deadline = updates.deadline; p.startDate = updates.startDate; p.endDate = updates.endDate; }
+                    if (p) { Object.assign(p, updates); }
                     window.showToast('✅ (離線) 修改成功！');
                 }
                 if(typeof window.debouncedRenderGov === 'function') window.debouncedRenderGov();
@@ -1574,7 +1476,6 @@
             });
         }
 
-        // 啟動系統
         document.addEventListener('DOMContentLoaded', () => {
             window.loadLocalData();
             initFirebase();
@@ -1602,15 +1503,13 @@
                             if (typeof window.loadLocalData === 'function') window.loadLocalData();
                             if (typeof window.updateTopDisplays === 'function') window.updateTopDisplays();
                         }
-                        if (event.data.events) window.globalLotteryEvents = event.data.events;
+                        if (event.data.events) { window.globalLotteryEvents = event.data.events; }
                     } catch(e) { console.error("同步失敗", e); }
                 }
             });
             
             window.addEventListener('storage', (e) => {
-                if (e.key === LOCAL_STORAGE_KEY || !e.key) {
-                    if (typeof window.loadLocalData === 'function') window.loadLocalData();
-                }
+                if (e.key === LOCAL_STORAGE_KEY || !e.key) { if (typeof window.loadLocalData === 'function') window.loadLocalData(); }
             });
         });
     </script>
