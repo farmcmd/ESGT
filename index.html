@@ -527,6 +527,9 @@
 
     <div id="export-receipt-container" class="p-8 w-[600px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0"></div>
     <div id="certificate-dom-container" class="p-8 w-[800px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans"></div>
+    
+    <!-- 新增：行程圖卡渲染隱藏容器 -->
+    <div id="itinerary-card-container" class="p-8 w-[600px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans"></div>
 
     <!-- Google 翻譯 -->
     <script type="text/javascript">
@@ -930,6 +933,15 @@
                             </div>
                         `;
                     });
+                    
+                    // 🌟 新增：打包此行程圖卡按鈕
+                    html += `
+                        <div class="pt-3 pb-1 px-1 border-t border-gray-100 mt-2">
+                            <button onclick="window.downloadItineraryCard('${group.id}')" class="w-full py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
+                                <i class="fas fa-camera-retro mr-2 group-hover:scale-110 transition-transform text-yellow-100"></i> 下載行程分享圖卡
+                            </button>
+                        </div>
+                    `;
                 } else {
                     html += `<div class="p-3 text-center text-[11px] text-gray-400 bg-gray-50 rounded-lg">尚無新增任何路線站點</div>`;
                 }
@@ -937,6 +949,107 @@
                 html += `</div></div>`;
             });
             container.innerHTML = html;
+        };
+
+        // 🌟 新增：打包圖卡與下載邏輯
+        window.downloadItineraryCard = async function(groupId) {
+            window.showToast('🔄 正在產生精美行程圖卡...');
+            const group = globalPoiGroups.find(g => g.id === groupId);
+            if (!group) return window.showToast('找不到行程資料', true);
+
+            const container = document.getElementById('itinerary-card-container');
+            if (!container) return;
+
+            // 組合站點時間軸 HTML
+            let poisHtml = '';
+            if (group.pois && group.pois.length > 0) {
+                poisHtml = group.pois.map((poi, index) => `
+                    <div style="display: flex; align-items: flex-start; margin-bottom: 20px; position: relative;">
+                        ${index !== group.pois.length - 1 ? '<div style="position: absolute; left: 24px; top: 45px; bottom: -20px; width: 3px; background-color: #E8EFE6; z-index: 1;"></div>' : ''}
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background-color: #F7F4EF; border: 3px solid #8B9D77; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 18px; flex-shrink: 0; z-index: 10; position: relative;">
+                            ${poi.icon || '📍'}
+                        </div>
+                        <div style="flex-grow: 1; padding-top: 8px; padding-bottom: 5px;">
+                            <div style="font-size: 20px; font-weight: 900; color: #2C3E28; margin-bottom: 5px; letter-spacing: 1px;">${poi.name || '未命名站點'}</div>
+                            <div style="font-size: 13px; color: #666; line-height: 1.5; font-weight: normal;">${poi.description || ''}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                poisHtml = '<div style="text-align: center; color: #999; padding: 20px;">尚無站點資料</div>';
+            }
+
+            // 組合完整圖卡 HTML
+            container.innerHTML = `
+                <div style="background-color: white; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-top: 10px solid #4A6741; font-family: 'Noto Sans TC', sans-serif;">
+                    <div style="padding: 35px 35px 25px 35px; background: linear-gradient(to bottom, #F0F7F4, #FFFFFF);">
+                        <div style="font-size: 12px; font-weight: bold; color: #8B9D77; letter-spacing: 2px; margin-bottom: 12px; display: flex; align-items: center;">
+                            <i class="fas fa-leaf" style="margin-right: 6px;"></i> 探探里山 永續推薦行程
+                        </div>
+                        <h2 style="font-size: 30px; font-weight: 900; color: #2C3E28; margin: 0 0 15px 0; line-height: 1.4; letter-spacing: 1px;">${group.title || '未命名活動'}</h2>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            ${group.orgName ? `<div style="font-size: 13px; color: #4A6741; font-weight: bold; background-color: #E8EFE6; padding: 4px 10px; border-radius: 6px;"><i class="fas fa-building" style="margin-right: 5px;"></i>${group.orgName}</div>` : ''}
+                            ${group.startDate ? `<div style="font-size: 13px; color: #666; font-weight: bold; background-color: #f3f4f6; padding: 4px 10px; border-radius: 6px;"><i class="far fa-calendar-alt" style="margin-right: 5px;"></i>${group.startDate} ~ ${group.endDate}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="padding: 10px 35px 30px 35px;">
+                        ${poisHtml}
+                    </div>
+                    <div style="background-color: #2C3E28; padding: 20px 35px; display: flex; justify-content: space-between; align-items: center; color: white;">
+                        <div>
+                            <div style="font-size: 18px; font-weight: bold; letter-spacing: 2px; margin-bottom: 6px;">探探里山永續基地</div>
+                            <div style="font-size: 12px; color: #8B9D77; letter-spacing: 1px;">掃描條碼或上網搜尋「探探里山」</div>
+                        </div>
+                        <div style="width: 54px; height: 54px; background-color: white; border-radius: 10px; padding: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <div id="itinerary-qr-${groupId}" style="width: 100%; height: 100%; display:flex; align-items:center; justify-content:center;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                container.style.position = 'fixed';
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.zIndex = '-1000';
+                
+                // 🌟 新增：產生真實的 QR Code
+                const qrContainer = document.getElementById(`itinerary-qr-${groupId}`);
+                if (qrContainer) {
+                    qrContainer.innerHTML = ''; // 清空原本內容
+                    new QRCode(qrContainer, { 
+                        text: "https://farmcmd.github.io/ESGT/", 
+                        width: 44, 
+                        height: 44, 
+                        colorDark : "#2C3E28", 
+                        colorLight : "#ffffff", 
+                        correctLevel : QRCode.CorrectLevel.H 
+                    });
+                }
+
+                // 稍微延遲一下，確保 QR Code 渲染完成
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                const canvas = await html2canvas(container.firstElementChild, { 
+                    scale: 2, 
+                    useCORS: true, 
+                    logging: false, 
+                    allowTaint: true,
+                    backgroundColor: '#F7F4EF'
+                });
+                
+                const link = document.createElement('a'); 
+                link.download = `探探里山行程_${group.title || '推薦行程'}.png`; 
+                link.href = canvas.toDataURL('image/png'); 
+                link.click();
+                
+                container.style.left = '-9999px'; 
+                window.showToast('✅ 行程圖卡下載成功！');
+            } catch(err) { 
+                console.error(err);
+                container.style.left = '-9999px'; 
+                window.showToast('❌ 產圖失敗，請檢查瀏覽器限制', true); 
+            }
         };
 
         window.showPoiDetails = function(poiJsonString) {
