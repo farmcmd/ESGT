@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>探探里山永續生態與農村風俗文化導覽</title>
+    <!-- 引入 qrcode.js 用於前端生成分享條碼 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -18,12 +19,22 @@
             margin: 0; padding: 0; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #000; color: var(--text-dark);
+            /* 嚴格防止手機瀏覽器預設下拉與滑動干擾 */
             touch-action: none; overscroll-behavior: none;
             -webkit-user-select: none; user-select: none;
         }
 
         #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #c5e1a5; }
+
+        /* 即時積分面板 */
+        #live-score-board {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9); border: 2px solid var(--primary-light);
+            padding: 8px 20px; border-radius: 30px; font-weight: bold; font-size: 18px; color: var(--primary-dark);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 105; pointer-events: none;
+            display: flex; align-items: center; gap: 8px;
+        }
 
         /* 畫筆工具列 */
         #draw-tools {
@@ -37,7 +48,7 @@
         }
         .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
 
-        /* 浮動面板 */
+        /* 浮動面板容器 */
         .floating-panel {
             position: absolute; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 600px; background: var(--panel-bg);
@@ -57,7 +68,7 @@
             max-height: 550px; padding: 15px; overflow-y: auto; border-top: 1px solid #e5e7eb;
         }
 
-        #top-panel { top: 15px; }
+        #top-panel { top: 75px; } /* 微調高度避開計分板 */
         #bottom-panel { bottom: 15px; }
         
         .creature-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
@@ -115,11 +126,10 @@
             pointer-events: none; z-index: 1000; transform: translate(-50%, -50%); box-shadow: 0 10px 25px rgba(0,0,0,0.4);
         }
         #alert-box {
-            position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 120px; left: 50%; transform: translateX(-50%);
             background: rgba(234, 88, 12, 0.9); color: white; padding: 12px 25px; border-radius: 30px; font-size: 16px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000; white-space: nowrap;
         }
         
-        /* 點擊指南針可重新對齊鏡頭 */
         #compass {
             position: absolute; bottom: 80px; left: 20px; width: 60px; height: 60px;
             background: rgba(255,255,255,0.7); border-radius: 50%; border: 3px solid #ccc;
@@ -154,9 +164,8 @@
 </head>
 <body>
 
-    <!-- 開場與表單 -->
     <div id="start-overlay">
-        <!-- 右上角 QR Code 分享按鈕 (修改為小方塊圖示) -->
+        <!-- 右上角 QR Code 分享按鈕 (小方塊版) -->
         <div style="position: absolute; top: 15px; right: 15px; z-index: 10001;">
             <button onclick="showShareQR()" title="掃碼分享本頁" style="width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; background: white; border: 2px solid var(--primary-light); border-radius: 8px; cursor: pointer; color: var(--primary-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -171,6 +180,7 @@
             </button>
         </div>
 
+        <!-- 初始表單 -->
         <div class="start-box">
             <h2 style="color: var(--primary-dark); margin-top: 0; margin-bottom: 10px; font-size: 22px;">探探里山永續生態與<br>農村風俗文化導覽</h2>
             
@@ -212,6 +222,7 @@
                 <div class="form-group" id="custom-location-group" style="display: none;"><label>請輸入自訂場域</label><input type="text" id="custom-location" class="form-input" placeholder="填寫場域名稱"></div>
                 <button class="btn-primary" onclick="startGame(false)">同意須知，儲存並出發</button>
             </div>
+            
             <div id="resume-game-section" style="display: none; border-top: 2px dashed #eee; margin-top: 20px; padding-top: 20px;">
                 <p style="font-size: 14px; font-weight: bold; color: #ea580c; margin-bottom: 10px;">偵測到未完成的生態任務！</p>
                 <button class="btn-secondary" onclick="startGame(true)">🚀 繼續上次探索</button>
@@ -228,6 +239,11 @@
             <p style="font-size: 12px; color: #666; margin-bottom: 15px; word-break: break-all;">https://farmcmd.github.io/ESGT/eco_landscape.html</p>
             <button onclick="document.getElementById('share-qr-modal').style.display='none'" style="width: 100%; padding: 10px; background: #e5e7eb; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #374151;">關閉</button>
         </div>
+    </div>
+
+    <!-- 即時動態計分板 (修改新增) -->
+    <div id="live-score-board" style="display: none;">
+        🌿 探索積分：<span id="current-score" style="color: #ea580c; font-size: 22px;">0</span> 分
     </div>
 
     <!-- 畫布與操作 UI -->
@@ -282,8 +298,8 @@
                 <a id="cert-download-link" style="display:none; width: 100%; text-decoration: none;">
                     <button style="width: 100%; padding: 12px; margin-top: 10px; background: var(--primary-light); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
                 </a>
-
-                <!-- 新增：前往主站登錄成就按鈕 -->
+                
+                <!-- 前往主站登錄成就按鈕 -->
                 <a href="https://farmcmd.github.io/ESGT/" target="_blank" style="width: 100%; text-decoration: none; display: block;">
                     <button style="width: 100%; padding: 12px; margin-top: 15px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 16px;">-->去主站登錄減碳成就</button>
                 </a>
@@ -365,7 +381,6 @@
             { id: 'b46', type: 'bio', name: '食蛇龜', icon: '🐢', validHabitats: ['h2', 'h4', 'h7'] } 
         ];
 
-        // 加入文化卡：紅包
         const CULTURE_DATA = [
             { id: 'cu1', type: 'culture', name: '水牛', icon: '🐃' },
             { id: 'cu2', type: 'culture', name: '燕子', icon: '🐦' },
@@ -387,20 +402,21 @@
             { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['b11', 'b12', 'b4'] }
         ];
 
+        // 擴大虛線框尺寸 (w, h 增加約 30~40%)
         let habitats = [
-            { id: 'h1', name: '枯木草堆', x: 50, y: 200, w: 120, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h2', name: '石堆', x: 350, y: 100, w: 100, h: 60, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h3', name: '砌石溝', x: 600, y: 900, w: 150, h: 60, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h4', name: '水塘', x: 1200, y: 900, w: 250, h: 150, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h5', name: '田埂草帶', x: 250, y: 550, w: 300, h: 60, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h6', name: '灌木欉', x: 1350, y: 200, w: 120, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h7', name: '濕地', x: 1300, y: 550, w: 200, h: 150, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h8', name: '護岸', x: 1050, y: 450, w: 60, h: 300, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h9', name: '漂浮草帶', x: 1250, y: 950, w: 100, h: 60, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h10', name: '昆蟲旅館', x: 800, y: 600, w: 80, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h11', name: '攀爬網', x: 900, y: 350, w: 100, h: 50, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h12', name: '涵洞護道', x: 500, y: 340, w: 120, h: 60, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h13', name: '深溝護道', x: 80, y: 800, w: 80, h: 180, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false }
+            { id: 'h1', name: '枯木草堆', x: 30, y: 180, w: 160, h: 110, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h2', name: '石堆', x: 320, y: 80, w: 140, h: 90, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h3', name: '砌石溝', x: 580, y: 870, w: 190, h: 90, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h4', name: '水塘', x: 1220, y: 820, w: 240, h: 160, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h5', name: '田埂草帶', x: 230, y: 530, w: 350, h: 90, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h6', name: '灌木欉', x: 1330, y: 180, w: 160, h: 140, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h7', name: '濕地', x: 1270, y: 520, w: 250, h: 190, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h8', name: '護岸', x: 1030, y: 430, w: 90, h: 350, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h9', name: '漂浮草帶', x: 1130, y: 930, w: 150, h: 90, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h10', name: '昆蟲旅館', x: 780, y: 580, w: 120, h: 110, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h11', name: '攀爬網', x: 880, y: 330, w: 140, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h12', name: '涵洞護道', x: 480, y: 320, w: 160, h: 90, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h13', name: '深溝護道', x: 60, y: 780, w: 120, h: 220, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false }
         ];
 
         let crisisZones = []; let inventory = []; let mapOccupants = []; 
@@ -418,13 +434,11 @@
         function setDrawColor(c) { currentDrawColor = c; }
         function clearDrawings() { if(confirm("清除所有畫布線條嗎？")) { drawings = []; saveProgress(); } }
 
-        // 重新對齊鏡頭
         function recenterCamera() {
             camera.detached = false;
             showAlert("📍 已將視角重新對齊小偵探");
         }
 
-        // --- 1.5 螢幕防休眠 ---
         let wakeLock = null;
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
@@ -433,7 +447,6 @@
         }
         document.addEventListener('visibilitychange', () => { if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock(); });
 
-        // --- 1.6 測驗題庫 (新增第4題) ---
         const QUIZ_DATA = [
             { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
             { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
@@ -448,13 +461,12 @@
             let html = '';
             QUIZ_DATA.forEach((q, i) => {
                 html += `<div class="quiz-question"><p>Q${i+1}. ${q.q}</p>`;
-                q.opts.forEach((opt, j) => { html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${j+1}. ${opt}</label>`; });
+                q.opts.forEach((opt, j) => { html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}" onchange="saveProgress()"> ${j+1}. ${opt}</label>`; });
                 html += `</div>`;
             });
             container.innerHTML = html;
         }
 
-        // --- 2. 核心狀態 ---
         let playerName = "小偵探"; let eventName = ""; let eventLocation = "";
         function toggleCustomLocation() {
             document.getElementById('custom-location-group').style.display = (document.getElementById('location-select').value === 'custom') ? 'block' : 'none';
@@ -484,15 +496,50 @@
             const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1; setTimeout(() => box.style.opacity = 0, 3000);
         }
 
-        const SAVE_KEY = 'ecoDetective_saveData_v8';
+        // --- 動態即時計分邏輯 ---
+        function computeCurrentScore() {
+            let tmpScore = quizCompleted ? quizScore : 0;
+            let successfullyPlacedIds = new Set();
+            
+            habitats.forEach(h => {
+                h.occupants.forEach(occ => {
+                    if (occ.dead) return;
+                    if (h.isBonus && occ.type === 'bio') { tmpScore += 1; successfullyPlacedIds.add(occ.id); }
+                    else if (occ.type === 'culture') { tmpScore += 1; }
+                    else if (occ.validHabitats.includes(h.id)) { tmpScore += 1; successfullyPlacedIds.add(occ.id); }
+                });
+            });
+
+            crisisZones.forEach(cz => { cz.occupants.forEach(occ => { tmpScore -= 1; }); });
+            mapOccupants.forEach(occ => { tmpScore += 1; });
+
+            FOOD_CHAINS.forEach(chain => {
+                let isCompleted = chain.members.every(mId => successfullyPlacedIds.has(mId));
+                if (isCompleted) { tmpScore += 10; }
+            });
+
+            document.getElementById('current-score').innerText = tmpScore;
+            return tmpScore;
+        }
+
+        const SAVE_KEY = 'ecoDetective_saveData_v9';
         function checkExistingSave() { if (localStorage.getItem(SAVE_KEY)) { document.getElementById('resume-game-section').style.display = 'block'; document.getElementById('new-game-form').style.display = 'none'; } }
         function clearSaveData() { if(confirm("確定要清除進度嗎？")) { localStorage.removeItem(SAVE_KEY); document.getElementById('resume-game-section').style.display = 'none'; document.getElementById('new-game-form').style.display = 'block'; } }
         
         function saveProgress() {
             if (!isGameRunning) return;
+            computeCurrentScore(); // 存檔時同步更新畫面計分板
+            
+            // 儲存測驗進度
+            let savedQuizState = [];
+            for (let i = 0; i < QUIZ_DATA.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                savedQuizState.push(selected ? selected.value : null);
+            }
+
             localStorage.setItem(SAVE_KEY, JSON.stringify({
                 playerName, eventName, eventLocation, inventory, habitats, mapOccupants, crisisZones,
-                quizCompleted, quizScore, drawings, player: { x: player.x, y: player.y, dirAngle: player.dirAngle }
+                quizCompleted, quizScore, savedQuizState, drawings, player: { x: player.x, y: player.y, dirAngle: player.dirAngle }
             }));
         }
 
@@ -506,7 +553,14 @@
                     crisisZones = data.crisisZones || []; drawings = data.drawings || [];
                     quizCompleted = data.quizCompleted || false; quizScore = data.quizScore || 0;
                     player.x = data.player.x; player.y = data.player.y; player.dirAngle = data.player.dirAngle;
-                    renderInventory(); renderQuiz(); return true;
+                    renderInventory(); renderQuiz(); 
+                    
+                    if (!quizCompleted && data.savedQuizState) {
+                        data.savedQuizState.forEach((val, i) => {
+                            if (val !== null) { const radio = document.querySelector(`input[name="q${i}"][value="${val}"]`); if(radio) radio.checked = true; }
+                        });
+                    }
+                    return true;
                 } catch (e) { return false; }
             } return false;
         }
@@ -538,16 +592,17 @@
                 const speed = 15; 
                 if(e.key==='ArrowUp') { 
                     player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed; checkMovement(speed); 
-                    camera.detached = false; // 恢復：按上鍵移動時，鏡頭自動恢復跟隨人物
+                    camera.detached = false;
                 }
                 if(e.key==='ArrowLeft') player.dirAngle -= 0.2; if(e.key==='ArrowRight') player.dirAngle += 0.2;
             });
 
             document.getElementById('start-overlay').style.display = 'none';
+            document.getElementById('live-score-board').style.display = 'flex'; // 顯示即時積分板
             isGameRunning = true; requestAnimationFrame(gameLoop);
+            computeCurrentScore();
         }
 
-        // --- 感測與移動邏輯 ---
         function handleOrientation(e) {
             if (!isGameRunning) return; let dx = e.gamma || 0; let dy = e.beta || 0;  
             if (Math.abs(dx) > 2 || Math.abs(dy) > 2) player.dirAngle = Math.atan2(dx, -dy);
@@ -556,19 +611,14 @@
 
         function handleMotion(e) {
             if (!isGameRunning) return; 
+            if (isPanningMap || draggingInstance || pendingPlacement) return; // 防干擾
             
-            // 新增智慧防干擾：當玩家正在「滑動地圖」、「拖曳卡片」或「開啟確認視窗」時，
-            // 暫時忽略手機的體感震動，確保鏡頭絕對不會亂跳回主角身上
-            if (isPanningMap || draggingInstance || pendingPlacement) return;
-
             let acc = e.acceleration || {x:0, y:0, z:0}; let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
-            
-            // 稍微提高體感步行的觸發閾值 (從 2.0 調升至 2.5)，降低單純手持時的微震動干擾
             if (mag > 2.5) {
                 const stepSize = 6; player.x += Math.sin(player.dirAngle) * stepSize; player.y -= Math.cos(player.dirAngle) * stepSize; 
                 player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x)); player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
                 checkMovement(stepSize);
-                camera.detached = false; // 恢復：玩家真正走路時，鏡頭會自動切換回主角身上
+                camera.detached = false;
             }
         }
 
@@ -619,7 +669,6 @@
             });
         }
 
-        // --- 拖曳與畫筆 ---
         let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0; const dragClone = document.getElementById('drag-clone');
         let pendingPlacement = null; 
 
@@ -708,7 +757,8 @@
                 h.bonusSpawned = true;
                 let nx = Math.max(50, Math.min(MAP_W - 150, h.x + (Math.random() > 0.5 ? 1 : -1) * (80 + Math.random()*50)));
                 let ny = Math.max(50, Math.min(MAP_H - 100, h.y + (Math.random() > 0.5 ? 1 : -1) * (80 + Math.random()*50)));
-                habitats.push({ id: 'bonus_' + Date.now(), name: '新生自然棲地', x: nx, y: ny, w: 120, h: 80, occupants: [], isBonus: true });
+                // 放大新生自然棲地尺寸
+                habitats.push({ id: 'bonus_' + Date.now(), name: '新生自然棲地', x: nx, y: ny, w: 160, h: 120, occupants: [], isBonus: true });
                 showAlert("🌟 生態復育有成！產生了藍白虛線的【新生自然棲地】！");
             }
             if (incorrect >= 3 && !h.crisisSpawned) {
@@ -717,7 +767,8 @@
                 let cName = types[Math.floor(Math.random() * types.length)];
                 let nx = Math.max(60, Math.min(MAP_W - 100, h.x + (Math.random() > 0.5 ? 1 : -1) * (80 + Math.random()*50)));
                 let ny = Math.max(60, Math.min(MAP_H - 100, h.y + (Math.random() > 0.5 ? 1 : -1) * (80 + Math.random()*50)));
-                crisisZones.push({ id: 'crisis_' + Date.now(), name: cName, x: nx, y: ny, r: 60, occupants: [] });
+                // 放大危機地帶半徑
+                crisisZones.push({ id: 'crisis_' + Date.now(), name: cName, x: nx, y: ny, r: 80, occupants: [] });
                 showAlert(`⚠️ 生態警報！錯誤的配置引發了危機地帶：【${cName}】！`);
             }
         }
@@ -769,7 +820,6 @@
             renderInventory(); saveProgress();
         }
 
-        // --- 7. 結算與證書/全景生成系統 ---
         function calculateScore() {
             if (!quizCompleted) {
                 let qScore = 0; let allAnswered = true;
@@ -815,7 +865,6 @@
             generateMapScreenshot(totalScore); 
         }
 
-        // --- 全景地圖背景輸出引擎 (傳入 targetCtx 確保塗鴉匯出) ---
         function generateMapScreenshot(totalScore) {
             const snapCanvas = document.createElement('canvas');
             snapCanvas.width = MAP_W; snapCanvas.height = MAP_H + 80; 
@@ -847,7 +896,6 @@
             ctx.fillStyle = '#14532d'; ctx.fillRect(50, 50, 40, 40); ctx.fillRect(1110, 50, 40, 40); ctx.fillRect(50, 710, 40, 40); ctx.fillRect(1110, 710, 40, 40);
             ctx.fillStyle = '#14532d'; ctx.textAlign = 'center'; ctx.font = 'bold 50px "Segoe UI", sans-serif'; ctx.fillText('探探里山永續生態與農村風俗文化導覽', 600, 200);
             
-            // 修正證書名稱與文字
             ctx.font = 'bold 42px "Segoe UI", sans-serif'; ctx.fillStyle = '#16a34a'; ctx.fillText('結業證書', 600, 270);
             ctx.fillStyle = '#1f2937'; ctx.font = '32px "Segoe UI", sans-serif'; ctx.fillText(`茲證明`, 600, 380);
             ctx.font = 'bold 46px "Segoe UI", sans-serif'; ctx.fillStyle = '#000'; ctx.fillText(`${playerName}`, 600, 450);
@@ -871,7 +919,6 @@
 
             setTimeout(() => {
                 const sourceToDraw = qrTemp.querySelector('canvas') || qrTemp.querySelector('img');
-                // QR Code 向右平移避開邊框
                 if(sourceToDraw) ctx.drawImage(sourceToDraw, 110, 650, 75, 75);
                 ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif'; ctx.fillText(`🌿 探探里山`, 200, 695);
                 
@@ -881,7 +928,6 @@
             }, 150);
         }
 
-        // --- 8. Canvas 渲染迴圈 ---
         function updateCamera() {
             if (!camera.detached) { camera.x = player.x - SCREEN_W / 2; camera.y = player.y - SCREEN_H / 2; }
             camera.x = Math.max(0, Math.min(Math.max(0, MAP_W - SCREEN_W), camera.x)); camera.y = Math.max(0, Math.min(Math.max(0, MAP_H - SCREEN_H), camera.y));
@@ -890,7 +936,6 @@
         function gameLoop() {
             if (!isGameRunning) return; updateCamera(); ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
             ctx.save(); ctx.translate(-camera.x, -camera.y);
-            // 將 ctx 作為參數傳入，確保畫面與截圖渲染邏輯一致
             drawMap(ctx); drawHabitats(ctx); drawCrisisZones(ctx); drawMapOccupants(ctx); drawDrawings(ctx); drawPlayer(ctx);
             ctx.restore(); requestAnimationFrame(gameLoop);
         }
@@ -903,48 +948,38 @@
             });
         }
 
-        // 優化版的地圖渲染 (包含樹木、房屋、水紋)
         function drawMap(targetCtx) {
-            // 基礎地皮
             targetCtx.fillStyle = '#c5e1a5'; targetCtx.fillRect(0, 0, MAP_W, MAP_H);
             
-            // 森林
             targetCtx.fillStyle = '#2e7d32'; targetCtx.beginPath(); targetCtx.moveTo(0,0); targetCtx.lineTo(400,0); targetCtx.lineTo(300,350); targetCtx.lineTo(0,350); targetCtx.fill(); 
             
-            // 淺山
             targetCtx.fillStyle = '#558b2f'; targetCtx.beginPath(); targetCtx.moveTo(400,0); targetCtx.lineTo(1100,0); targetCtx.quadraticCurveTo(1150,200,1050,350); targetCtx.lineTo(300,350); targetCtx.fill(); 
             
-            // 山邊道路與虛線
             targetCtx.fillStyle = '#757575'; targetCtx.fillRect(0, 350, MAP_W, 100); 
             targetCtx.save(); targetCtx.strokeStyle = '#E0E0E0'; targetCtx.lineWidth = 6; targetCtx.setLineDash([30, 30]);
             targetCtx.beginPath(); targetCtx.moveTo(0, 400); targetCtx.lineTo(MAP_W, 400); targetCtx.stroke(); targetCtx.restore();
 
-            // 涵洞
             targetCtx.fillStyle = '#424242'; targetCtx.fillRect(550, 340, 60, 120); 
 
-            // 溪流與水紋
             targetCtx.fillStyle = '#4fc3f7'; targetCtx.beginPath(); targetCtx.moveTo(1100, 450); targetCtx.lineTo(1250, 450); targetCtx.lineTo(1400, MAP_H); targetCtx.lineTo(1250, MAP_H); targetCtx.fill(); 
             targetCtx.save(); targetCtx.strokeStyle = 'rgba(255,255,255,0.4)'; targetCtx.lineWidth = 3;
             targetCtx.beginPath(); targetCtx.moveTo(1150, 500); targetCtx.lineTo(1220, 700); targetCtx.stroke();
             targetCtx.beginPath(); targetCtx.moveTo(1200, 550); targetCtx.lineTo(1320, 900); targetCtx.stroke();
             targetCtx.beginPath(); targetCtx.moveTo(1250, 800); targetCtx.lineTo(1350, 1100); targetCtx.stroke(); targetCtx.restore();
 
-            // 農田與作物線條
             targetCtx.fillStyle = '#fff59d'; targetCtx.fillRect(200, 550, 450, 250); 
             targetCtx.save(); targetCtx.strokeStyle = '#d4e157'; targetCtx.lineWidth = 4;
             for(let cy = 570; cy < 800; cy += 30) { targetCtx.beginPath(); targetCtx.moveTo(210, cy); targetCtx.lineTo(640, cy); targetCtx.stroke(); }
             targetCtx.restore();
 
-            // 水塘與浮萍
-            targetCtx.fillStyle = '#29b6f6'; targetCtx.beginPath(); targetCtx.ellipse(1300, 950, 180, 100, 0, 0, Math.PI * 2); targetCtx.fill(); 
+            targetCtx.fillStyle = '#29b6f6'; targetCtx.beginPath(); targetCtx.ellipse(1350, 910, 160, 90, 0, 0, Math.PI * 2); targetCtx.fill(); 
             targetCtx.save(); targetCtx.fillStyle = '#66BB6A';
-            [[1250, 920], [1350, 910], [1400, 980]].forEach(pos => { targetCtx.beginPath(); targetCtx.arc(pos[0], pos[1], 15, 0, Math.PI*1.8); targetCtx.fill(); });
+            [[1160, 960], [1210, 970], [1250, 990]].forEach(pos => { targetCtx.beginPath(); targetCtx.arc(pos[0], pos[1], 15, 0, Math.PI*1.8); targetCtx.fill(); });
             targetCtx.restore();
 
-            // 裝飾物件副程式
             const drawTree = (x, y, scale, type) => {
                 targetCtx.save(); targetCtx.translate(x, y);
-                targetCtx.fillStyle = '#5D4037'; targetCtx.fillRect(-4 * scale, 0, 8 * scale, 20 * scale); // 樹幹
+                targetCtx.fillStyle = '#5D4037'; targetCtx.fillRect(-4 * scale, 0, 8 * scale, 20 * scale); 
                 if (type === 'pine') {
                     targetCtx.fillStyle = '#1B5E20';
                     targetCtx.beginPath(); targetCtx.moveTo(0, -30 * scale); targetCtx.lineTo(-20 * scale, 5 * scale); targetCtx.lineTo(20 * scale, 5 * scale); targetCtx.fill();
@@ -960,19 +995,17 @@
 
             const drawHouse = (x, y) => {
                 targetCtx.save(); targetCtx.translate(x, y);
-                targetCtx.fillStyle = '#F5F5F5'; targetCtx.fillRect(-40, -25, 80, 50); // 屋體
-                targetCtx.fillStyle = '#D32F2F'; targetCtx.beginPath(); targetCtx.moveTo(-45, -25); targetCtx.lineTo(0, -60); targetCtx.lineTo(45, -25); targetCtx.fill(); // 紅屋頂
-                targetCtx.fillStyle = '#795548'; targetCtx.fillRect(-10, 5, 20, 20); // 木門
-                targetCtx.fillStyle = '#81D4FA'; targetCtx.fillRect(-30, -10, 15, 15); targetCtx.fillRect(15, -10, 15, 15); // 窗戶
+                targetCtx.fillStyle = '#F5F5F5'; targetCtx.fillRect(-40, -25, 80, 50); 
+                targetCtx.fillStyle = '#D32F2F'; targetCtx.beginPath(); targetCtx.moveTo(-45, -25); targetCtx.lineTo(0, -60); targetCtx.lineTo(45, -25); targetCtx.fill(); 
+                targetCtx.fillStyle = '#795548'; targetCtx.fillRect(-10, 5, 20, 20); 
+                targetCtx.fillStyle = '#81D4FA'; targetCtx.fillRect(-30, -10, 15, 15); targetCtx.fillRect(15, -10, 15, 15); 
                 targetCtx.restore();
             };
 
-            // 繪製樹林與建築
-            [[80,80], [180,150], [280,60], [120,260], [60,320], [200,220], [320,160], [40,180]].forEach(pos => drawTree(pos[0], pos[1], 1.2, 'pine'));
+            [[80,80], [180,150], [280,60], [150,280], [60,320], [200,220], [320,160], [20,120]].forEach(pos => drawTree(pos[0], pos[1], 1.2, 'pine'));
             [[450,100], [550,200], [680,80], [800,220], [950,120], [1020,250], [880,70], [750,280], [600,120], [1050, 150]].forEach(pos => drawTree(pos[0], pos[1], 1.0, 'round'));
-            drawHouse(750, 600); drawHouse(880, 630);
+            drawHouse(720, 550); drawHouse(880, 520);
 
-            // 繪製棲地底部裝飾
             targetCtx.save(); targetCtx.translate(110, 240); 
             targetCtx.fillStyle = '#795548'; targetCtx.fillRect(-30, -5, 60, 8); targetCtx.fillRect(-20, 5, 40, 6); targetCtx.fillRect(-15, -12, 35, 6);
             targetCtx.fillStyle = '#D4E157'; targetCtx.beginPath(); targetCtx.moveTo(-15, 5); targetCtx.lineTo(-25, -25); targetCtx.lineTo(-5, 0); targetCtx.fill();
@@ -998,7 +1031,7 @@
             for(let i=0; i<8; i++) { targetCtx.beginPath(); targetCtx.arc(1080, 470 + i*35, 18, 0, Math.PI*2); targetCtx.fill(); }
             targetCtx.restore();
 
-            targetCtx.save(); targetCtx.fillStyle = '#4CAF50'; targetCtx.beginPath(); targetCtx.ellipse(1300, 980, 45, 25, 0, 0, Math.PI*2); targetCtx.fill(); targetCtx.restore();
+            targetCtx.save(); targetCtx.fillStyle = '#4CAF50'; targetCtx.beginPath(); targetCtx.ellipse(1350, 910, 160, 90, 0, 0, Math.PI*2); targetCtx.fill(); targetCtx.restore();
 
             targetCtx.save(); targetCtx.translate(840, 640);
             targetCtx.fillStyle = '#8D6E63'; targetCtx.fillRect(-25, -30, 50, 60); 
@@ -1019,11 +1052,9 @@
 
             drawTextBg(targetCtx, '森林', 150, 150, '#1b5e20');
             drawTextBg(targetCtx, '淺山', 700, 150, '#33691e');
-            drawTextBg(targetCtx, '山邊道路', 200, 400, '#424242');
-            drawTextBg(targetCtx, '涵洞', 580, 400, '#212121');
-            drawTextBg(targetCtx, '溪流', 1230, 650, '#0277bd');
-            drawTextBg(targetCtx, '農田', 420, 670, '#f57f17');
-            drawTextBg(targetCtx, '水塘', 1300, 950, '#0277bd');
+            drawTextBg(targetCtx, '山邊道路', 200, 420, '#424242');
+            drawTextBg(targetCtx, '溪流', 1200, 600, '#0277bd');
+            drawTextBg(targetCtx, '農田', 420, 720, '#f57f17');
         }
 
         function drawHabitats(targetCtx) {
@@ -1064,23 +1095,24 @@
                         occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
                         targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
                     });
-                } else {
-                    // 加入半透明白色背景框，解決文字與複雜地景重疊不清的問題
-                    const text = h.name;
-                    targetCtx.font = 'bold 14px Arial'; 
-                    const w = targetCtx.measureText(text).width + 16;
-                    const cx = h.x + h.w/2;
-                    const cy = h.y + h.h/2;
-                    
-                    targetCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-                    targetCtx.beginPath(); 
-                    targetCtx.roundRect(cx - w/2, cy - 12, w, 24, 6); 
-                    targetCtx.fill();
-                    
-                    targetCtx.fillStyle = h.isBonus ? '#1d4ed8' : '#b71c1c'; 
-                    targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; 
-                    targetCtx.fillText(text, cx, cy);
                 }
+                
+                // 強制名稱置頂：無論是否有生物，名稱標籤永遠畫在最上面
+                const text = h.name;
+                targetCtx.font = 'bold 14px Arial'; 
+                const w = targetCtx.measureText(text).width + 16;
+                const cx = h.x + h.w/2;
+                const cy = h.y + h.h/2;
+                
+                targetCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                targetCtx.beginPath(); 
+                targetCtx.roundRect(cx - w/2, cy - 12, w, 24, 6); 
+                targetCtx.fill();
+                
+                targetCtx.fillStyle = h.isBonus ? '#1d4ed8' : '#b71c1c'; 
+                targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; 
+                targetCtx.fillText(text, cx, cy);
+
                 targetCtx.restore();
             });
         }
@@ -1092,9 +1124,6 @@
                 targetCtx.strokeStyle = '#111'; targetCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; targetCtx.setLineDash([8, 8]);
                 targetCtx.beginPath(); targetCtx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
                 targetCtx.strokeStyle = '#fff'; targetCtx.lineDashOffset = 8; targetCtx.stroke();
-
-                targetCtx.font = 'bold 12px Arial'; targetCtx.fillStyle = '#ef4444'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
-                targetCtx.fillText("⚠️" + cz.name, cz.x, cz.y - cz.r + 15);
 
                 if (cz.occupants.length > 0) {
                     const boxW = cz.r * 1.4; const maxCols = Math.max(1, Math.floor(boxW / iconSize));
@@ -1109,7 +1138,6 @@
                         if (occ.type === 'culture') { targetCtx.beginPath(); targetCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke(); } 
                         else { targetCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); targetCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
                         
-                        // 繪製卡牌圖示與名稱
                         targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.fillText(occ.icon, px, py - 4);
                         targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; targetCtx.fillText(occ.name, px, py + 16);
 
@@ -1117,6 +1145,18 @@
                         targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
                     });
                 }
+                
+                // 強制危機警告名稱置頂
+                const cText = "⚠️" + cz.name;
+                targetCtx.font = 'bold 12px Arial';
+                const cWidth = targetCtx.measureText(cText).width + 16;
+                targetCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                targetCtx.beginPath(); 
+                targetCtx.roundRect(cz.x - cWidth/2, cz.y - cz.r + 3, cWidth, 24, 6); 
+                targetCtx.fill();
+                targetCtx.fillStyle = '#ef4444'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
+                targetCtx.fillText(cText, cz.x, cz.y - cz.r + 15);
+
                 targetCtx.restore();
             });
         }
@@ -1130,7 +1170,6 @@
                 targetCtx.fillStyle = '#fffbeb'; targetCtx.beginPath(); targetCtx.arc(occ.x, occ.y, r, 0, Math.PI*2); targetCtx.fill();
                 targetCtx.strokeStyle = '#f59e0b'; targetCtx.lineWidth = 2; targetCtx.stroke();
                 
-                // 繪製卡牌圖示與名稱
                 targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; 
                 targetCtx.fillText(occ.icon, occ.x, occ.y - 4);
                 targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; 
