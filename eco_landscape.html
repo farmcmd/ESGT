@@ -408,15 +408,15 @@
             { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['b11', 'b12', 'b4'] }
         ];
 
-        // 重新排版與大尺寸的 14 種微棲地 (含原始森林 h14)
+        // 重新排版與大尺寸的 14 種微棲地 (含原始森林 h14，名稱加入標示)
         let habitats = [
             { id: 'h14', name: '原始森林', x: 20, y: 20, w: 240, h: 160, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h1', name: '枯木草堆', x: 40, y: 240, w: 140, h: 90, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h12', name: '涵洞護道', x: 420, y: 350, w: 150, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h12', name: '涵洞護道(生物可利用友善設施)', x: 420, y: 350, w: 150, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h6', name: '灌木欉', x: 800, y: 220, w: 150, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h2', name: '石堆', x: 1020, y: 120, w: 130, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h10', name: '昆蟲旅館', x: 620, y: 550, w: 100, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h11', name: '攀爬網', x: 450, y: 480, w: 130, h: 70, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h10', name: '昆蟲旅館', x: 300, y: 880, w: 120, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h11', name: '攀爬網(生物可利用友善設施)', x: 25, y: 680, w: 110, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h5', name: '田埂草帶', x: 200, y: 720, w: 320, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h13', name: '灌溉溝渠', x: 40, y: 800, w: 100, h: 200, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h3', name: '砌石溝', x: 600, y: 880, w: 180, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
@@ -1210,7 +1210,7 @@
             drawWoodSign(targetCtx, '溪流', 1200, 600);
             drawWoodSign(targetCtx, '農田', 440, 960);
             drawWoodSign(targetCtx, '設施農業(溫室)', 350, 460);
-            drawWoodSign(targetCtx, '生物通道', 1275, 400);
+            drawWoodSign(targetCtx, '生物通道(生物可利用友善設施)', 1275, 400);
             drawWoodSign(targetCtx, '灌溉溝渠', 80, 630);
         }
 
@@ -1265,8 +1265,15 @@
 
             // 確保木牌繪製在所有卡牌最上層，且立於框線正上方
             habitats.forEach(h => {
-                const cx = h.x + h.w/2; 
-                const cy = h.y; // 放在框線頂部
+                let cx = h.x + h.w/2; 
+                let cy = h.y; // 放在框線頂部
+                
+                // 防溢出處理：如果文字加上外框太長，會自動向內平移，避免被螢幕切邊
+                targetCtx.font = 'bold 16px "Segoe UI", sans-serif';
+                let textW = targetCtx.measureText(h.name).width + 24;
+                if(cx - textW/2 < 10) cx = textW/2 + 10; // 避免左側超出版面
+                if(cx + textW/2 > MAP_W - 10) cx = MAP_W - textW/2 - 10; // 避免右側超出版面
+
                 drawWoodSign(targetCtx, h.name, cx, cy, h.isBonus);
             });
         }
