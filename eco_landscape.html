@@ -23,8 +23,9 @@
         }
 
         #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #7cd059; }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #c5e1a5; }
 
+        /* 畫筆工具列 */
         #draw-tools {
             position: absolute; top: 15px; left: 15px; z-index: 150;
             display: flex; flex-direction: column; gap: 8px; align-items: center;
@@ -36,6 +37,7 @@
         }
         .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
 
+        /* 浮動面板 */
         .floating-panel {
             position: absolute; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 600px; background: var(--panel-bg);
@@ -44,7 +46,6 @@
             backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.5);
             display: flex; flex-direction: column; 
             z-index: 200; /* 保證展開時覆蓋所有 UI */
-            touch-action: pan-y; 
         }
         .panel-header {
             padding: 12px 20px; font-weight: bold; color: var(--primary-dark);
@@ -56,6 +57,7 @@
         .floating-panel.open .panel-content {
             max-height: 550px; padding: 15px; overflow-y: auto; border-top: 1px solid #e5e7eb;
         }
+
         #bottom-panel { bottom: 15px; }
         
         /* 單一右側卡牌收納，解放左側視野 */
@@ -65,6 +67,7 @@
             z-index: 150; pointer-events: auto; touch-action: pan-y;
             align-items: center; padding-right: 5px;
         }
+        /* 隱藏滾動條但保持功能 */
         .side-inventory::-webkit-scrollbar { display: none; }
         
         .creature-card {
@@ -72,7 +75,9 @@
             background: #ffffff; border: 2px solid #9ca3af; border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative;
-            touch-action: pan-y; -webkit-touch-callout: none; transition: transform 0.1s;
+            /* 讓卡片不要攔截系統觸控，交由 pointer 處理長按 */
+            touch-action: pan-y; -webkit-touch-callout: none;
+            transition: transform 0.1s;
         }
         .culture-card { border-radius: 50%; border: 3px solid #f59e0b; background: #fffbeb; }
 
@@ -115,6 +120,19 @@
         .form-group { margin-bottom: 15px; text-align: left; }
         .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
         .form-input { width: 100%; padding: 10px; font-size: 15px; border: 2px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        
+        /* 複選框列表樣式 */
+        .checkbox-list {
+            display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; 
+            padding: 8px; border: 2px solid #ccc; border-radius: 6px; background: #fafafa;
+        }
+        .checkbox-label {
+            display: flex; align-items: center; gap: 8px; font-size: 14px; color: #374151; cursor: pointer;
+            padding: 6px; border-radius: 4px; border: 1px solid transparent; transition: background 0.2s;
+        }
+        .checkbox-label:hover { background: #e5e7eb; border-color: #d1d5db; }
+        .checkbox-label input { width: 16px; height: 16px; margin: 0; }
+
         .btn-primary, .btn-secondary { color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%; box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.1s, box-shadow 0.1s; }
         .btn-primary:active, .btn-secondary:active { transform: translateY(4px); box-shadow: none; }
         .btn-primary { background: #65af44; border-bottom: 4px solid #4a8730; }
@@ -210,19 +228,19 @@
                 <div class="form-group"><label>偵探名稱 (必填)</label><input type="text" id="player-name" class="form-input" placeholder="請輸入姓名"></div>
                 <div class="form-group"><label>活動名稱 (非必填)</label><input type="text" id="event-name" class="form-input" placeholder="例如：春季生態營"></div>
                 <div class="form-group">
-                    <label>探索場域 (必填)</label>
-                    <select id="location-select" class="form-input" onchange="toggleCustomLocation()">
-                        <option value="酪酪找生態">1. 酪酪找生態</option>
-                        <option value="瓜呱報生態">2. 瓜呱報生態</option>
-                        <option value="林近里山">3. 林近里山</option>
-                        <option value="校園">4. 校園</option>
-                        <option value="社區">5. 社區</option>
-                        <option value="河岸">6. 河岸</option>
-                        <option value="淺山步道">7. 淺山步道</option>
-                        <option value="custom">8. 其他 (自行填寫)</option>
-                    </select>
+                    <label>探索場域 (可複選串聯活動)</label>
+                    <div class="checkbox-list">
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="1.酪酪找生態(湧健酪梨園)"> 1. 酪酪找生態(湧健酪梨園)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="2.瓜呱報生態(雨社山下農場)"> 2. 瓜呱報生態(雨社山下農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="3.林近里山(指令教育農場)"> 3. 林近里山(指令教育農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="4.護溪龜歸(阿爾喜農場)"> 4. 護溪龜歸(阿爾喜農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="5.金線連一連"> 5. 金線連一連</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="6.網路茶不到的知識(小茶米農場)"> 6. 網路茶不到的知識(小茶米農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="7.轀轆森林"> 7. 轀轆森林</label>
+                        <label class="checkbox-label"><input type="checkbox" id="loc-other-cb" onchange="toggleCustomLocation()"> 8. 其他 (自行填寫)</label>
+                    </div>
                 </div>
-                <div class="form-group" id="custom-location-group" style="display: none;"><label>請輸入自訂場域</label><input type="text" id="custom-location" class="form-input" placeholder="填寫場域名稱"></div>
+                <div class="form-group" id="custom-location-group" style="display: none;"><input type="text" id="custom-location" class="form-input" placeholder="填寫場域名稱"></div>
                 <button class="btn-primary" onclick="startGame(false)">確認出發 🚀</button>
             </div>
             
@@ -478,7 +496,7 @@
         // --- 2. 核心狀態 ---
         let playerName = "小偵探"; let eventName = ""; let eventLocation = "";
         function toggleCustomLocation() {
-            document.getElementById('custom-location-group').style.display = (document.getElementById('location-select').value === 'custom') ? 'block' : 'none';
+            document.getElementById('custom-location-group').style.display = document.getElementById('loc-other-cb').checked ? 'block' : 'none';
         }
 
         const canvas = document.getElementById('gameCanvas'); let ctx = canvas.getContext('2d');
@@ -586,8 +604,21 @@
                 let pName = document.getElementById('player-name').value.trim();
                 if(!pName) { alert("請填寫偵探名稱！"); return; }
                 playerName = pName; eventName = document.getElementById('event-name').value.trim();
-                let locSelect = document.getElementById('location-select').value;
-                eventLocation = locSelect === 'custom' ? (document.getElementById('custom-location').value.trim() || '未定場域') : locSelect;
+                
+                // 複選框邏輯
+                let selectedLocs = [];
+                const checkboxes = document.querySelectorAll('input[name="location"]:checked');
+                checkboxes.forEach(cb => selectedLocs.push(cb.value));
+                if (document.getElementById('loc-other-cb').checked) {
+                    const customVal = document.getElementById('custom-location').value.trim();
+                    if (customVal) selectedLocs.push(customVal);
+                }
+                
+                if (selectedLocs.length === 0) {
+                    alert("請至少選擇一個探索場域！"); return;
+                }
+                eventLocation = selectedLocs.join(' + ');
+
                 renderQuiz(); saveProgress();
             }
 
@@ -923,9 +954,7 @@
             sCtx.fillStyle = '#fff'; sCtx.font = 'bold 28px "Segoe UI", sans-serif';
             sCtx.textAlign = 'left'; sCtx.textBaseline = 'middle';
             
-            const routeMapping = { "酪酪找生態": "湧健酪梨園/梅園+槑休閒農業區", "瓜呱報生態": "雨社山下農場+阿爾喜農場", "林近里山": "蛇窯文化園區+指令教育農場+明揚養蜂" };
-            let displayLocation = routeMapping[eventLocation] ? `${eventLocation} (${routeMapping[eventLocation]})` : eventLocation;
-            sCtx.fillText(`🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${displayLocation} | 總成績：${totalScore} 分`, 30, MAP_H + 40);
+            sCtx.fillText(`🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${eventLocation} | 總成績：${totalScore} 分`, 30, MAP_H + 40);
 
             const dataUrl = snapCanvas.toDataURL('image/png');
             const mapPreviewImg = document.getElementById('map-preview');
@@ -956,9 +985,13 @@
                 ctx.fillText(`在生態導覽與農村風俗文化導覽活動中，認真學習，`, 600, 510);
                 ctx.fillText(`獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。`, 600, 550);
 
-                // 簡化邏輯：直接讀取 eventLocation，不需額外 Mapping
                 ctx.font = 'bold 24px "Segoe UI", sans-serif'; let detailY = 620;
                 if(eventName) { ctx.fillText(`活動名稱：${eventName}`, 600, detailY); detailY += 40; }
+                
+                // 處理可能過長的串聯場域名稱
+                if (ctx.measureText(`路線(場域)：${eventLocation}`).width > 1000) {
+                    ctx.font = 'bold 18px "Segoe UI", sans-serif';
+                }
                 ctx.fillText(`路線(場域)：${eventLocation}  |  評測總成績：${score} 分`, 600, detailY);
 
                 const randomId = Math.random().toString(36).substring(2, 8).toUpperCase(); const dateStr = new Date().toLocaleDateString('zh-TW');
@@ -1022,20 +1055,27 @@
             });
         }
 
-        // 優美木牌繪製函數 (替換原有的 drawTextBg)
+        // 優美木牌繪製函數
         function drawWoodSign(targetCtx, text, x, y, isBonus = false) {
             targetCtx.save();
             targetCtx.font = 'bold 16px "Segoe UI", sans-serif';
-            const w = targetCtx.measureText(text).width + 24;
+            let textW = targetCtx.measureText(text).width;
+            
+            // 防邊界溢出邏輯：若木牌文字過長，強迫將中心點往內縮
+            let cx = x;
+            let displayW = textW + 24;
+            if (cx - displayW/2 < 10) cx = displayW/2 + 10;
+            if (cx + displayW/2 > MAP_W - 10) cx = MAP_W - displayW/2 - 10;
+
             const h = 30;
             
             // 陰影
             targetCtx.fillStyle = 'rgba(0,0,0,0.3)';
-            targetCtx.beginPath(); targetCtx.roundRect(x - w/2 + 2, y - h/2 + 3, w, h, 6); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.roundRect(cx - displayW/2 + 2, y - h/2 + 3, displayW, h, 6); targetCtx.fill();
             
             // 木牌底色 (或新生棲地的藍色)
             targetCtx.fillStyle = isBonus ? '#2D80C6' : '#b87c47';
-            targetCtx.beginPath(); targetCtx.roundRect(x - w/2, y - h/2, w, h, 6); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.roundRect(cx - displayW/2, y - h/2, displayW, h, 6); targetCtx.fill();
             
             // 邊框
             targetCtx.strokeStyle = isBonus ? '#1c7ab1' : '#6d4327';
@@ -1043,15 +1083,15 @@
             
             // 釘子
             targetCtx.fillStyle = '#4a2c18';
-            targetCtx.beginPath(); targetCtx.arc(x - w/2 + 5, y - h/2 + 5, 2, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.beginPath(); targetCtx.arc(x + w/2 - 5, y - h/2 + 5, 2, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.beginPath(); targetCtx.arc(x - w/2 + 5, y + h/2 - 5, 2, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.beginPath(); targetCtx.arc(x + w/2 - 5, y + h/2 - 5, 2, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.arc(cx - displayW/2 + 5, y - h/2 + 5, 2, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.arc(cx + displayW/2 - 5, y - h/2 + 5, 2, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.arc(cx - displayW/2 + 5, y + h/2 - 5, 2, 0, Math.PI*2); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.arc(cx + displayW/2 - 5, y + h/2 - 5, 2, 0, Math.PI*2); targetCtx.fill();
             
             // 文字
             targetCtx.fillStyle = '#ffffff';
             targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
-            targetCtx.fillText(text, x, y + 1);
+            targetCtx.fillText(text, cx, y + 1);
             targetCtx.restore();
         }
 
@@ -1104,7 +1144,7 @@
             });
             targetCtx.restore();
 
-            // 【新增】左下角灌溉溝渠
+            // 左下角灌溉溝渠
             targetCtx.save();
             targetCtx.fillStyle = '#9e9e9e'; targetCtx.fillRect(30, 650, 100, 500); // 水泥邊框
             targetCtx.fillStyle = '#2e9dd9'; targetCtx.fillRect(40, 650, 80, 500); // 溝渠水流
@@ -1112,7 +1152,7 @@
             for(let y=680; y<1100; y+=60) { targetCtx.beginPath(); targetCtx.moveTo(55, y); targetCtx.lineTo(105, y+10); targetCtx.stroke(); }
             targetCtx.restore();
 
-            // 【新增】上方溫室 (設施農業)
+            // 上方溫室 (設施農業)
             targetCtx.save(); targetCtx.translate(150, 480);
             targetCtx.fillStyle = '#e0e0e0'; targetCtx.fillRect(0, 0, 400, 220); // 溫室地板
             targetCtx.fillStyle = '#8d6e63'; targetCtx.fillRect(20, 20, 360, 180); // 內部土壤
@@ -1123,7 +1163,7 @@
             targetCtx.strokeRect(0, 0, 400, 220);
             targetCtx.restore();
 
-            // 【新增】下方新農田
+            // 下方新農田
             targetCtx.save(); targetCtx.translate(220, 820);
             targetCtx.fillStyle = '#a6714a'; targetCtx.fillRect(0, 0, 450, 280); // 泥地
             targetCtx.strokeStyle = '#8c5632'; targetCtx.lineWidth = 6;
@@ -1132,7 +1172,7 @@
             for(let y=30; y<280; y+=40) { for(let x=40; x<430; x+=30) { targetCtx.beginPath(); targetCtx.arc(x, y, 4, 0, Math.PI*2); targetCtx.fill(); } } // 作物
             targetCtx.restore();
 
-            // 【新增】生物通道 (跨越道路)
+            // 生物通道 (跨越道路)
             targetCtx.save();
             targetCtx.fillStyle = '#5fb33e'; targetCtx.fillRect(1150, 330, 250, 140); // 綠色橋面
             targetCtx.fillStyle = '#a6714a'; // 泥土小徑延伸
@@ -1144,11 +1184,10 @@
                 ctx.save(); ctx.translate(x, y);
                 ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 5*scale, 15*scale, 6*scale, 0, 0, Math.PI*2); ctx.fill(); 
                 ctx.fillStyle = '#6e4526'; ctx.fillRect(-4*scale, -10*scale, 8*scale, 15*scale); // 樹幹
-                // 針葉層次
                 for(let i=0; i<3; i++) {
                     let w = (25 - i*5) * scale; let h = 30 * scale; let ty = (-20 - i*15) * scale;
-                    ctx.fillStyle = '#0a4221'; ctx.beginPath(); ctx.moveTo(0, ty-h); ctx.lineTo(w, ty); ctx.lineTo(0, ty); ctx.fill(); // 右亮
-                    ctx.fillStyle = '#115e32'; ctx.beginPath(); ctx.moveTo(0, ty-h); ctx.lineTo(-w, ty); ctx.lineTo(0, ty); ctx.fill(); // 左暗
+                    ctx.fillStyle = '#0a4221'; ctx.beginPath(); ctx.moveTo(0, ty-h); ctx.lineTo(w, ty); ctx.lineTo(0, ty); ctx.fill(); 
+                    ctx.fillStyle = '#115e32'; ctx.beginPath(); ctx.moveTo(0, ty-h); ctx.lineTo(-w, ty); ctx.lineTo(0, ty); ctx.fill(); 
                 }
                 ctx.restore();
             };
@@ -1157,7 +1196,6 @@
                 ctx.save(); ctx.translate(x, y);
                 ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 5*scale, 15*scale, 6*scale, 0, 0, Math.PI*2); ctx.fill(); 
                 ctx.fillStyle = '#7a4f2e'; ctx.fillRect(-5*scale, -15*scale, 10*scale, 20*scale); // 樹幹
-                // 闊葉層次
                 ctx.fillStyle = '#145c1a'; ctx.beginPath(); ctx.arc(0, -30*scale, 25*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-15*scale, -20*scale, 20*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(15*scale, -20*scale, 20*scale, 0, Math.PI*2); ctx.fill(); 
                 ctx.fillStyle = '#1e8027'; ctx.beginPath(); ctx.arc(0, -35*scale, 18*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-12*scale, -25*scale, 12*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(12*scale, -25*scale, 12*scale, 0, Math.PI*2); ctx.fill(); 
                 ctx.restore();
@@ -1168,11 +1206,11 @@
                 ctx.save(); ctx.translate(x, y);
                 ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 30, 55, 15, 0, 0, Math.PI*2); ctx.fill(); 
                 ctx.fillStyle = '#fce4c8'; ctx.fillRect(-45, -25, 90, 55); 
-                ctx.fillStyle = '#d64d42'; ctx.beginPath(); ctx.moveTo(-55, -25); ctx.lineTo(0, -65); ctx.lineTo(55, -25); ctx.fill(); // 紅屋頂右
-                ctx.fillStyle = '#ab3b32'; ctx.beginPath(); ctx.moveTo(0, -65); ctx.lineTo(55, -25); ctx.lineTo(0, -25); ctx.fill(); // 紅屋頂左(陰影)
-                ctx.fillStyle = '#5c3a21'; ctx.fillRect(-12, 5, 24, 25); // 門
-                ctx.fillStyle = '#71bded'; ctx.fillRect(-35, -10, 15, 20); ctx.fillRect(20, -10, 15, 20); // 窗
-                ctx.fillStyle = '#a3a3a3'; ctx.fillRect(25, -70, 10, 25); // 煙囪
+                ctx.fillStyle = '#d64d42'; ctx.beginPath(); ctx.moveTo(-55, -25); ctx.lineTo(0, -65); ctx.lineTo(55, -25); ctx.fill(); 
+                ctx.fillStyle = '#ab3b32'; ctx.beginPath(); ctx.moveTo(0, -65); ctx.lineTo(55, -25); ctx.lineTo(0, -25); ctx.fill(); 
+                ctx.fillStyle = '#5c3a21'; ctx.fillRect(-12, 5, 24, 25); 
+                ctx.fillStyle = '#71bded'; ctx.fillRect(-35, -10, 15, 20); ctx.fillRect(20, -10, 15, 20); 
+                ctx.fillStyle = '#a3a3a3'; ctx.fillRect(25, -70, 10, 25); 
                 ctx.restore();
             };
 
@@ -1266,13 +1304,6 @@
             habitats.forEach(h => {
                 let cx = h.x + h.w/2; 
                 let cy = h.y; // 放在框線頂部
-                
-                // 防溢出處理：如果文字加上外框太長，會自動向內平移，避免被螢幕切邊
-                targetCtx.font = 'bold 16px "Segoe UI", sans-serif';
-                let textW = targetCtx.measureText(h.name).width + 24;
-                if(cx - textW/2 < 10) cx = textW/2 + 10; // 避免左側超出版面
-                if(cx + textW/2 > MAP_W - 10) cx = MAP_W - textW/2 - 10; // 避免右側超出版面
-
                 drawWoodSign(targetCtx, h.name, cx, cy, h.isBonus);
             });
         }
