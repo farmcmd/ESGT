@@ -42,6 +42,14 @@
         .power-save-mode *, .power-save-mode *::before, .power-save-mode *::after{animation-play-state:paused !important;}
         .group-header { cursor: pointer; transition: background-color 0.2s; }
         .group-header:hover { background-color: #f1f8f5; }
+        
+        /* 針對深層連結的發光提示動畫 */
+        @keyframes highlightPulse {
+            0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+        }
+        .highlight-target { animation: highlightPulse 2s ease-out 2; border-color: #facc15 !important; }
     </style>
 </head>
 <body class="font-sans antialiased overflow-x-hidden">
@@ -902,7 +910,7 @@
                 const pois = group.pois || [];
                 
                 html += `
-                    <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                    <div id="poi-group-${group.id}" class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white scroll-mt-24 transition-all duration-500">
                         <button class="group-header w-full text-left px-3 py-3 bg-gray-50 focus:outline-none flex justify-between items-center" 
                                 onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180');">
                             <div class="flex flex-col">
@@ -934,11 +942,14 @@
                         `;
                     });
                     
-                    // 🌟 新增：打包此行程圖卡按鈕
+                    // 🌟 新增：打包此行程圖卡與分享專案網址按鈕 (Grid 雙欄並排)
                     html += `
-                        <div class="pt-3 pb-1 px-1 border-t border-gray-100 mt-2">
+                        <div class="pt-3 pb-1 px-1 border-t border-gray-100 mt-2 grid grid-cols-2 gap-2">
                             <button onclick="window.downloadItineraryCard('${group.id}')" class="w-full py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
-                                <i class="fas fa-camera-retro mr-2 group-hover:scale-110 transition-transform text-yellow-100"></i> 下載行程分享圖卡
+                                <i class="fas fa-camera-retro mr-2 group-hover:scale-110 transition-transform text-yellow-100"></i> 下載行程圖卡
+                            </button>
+                            <button onclick="window.shareItinerary('${group.id}')" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
+                                <i class="fas fa-link mr-2 group-hover:scale-110 transition-transform text-blue-100"></i> 分享專案網址
                             </button>
                         </div>
                     `;
@@ -949,6 +960,49 @@
                 html += `</div></div>`;
             });
             container.innerHTML = html;
+            setTimeout(window.checkAndScrollToSharedProject, 500);
+        };
+
+        // 🌟 新增：產生分享網址與呼叫系統 Modal
+        window.shareItinerary = function(groupId) {
+            // 固定寫死乾淨的基礎網址，避免環境參數干擾
+            const shareUrl = `https://farmcmd.github.io/ESGT/?project_id=${groupId}`;
+            
+            if (typeof window.openShareQRCode === 'function') {
+                window.openShareQRCode(shareUrl);
+            } else {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        window.showToast('✅ 專屬網址已成功複製！快分享給夥伴吧');
+                    }).catch(() => {
+                        prompt('請手動複製以下網址分享：', shareUrl);
+                    });
+                } else {
+                    prompt('請手動複製以下網址分享：', shareUrl);
+                }
+            }
+        };
+
+        window.checkAndScrollToSharedProject = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetId = urlParams.get('project_id');
+            if (targetId) {
+                const targetElement = document.getElementById(`poi-group-${targetId}`);
+                if (targetElement) {
+                    // 自動展開折疊面板
+                    const contentArea = targetElement.querySelector('.hidden.px-2.py-2.bg-white');
+                    if (contentArea) {
+                        const headerBtn = targetElement.querySelector('.group-header');
+                        if (headerBtn) headerBtn.click();
+                    }
+
+                    setTimeout(() => {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetElement.classList.add('ring-4', 'ring-yellow-400');
+                        setTimeout(() => targetElement.classList.remove('ring-4', 'ring-yellow-400'), 4000);
+                    }, 500); 
+                }
+            }
         };
 
         // 🌟 新增：打包圖卡與下載邏輯
@@ -1018,7 +1072,7 @@
                 if (qrContainer) {
                     qrContainer.innerHTML = ''; // 清空原本內容
                     new QRCode(qrContainer, { 
-                        text: "https://farmcmd.github.io/ESGT/", 
+                        text: `https://farmcmd.github.io/ESGT/?project_id=${groupId}`, 
                         width: 44, 
                         height: 44, 
                         colorDark : "#2C3E28", 
@@ -1362,7 +1416,7 @@
                 const container = document.getElementById('certificate-dom-container'); if(!container) return;
                 const dateStr = new Date().toLocaleDateString('zh-TW');
                 
-                const recentLogs = (state.activityLogs || []).slice(0, 3).map(l => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(l.time||'').split(' ')[0]||dateStr}</span> ${l.text||'行動'}</div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無行動紀錄</div>';
+                const recentLogs = (state.activityLogs || []).slice(0, 3).map(l => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(l.time||'').split(' ')[0]||dateStr}</span> ${l.text||'行动'}</div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無行動紀錄</div>';
                 const recentCheckouts = (state.checkoutHistory || []).slice(0, 3).map(c => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(c.time||'').split(' ')[0]||dateStr}</span> 歸戶至: ${c.target||'未知'} <b>(${c.carbon||0}g)</b></div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無歸戶紀錄</div>';
                 
                 container.innerHTML = `
