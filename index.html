@@ -942,14 +942,20 @@
                         `;
                     });
                     
-                    // 🌟 新增：打包此行程圖卡與分享專案網址按鈕 (Grid 雙欄並排)
+                    // 🌟 新增：打包圖卡與分享專案網址按鈕 (Grid 雙欄並排)
                     html += `
                         <div class="pt-3 pb-1 px-1 border-t border-gray-100 mt-2 grid grid-cols-2 gap-2">
                             <button onclick="window.downloadItineraryCard('${group.id}')" class="w-full py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
-                                <i class="fas fa-camera-retro mr-2 group-hover:scale-110 transition-transform text-yellow-100"></i> 下載行程圖卡
+                                <i class="fas fa-camera-retro mr-2 group-hover:scale-110 transition-transform text-yellow-100"></i> 下載行程分享圖卡
                             </button>
                             <button onclick="window.shareItinerary('${group.id}')" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
                                 <i class="fas fa-link mr-2 group-hover:scale-110 transition-transform text-blue-100"></i> 分享專案網址
+                            </button>
+                        </div>
+                        <!-- 畫布測試專用按鈕 (如果您需要在預覽中測試，可以保留) -->
+                        <div class="px-1 pb-1 mt-1">
+                            <button onclick="window.simulateDeepLinkTest('${group.id}')" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-[13px] font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition outline-none transform active:scale-95 tracking-wide">
+                                <i class="fas fa-bullseye"></i> 測試定位功能 (模擬點開連結)
                             </button>
                         </div>
                     `;
@@ -963,14 +969,16 @@
             setTimeout(window.checkAndScrollToSharedProject, 500);
         };
 
-        // 🌟 新增：產生分享網址與呼叫系統 Modal
+        // 🌟 新增：產生分享網址邏輯，並直接開啟系統的 QR Modal
         window.shareItinerary = function(groupId) {
-            // 固定寫死乾淨的基礎網址，避免環境參數干擾
+            // 直接寫死基礎網址，避免環境被污染
             const shareUrl = `https://farmcmd.github.io/ESGT/?project_id=${groupId}`;
             
+            // 直接呼叫系統已經存在的 QR Code 顯示 Modal，傳入新的專屬網址
             if (typeof window.openShareQRCode === 'function') {
                 window.openShareQRCode(shareUrl);
             } else {
+                // 如果 Modal 功能失效的備用方案
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(shareUrl).then(() => {
                         window.showToast('✅ 專屬網址已成功複製！快分享給夥伴吧');
@@ -983,24 +991,76 @@
             }
         };
 
+        // 畫布模擬用的 Deep Link 測試
+        window.simulateDeepLinkTest = function(groupId) {
+            const testUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?project_id=' + groupId;
+            try {
+                window.history.pushState({path: testUrl}, '', testUrl);
+            } catch(e) {
+                // 如果在畫布(Blob)中被擋，直接觸發函式而不用真的改網址
+                console.warn('History API blocked, simulating click directly.');
+                window.location.search = `?project_id=${groupId}`; // fallback for testing if needed
+            }
+            window.showToast('🔄 正在模擬載入專屬網址...');
+            setTimeout(() => {
+                // 手動傳入 ID 給處理函式，繞過真實網址解析
+                const targetElement = document.getElementById(`poi-group-${groupId}`);
+                if (targetElement) {
+                    const homePage = document.getElementById('homepage');
+                    const missionPage = document.getElementById('mission-page');
+                    if (homePage && missionPage && missionPage.classList.contains('hidden')) {
+                        homePage.classList.add('hidden');
+                        missionPage.classList.remove('hidden');
+                        if(window.mapsApiReady && typeof window.renderMap === 'function') {
+                            setTimeout(window.renderMap, 100);
+                        }
+                    }
+
+                    const headerBtn = targetElement.querySelector('.group-header');
+                    if (headerBtn && targetElement.querySelector('.hidden')) {
+                        headerBtn.click();
+                    }
+
+                    setTimeout(() => {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetElement.classList.add('ring-4', 'ring-yellow-400', 'transition-all', 'duration-500');
+                        setTimeout(() => targetElement.classList.remove('ring-4', 'ring-yellow-400'), 4000);
+                    }, 800);
+                }
+            }, 300);
+        };
+
         window.checkAndScrollToSharedProject = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const targetId = urlParams.get('project_id');
             if (targetId) {
                 const targetElement = document.getElementById(`poi-group-${targetId}`);
                 if (targetElement) {
+                    // 🌟 關鍵修正：因為專案列表在「任務頁面」裡，預設是隱藏的。我們必須先切換頁面！
+                    const homePage = document.getElementById('homepage');
+                    const missionPage = document.getElementById('mission-page');
+                    
+                    if (homePage && missionPage && missionPage.classList.contains('hidden')) {
+                        homePage.classList.add('hidden');
+                        missionPage.classList.remove('hidden');
+                        
+                        // 由於地圖從隱藏變顯示，需要重新渲染
+                        if(window.mapsApiReady && typeof window.renderMap === 'function') {
+                            setTimeout(window.renderMap, 100);
+                        }
+                    }
+
                     // 自動展開折疊面板
-                    const contentArea = targetElement.querySelector('.hidden.px-2.py-2.bg-white');
-                    if (contentArea) {
-                        const headerBtn = targetElement.querySelector('.group-header');
-                        if (headerBtn) headerBtn.click();
+                    const headerBtn = targetElement.querySelector('.group-header');
+                    if (headerBtn && targetElement.querySelector('.hidden')) {
+                         headerBtn.click();
                     }
 
                     setTimeout(() => {
                         targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        targetElement.classList.add('ring-4', 'ring-yellow-400');
+                        targetElement.classList.add('ring-4', 'ring-yellow-400', 'transition-all', 'duration-500');
                         setTimeout(() => targetElement.classList.remove('ring-4', 'ring-yellow-400'), 4000);
-                    }, 500); 
+                    }, 800); // 加長一點延遲，確保頁面切換和地圖渲染完成
                 }
             }
         };
@@ -1416,7 +1476,7 @@
                 const container = document.getElementById('certificate-dom-container'); if(!container) return;
                 const dateStr = new Date().toLocaleDateString('zh-TW');
                 
-                const recentLogs = (state.activityLogs || []).slice(0, 3).map(l => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(l.time||'').split(' ')[0]||dateStr}</span> ${l.text||'行动'}</div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無行動紀錄</div>';
+                const recentLogs = (state.activityLogs || []).slice(0, 3).map(l => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(l.time||'').split(' ')[0]||dateStr}</span> ${l.text||'行動'}</div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無行動紀錄</div>';
                 const recentCheckouts = (state.checkoutHistory || []).slice(0, 3).map(c => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(c.time||'').split(' ')[0]||dateStr}</span> 歸戶至: ${c.target||'未知'} <b>(${c.carbon||0}g)</b></div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無歸戶紀錄</div>';
                 
                 container.innerHTML = `
