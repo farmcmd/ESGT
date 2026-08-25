@@ -210,12 +210,19 @@
                                          <div class="text-[11px] font-bold text-gray-400 text-center py-3 bg-white/50 rounded-lg border border-dashed border-gray-300 leading-relaxed px-1">請從探探里山永續廊道或上方「專案活動」中，<br>依序選擇地點加入路線</div>
                                      </div>
                                      
-                                     <button id="add-return-btn" onclick="window.addReturnPoint()" class="hidden w-full py-1.5 bg-white/80 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50 transition shadow-sm mt-1 outline-none"><i class="fas fa-undo-alt mr-1"></i> 返回起始點 (形成環線)</button>
+                                     <button id="add-return-btn" onclick="window.addReturnPoint()" class="hidden w-full py-1.5 bg-white/80 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50 transition shadow-sm mt-1 outline-none"><i class="fas fa-undo-alt mr-1"></i> 計算回程 (來回里程)</button>
                                  </div>
 
                                  <div class="flex flex-col gap-2 mt-2 pt-3 border-t border-gray-200/60">
-                                     <div id="trip-calculation-status" class="text-[11px] font-bold text-mori-wood bg-[#F0F7F4]/80 p-2.5 rounded-lg border border-mori-light/50 text-center min-h-[40px] flex items-center justify-center backdrop-blur-sm">
-                                         請加入至少兩個站點
+                                     <!-- 快速切換交通方式下拉選單 -->
+                                     <div class="flex items-center gap-2 bg-[#F0F7F4]/80 p-2 rounded-lg border border-mori-light/50 backdrop-blur-sm">
+                                         <i class="fas fa-bus text-mori-sage text-[13px] shrink-0"></i>
+                                         <select id="quick-transport-select" onchange="window.selectTransport(this.value)" class="flex-1 bg-white border border-gray-200 rounded text-[12px] font-bold text-gray-700 py-1.5 px-2 focus:outline-none focus:border-mori-sage shadow-sm cursor-pointer">
+                                             <option value="" disabled selected>請選擇交通方式</option>
+                                         </select>
+                                     </div>
+                                     <div id="trip-calculation-status" class="text-[11px] font-bold text-gray-500 text-center min-h-[20px] flex items-center justify-center tracking-wide">
+                                         加入站點後，點擊計算路線
                                      </div>
                                      <div class="grid grid-cols-2 gap-2 mt-1">
                                          <button id="preview-trip-button" class="hidden py-2 bg-mori-forest text-white rounded-lg shadow-md font-bold text-[12px] hover:bg-mori-dark transition outline-none transform active:scale-95"><i class="fas fa-calculator mr-1.5"></i>計算路線</button>
@@ -742,7 +749,7 @@
         };
 
         window.addReturnPoint = function() {
-            if (window.routePoints.length < 2) return window.showToast('請至少加入兩個不同站點再形成環線', true);
+            if (window.routePoints.length < 2) return window.showToast('請至少加入兩個不同站點再計算回程', true);
             const start = window.routePoints[0];
             window.addPointToRoute({ coords: start.coords, name: start.name + " (回程)" });
         };
@@ -754,7 +761,7 @@
             const confirmBtn = document.getElementById('confirm-trip-button');
             const status = document.getElementById('trip-calculation-status');
 
-            if(status) status.innerHTML = '請加入至少兩個站點，並點擊上方「開始計算路線」。';
+            if(status) status.innerHTML = '加入站點並確認交通方式後，點擊計算路線';
             if(confirmBtn) confirmBtn.classList.add('hidden');
             window.pendingTrip = { isValid: false };
             
@@ -1776,6 +1783,14 @@
         window.bindMapAndTransportEvents=function(){
             const tGrid=document.getElementById('transport-grid');
             if(tGrid){tGrid.innerHTML=Object.entries(transportData).map(([k,d])=>`<div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer text-center hover:border-mori-forest transition" onclick="window.selectTransport('${k}')"><div class="text-3xl mb-2">${d.icon}</div><div class="text-xs font-bold text-gray-700">${d.name}</div></div>`).join('');}
+            
+            // 綁定快速下拉選單的選項
+            const quickSelect = document.getElementById('quick-transport-select');
+            if (quickSelect) {
+                quickSelect.innerHTML = '<option value="" disabled selected>請選擇交通方式</option>' + 
+                    Object.entries(transportData).map(([k, d]) => `<option value="${k}">${d.icon} ${d.name}</option>`).join('');
+            }
+
             const selects=[document.getElementById('city-select')];
             const cityHtml='<option value="">-- 選擇 --</option>'+taiwanCities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
             if(selects[0])selects[0].innerHTML=cityHtml;
@@ -1792,6 +1807,11 @@
 
         window.selectTransport=function(key){
             state.currentTransport=key;
+            
+            // 同步更新浮動面板中的下拉選單
+            const quickSelect = document.getElementById('quick-transport-select');
+            if(quickSelect) quickSelect.value = key;
+
             document.getElementById('homepage').classList.add('hidden');document.getElementById('mission-page').classList.remove('hidden');
             document.getElementById('current-transport-display-mission').innerHTML=`<i class="fas fa-info-circle mr-1.5 opacity-80"></i>交通方式: ${transportData[key].name}`;
             
