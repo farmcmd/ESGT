@@ -994,6 +994,10 @@
             });
         };
 
+        // 🌟 新增：群組折疊狀態記憶，解決點擊卡片後選單自動收合的缺陷
+        window.entOpenGroups = window.entOpenGroups || new Set();
+        window.govOpenGroups = window.govOpenGroups || new Set();
+
         window.renderEntProjectsDashboard = function() {
             const grid = document.getElementById('enterprise-grid'); 
             const select = document.getElementById('ent-proj-select');
@@ -1024,25 +1028,60 @@
                 const isUncat = sn === '未分類'; 
                 const firstProjName = grouped[sn][0]?.orgName || '未命名企業'; 
                 
+                // 🌟 新增：計算該群組內卡片的選取狀態，並產出「全選序號」按鈕
+                let allSelected = grouped[sn].length > 0 && grouped[sn].every(p => summaryState.entSelected.has(p.id));
+                let partialSelected = grouped[sn].some(p => summaryState.entSelected.has(p.id)) && !allSelected;
+                let selectBtnHtml = '';
+                if (summaryState.entMode) {
+                    selectBtnHtml = `
+                        <button class="group-select-btn ml-3 bg-white border ${allSelected ? 'border-yellow-500 text-yellow-600' : 'border-gray-300 text-gray-500'} px-2.5 py-0.5 rounded text-[11px] font-bold shadow-sm transition-colors z-10 relative hover:bg-yellow-50 flex items-center shrink-0">
+                            <i class="fas ${allSelected ? 'fa-check-square text-yellow-500' : (partialSelected ? 'fa-minus-square text-yellow-400' : 'fa-square text-gray-300')} mr-1.5"></i>${allSelected ? '取消全選' : '全選序號'}
+                        </button>
+                    `;
+                }
+
+                // 🌟 讀取折疊記憶狀態
+                const isOpen = window.entOpenGroups.has(sn);
+
                 const groupHeader = document.createElement('div'); 
                 groupHeader.className = `bg-yellow-50/90 p-3.5 rounded-xl font-bold text-yellow-800 cursor-pointer flex justify-between items-center mb-3 shadow-sm border border-yellow-200 hover:bg-yellow-100 transition-colors sticky top-0 z-40 backdrop-blur-md`;
                 
                 groupHeader.innerHTML = `
-                    <span>
-                        <span class="w-5 text-center inline-block mr-1"><i class="fas ${isUncat ? 'fa-folder-open' : 'fa-building'} text-yellow-600"></i></span>
-                        ${isUncat ? '一般活動 (未設定序號)' : `<span class="text-[0.55em] opacity-80 font-bold tracking-widest mr-0.5 align-middle">活動序號：</span><span class="font-mono text-yellow-700 bg-white px-1.5 py-0.5 rounded shadow-sm">${sn}</span><span class="ml-2 text-yellow-900 border-l-2 border-yellow-400 pl-2">${firstProjName}</span>`} 
-                        <span class="text-[11px] font-bold text-white bg-yellow-500 px-2 py-0.5 rounded-full shadow-inner ml-2">${grouped[sn].length} 筆</span>
-                    </span> 
-                    <i class="fas fa-chevron-down text-yellow-500 transition-transform" style="transform: rotate(-90deg);"></i>
+                    <div class="flex items-center overflow-hidden">
+                        <i class="fas ${isUncat ? 'fa-folder-open' : 'fa-building'} mr-2 text-yellow-600 shrink-0"></i>
+                        <div class="flex items-center flex-wrap gap-1.5 shrink-0">
+                            ${isUncat ? '一般活動 (未設定序號)' : `<span class="text-[0.55em] opacity-80 font-bold tracking-widest align-middle hidden sm:inline">活動序號：</span><span class="font-mono text-yellow-700 bg-white px-1.5 py-0.5 rounded shadow-sm">${sn}</span><span class="text-yellow-900 border-l-2 border-yellow-400 pl-1.5 max-w-[150px] truncate sm:max-w-none inline-block align-middle">${firstProjName}</span>`} 
+                            <span class="text-[11px] font-bold text-white bg-yellow-500 px-2 py-0.5 rounded-full shadow-inner">${grouped[sn].length} 筆</span>
+                        </div>
+                        ${selectBtnHtml}
+                    </div> 
+                    <i class="fas fa-chevron-down text-yellow-500 transition-transform shrink-0" style="transform: rotate(${isOpen ? '0deg' : '-90deg'});"></i>
                 `;
                 
                 const groupGrid = document.createElement('div'); 
-                groupGrid.className = `grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 hidden items-start`;
+                groupGrid.className = `grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 ${isOpen ? '' : 'hidden'}`;
                 
-                groupHeader.onclick = () => { 
+                groupHeader.onclick = (e) => { 
+                    // 🌟 攔截全選按鈕點擊，防止觸發折疊
+                    if (e.target.closest('.group-select-btn')) {
+                        e.stopPropagation();
+                        if (allSelected) {
+                            grouped[sn].forEach(p => summaryState.entSelected.delete(p.id));
+                        } else {
+                            grouped[sn].forEach(p => summaryState.entSelected.add(p.id));
+                        }
+                        document.getElementById('ent-summary-count').textContent = summaryState.entSelected.size;
+                        window.renderEntProjectsDashboard();
+                        return;
+                    }
+
                     groupGrid.classList.toggle('hidden'); 
+                    const isNowHidden = groupGrid.classList.contains('hidden');
+                    if (isNowHidden) window.entOpenGroups.delete(sn);
+                    else window.entOpenGroups.add(sn);
+
                     const icon = groupHeader.querySelector('.fa-chevron-down'); 
-                    if(icon) icon.style.transform = groupGrid.classList.contains('hidden') ? 'rotate(-90deg)' : 'rotate(0deg)'; 
+                    if(icon) icon.style.transform = isNowHidden ? 'rotate(-90deg)' : 'rotate(0deg)'; 
                 };
                 
                 grid.appendChild(groupHeader); 
@@ -1321,25 +1360,60 @@
                 const isUncat = sn === '未分類'; 
                 const firstProjName = grouped[sn][0]?.name || '未命名計畫'; 
                 
+                // 🌟 新增：計算該群組內卡片的選取狀態，並產出「全選序號」按鈕
+                let allSelected = grouped[sn].length > 0 && grouped[sn].every(p => summaryState.govSelected.has(p.id));
+                let partialSelected = grouped[sn].some(p => summaryState.govSelected.has(p.id)) && !allSelected;
+                let selectBtnHtml = '';
+                if (summaryState.govMode) {
+                    selectBtnHtml = `
+                        <button class="group-select-btn ml-3 bg-white border ${allSelected ? 'border-yellow-500 text-yellow-600' : 'border-gray-300 text-gray-500'} px-2.5 py-0.5 rounded text-[11px] font-bold shadow-sm transition-colors z-10 relative hover:bg-yellow-50 flex items-center shrink-0">
+                            <i class="fas ${allSelected ? 'fa-check-square text-yellow-500' : (partialSelected ? 'fa-minus-square text-yellow-400' : 'fa-square text-gray-300')} mr-1.5"></i>${allSelected ? '取消全選' : '全選序號'}
+                        </button>
+                    `;
+                }
+
+                // 🌟 讀取折疊記憶狀態
+                const isOpen = window.govOpenGroups.has(sn);
+
                 const groupHeader = document.createElement('div'); 
                 groupHeader.className = `bg-blue-50/90 p-3.5 rounded-xl font-bold text-blue-800 cursor-pointer flex justify-between items-center mb-3 shadow-sm border border-blue-200 hover:bg-blue-100 transition-colors sticky top-0 z-40 backdrop-blur-md`;
                 
                 groupHeader.innerHTML = `
-                    <span>
-                        <span class="w-5 text-center inline-block mr-1"><i class="fas ${isUncat ? 'fa-folder-open' : 'fa-layer-group'} text-blue-600"></i></span>
-                        ${isUncat ? '一般計畫 (未設定序號)' : `<span class="text-[0.55em] opacity-80 font-bold tracking-widest mr-0.5 align-middle">活動序號：</span><span class="font-mono text-blue-700 bg-white px-1.5 py-0.5 rounded shadow-sm">${sn}</span><span class="ml-2 text-blue-900 border-l-2 border-blue-300 pl-2">${firstProjName}</span>`} 
-                        <span class="text-[11px] font-bold text-white bg-blue-500 px-2 py-0.5 rounded-full shadow-inner ml-2">${grouped[sn].length} 筆</span>
-                    </span> 
-                    <i class="fas fa-chevron-down text-blue-500 transition-transform" style="transform: rotate(-90deg);"></i>
+                    <div class="flex items-center overflow-hidden">
+                        <i class="fas ${isUncat ? 'fa-folder-open' : 'fa-layer-group'} mr-2 text-blue-600 shrink-0"></i>
+                        <div class="flex items-center flex-wrap gap-1.5 shrink-0">
+                            ${isUncat ? '一般計畫 (未設定序號)' : `<span class="text-[0.55em] opacity-80 font-bold tracking-widest align-middle hidden sm:inline">活動序號：</span><span class="font-mono text-blue-700 bg-white px-1.5 py-0.5 rounded shadow-sm">${sn}</span><span class="text-blue-900 border-l-2 border-blue-300 pl-1.5 max-w-[150px] truncate sm:max-w-none inline-block align-middle">${firstProjName}</span>`} 
+                            <span class="text-[11px] font-bold text-white bg-blue-500 px-2 py-0.5 rounded-full shadow-inner">${grouped[sn].length} 筆</span>
+                        </div>
+                        ${selectBtnHtml}
+                    </div> 
+                    <i class="fas fa-chevron-down text-blue-500 transition-transform shrink-0" style="transform: rotate(${isOpen ? '0deg' : '-90deg'});"></i>
                 `;
                 
                 const groupGrid = document.createElement('div'); 
-                groupGrid.className = `grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 hidden items-start`;
+                groupGrid.className = `grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 ${isOpen ? '' : 'hidden'}`;
                 
-                groupHeader.onclick = () => { 
+                groupHeader.onclick = (e) => { 
+                    // 🌟 攔截全選按鈕點擊，防止觸發折疊
+                    if (e.target.closest('.group-select-btn')) {
+                        e.stopPropagation();
+                        if (allSelected) {
+                            grouped[sn].forEach(p => summaryState.govSelected.delete(p.id));
+                        } else {
+                            grouped[sn].forEach(p => summaryState.govSelected.add(p.id));
+                        }
+                        document.getElementById('gov-summary-count').textContent = summaryState.govSelected.size;
+                        window.renderGovDashboard();
+                        return;
+                    }
+
                     groupGrid.classList.toggle('hidden'); 
+                    const isNowHidden = groupGrid.classList.contains('hidden');
+                    if (isNowHidden) window.govOpenGroups.delete(sn);
+                    else window.govOpenGroups.add(sn);
+
                     const icon = groupHeader.querySelector('.fa-chevron-down'); 
-                    if (icon) icon.style.transform = groupGrid.classList.contains('hidden') ? 'rotate(-90deg)' : 'rotate(0deg)'; 
+                    if (icon) icon.style.transform = isNowHidden ? 'rotate(-90deg)' : 'rotate(0deg)'; 
                 };
                 
                 grid.appendChild(groupHeader); 
