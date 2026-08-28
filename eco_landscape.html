@@ -14,7 +14,7 @@
             --card-size: 55px;
         }
 
-        html, body { height: 100%; } /* iOS 修復高度問題 */
+        html, body { height: 100%; }
         body {
             margin: 0; padding: 0; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -192,9 +192,10 @@
             
             <div id="new-game-form">
                 <div class="warning-box">
-                    ⚠️ <b>安全與導覽須知：</b><br>
-                    1. 生態導覽途中，學員<b>請勿邊走邊滑手機</b>。跟隨講師移動即可收集卡牌，定點再操作。<br>
-                    2. 探索農村風俗，請抱持<b>學習與敬畏自然</b>的心態。
+                    <strong style="font-size:14px;">📋 行前通知與安全須知：</strong><br>
+                    1. 🚷 <b>注意安全：</b>導覽行進間請勿注視手機。請緊跟講師，抵達定點後再操作系統。<br>
+                    2. 🌿 <b>尊重自然：</b>探索農村風俗與生態時，請保持安靜觀察，切勿破壞棲地環境。<br>
+                    3. 🎒 <b>裝備確認：</b>請確保手機電量充足，並備妥防蚊、防曬用品。
                 </div>
                 
                 <div class="info-box-green">
@@ -446,7 +447,7 @@
         let crisisZones = []; let inventory = []; let mapOccupants = []; 
         let isDrawingMode = false; let currentDrawColor = '#2D80C6'; let drawings = []; let currentPath = null;
         
-        let activeSelectedCard = null; // ★ 追蹤當前拿在手上的卡片
+        let activeSelectedCard = null; 
         let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0; 
         let pendingPlacement = null;
 
@@ -515,7 +516,6 @@
             let tmpScore = quizCompleted ? quizScore : 0;
             let successfullyPlacedIds = new Set();
             
-            // ★ 修改：將觸發事件本身的分數也加入即時計算
             tmpScore += habitats.filter(h => h.isBonus).length * 5;
             tmpScore -= crisisZones.length * 5;
 
@@ -640,7 +640,6 @@
 
         function handleMotion(e) {
             if (!isGameRunning) return; 
-            // ★ 修復：阻斷視角亂跳 (如果在拖曳地圖、手上有卡片、或是正在放置，則忽略走路計步)
             if (isPanningMap || draggingInstance || pendingPlacement || activeSelectedCard) return; 
             
             let acc = e.acceleration || {x:0, y:0, z:0}; let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
@@ -670,7 +669,6 @@
         function renderInventory() {
             const container = document.getElementById('right-inventory'); 
             
-            // ★ 當有鎖定的卡片時，背包變暗且無法點擊
             if (activeSelectedCard) {
                 container.classList.add('locked');
             } else {
@@ -700,7 +698,7 @@
 
                 div.addEventListener('pointerdown', (e) => {
                     if (e.pointerType === 'mouse' && e.button !== 0) return; 
-                    if (activeSelectedCard) return; // ★ 鎖定防呆
+                    if (activeSelectedCard) return; 
 
                     startX = e.clientX; startY = e.clientY;
                     isCancelled = false;
@@ -725,7 +723,6 @@
                                 let instToExtract = group[group.length - 1];
                                 inventory = inventory.filter(i => i.uniqueId !== instToExtract.uniqueId);
                                 
-                                // ★ 將卡片往左平移一點，設為唯一啟動卡片
                                 instToExtract.x = camera.x + SCREEN_W - 160; 
                                 instToExtract.y = camera.y + startY - 25;
                                 activeSelectedCard = instToExtract;
@@ -750,12 +747,11 @@
                 currentPath = { color: currentDrawColor, points: [coords] }; drawings.push(currentPath); canvas.setPointerCapture(e.pointerId); return;
             }
 
-            // ★ 優先檢查是否點到「唯一選定中」的卡片
             if (activeSelectedCard) {
                 let box = activeSelectedCard.renderBox;
                 if (box && coords.x >= box.x && coords.x <= box.x + box.w && coords.y >= box.y && coords.y <= box.y + box.h) {
                     draggingInstance = activeSelectedCard; 
-                    activeSelectedCard = null; // 開始拖曳就解除等待狀態
+                    activeSelectedCard = null; 
                     setupDrag(e, draggingInstance); return;
                 }
             }
@@ -844,7 +840,7 @@
                 draggingInstance = null;
             } else {
                 draggingInstance.x = coords.x - 25; draggingInstance.y = coords.y - 25; mapOccupants.push(draggingInstance);
-                draggingInstance = null; saveProgress(); renderInventory(); // 放地上也解鎖背包
+                draggingInstance = null; saveProgress(); renderInventory(); 
             }
         }
 
@@ -854,14 +850,14 @@
                 if (pendingPlacement.crisis) { pendingPlacement.crisis.occupants.push(inst); }
                 else if (pendingPlacement.habitat) { pendingPlacement.habitat.occupants.push(inst); }
                 checkHabitatEvolution(pendingPlacement.habitat);
-                pendingPlacement = null; saveProgress(); renderInventory(); // 確認放入後解鎖背包
+                pendingPlacement = null; saveProgress(); renderInventory(); 
             }
             document.getElementById('confirm-modal').style.display = 'none';
         }
         function cancelPlacement() {
             if (pendingPlacement) {
                 let inst = pendingPlacement.instance; inst.x = pendingPlacement.coords.x - 25; inst.y = pendingPlacement.coords.y - 25; mapOccupants.push(inst);
-                pendingPlacement = null; saveProgress(); renderInventory(); // 取消放地上解鎖背包
+                pendingPlacement = null; saveProgress(); renderInventory(); 
             }
             document.getElementById('confirm-modal').style.display = 'none';
         }
@@ -957,6 +953,7 @@
             ctx.fillStyle = 'white'; ctx.fillText(text, finalX + 15, finalY + 23);
         }
 
+        /* ----- 加入星露谷風格地貌繪圖優化 ----- */
         function drawTrees(x, y, count) {
             for(let i=0; i<count; i++) {
                 let tx = x + (i * 45 % 150); let ty = y + (i * 35 % 120);
@@ -979,7 +976,7 @@
 
         function drawMap() {
             ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
-            for(let i=0; i<40; i++) drawGrassPatch(100 + (i*177)%1400, 100 + (i*93)%1000); // 隨機草叢
+            for(let i=0; i<40; i++) drawGrassPatch(100 + (i*177)%1400, 100 + (i*93)%1000); 
             
             ctx.fillStyle = '#4CAF50'; ctx.fillRect(0, 0, 300, 320);
             drawTrees(20, 20, 8); drawTrees(150, 100, 5);
@@ -1011,7 +1008,7 @@
             ctx.lineWidth = 2;
             for(let i=1; i<5; i++) { ctx.beginPath(); ctx.moveTo(150, 450 + i*50); ctx.lineTo(500, 450 + i*50); ctx.stroke(); }
             for(let j=1; j<7; j++) { ctx.beginPath(); ctx.moveTo(150 + j*50, 450); ctx.lineTo(150 + j*50, 700); ctx.stroke(); }
-            ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.moveTo(160, 460); ctx.lineTo(250, 460); ctx.lineTo(160, 550); ctx.fill(); // 玻璃反光
+            ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.moveTo(160, 460); ctx.lineTo(250, 460); ctx.lineTo(160, 550); ctx.fill(); 
             drawWoodSign('設施農業(溫室)', 325, 420, true);
 
             ctx.fillStyle = '#f5f5f5'; ctx.fillRect(680, 520, 60, 50); ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.moveTo(670, 520); ctx.lineTo(710, 480); ctx.lineTo(750, 520); ctx.fill();
@@ -1020,7 +1017,7 @@
 
             ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.moveTo(1000, 400); ctx.lineTo(1100, 400); ctx.lineTo(1350, 1200); ctx.lineTo(1150, 1200); ctx.fill();
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(1030, 450); ctx.lineTo(1070, 450); ctx.moveTo(1060, 550); ctx.lineTo(1090, 550); ctx.moveTo(1080, 750); ctx.lineTo(1120, 750); ctx.moveTo(1120, 950); ctx.lineTo(1170, 950); ctx.stroke(); // 水紋
+            ctx.beginPath(); ctx.moveTo(1030, 450); ctx.lineTo(1070, 450); ctx.moveTo(1060, 550); ctx.lineTo(1090, 550); ctx.moveTo(1080, 750); ctx.lineTo(1120, 750); ctx.moveTo(1120, 950); ctx.lineTo(1170, 950); ctx.stroke(); 
             drawWoodSign('溪流', 1100, 600, true);
             
             ctx.fillStyle = '#94a3b8'; ctx.fillRect(20, 650, 130, 400); 
@@ -1033,11 +1030,16 @@
 
         function drawHabitats() {
             habitats.forEach(h => {
-                // ★ 修改為螢光綠色
-                ctx.strokeStyle = h.isBonus ? '#2563eb' : '#39FF14'; ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
-                ctx.shadowColor = h.isBonus ? 'rgba(37, 99, 235, 0.5)' : 'rgba(57, 255, 20, 0.3)'; ctx.shadowBlur = 5;
+                // ★ 完美依照圖片格式，還原框線顏色與半透明底色
+                ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#ef4444'; 
+                ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
+                ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.3)'; ctx.shadowBlur = 5;
                 ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]); ctx.shadowBlur = 0;
                 
+                if (h.isBonus) {
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.15)'; ctx.fillRect(h.x, h.y, h.w, h.h);
+                }
+
                 h.occupants.forEach((occ, idx) => {
                     let cx = h.x + 10 + (idx % 3) * 60; let cy = h.y + 10 + Math.floor(idx / 3) * 60;
                     if(cx + 50 > h.x + h.w) { cx = h.x + h.w - 55; }
@@ -1056,7 +1058,16 @@
                 });
             });
 
-            habitats.forEach(h => { drawWoodSign(h.name, h.x + h.w / 2, h.y - 20, true); });
+            habitats.forEach(h => { 
+                if (h.isBonus) {
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.beginPath(); ctx.roundRect(h.x, h.y - 25, 120, 25, 4); ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.font = 'bold 14px "Segoe UI"'; ctx.textAlign = 'left';
+                    ctx.fillText('新生自然棲地', h.x + 10, h.y - 8);
+                } else {
+                    drawWoodSign(h.name, h.x + h.w / 2, h.y - 20, true); 
+                }
+            });
         }
 
         function drawCrisisZones() {
@@ -1077,7 +1088,12 @@
                 });
             });
 
-            crisisZones.forEach(cz => { drawWoodSign(cz.name, cz.x, cz.y - cz.r - 20, true); });
+            crisisZones.forEach(cz => { 
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath(); ctx.roundRect(cz.x - 50, cz.y - cz.r - 25, 100, 25, 4); ctx.fill();
+                ctx.fillStyle = 'white'; ctx.font = 'bold 14px "Segoe UI"'; ctx.textAlign = 'center';
+                ctx.fillText(cz.name, cz.x, cz.y - cz.r - 8);
+            });
         }
 
         function drawMapOccupants() {
@@ -1179,23 +1195,27 @@
             }, 100);
         }
 
-        // ★ 更新：全景地圖輸出增加深綠色資訊列
+        // ★ 核心修復：解決手機截圖破圖，並還原深綠色底框資訊列
         function generateMapScreenshot() {
             try {
                 let tmpCanvas = document.createElement('canvas'); 
-                // 擴充高度 50px 給底部的資訊列
                 tmpCanvas.width = MAP_W; tmpCanvas.height = MAP_H + 50; 
                 let tCtx = tmpCanvas.getContext('2d');
                 
                 let oldCtx = ctx; let oldCamX = camera.x; let oldCamY = camera.y;
+                let oldCanvasW = canvas.width; let oldCanvasH = canvas.height;
+                
+                // 強制接管並鎖定畫布尺寸，解決手機裝置破圖問題
                 ctx = tCtx; camera.x = 0; camera.y = 0;
+                canvas.width = MAP_W; canvas.height = MAP_H;
 
                 ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
                 drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawDrawings();
 
                 ctx = oldCtx; camera.x = oldCamX; camera.y = oldCamY;
+                canvas.width = oldCanvasW; canvas.height = oldCanvasH;
                 
-                // 繪製底部深綠色資訊列
+                // 依照圖片繪製深綠色底部資訊列
                 tCtx.fillStyle = '#14532d';
                 tCtx.fillRect(0, MAP_H, MAP_W, 50);
                 
@@ -1217,36 +1237,57 @@
             }
         }
 
+        // ★ 核心修復：完全依照圖片重構結業證書排版
         function generateCertificate(score) {
             try {
                 let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = 800; tmpCanvas.height = 600; let tCtx = tmpCanvas.getContext('2d');
-                let grad = tCtx.createLinearGradient(0, 0, 800, 600); grad.addColorStop(0, '#f0fdf4'); grad.addColorStop(1, '#dcfce7');
-                tCtx.fillStyle = grad; tCtx.fillRect(0, 0, 800, 600);
                 
-                tCtx.strokeStyle = '#166534'; tCtx.lineWidth = 15; tCtx.strokeRect(20, 20, 760, 560);
-                tCtx.strokeStyle = '#4ade80'; tCtx.lineWidth = 5; tCtx.strokeRect(30, 30, 740, 540);
+                // 淺綠色背景
+                tCtx.fillStyle = '#e8f5e9'; tCtx.fillRect(0, 0, 800, 600);
                 
-                tCtx.fillStyle = '#14532d'; tCtx.textAlign = 'center'; tCtx.font = 'bold 48px "Segoe UI", sans-serif'; tCtx.fillText('探探里山 永續生態結業證書', 400, 100);
+                // 內外框線
+                tCtx.strokeStyle = '#166534'; tCtx.lineWidth = 6; tCtx.strokeRect(20, 20, 760, 560);
+                tCtx.strokeStyle = '#4ade80'; tCtx.lineWidth = 2; tCtx.strokeRect(30, 30, 740, 540);
                 
-                tCtx.font = '28px "Segoe UI"'; tCtx.fillStyle = '#374151';
-                tCtx.fillText(`茲證明 優秀偵探`, 400, 180);
-                tCtx.font = 'bold 40px "Segoe UI"'; tCtx.fillStyle = '#ea580c'; tCtx.fillText(`${playerName}`, 400, 240);
+                // 邊角深綠色裝飾塊
+                tCtx.fillStyle = '#14532d';
+                tCtx.fillRect(20, 20, 25, 25); tCtx.fillRect(755, 20, 25, 25);
+                tCtx.fillRect(20, 555, 25, 25); tCtx.fillRect(755, 555, 25, 25);
                 
-                tCtx.font = '24px "Segoe UI"'; tCtx.fillStyle = '#374151';
-                tCtx.fillText(`於 ${eventName || '永續生態導覽活動'} 中`, 400, 300);
-                tCtx.fillText(`成功探索【${eventLocation}】`, 400, 340);
-                tCtx.fillText(`並展現卓越的生態棲地觀察力，獲得總積分：`, 400, 380);
+                // 標題與內文排版
+                tCtx.fillStyle = '#14532d'; tCtx.textAlign = 'center'; tCtx.font = 'bold 36px "Segoe UI", sans-serif';
+                tCtx.fillText('探探里山永續生態與農村風俗文化導覽', 400, 120);
                 
-                tCtx.font = 'bold 60px "Segoe UI"'; tCtx.fillStyle = '#16a34a'; tCtx.fillText(`${score} 分`, 400, 460);
+                tCtx.fillStyle = '#22c55e'; tCtx.font = 'bold 32px "Segoe UI", sans-serif';
+                tCtx.fillText('結業證書', 400, 180);
                 
-                tCtx.font = '18px "Segoe UI"'; tCtx.fillStyle = '#6b7280'; let dateStr = new Date().toLocaleDateString('zh-TW');
-                // ★ 證書發證單位確保為「探探里山永續基地」
-                tCtx.fillText(`發證日期：${dateStr} | 發證單位：探探里山永續基地`, 400, 530);
+                tCtx.fillStyle = '#4b5563'; tCtx.font = '22px "Segoe UI", sans-serif';
+                tCtx.fillText('茲證明', 400, 260);
+                
+                tCtx.fillStyle = '#000000'; tCtx.font = 'bold 46px "Segoe UI", sans-serif';
+                tCtx.fillText(`${playerName}`, 400, 320);
+                
+                tCtx.fillStyle = '#4b5563'; tCtx.font = '20px "Segoe UI", sans-serif';
+                tCtx.fillText('在生態導覽與農村風俗文化導覽活動中，認真學習，', 400, 380);
+                tCtx.fillText('獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。', 400, 415);
+                
+                tCtx.fillStyle = '#1f2937'; tCtx.font = 'bold 20px "Segoe UI", sans-serif';
+                tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 470);
+                tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 505);
+                
+                // 左下角：探探里山文字
+                tCtx.fillStyle = '#16a34a'; tCtx.textAlign = 'left'; tCtx.font = 'bold 22px "Segoe UI", sans-serif';
+                tCtx.fillText('🌿 探探里山', 120, 545);
+                
+                // 右下角：證書編號與日期
+                tCtx.fillStyle = '#9ca3af'; tCtx.textAlign = 'right'; tCtx.font = '14px "Segoe UI", sans-serif';
+                let dateStr = new Date().toLocaleDateString('zh-TW');
+                let vCode = 'ESG-' + Date.now().toString().slice(-6).toUpperCase();
+                tCtx.fillText(`證書編號：${vCode}`, 750, 530);
+                tCtx.fillText(`核發日期：${dateStr}`, 750, 555);
 
                 let qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = '';
-                let vCode = 'ESGT-' + Date.now().toString().slice(-6);
-                tCtx.font = '14px monospace'; tCtx.fillStyle = '#9ca3af'; tCtx.fillText(`防偽碼: ${vCode}`, 400, 555);
                 
                 const finalizeCert = () => {
                     let dataURL = tmpCanvas.toDataURL("image/png");
@@ -1256,12 +1297,12 @@
                     previewImg.src = dataURL; previewImg.style.display = 'block';
                 };
                 
-                new QRCode(qrContainer, { text: `https://farmcmd.github.io/ESGT/?cert=${vCode}`, width: 100, height: 100, colorDark : "#166534" });
+                new QRCode(qrContainer, { text: `https://farmcmd.github.io/ESGT/?cert=${vCode}`, width: 70, height: 70, colorDark : "#166534" });
                 
                 setTimeout(() => {
                     try {
                         let qrCanvas = qrContainer.querySelector('canvas');
-                        if (qrCanvas) tCtx.drawImage(qrCanvas, 660, 480, 100, 100);
+                        if (qrCanvas) tCtx.drawImage(qrCanvas, 40, 500, 70, 70); // 繪製左下角 QR Code
                     } catch (e) {}
                     finalizeCert();
                 }, 200);
