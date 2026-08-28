@@ -3,678 +3,1263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>探探里山生態小偵探</title>
+    <title>探探里山永續生態與農村風俗文化導覽</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #2c3e50; font-family: 'Microsoft JhengHei', sans-serif; }
+        :root {
+            --primary-dark: #14532d;
+            --primary-light: #22c55e;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --text-dark: #1f2937;
+            --card-size: 55px;
+        }
+
+        html, body { height: 100%; } /* iOS 修復高度問題 */
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000; color: var(--text-dark);
+            touch-action: none; overscroll-behavior: none;
+            -webkit-user-select: none; user-select: none;
+        }
+
+        #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #8BC34A; }
+
+        #draw-tools {
+            position: absolute; top: 15px; left: 15px; z-index: 150;
+            display: flex; flex-direction: column; gap: 8px; align-items: center;
+        }
+        .tool-btn {
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid #ccc;
+            background: white; font-size: 20px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+
+        .floating-panel {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 95%; max-width: 600px; background: var(--panel-bg);
+            border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.5);
+            display: flex; flex-direction: column; 
+            z-index: 200; 
+        }
+        .panel-header {
+            padding: 12px 20px; font-weight: bold; color: var(--primary-dark);
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+        }
+        .panel-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 15px;
+        }
+        .floating-panel.open .panel-content {
+            max-height: 550px; padding: 15px; overflow-y: auto; border-top: 1px solid #e5e7eb;
+        }
+        #bottom-panel { bottom: 15px; }
         
-        #game-container { position: relative; width: 100%; height: 100%; display: none; }
-        #gameCanvas { display: block; width: 100%; height: 100%; }
+        .side-inventory {
+            position: absolute; top: 90px; bottom: 120px; right: 10px; width: 75px;
+            display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden;
+            z-index: 150; pointer-events: auto; touch-action: pan-y;
+            align-items: center; padding-right: 5px; transition: opacity 0.3s;
+        }
+        .side-inventory.locked { opacity: 0.4; pointer-events: none; filter: grayscale(50%); }
+        .side-inventory::-webkit-scrollbar { display: none; }
         
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; }
+        .creature-card {
+            width: var(--card-size); height: var(--card-size); flex-shrink: 0;
+            background: #ffffff; border: 2px solid #9ca3af; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative;
+            touch-action: pan-y; -webkit-touch-callout: none;
+            transition: transform 0.1s;
+        }
+        .culture-card { border-radius: 50%; border: 3px solid #f59e0b; background: #fffbeb; }
+
+        .c-icon { font-size: 26px; pointer-events: none; }
+        .c-name { font-size: 11px; font-weight: bold; color: #4b5563; pointer-events: none; margin-top: -2px; }
+        .c-badge {
+            position: absolute; top: -6px; right: -6px; background: #ef4444; color: white;
+            font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 2px solid white; z-index: 10;
+        }
+
+        #live-score-board {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); border: 3px solid #65af44;
+            padding: 8px 25px; border-radius: 30px; font-weight: bold; font-size: 18px; color: #1e782a;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25); z-index: 105; pointer-events: none;
+            display: flex; align-items: center; gap: 8px; text-shadow: 1px 1px 0px white;
+        }
         
-        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto; }
-        .btn-menu { width: 50px; height: 50px; background: #fff; border-radius: 50%; border: 2px solid #ccc; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; }
-        .score-board { background: rgba(255, 255, 255, 0.9); padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; color: #2c3e50; border: 2px solid #a3d977; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .answer-box { font-size: 14px; line-height: 1.6; }
+        .answer-box h4 { margin: 0 0 10px 0; color: #ea580c; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+        .score-display { font-size: 24px; font-weight: bold; color: var(--primary-light); text-align: center; margin-top: 15px;}
+        #cert-preview, #map-preview { width: 100%; border-radius: 8px; margin-top: 15px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: none; }
+
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 83, 45, 0.95); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; overflow-y: auto;
+        }
+        .start-box {
+            background: white; color: var(--text-dark); padding: 25px; border-radius: 16px;
+            text-align: center; width: 90%; max-width: 450px; margin: 20px 0;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
         
-        #backpack-menu { position: absolute; top: 0; right: -300px; width: 250px; height: 100%; background: rgba(255, 255, 255, 0.95); box-shadow: -4px 0 10px rgba(0,0,0,0.3); transition: right 0.3s ease; pointer-events: auto; display: flex; flex-direction: column; z-index: 100; }
-        #backpack-menu.open { right: 0; }
-        .backpack-header { padding: 15px; background: #8bc34a; color: white; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
-        .backpack-close { cursor: pointer; font-size: 24px; line-height: 1; }
-        #backpack-info { padding: 10px; font-size: 13px; color: #555; background: #e8f5e9; border-bottom: 2px solid #c8e6c9; }
-        .bp-rule-title { font-weight: bold; color: #2e7d32; margin-bottom: 5px; }
+        .warning-box, .info-box-green { padding: 12px; margin-bottom: 20px; font-size: 12px; text-align: left; line-height: 1.6; border-radius: 0 6px 6px 0; }
+        .warning-box { background: #fffbeb; border-left: 5px solid #f59e0b; color: #92400e; }
+        .info-box-green { background: #f0fdf4; border-left: 5px solid #22c55e; color: #14532d; }
+
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .form-input { width: 100%; padding: 10px; font-size: 15px; border: 2px solid #ccc; border-radius: 6px; box-sizing: border-box; }
         
-        .inventory-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .checkbox-list {
+            display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; 
+            padding: 8px; border: 2px solid #ccc; border-radius: 6px; background: #fafafa;
+        }
+        .checkbox-label {
+            display: flex; align-items: center; gap: 8px; font-size: 14px; color: #374151; cursor: pointer;
+            padding: 6px; border-radius: 4px; border: 1px solid transparent; transition: background 0.2s;
+        }
+        .checkbox-label:hover { background: #e5e7eb; border-color: #d1d5db; }
+        .checkbox-label input { width: 16px; height: 16px; margin: 0; }
+
+        .btn-primary, .btn-secondary { color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%; box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.1s, box-shadow 0.1s; }
+        .btn-primary:active, .btn-secondary:active { transform: translateY(4px); box-shadow: none; }
+        .btn-primary { background: #65af44; border-bottom: 4px solid #4a8730; }
+        .btn-secondary { background: #dca166; border-bottom: 4px solid #b66f36; }
+        .btn-danger { background: transparent; color: #ef4444; border: 2px solid #ef4444; padding: 10px 30px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; width: 100%; }
+
+        #alert-box {
+            position: fixed; top: 120px; left: 50%; transform: translateX(-50%);
+            background: rgba(45, 128, 198, 0.95); color: white; padding: 12px 25px; border-radius: 30px; 
+            font-size: 16px; font-weight: bold; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000; white-space: nowrap;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3); border: 2px solid #ffffff;
+        }
         
-        .card { background: white; border: 2px solid #ddd; border-radius: 8px; padding: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: grab; position: relative; }
-        .card img { width: 50px; height: 50px; object-fit: contain; background: #f0f0f0; border-radius: 4px; pointer-events: none; }
-        .card-info { flex: 1; pointer-events: none; }
-        .card-name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
-        .card-type { font-size: 12px; color: #888; }
+        #compass {
+            position: absolute; bottom: 80px; left: 20px; width: 60px; height: 60px;
+            background: rgba(255,255,255,0.9); border-radius: 50%; border: 4px solid #8f562b;
+            z-index: 50; display: flex; justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        #compass-arrow {
+            width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent;
+            border-bottom: 22px solid #D32F2F; transform: translateY(-10px); transition: transform 0.1s; pointer-events: none;
+        }
         
-        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000&auto=format&fit=crop') center/cover; display: flex; align-items: center; justify-content: center; z-index: 500; }
-        .start-modal { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
-        .start-modal h1 { margin-top: 0; color: #2e7d32; text-align: center; font-size: 24px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        .form-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        
-        .checkbox-group { border: 1px solid #ccc; border-radius: 5px; padding: 10px; max-height: 150px; overflow-y: auto; background: #fff; }
-        .checkbox-group label { display: flex; align-items: center; font-weight: normal; margin-bottom: 8px; cursor: pointer; }
-        .checkbox-group input[type="checkbox"] { margin-right: 8px; width: 18px; height: 18px; }
-        
-        .btn-start { width: 100%; padding: 12px; background: #ff9800; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(255,152,0,0.4); margin-top: 10px; }
-        
-        .info-box-green { background: #e8f5e9; border: 2px solid #8bc34a; border-radius: 8px; padding: 12px; margin-top: 15px; font-size: 12px; color: #2e7d32; line-height: 1.5; }
-        .info-box-green strong { display: block; margin-bottom: 4px; color: #1b5e20; }
-        
-        #result-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 600; flex-direction: column; padding: 20px; }
-        .result-container { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; text-align: center; }
-        .result-container h2 { color: #2e7d32; margin-top: 0; }
-        .cert-container, .map-result-container { margin: 15px 0; border: 2px solid #eee; padding: 10px; background: #f9f9f9; border-radius: 8px; }
-        .cert-container img, .map-result-container img { width: 100%; height: auto; display: block; margin: 0 auto; border: 1px solid #ccc; }
-        .btn-download { display: inline-block; padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: none; font-size: 14px; }
-        .btn-restart { display: inline-block; padding: 10px 20px; background: #ff9800; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; margin-left: 10px; }
-        
-        #cert-canvas-container, #qrcode-container { display: none; }
+        .quiz-question { margin-bottom: 15px; text-align: left; font-size: 13px; color: #333; }
+        .quiz-question p { margin: 0 0 8px 0; font-weight: bold; color: #1f2937; line-height: 1.4; }
+        .quiz-option { display: block; margin-bottom: 6px; cursor: pointer; padding: 6px; border-radius: 6px; transition: background 0.2s; border: 1px solid transparent;}
+        .quiz-option:hover { background: #f3f4f6; border-color: #ccc;}
+
+        #confirm-modal, #share-qr-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); z-index: 10000;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .confirm-box {
+            background: #ffeed4; padding: 25px; border-radius: 12px; text-align: center;
+            width: 85%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 4px solid #8f562b;
+        }
+        .confirm-text { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #5e3212; line-height: 1.5; }
+        .confirm-btn-group { display: flex; gap: 15px; justify-content: center; }
+        .confirm-btn-group button { 
+            flex: 1; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; border: none;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .confirm-btn-group button:active { transform: translateY(4px); box-shadow: none; }
+        .btn-yes { background: #65af44; color: white; border-bottom: 4px solid #4a8730; }
+        .btn-no { background: #e5e7eb; color: #374151; border-bottom: 4px solid #9ca3af; }
     </style>
 </head>
 <body>
+    <div id="start-overlay">
+        <div style="position: absolute; top: 15px; right: 15px; z-index: 10001;">
+            <button onclick="showShareQR()" title="掃碼分享本頁" style="width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; background: white; border: 3px solid #65af44; border-radius: 8px; cursor: pointer; color: #1e782a; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+                    <path d="M14 14h1v1h-1z"></path><path d="M19 14h2v2h-2z"></path><path d="M14 19h2v2h-2z"></path><path d="M19 19h1v1h-1z"></path>
+                </svg>
+            </button>
+        </div>
 
-    <div id="start-screen">
-        <div class="start-modal">
-            <h1>探探里山生態小偵探</h1>
-            <form id="new-game-form">
-                <div class="form-group">
-                    <label>偵探姓名 (將印製於證書)：</label>
-                    <input type="text" id="player-name" required placeholder="請輸入您的姓名">
+        <div class="start-box">
+            <h2 style="color: #1e782a; margin-top: 0; margin-bottom: 10px; font-size: 24px; text-shadow: 1px 1px 0px #ccc;">探探里山<br>永續生態與農村文化導覽</h2>
+            
+            <div id="new-game-form">
+                <div class="warning-box">
+                    ⚠️ <b>安全與導覽須知：</b><br>
+                    1. 生態導覽途中，學員<b>請勿邊走邊滑手機</b>。跟隨講師移動即可收集卡牌，定點再操作。<br>
+                    2. 探索農村風俗，請抱持<b>學習與敬畏自然</b>的心態。
                 </div>
-                <div class="form-group">
-                    <label>探索場域 (可複選串聯活動)：</label>
-                    <div class="checkbox-group" id="location-select">
-                        <label><input type="checkbox" value="1.酪酪找生態(湧健酪梨園)"> 1.酪酪找生態(湧健酪梨園)</label>
-                        <label><input type="checkbox" value="2.瓜呱報生態(雨社山下農場)"> 2.瓜呱報生態(雨社山下農場)</label>
-                        <label><input type="checkbox" value="3.林近里山(指令教育農場)"> 3.林近里山(指令教育農場)</label>
-                        <label><input type="checkbox" value="4.護溪龜歸(阿爾喜農場)"> 4.護溪龜歸(阿爾喜農場)</label>
-                        <label><input type="checkbox" value="5.金線連一連"> 5.金線連一連</label>
-                        <label><input type="checkbox" value="6.網路茶不到的知識(小茶米農場)"> 6.網路茶不到的知識(小茶米農場)</label>
-                        <label><input type="checkbox" value="7.轀轆森林"> 7.轀轆森林</label>
-                        <label><input type="checkbox" value="其他" id="cb-other" onchange="toggleCustomLocation()"> 8.其他(自行填寫)</label>
+                
+                <div class="info-box-green">
+                    <b>計畫支持：</b>教育部大學社會責任推動計畫 臺大。山林。學院 2.0 水里里山生態廊道計畫<br><br>
+                    <b>🧑‍🌾 種子講師：</b><br>
+                    1. 指令教育農場 陳宏瑋 (農業部第七屆百大青農)<br>
+                    2. 湧健酪梨/梅園 林裕翔 (農業部第八屆百大青農)<br>
+                    3. 雨社山下農場 梁維軒 (農業部第八屆百大青農)<br>
+                    4. 阿爾喜檸檬園 范振育 (農業部第七屆百大青農)<br>
+                    5. 小茶米農場 連宴瑩 (農業部第七屆百大青農)
+                    <div style="margin-top: 10px; font-size: 11px; color: #166534; border-top: 1px solid #bbf7d0; padding-top: 5px;">
+                        系統開發： farmcmd@gmail.com (陳宏瑋)
                     </div>
-                    <input type="text" id="custom-location" placeholder="請輸入場域" style="display:none; margin-top:8px;">
                 </div>
-                <button type="button" class="btn-start" onclick="startGame()">確認出發</button>
-            </form>
+                
+                <div class="form-group"><label>偵探名稱 (必填)</label><input type="text" id="player-name" class="form-input" placeholder="請輸入姓名"></div>
+                <div class="form-group"><label>活動名稱 (非必填)</label><input type="text" id="event-name" class="form-input" placeholder="例如：春季生態營"></div>
+                <div class="form-group">
+                    <label>探索場域 (可複選，串聯多個活動)</label>
+                    <div class="checkbox-list">
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="1.酪酪找生態(湧健酪梨園)"> 1. 酪酪找生態(湧健酪梨園)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="2.瓜呱報生態(雨社山下農場)"> 2. 瓜呱報生態(雨社山下農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="3.林近里山(指令教育農場)"> 3. 林近里山(指令教育農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="4.護溪龜歸(阿爾喜農場)"> 4. 護溪龜歸(阿爾喜農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="5.金線連一連"> 5. 金線連一連</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="6.網路茶不到的知識(小茶米農場)"> 6. 網路茶不到的知識(小茶米農場)</label>
+                        <label class="checkbox-label"><input type="checkbox" name="location" value="7.轀轆森林"> 7. 轀轆森林</label>
+                        <label class="checkbox-label"><input type="checkbox" id="loc-other-cb" onchange="toggleCustomLocation()"> 8. 其他 (自行填寫)</label>
+                    </div>
+                </div>
+                <div class="form-group" id="custom-location-group" style="display: none;"><input type="text" id="custom-location" class="form-input" placeholder="填寫場域名稱"></div>
+                <button class="btn-primary" onclick="startGame(false)">確認出發 🚀</button>
+            </div>
             
-            <div class="info-box-green">
-                <strong>計畫支持：</strong>
-                教育部大學社會責任推動計畫<br>臺大。山林。學院 2.0 水里里山生態廊道計畫
-                <hr style="border: 0; border-top: 1px dashed #8bc34a; margin: 8px 0;">
-                <strong>種子講師陣容：</strong>
-                1. 指令教育農場 陳宏瑋 (第七屆百大青農)<br>
-                2. 湧健酪梨/梅園 林裕翔 (第八屆百大青農)<br>
-                3. 雨社山下農場 梁維軒 (第八屆百大青農)<br>
-                4. 阿爾喜檸檬園 范振育 (第七屆百大青農)<br>
-                5. 小茶米農場 連宴瑩 (第七屆百大青農)
-                <hr style="border: 0; border-top: 1px dashed #8bc34a; margin: 8px 0;">
-                系統開發：<br>探探里山永續基地 / 梁維軒 共同企劃
+            <div id="resume-game-section" style="display: none; border-top: 2px dashed #eee; margin-top: 20px; padding-top: 20px;">
+                <p style="font-size: 16px; font-weight: bold; color: #ea580c; margin-bottom: 15px;">💾 偵測到未完成的生態任務！</p>
+                <button class="btn-secondary" onclick="startGame(true)">繼續上次探索</button>
+                <button class="btn-danger" onclick="clearSaveData()">🗑️ 清除進度重新開始</button>
             </div>
         </div>
     </div>
 
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        <div id="ui-layer">
-            <div class="top-bar">
-                <div class="btn-menu" onclick="toggleMenu()">🎒</div>
-                <div class="score-board">🌿 探索積分：<span id="score-display">0</span></div>
-            </div>
-        </div>
-
-        <div id="backpack-menu">
-            <div class="backpack-header">
-                生物圖鑑與背包
-                <div class="backpack-close" onclick="toggleMenu()">×</div>
-            </div>
-            <div id="backpack-info">
-                <div class="bp-rule-title">探探里山生態微棲地探索規則：</div>
-                成功擴增棲地 <strong>(加 5 分)</strong><br>
-                引發環境危機 <strong>(扣 5 分)</strong><br>
-                <em>操作：長按卡片 0.3 秒即可抽出至畫面。可自由拖曳至棲地框。</em>
-            </div>
-            <div class="inventory-list" id="inventory-list"></div>
-            <button class="btn-start" style="margin: 10px; width: auto;" onclick="showResult()">結算成果</button>
+    <div id="share-qr-modal">
+        <div style="background: white; padding: 25px; border-radius: 12px; text-align: center; width: 80%; max-width: 300px; border: 4px solid #65af44;">
+            <h3 style="margin-top: 0; color: #1e782a;">掃描分享本頁</h3>
+            <div id="share-qrcode-img" style="margin: 20px auto; display: flex; justify-content: center;"></div>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px; word-break: break-all;">https://farmcmd.github.io/ESGT/eco_landscape.html</p>
+            <button onclick="document.getElementById('share-qr-modal').style.display='none'" style="width: 100%; padding: 12px; background: #e5e7eb; border: none; border-bottom: 4px solid #ccc; border-radius: 6px; cursor: pointer; font-weight: bold; color: #374151;">關閉</button>
         </div>
     </div>
 
-    <div id="result-screen">
-        <div class="result-container">
-            <h2>🎉 探索完成！</h2>
-            <p>偵探：<span id="res-name"></span></p>
-            <p>總積分：<strong style="font-size: 24px; color: #ff9800;" id="res-score"></strong> 分</p>
-            
-            <div class="map-result-container">
-                <h4>全景地圖紀錄</h4>
-                <img id="map-result-img" src="" alt="生成中...">
-                <button class="btn-download" id="download-map-btn">下載全景地圖</button>
-            </div>
+    <div id="live-score-board" style="display: none;">
+        🌿 探索積分：<span id="current-score" style="color: #ea580c; font-size: 24px; text-shadow: none;">0</span>
+    </div>
 
-            <div class="cert-container">
-                <h4>結業證書</h4>
-                <img id="cert-result-img" src="" alt="生成中...">
-                <button class="btn-download" id="download-cert-btn">下載證書</button>
-            </div>
-            
-            <button class="btn-restart" onclick="location.reload()">重新開始</button>
+    <div id="canvas-wrapper"><canvas id="gameCanvas"></canvas></div>
+    <div id="compass" onclick="recenterCamera()" title="點擊找回小偵探"><div id="compass-arrow"></div></div>
+
+    <div id="draw-tools">
+        <button id="draw-btn" class="tool-btn" onclick="toggleDrawMode()" title="啟用/關閉畫筆">🖌️</button>
+        <div id="color-palette" style="display: none; flex-direction: column; gap: 6px; margin-top: 5px;">
+            <button class="color-btn" onclick="setDrawColor('#2D80C6')" style="background: #2D80C6; border-color:#fff;"></button>
+            <button class="color-btn" onclick="setDrawColor('#F5B942')" style="background: #F5B942; border-color:#fff;"></button>
+            <button class="color-btn" onclick="setDrawColor('#ffffff')" style="background: #ffffff; border-color:#ccc;"></button>
+            <button class="tool-btn" onclick="clearDrawings()" style="width: 30px; height: 30px; font-size:12px; color:#ef4444; font-weight:bold; border-color:#ef4444;">✖</button>
         </div>
     </div>
 
-    <div id="cert-canvas-container"><canvas id="certCanvas" width="800" height="600"></canvas></div>
-    <div id="qrcode-container"></div>
+    <div id="right-inventory" class="side-inventory"></div>
 
-<script>
-let canvas = document.getElementById('gameCanvas');
-let ctx = canvas.getContext('2d');
-let gameLoopId;
-let playerName = "";
-let eventLocation = "";
-let currentScore = 0;
+    <div id="bottom-panel" class="floating-panel">
+        <div class="panel-header" onclick="togglePanel('bottom-panel')"><span>📜 探探里山生態微棲地探索規則</span><span class="toggle-icon">▲</span></div>
+        <div class="panel-content">
+            
+            <div id="backpack-info" style="background: #ffeed4; border: 2px solid #8f562b; padding: 12px; font-size: 13px; margin-bottom: 15px; color: #5e3212; border-radius: 8px; text-align: left; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+                💡 <b>探探里山生態微棲地探索規則：</b><br>
+                • <b>如何操作：</b>在右側卡牌庫<b style="color:#d32f2f;">「長按卡片 0.3 秒」</b>將其取出。此時卡片會往左移並顯示 👆，您便可自由將該卡片拖曳至虛線框內。(※每次只能處理一張卡片)<br>
+                • <b>擴增棲地：</b>在同一棲地放入 <b>3張正確</b> 的生物卡，將觸發藍白虛線的「新生自然棲地」 <b style="color:#16a34a;">(加 5 分)</b>！<br>
+                • <b>環境危機：</b>放入 <b>3張錯誤</b> 的卡片，將引發黑白虛線的「危機地帶」 <b style="color:#ef4444;">(扣 5 分)</b>。<br>
+                • ☠️ <b>生態陷阱：</b><span style="color:#b91c1c;">拖曳時若不慎「路過」危機地帶，生物會被強制吸入並死亡(卡片變灰)，結算倒扣 1 分！</span><br>
+            </div>
 
-let camera = { x: 400, y: 600, zoom: 1, detached: false };
-let player = { x: 400, y: 600, speed: 10, facing: 'down', state: 'idle', frame: 0 }; // 提升速度
+            <div id="quiz-section" style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #1e782a; border-bottom: 2px solid #8BC34A; padding-bottom: 5px;">📝 加分任務小測驗</h4>
+                <div id="quiz-container"></div>
+            </div>
+            
+            <div class="answer-box" id="result-section" style="display:none;">
+                <h4 style="color: #ea580c; border-bottom: 2px solid #fcd34d;">🎯 任務結算報告</h4>
+                <div id="score-details" style="background: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid #eee;"></div>
+                <div class="score-display" id="final-score" style="font-size: 28px; text-shadow: 1px 1px 0px #ccc;"></div>
+                
+                <div id="ios-hint" style="text-align:center; padding: 12px; background:#fffbeb; color:#ea580c; border: 2px dashed #fcd34d; border-radius: 8px; margin-top: 15px; font-weight: bold; font-size: 14px;">
+                    💡 iOS 用戶請直接「長按」下方圖片儲存！
+                </div>
 
-let lastMotionTime = 0;
-let isPanningMap = false;
-let panStart = { x: 0, y: 0 };
-let camStart = { x: 0, y: 0 };
-let pendingPlacement = null;
+                <img id="map-preview" alt="全景地圖預覽" style="margin-top: 15px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                <button id="map-download-btn" onclick="triggerDownload('map-preview', playerName + '_里山生態全景圖.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #2D80C6; border-bottom: 4px solid #1c7ab1; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖</button>
+                
+                <img id="cert-preview" alt="結業證書預覽" style="margin-top: 20px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                <button id="cert-download-btn" onclick="triggerDownload('cert-preview', playerName + '_生態證書.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #65af44; border-bottom: 4px solid #4a8730; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
+                
+                <a href="https://farmcmd.github.io/ESGT/" target="_blank" style="width: 100%; text-decoration: none; display: block;">
+                    <button style="width: 100%; padding: 15px; margin-top: 15px; background: #F5B942; border-bottom: 4px solid #c79532; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 16px;">🚀 去主站登錄減碳成就</button>
+                </a>
+            </div>
+            
+            <button id="calc-btn" onclick="calculateScore()" style="width: 100%; padding: 15px; margin-top: 10px; background: #14532d; border-bottom: 4px solid #062b14; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 18px;">提交測驗並結算分數</button>
+        </div>
+    </div>
 
-let inventory = [];
-let mapOccupants = []; 
-let crisisZones = []; 
+    <div id="alert-box">提示訊息</div>
 
-const ECO_DATA = [
-    { id: 'c1', name: '水稻', type: '植物', img: '🌾', baseScore: 1, validHabitats: ['h1', 'h5', 'h9'] },
-    { id: 'c2', name: '玉米', type: '植物', img: '🌽', baseScore: 1, validHabitats: ['h1', 'h5'] },
-    { id: 'c3', name: '菜葉類', type: '植物', img: '🥬', baseScore: 1, validHabitats: ['h1', 'h5'] },
-    { id: 'c4', name: '果樹', type: '植物', img: '🍎', baseScore: 1, validHabitats: ['h1', 'h2', 'h5'] },
-    { id: 'c5', name: '茶樹', type: '植物', img: '🌱', baseScore: 1, validHabitats: ['h1', 'h2'] },
-    { id: 'c6', name: '竹林', type: '植物', img: '🎋', baseScore: 1, validHabitats: ['h2', 'h14'] },
-    { id: 'c7', name: '蜜蜂', type: '昆蟲', img: '🐝', baseScore: 2, validHabitats: ['h10', 'h2', 'h3', 'h4', 'h5'] },
-    { id: 'c8', name: '瓢蟲', type: '昆蟲', img: '🐞', baseScore: 2, validHabitats: ['h10', 'h3', 'h4', 'h5'] },
-    { id: 'c9', name: '草蛉', type: '昆蟲', img: '🦗', baseScore: 2, validHabitats: ['h10', 'h3', 'h4', 'h5'] },
-    { id: 'c10', name: '螳螂', type: '昆蟲', img: '🦗', baseScore: 2, validHabitats: ['h10', 'h3', 'h4', 'h5'] },
-    { id: 'c11', name: '獨角仙', type: '昆蟲', img: '🪲', baseScore: 2, validHabitats: ['h2', 'h4', 'h14'] },
-    { id: 'c12', name: '鍬形蟲', type: '昆蟲', img: '🪲', baseScore: 2, validHabitats: ['h2', 'h4', 'h14'] },
-    { id: 'c13', name: '蝴蝶', type: '昆蟲', img: '🦋', baseScore: 2, validHabitats: ['h10', 'h3', 'h4', 'h5'] },
-    { id: 'c14', name: '蛾類', type: '昆蟲', img: '🦋', baseScore: 2, validHabitats: ['h10', 'h3', 'h4', 'h5', 'h14'] },
-    { id: 'c15', name: '螞蟻', type: '昆蟲', img: '🐜', baseScore: 1, validHabitats: ['h12', 'h3', 'h4'] },
-    { id: 'c16', name: '胡蜂', type: '昆蟲', img: '🐝', baseScore: 2, validHabitats: ['h2', 'h14', 'h5'] },
-    { id: 'c17', name: '通用昆蟲', type: '昆蟲', img: '🐛', baseScore: 1, validHabitats: ['h10', 'h3', 'h4', 'h5'] },
-    { id: 'c18', name: '蜘蛛', type: '節肢', img: '🕷️', baseScore: 2, validHabitats: ['h10', 'h3', 'h4', 'h12', 'h5'] },
-    { id: 'c19', name: '馬陸/蜈蚣', type: '節肢', img: '🐛', baseScore: 1, validHabitats: ['h12', 'h4', 'h3'] },
-    { id: 'c20', name: '蝸牛/蛞蝓', type: '軟體', img: '🐌', baseScore: 1, validHabitats: ['h12', 'h4', 'h7', 'h8'] },
-    { id: 'c21', name: '蚯蚓', type: '環節', img: '🪱', baseScore: 2, validHabitats: ['h1', 'h5', 'h4'] },
-    { id: 'c22', name: '蛙類', type: '兩棲', img: '🐸', baseScore: 3, validHabitats: ['h7', 'h8', 'h9', 'h5'] },
-    { id: 'c23', name: '蛇類', type: '爬蟲', img: '🐍', baseScore: 3, validHabitats: ['h2', 'h6', 'h11', 'h4', 'h5', 'h14'] },
-    { id: 'c24', name: '蜥蜴/攀木蜥蜴', type: '爬蟲', img: '🦎', baseScore: 3, validHabitats: ['h2', 'h3', 'h12', 'h14'] },
-    { id: 'c25', name: '食蛇龜', type: '爬蟲', img: '🐢', baseScore: 5, validHabitats: ['h2', 'h6', 'h11', 'h3', 'h14'] },
-    { id: 'c26', name: '龜類', type: '爬蟲', img: '🐢', baseScore: 3, validHabitats: ['h7', 'h8', 'h9', 'h6', 'h11'] },
-    { id: 'c27', name: '白頭翁', type: '鳥類', img: '🐦', baseScore: 3, validHabitats: ['h2', 'h3', 'h14'] },
-    { id: 'c28', name: '綠繡眼', type: '鳥類', img: '🐦', baseScore: 3, validHabitats: ['h2', 'h3', 'h14'] },
-    { id: 'c29', name: '麻雀', type: '鳥類', img: '🐦', baseScore: 2, validHabitats: ['h2', 'h3', 'h1', 'h5'] },
-    { id: 'c30', name: '紅嘴黑鵯', type: '鳥類', img: '🐦', baseScore: 3, validHabitats: ['h2', 'h14'] },
-    { id: 'c31', name: '斑鳩', type: '鳥類', img: '🕊️', baseScore: 2, validHabitats: ['h2', 'h1', 'h5'] },
-    { id: 'c32', name: '竹雞', type: '鳥類', img: '🐔', baseScore: 3, validHabitats: ['h2', 'h3', 'h14'] },
-    { id: 'c33', name: '老鷹/大冠鷲', type: '鳥類', img: '🦅', baseScore: 5, validHabitats: ['h2', 'h14'] },
-    { id: 'c34', name: '貓頭鷹/領角鴞', type: '鳥類', img: '🦉', baseScore: 5, validHabitats: ['h2', 'h14'] },
-    { id: 'c35', name: '夜鷺/鷺鷥', type: '鳥類', img: '🦩', baseScore: 3, validHabitats: ['h7', 'h8', 'h9'] },
-    { id: 'c36', name: '水鳥', type: '鳥類', img: '🦆', baseScore: 3, validHabitats: ['h7', 'h8', 'h9'] },
-    { id: 'c37', name: '白鼻心', type: '哺乳', img: '🦡', baseScore: 4, validHabitats: ['h2', 'h6', 'h11', 'h14'] },
-    { id: 'c38', name: '鼬獾', type: '哺乳', img: '🦡', baseScore: 4, validHabitats: ['h2', 'h6', 'h11', 'h14'] },
-    { id: 'c39', name: '穿山甲', type: '哺乳', img: '🦔', baseScore: 5, validHabitats: ['h2', 'h6', 'h11', 'h14'] },
-    { id: 'c40', name: '台灣獼猴', type: '哺乳', img: '🐒', baseScore: 3, validHabitats: ['h2', 'h14'] },
-    { id: 'c41', name: '石虎', type: '哺乳', img: '🐆', baseScore: 5, validHabitats: ['h2', 'h6', 'h11', 'h14'] },
-    { id: 'c42', name: '野兔', type: '哺乳', img: '🐇', baseScore: 3, validHabitats: ['h2', 'h5', 'h3'] },
-    { id: 'c43', name: '鼠類', type: '哺乳', img: '🐀', baseScore: 1, validHabitats: ['h1', 'h5', 'h12'] },
-    { id: 'c44', name: '魚類', type: '魚類', img: '🐟', baseScore: 2, validHabitats: ['h7', 'h8', 'h9'] },
-    { id: 'c45', name: '蝦/蟹', type: '甲殼', img: '🦐', baseScore: 2, validHabitats: ['h7', 'h8', 'h9'] },
-    { id: 'c46', name: '福壽螺 (外來)', type: '軟體', img: '🐌', baseScore: 0, validHabitats: ['h7', 'h8', 'h1', 'h13'] }
-];
-
-let habitats = [
-    { id: 'h1', name: '農田', x: 200, y: 750, w: 500, h: 250, isBonus: false },
-    { id: 'h2', name: '淺山', x: 400, y: 50, w: 60, h: 40, isBonus: false },
-    { id: 'h3', name: '灌木欉', x: 600, y: 150, w: 150, h: 100, isBonus: false },
-    { id: 'h4', name: '枯木草堆', x: 50, y: 180, w: 120, h: 80, isBonus: false },
-    { id: 'h5', name: '田埂草帶', x: 250, y: 920, w: 180, h: 60, isBonus: false },
-    { id: 'h6', name: '涵洞護道(生物可利用友善設施)', x: 300, y: 250, w: 140, h: 100, isBonus: false },
-    { id: 'h7', name: '溪流', x: 1000, y: 400, w: 60, h: 40, isBonus: false },
-    { id: 'h8', name: '水塘', x: 1100, y: 600, w: 250, h: 200, isBonus: false },
-    { id: 'h9', name: '濕地', x: 1200, y: 380, w: 180, h: 120, isBonus: false },
-    { id: 'h10', name: '昆蟲旅館', x: 300, y: 880, w: 120, h: 80, isBonus: false },
-    { id: 'h11', name: '攀爬網(生物可利用友善設施)', x: 25, y: 680, w: 110, h: 100, isBonus: false },
-    { id: 'h12', name: '石堆', x: 900, y: 100, w: 100, h: 80, isBonus: false },
-    { id: 'h13', name: '灌溉溝渠', x: 25, y: 800, w: 100, h: 120, isBonus: false },
-    { id: 'h14', name: '原始森林', x: 50, y: 30, w: 200, h: 120, isBonus: false },
-    { id: 'h_bio', name: '生物通道(生物可利用友善設施)', x: 1050, y: 260, w: 350, h: 20, isBonus: false }
-];
-
-let trees = [];
-
-function toggleCustomLocation() {
-    const otherCb = document.getElementById('cb-other');
-    const customInput = document.getElementById('custom-location');
-    customInput.style.display = otherCb.checked ? 'block' : 'none';
-}
-
-function startGame() {
-    playerName = document.getElementById('player-name').value.trim();
-    let locations = [];
-    document.querySelectorAll('#location-select input:checked').forEach(cb => {
-        locations.push(cb.value === '其他' ? document.getElementById('custom-location').value : cb.value);
-    });
-    eventLocation = locations.join(' + ');
-    if (!playerName) return alert('請輸入偵探姓名！');
-    if (!eventLocation) return alert('請至少選擇或輸入一個探索場域！');
-
-    document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('game-container').style.display = 'block';
+    <div id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-text" id="confirm-msg">確認放置？</div>
+            <div class="confirm-btn-group">
+                <button class="btn-no" onclick="cancelPlacement()">取消</button>
+                <button class="btn-yes" onclick="confirmPlacement()">確定放置</button>
+            </div>
+        </div>
+    </div>
     
-    initGame();
-}
+    <div id="qrcode" style="position: absolute; left: -9999px; visibility: hidden;"></div>
 
-function initGame() {
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    
-    inventory = ECO_DATA.map(item => ({ ...item }));
-    shuffle(inventory);
-    
-    for(let i=0; i<35; i++) {
-        trees.push({
-            x: Math.random()*1500, y: Math.random()*300,
-            r: 25 + Math.random()*15
+    <script>
+        // 核心變數與全域函數
+        const QUIZ_DATA = [
+            { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
+            { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
+            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 },
+            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
+        ];
+
+        function toggleCustomLocation() {
+            const group = document.getElementById('custom-location-group');
+            const cb = document.getElementById('loc-other-cb');
+            if(group && cb) group.style.display = cb.checked ? 'block' : 'none';
+        }
+        
+        window.toggleCustomLocation = toggleCustomLocation; // 強制掛載到 window，避免未定義錯誤
+
+        function showShareQR() {
+            document.getElementById('share-qr-modal').style.display = 'flex';
+            let qrBox = document.getElementById('share-qrcode-img');
+            if (qrBox.innerHTML === '') {
+                new QRCode(qrBox, { text: "https://farmcmd.github.io/ESGT/eco_landscape.html", width: 150, height: 150, colorDark : "#1e782a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L });
+            }
+        }
+
+        function triggerDownload(imgId, filename) {
+            let img = document.getElementById(imgId);
+            if (!img || !img.src) return;
+            let link = document.createElement('a');
+            link.href = img.src;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        const ECO_DATA = [
+            { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12', 'h11', 'h14'] }, 
+            { id: 'b2', type: 'bio', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5', 'h14'] }, 
+            { id: 'b3', type: 'bio', name: '鼬獾', icon: '🦡', validHabitats: ['h6', 'h12', 'h11', 'h14'] }, 
+            { id: 'b4', type: 'bio', name: '蛇類', icon: '🐍', validHabitats: ['h2', 'h7', 'h1', 'h5', 'h11', 'h14'] }, 
+            { id: 'b5', type: 'bio', name: '龜類', icon: '🐢', validHabitats: ['h4', 'h8', 'h11'] }, 
+            { id: 'b6', type: 'bio', name: '雉雞', icon: '🐓', validHabitats: ['h5', 'h6', 'h14'] }, 
+            { id: 'b7', type: 'bio', name: '鳥類', icon: '🐦', validHabitats: ['h6', 'h14'] }, 
+            { id: 'b8', type: 'bio', name: '昆蟲', icon: '🪲', validHabitats: ['h10', 'h1', 'h5', 'h14'] }, 
+            { id: 'b9', type: 'bio', name: '瓢蟲', icon: '🐞', validHabitats: ['h10', 'h6', 'h5', 'h1'] }, 
+            { id: 'b10', type: 'bio', name: '蚜蟲', icon: '🦠', validHabitats: ['h5'] }, 
+            { id: 'b11', type: 'bio', name: '螞蟻', icon: '🐜', validHabitats: ['h2', 'h5'] }, 
+            { id: 'b12', type: 'bio', name: '蛙類', icon: '🐸', validHabitats: ['h7', 'h4', 'h3', 'h5'] }, 
+            { id: 'b13', type: 'bio', name: '金線蛙', icon: '🐸✨', validHabitats: ['h7', 'h4'] }, 
+            { id: 'b14', type: 'bio', name: '蝴蝶', icon: '🦋', validHabitats: ['h6', 'h5', 'h14'] }, 
+            { id: 'b15', type: 'bio', name: '蜜蜂', icon: '🐝', validHabitats: ['h10', 'h6', 'h5', 'h14'] }, 
+            { id: 'b16', type: 'bio', name: '螳螂', icon: '🦗', validHabitats: ['h5', 'h6'] }, 
+            { id: 'b17', type: 'bio', name: '本土魚', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] }, 
+            { id: 'b18', type: 'bio', name: '大肚魚', icon: '🐟', validHabitats: ['h4', 'h13'] }, 
+            { id: 'b19', type: 'bio', name: '七星鯉', icon: '🐟✨', validHabitats: ['h4', 'h9'] },
+            { id: 'b20', type: 'bio', name: '福壽螺', icon: '🐌', validHabitats: ['h4', 'h7', 'h3', 'h13'] }, 
+            { id: 'b21', type: 'bio', name: '虎皮蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
+            { id: 'b22', type: 'bio', name: '澤蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
+            { id: 'b23', type: 'bio', name: '泥鰍', icon: '🐟', validHabitats: ['h4', 'h3', 'h13', 'h7'] },
+            { id: 'b24', type: 'bio', name: '田螺', icon: '🐚', validHabitats: ['h4', 'h7', 'h3'] }, 
+            { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🦟', validHabitats: ['h4', 'h7', 'h9'] }, 
+            { id: 'b26', type: 'bio', name: '食蟲虻', icon: '🪰', validHabitats: ['h5', 'h6'] },
+            { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h5', 'h14'] }, 
+            { id: 'b28', type: 'bio', name: '胡蜂', icon: '🐝', validHabitats: ['h6', 'h1', 'h5', 'h14'] }, 
+            { id: 'b29', type: 'bio', name: '鷺鷥', icon: '🦢', validHabitats: ['h4', 'h7', 'h5'] }, 
+            { id: 'b30', type: 'bio', name: '紅冠水雞', icon: '🦆', validHabitats: ['h4', 'h7', 'h9'] },
+            { id: 'b31', type: 'bio', name: '秧雞', icon: '🦆', validHabitats: ['h7', 'h5'] },
+            { id: 'b32', type: 'bio', name: '麻雀', icon: '🐦', validHabitats: ['h5', 'h6', 'h1'] },
+            { id: 'b33', type: 'bio', name: '蝸牛', icon: '🐌', validHabitats: ['h5', 'h6', 'h1', 'h14'] },
+            { id: 'b34', type: 'bio', name: '螢火蟲', icon: '✨', validHabitats: ['h4', 'h7'] },
+            { id: 'b35', type: 'bio', name: '黑冠麻鷺', icon: '🐦‍⬛', validHabitats: ['h6', 'h5', 'h14'] }, 
+            { id: 'b36', type: 'bio', name: '大冠鷲', icon: '🦅', validHabitats: ['h6', 'h12', 'h14'] },
+            { id: 'b37', type: 'bio', name: '穿山甲', icon: '🦔', validHabitats: ['h6', 'h12', 'h1', 'h11', 'h14'] }, 
+            { id: 'b38', type: 'bio', name: '白鼻心', icon: '🦡', validHabitats: ['h6', 'h12', 'h11', 'h14'] }, 
+            { id: 'b39', type: 'bio', name: '黑翅鳶', icon: '🦅', validHabitats: ['h5', 'h6', 'h14'] },
+            { id: 'b40', type: 'bio', name: '環頸雉', icon: '🦃', validHabitats: ['h5', 'h6'] }, 
+            { id: 'b41', type: 'bio', name: '燕子', icon: '🐦', validHabitats: ['h5', 'h4', 'h14'] },
+            { id: 'b42', type: 'bio', name: '藍鵲', icon: '🐦', validHabitats: ['h6', 'h14'] }, 
+            { id: 'b43', type: 'bio', name: '竹雞', icon: '🐔', validHabitats: ['h6', 'h5', 'h14'] }, 
+            { id: 'b44', type: 'bio', name: '山豬', icon: '🐗', validHabitats: ['h6', 'h12', 'h14'] }, 
+            { id: 'b45', type: 'bio', name: '台灣獼猴', icon: '🐒', validHabitats: ['h6', 'h14'] }, 
+            { id: 'b46', type: 'bio', name: '食蛇龜', icon: '🐢', validHabitats: ['h2', 'h4', 'h7', 'h6', 'h11', 'h14'] } 
+        ];
+
+        const CULTURE_DATA = [
+            { id: 'cu1', type: 'culture', name: '水牛', icon: '🐃' },
+            { id: 'cu2', type: 'culture', name: '燕子', icon: '🐦' },
+            { id: 'cu3', type: 'culture', name: '花浪蛇', icon: '🐍' },
+            { id: 'cu4', type: 'culture', name: '水缸', icon: '🏺' },
+            { id: 'cu5', type: 'culture', name: '土地公拐', icon: '🎋' },
+            { id: 'cu6', type: 'culture', name: '三合院', icon: '🏘️' },
+            { id: 'cu7', type: 'culture', name: '石敢當', icon: '🪨' },
+            { id: 'cu8', type: 'culture', name: '菁仔叢', icon: '🌴' },
+            { id: 'cu9', type: 'culture', name: '香爐', icon: '🪔' },
+            { id: 'cu10', type: 'culture', name: '大榕樹', icon: '🌳' },
+            { id: 'cu11', type: 'culture', name: '紅包', icon: '🧧' }
+        ];
+
+        const CARD_POOL = [...ECO_DATA, ...CULTURE_DATA];
+
+        const FOOD_CHAINS = [
+            { id: 'chain1', name: '田野捕食鏈 (蚜蟲➜瓢蟲➜鳥類)', members: ['b10', 'b9', 'b7'] }, 
+            { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['b11', 'b12', 'b4'] }
+        ];
+
+        let habitats = [
+            { id: 'h14', name: '原始森林', x: 20, y: 20, w: 260, h: 180, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h1', name: '枯木草堆', x: 40, y: 260, w: 180, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h12', name: '涵洞護道(生物可利用友善設施)', x: 400, y: 350, w: 180, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h6', name: '灌木欉', x: 750, y: 220, w: 180, h: 150, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h2', name: '石堆', x: 1020, y: 120, w: 160, h: 110, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h10', name: '昆蟲旅館', x: 300, y: 880, w: 150, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h11', name: '攀爬網(生物可利用友善設施)', x: 25, y: 680, w: 110, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h5', name: '田埂草帶', x: 280, y: 1000, w: 360, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h13', name: '灌溉溝渠', x: 40, y: 800, w: 130, h: 220, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h3', name: '砌石溝', x: 600, y: 850, w: 200, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h4', name: '水塘', x: 1220, y: 800, w: 280, h: 200, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h9', name: '漂浮草帶', x: 1080, y: 920, w: 160, h: 110, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h7', name: '濕地', x: 1280, y: 480, w: 260, h: 220, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h8', name: '護岸', x: 1020, y: 420, w: 120, h: 360, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false }
+        ];
+
+        let crisisZones = []; let inventory = []; let mapOccupants = []; 
+        let isDrawingMode = false; let currentDrawColor = '#2D80C6'; let drawings = []; let currentPath = null;
+        
+        let activeSelectedCard = null; // ★ 追蹤當前拿在手上的卡片
+        let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0; 
+        let pendingPlacement = null;
+
+        function toggleDrawMode() {
+            isDrawingMode = !isDrawingMode;
+            const btn = document.getElementById('draw-btn'); const pal = document.getElementById('color-palette');
+            if (isDrawingMode) {
+                btn.style.background = '#e2e8f0'; btn.style.borderColor = '#16a34a'; pal.style.display = 'flex';
+            } else {
+                btn.style.background = 'white'; btn.style.borderColor = '#ccc'; pal.style.display = 'none';
+            }
+        }
+        function setDrawColor(c) { currentDrawColor = c; }
+        function clearDrawings() { if(confirm("清除所有畫布線條嗎？")) { drawings = []; saveProgress(); } }
+
+        function recenterCamera() { camera.detached = false; showAlert("📍 已將視角重新對齊小偵探"); }
+
+        let wakeLock = null;
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+            }
+        }
+        document.addEventListener('visibilitychange', () => { if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock(); });
+
+        let quizCompleted = false; let quizScore = 0;
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            if (quizCompleted) { container.innerHTML = `<div style="padding: 12px; background: #dcfce7; color: #166534; border-radius: 6px; font-size: 14px; text-align: center; font-weight: bold; border: 2px solid #8BC34A;">✨ 已完成測驗，加分：${quizScore} 分 ✨</div>`; return; }
+            let html = '';
+            QUIZ_DATA.forEach((q, i) => {
+                html += `<div class="quiz-question"><p>Q${i+1}. ${q.q}</p>`;
+                q.opts.forEach((opt, j) => { html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}" onchange="saveProgress()"> ${j+1}. ${opt}</label>`; });
+                html += `</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        let playerName = "小偵探"; let eventName = ""; let eventLocation = "";
+
+        const canvas = document.getElementById('gameCanvas'); let ctx = canvas.getContext('2d');
+        const MAP_W = 1600; const MAP_H = 1200;
+        let SCREEN_W = window.innerWidth; let SCREEN_H = window.innerHeight;
+        let camera = { x: 0, y: 0, detached: false };
+        let isGameRunning = false; let distanceTraveled = 0;
+        let player = { x: MAP_W - 150, y: 150, dirAngle: 0, size: 30, icon: '🕵️' };
+
+        function resizeCanvas() { SCREEN_W = window.innerWidth; SCREEN_H = window.innerHeight; canvas.width = SCREEN_W; canvas.height = SCREEN_H; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId); const icon = panel.querySelector('.toggle-icon');
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open'); icon.innerText = '▲';
+            } else {
+                document.querySelectorAll('.floating-panel').forEach(p => { p.classList.remove('open'); if(p.id === 'bottom-panel') p.querySelector('.toggle-icon').innerText = '▲'; });
+                panel.classList.add('open'); icon.innerText = '✖';
+            }
+        }
+
+        function showAlert(msg) {
+            const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1; setTimeout(() => box.style.opacity = 0, 3000);
+        }
+
+        function computeCurrentScore() {
+            let tmpScore = quizCompleted ? quizScore : 0;
+            let successfullyPlacedIds = new Set();
+            
+            // ★ 修改：將觸發事件本身的分數也加入即時計算
+            tmpScore += habitats.filter(h => h.isBonus).length * 5;
+            tmpScore -= crisisZones.length * 5;
+
+            habitats.forEach(h => {
+                h.occupants.forEach(occ => {
+                    if (occ.dead) return;
+                    if (h.isBonus && occ.type === 'bio') { tmpScore += 1; successfullyPlacedIds.add(occ.id); }
+                    else if (occ.type === 'culture') { tmpScore += 1; }
+                    else if (occ.validHabitats && occ.validHabitats.includes(h.id)) { tmpScore += 1; successfullyPlacedIds.add(occ.id); }
+                });
+            });
+
+            crisisZones.forEach(cz => { cz.occupants.forEach(occ => { tmpScore -= 1; }); });
+            mapOccupants.forEach(occ => { tmpScore += 1; });
+
+            FOOD_CHAINS.forEach(chain => {
+                let isCompleted = chain.members.every(mId => successfullyPlacedIds.has(mId));
+                if (isCompleted) { tmpScore += 10; }
+            });
+
+            document.getElementById('current-score').innerText = tmpScore;
+            return tmpScore;
+        }
+
+        const SAVE_KEY = 'ecoDetective_saveData_v14';
+        function checkExistingSave() { if (localStorage.getItem(SAVE_KEY)) { document.getElementById('resume-game-section').style.display = 'block'; document.getElementById('new-game-form').style.display = 'none'; } }
+        function clearSaveData() { if(confirm("確定要清除進度嗎？")) { localStorage.removeItem(SAVE_KEY); document.getElementById('resume-game-section').style.display = 'none'; document.getElementById('new-game-form').style.display = 'block'; } }
+        
+        function saveProgress() {
+            if (!isGameRunning) return;
+            computeCurrentScore(); 
+            
+            let savedQuizState = [];
+            for (let i = 0; i < QUIZ_DATA.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                savedQuizState.push(selected ? selected.value : null);
+            }
+
+            localStorage.setItem(SAVE_KEY, JSON.stringify({
+                playerName, eventName, eventLocation, inventory, habitats, mapOccupants, crisisZones,
+                quizCompleted, quizScore, savedQuizState, drawings, player: { x: player.x, y: player.y, dirAngle: player.dirAngle }
+            }));
+        }
+
+        function loadProgress() {
+            const savedData = localStorage.getItem(SAVE_KEY);
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    playerName = data.playerName; eventName = data.eventName; eventLocation = data.eventLocation;
+                    inventory = data.inventory || []; habitats = data.habitats || habitats; mapOccupants = data.mapOccupants || []; 
+                    crisisZones = data.crisisZones || []; drawings = data.drawings || [];
+                    quizCompleted = data.quizCompleted || false; quizScore = data.quizScore || 0;
+                    player.x = data.player.x; player.y = data.player.y; player.dirAngle = data.player.dirAngle;
+                    renderInventory(); renderQuiz(); 
+                    
+                    if (!quizCompleted && data.savedQuizState) {
+                        data.savedQuizState.forEach((val, i) => {
+                            if (val !== null) { const radio = document.querySelector(`input[name="q${i}"][value="${val}"]`); if(radio) radio.checked = true; }
+                        });
+                    }
+                    return true;
+                } catch (e) { return false; }
+            } return false;
+        }
+        window.onload = checkExistingSave;
+
+        async function startGame(isResume = false) {
+            requestWakeLock(); 
+            if (isResume) {
+                if(!loadProgress()) { alert("讀取進度失敗，請重新開始。"); return; }
+            } else {
+                let pName = document.getElementById('player-name').value.trim();
+                if(!pName) { alert("請填寫偵探名稱！"); return; }
+                playerName = pName; eventName = document.getElementById('event-name').value.trim();
+                
+                let selectedLocs = [];
+                const checkboxes = document.querySelectorAll('input[name="location"]:checked');
+                checkboxes.forEach(cb => selectedLocs.push(cb.value));
+                if (document.getElementById('loc-other-cb').checked) {
+                    const customVal = document.getElementById('custom-location').value.trim();
+                    if (customVal) selectedLocs.push(customVal);
+                }
+                
+                if (selectedLocs.length === 0) {
+                    alert("請至少選擇一個探索場域！"); return;
+                }
+                eventLocation = selectedLocs.join(' + ');
+
+                renderQuiz(); saveProgress();
+            }
+
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    let p1 = await DeviceOrientationEvent.requestPermission(); let p2 = typeof DeviceMotionEvent !== 'undefined' ? await DeviceMotionEvent.requestPermission() : 'granted';
+                    if (p1 === 'granted' && p2 === 'granted') { window.addEventListener('deviceorientation', handleOrientation); window.addEventListener('devicemotion', handleMotion); }
+                } catch (e) {}
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation); window.addEventListener('devicemotion', handleMotion);
+            }
+
+            window.addEventListener('keydown', (e) => {
+                const speed = 15; 
+                if(e.key==='ArrowUp') { 
+                    player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed; checkMovement(speed); 
+                    camera.detached = false;
+                }
+                if(e.key==='ArrowLeft') player.dirAngle -= 0.2; if(e.key==='ArrowRight') player.dirAngle += 0.2;
+            });
+
+            document.getElementById('start-overlay').style.display = 'none';
+            document.getElementById('live-score-board').style.display = 'flex'; 
+            isGameRunning = true; requestAnimationFrame(gameLoop);
+            computeCurrentScore();
+        }
+
+        function handleOrientation(e) {
+            if (!isGameRunning) return; let dx = e.gamma || 0; let dy = e.beta || 0;  
+            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) player.dirAngle = Math.atan2(dx, -dy);
+            document.getElementById('compass-arrow').style.transform = `translateY(-10px) rotate(${player.dirAngle}rad)`;
+        }
+
+        function handleMotion(e) {
+            if (!isGameRunning) return; 
+            // ★ 修復：阻斷視角亂跳 (如果在拖曳地圖、手上有卡片、或是正在放置，則忽略走路計步)
+            if (isPanningMap || draggingInstance || pendingPlacement || activeSelectedCard) return; 
+            
+            let acc = e.acceleration || {x:0, y:0, z:0}; let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+            if (mag > 2.5) {
+                const stepSize = 6; player.x += Math.sin(player.dirAngle) * stepSize; player.y -= Math.cos(player.dirAngle) * stepSize; 
+                player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x)); player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
+                checkMovement(stepSize);
+                camera.detached = false;
+            }
+        }
+
+        function checkMovement(dist) {
+            distanceTraveled += dist;
+            if (distanceTraveled > 150) { 
+                distanceTraveled = 0; saveProgress(); 
+                if (Math.random() < 0.10) triggerEncounter(); 
+            }
+        }
+
+        function triggerEncounter() {
+            let randomTemplate = CARD_POOL[Math.floor(Math.random() * CARD_POOL.length)];
+            let instance = { ...randomTemplate, uniqueId: 'inst_' + Date.now() + Math.floor(Math.random()*1000), dead: false };
+            inventory.push(instance); renderInventory(); saveProgress();
+            showAlert(`👣 發現了${instance.type==='culture'?'文化地景':'生態物種'}【${instance.name}】！`);
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('right-inventory'); 
+            
+            // ★ 當有鎖定的卡片時，背包變暗且無法點擊
+            if (activeSelectedCard) {
+                container.classList.add('locked');
+            } else {
+                container.classList.remove('locked');
+            }
+
+            if (inventory.length === 0) { container.innerHTML = ''; return; }
+            
+            container.innerHTML = '';
+            let grouped = {};
+            inventory.forEach(c => { if(!grouped[c.id]) grouped[c.id] = []; grouped[c.id].push(c); });
+
+            Object.values(grouped).forEach(group => {
+                const c = group[0]; const count = group.length;
+                const div = document.createElement('div'); 
+                div.className = c.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
+                div.innerHTML = `
+                    <div class="c-icon">${c.icon}</div><div class="c-name">${c.name}</div>
+                    ${count > 1 ? `<div class="c-badge">x${count}</div>` : ''}
+                `;
+                
+                let pressTimer = null;
+                let startX, startY;
+                let isCancelled = false;
+
+                const cancelPress = () => { isCancelled = true; if (pressTimer) clearTimeout(pressTimer); };
+
+                div.addEventListener('pointerdown', (e) => {
+                    if (e.pointerType === 'mouse' && e.button !== 0) return; 
+                    if (activeSelectedCard) return; // ★ 鎖定防呆
+
+                    startX = e.clientX; startY = e.clientY;
+                    isCancelled = false;
+                    
+                    const checkMove = (ev) => { 
+                        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > 15) cancelPress(); 
+                    };
+                    const cleanup = () => { cancelPress(); window.removeEventListener('pointermove', checkMove); window.removeEventListener('pointerup', cleanup); window.removeEventListener('pointercancel', cleanup); };
+
+                    window.addEventListener('pointermove', checkMove, { passive: true });
+                    window.addEventListener('pointerup', cleanup, { once: true });
+                    window.addEventListener('pointercancel', cleanup, { once: true });
+
+                    pressTimer = setTimeout(() => {
+                        if (!isCancelled && !activeSelectedCard) {
+                            if (navigator.vibrate) navigator.vibrate(50); 
+                            div.style.transform = "scale(1.2)"; 
+                            
+                            setTimeout(() => {
+                                div.style.transform = "scale(1)";
+                                
+                                let instToExtract = group[group.length - 1];
+                                inventory = inventory.filter(i => i.uniqueId !== instToExtract.uniqueId);
+                                
+                                // ★ 將卡片往左平移一點，設為唯一啟動卡片
+                                instToExtract.x = camera.x + SCREEN_W - 160; 
+                                instToExtract.y = camera.y + startY - 25;
+                                activeSelectedCard = instToExtract;
+                                
+                                renderInventory();
+                            }, 150);
+                        }
+                        cleanup();
+                    }, 300); 
+                }); 
+                
+                container.appendChild(div);
+            });
+        }
+
+        function getLogicalCoords(e) { return { x: e.clientX + camera.x, y: e.clientY + camera.y }; }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            if (!isGameRunning) return; const coords = getLogicalCoords(e);
+            
+            if (isDrawingMode) {
+                currentPath = { color: currentDrawColor, points: [coords] }; drawings.push(currentPath); canvas.setPointerCapture(e.pointerId); return;
+            }
+
+            // ★ 優先檢查是否點到「唯一選定中」的卡片
+            if (activeSelectedCard) {
+                let box = activeSelectedCard.renderBox;
+                if (box && coords.x >= box.x && coords.x <= box.x + box.w && coords.y >= box.y && coords.y <= box.y + box.h) {
+                    draggingInstance = activeSelectedCard; 
+                    activeSelectedCard = null; // 開始拖曳就解除等待狀態
+                    setupDrag(e, draggingInstance); return;
+                }
+            }
+
+            for (let i = mapOccupants.length - 1; i >= 0; i--) {
+                let occ = mapOccupants[i];
+                if (occ.renderBox && !occ.dead && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                    draggingInstance = occ; mapOccupants.splice(i, 1); setupDrag(e, occ); return; 
+                }
+            }
+            for (let cz of crisisZones) {
+                if (cz.occupants.length > 0) {
+                    for (let i = cz.occupants.length - 1; i >= 0; i--) {
+                        let occ = cz.occupants[i];
+                        if (occ.renderBox && !occ.dead && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                            draggingInstance = occ; cz.occupants.splice(i, 1); setupDrag(e, occ); return; 
+                        }
+                    }
+                }
+            }
+            for (let h of habitats) {
+                if (h.occupants.length > 0) {
+                    for (let i = h.occupants.length - 1; i >= 0; i--) {
+                        let occ = h.occupants[i];
+                        if (occ.renderBox && !occ.dead && coords.x >= occ.renderBox.x && coords.x <= occ.renderBox.x + occ.renderBox.w && coords.y >= occ.renderBox.y && coords.y <= occ.renderBox.y + occ.renderBox.h) {
+                            draggingInstance = occ; h.occupants.splice(i, 1); setupDrag(e, occ); return; 
+                        }
+                    }
+                }
+            }
+            isPanningMap = true; camera.detached = true; lastPanX = e.clientX; lastPanY = e.clientY; canvas.setPointerCapture(e.pointerId);
         });
-    }
 
-    renderInventory();
-    setupControls();
-    
-    if (window.DeviceMotionEvent) {
-        window.addEventListener('devicemotion', handleMotion);
-    }
-    gameLoopId = requestAnimationFrame(gameLoop);
-}
+        canvas.addEventListener('pointermove', (e) => {
+            if (isDrawingMode && currentPath) { currentPath.points.push(getLogicalCoords(e)); e.preventDefault(); return; }
+            if (isPanningMap) { camera.x -= (e.clientX - lastPanX); camera.y -= (e.clientY - lastPanY); lastPanX = e.clientX; lastPanY = e.clientY; e.preventDefault(); }
+            
+            if (draggingInstance) {
+                if (e.preventDefault) { e.preventDefault(); }
+                draggingInstance.x = getLogicalCoords(e).x - 25; draggingInstance.y = getLogicalCoords(e).y - 25;
+                
+                const coords = getLogicalCoords(e);
+                for (let cz of crisisZones) {
+                    if (Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r + 20) {
+                        draggingInstance.dead = true; 
+                        cz.occupants.push(draggingInstance);
+                        inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
+                        window.removeEventListener('pointerup', handleDragEnd); 
+                        showAlert(`☠️ 生態陷阱！【${draggingInstance.name}】被強制吸入了【${cz.name}】並已喪失生命力！`);
+                        renderInventory(); saveProgress(); draggingInstance = null;
+                        break;
+                    }
+                }
+            }
+        }, { passive: false });
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
-function toggleMenu() {
-    document.getElementById('backpack-menu').classList.toggle('open');
-}
-
-// 移除繁瑣的鎖定，恢復直覺的長按抽出
-function renderInventory() {
-    const list = document.getElementById('inventory-list');
-    list.innerHTML = '';
-    
-    inventory.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `
-            <div style="font-size:30px;">${item.img}</div>
-            <div class="card-info">
-                <div class="card-name">${item.name}</div>
-                <div class="card-type">${item.type}</div>
-            </div>
-        `;
-        
-        let pressTimer;
-        div.addEventListener('pointerdown', (e) => {
-            pressTimer = setTimeout(() => {
-                let inst = inventory.splice(index, 1)[0];
-                // 直接放在地圖中央偏右，立刻可拖曳，不鎖背包
-                inst.x = camera.x + 100;
-                inst.y = camera.y;
-                inst.score = 0;
-                mapOccupants.push(inst);
-                renderInventory();
-            }, 300);
+        canvas.addEventListener('pointerup', (e) => { 
+            if (isDrawingMode && currentPath) { currentPath = null; saveProgress(); canvas.releasePointerCapture(e.pointerId); return; }
+            if (isPanningMap) { isPanningMap = false; canvas.releasePointerCapture(e.pointerId); } 
+            
+            if (draggingInstance) { handleDragEnd(e); }
         });
-        div.addEventListener('pointerup', () => clearTimeout(pressTimer));
-        div.addEventListener('pointerleave', () => clearTimeout(pressTimer));
-        
-        list.appendChild(div);
-    });
-}
 
-function setupControls() {
-    canvas.addEventListener('pointerdown', e => {
-        if (pendingPlacement) return;
-        
-        const rect = canvas.getBoundingClientRect();
-        const worldX = e.clientX - rect.left + camera.x - canvas.width/2;
-        const worldY = e.clientY - rect.top + camera.y - canvas.height/2;
-        
-        let hit = mapOccupants.slice().reverse().find(o => Math.abs(worldX - o.x) < 30 && Math.abs(worldY - o.y) < 30);
-        if (hit) {
-            setupDrag(e, hit);
-        } else {
-            isPanningMap = true;
-            panStart = { x: e.clientX, y: e.clientY };
-            camStart = { x: camera.x, y: camera.y };
-            camera.detached = true;
+        function setupDrag(e, instance) {
+            try { if(e && e.preventDefault) e.preventDefault(); } catch(err) {}
+            instance.x = getLogicalCoords(e).x - 25; instance.y = getLogicalCoords(e).y - 25;
         }
-    });
 
-    window.addEventListener('pointermove', e => {
-        if (isPanningMap) {
-            camera.x = camStart.x - (e.clientX - panStart.x);
-            camera.y = camStart.y - (e.clientY - panStart.y);
-            camera.x = Math.max(canvas.width/2, Math.min(1600 - canvas.width/2, camera.x));
-            camera.y = Math.max(canvas.height/2, Math.min(1200 - canvas.height/2, camera.y));
+        function handleDragEnd(e) {
+            if (!draggingInstance) return;
+            const coords = getLogicalCoords(e);
+            
+            let targetHabitat = null; let targetCrisis = null;
+            for (let cz of crisisZones) { if (Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r) { targetCrisis = cz; break; } }
+            if (!targetCrisis) {
+                for (let h of habitats) {
+                    if (coords.x >= h.x && coords.x <= h.x + h.w && coords.y >= h.y && coords.y <= h.y + h.h) { targetHabitat = h; break; }
+                }
+            }
+
+            if (targetCrisis || targetHabitat) {
+                let name = targetCrisis ? targetCrisis.name : targetHabitat.name;
+                document.getElementById('confirm-msg').innerText = `是否將【${draggingInstance.name}】放置於【${name}】？`;
+                document.getElementById('confirm-modal').style.display = 'flex';
+                pendingPlacement = { instance: draggingInstance, coords: coords, habitat: targetHabitat, crisis: targetCrisis };
+                draggingInstance = null;
+            } else {
+                draggingInstance.x = coords.x - 25; draggingInstance.y = coords.y - 25; mapOccupants.push(draggingInstance);
+                draggingInstance = null; saveProgress(); renderInventory(); // 放地上也解鎖背包
+            }
         }
-    });
 
-    window.addEventListener('pointerup', () => {
-        isPanningMap = false;
-    });
-}
-
-let draggingInstance = null;
-
-function setupDrag(e, instance) {
-    if(e.cancelable) e.preventDefault();
-    draggingInstance = instance;
-    
-    const moveHandler = ev => {
-        const rect = canvas.getBoundingClientRect();
-        draggingInstance.x = ev.clientX - rect.left + camera.x - canvas.width/2;
-        draggingInstance.y = ev.clientY - rect.top + camera.y - canvas.height/2;
-    };
-    
-    const upHandler = () => {
-        window.removeEventListener('pointermove', moveHandler);
-        window.removeEventListener('pointerup', upHandler);
-        handleDragEnd(draggingInstance);
-        draggingInstance = null;
-    };
-    
-    window.addEventListener('pointermove', moveHandler);
-    window.addEventListener('pointerup', upHandler);
-}
-
-function handleDragEnd(inst) {
-    let targetHab = habitats.find(h => inst.x >= h.x && inst.x <= h.x + h.w && inst.y >= h.y && inst.y <= h.y + h.h);
-    if (targetHab) {
-        askPlacement(inst, targetHab);
-    }
-}
-
-function askPlacement(inst, hab) {
-    pendingPlacement = inst;
-    let isValid = inst.validHabitats.includes(hab.id);
-    let msg = isValid ? `將 ${inst.name} 放入 ${hab.name}？\n配置正確！` : `將 ${inst.name} 放入 ${hab.name}？\n警告：棲地不符！`;
-    
-    if (confirm(msg)) {
-        inst.x = hab.x + hab.w/2 + (Math.random()*40 - 20);
-        inst.y = hab.y + hab.h/2 + (Math.random()*40 - 20);
-        inst.score = isValid ? inst.baseScore + 1 : -1;
-        
-        if (isValid) {
-            hab.isBonus = true;
-        } else {
-            if (!crisisZones.includes(hab.id)) crisisZones.push(hab.id);
+        function confirmPlacement() {
+            if (pendingPlacement) {
+                let inst = pendingPlacement.instance;
+                if (pendingPlacement.crisis) { pendingPlacement.crisis.occupants.push(inst); }
+                else if (pendingPlacement.habitat) { pendingPlacement.habitat.occupants.push(inst); }
+                checkHabitatEvolution(pendingPlacement.habitat);
+                pendingPlacement = null; saveProgress(); renderInventory(); // 確認放入後解鎖背包
+            }
+            document.getElementById('confirm-modal').style.display = 'none';
         }
-        computeCurrentScore();
-    }
-    pendingPlacement = null;
-}
-
-function computeCurrentScore() {
-    let tmp = 0;
-    mapOccupants.forEach(o => tmp += o.score || 0);
-    tmp += habitats.filter(h => h.isBonus).length * 5;
-    tmp -= crisisZones.length * 5;
-    currentScore = tmp;
-    document.getElementById('score-display').innerText = currentScore;
-}
-
-// 恢復俐落、即時的運鏡與感測
-function handleMotion(e) {
-    if (isPanningMap || draggingInstance || pendingPlacement) return;
-    
-    let acc = e.accelerationIncludingGravity;
-    if (!acc) return;
-    let total = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
-    
-    let now = Date.now();
-    // 降低閾值，讓走路判定更靈敏
-    if (total > 12 && now - lastMotionTime > 200) {
-        player.state = 'walk';
-        player.y -= player.speed;
-        if(player.y < 100) player.y = 100;
-        
-        // 移除平滑運鏡，直接跟隨人物
-        camera.x = player.x;
-        camera.y = player.y;
-        camera.detached = false;
-        
-        lastMotionTime = now;
-        setTimeout(() => player.state = 'idle', 150);
-    }
-}
-
-function gameLoop() {
-    update();
-    draw();
-    gameLoopId = requestAnimationFrame(gameLoop);
-}
-
-function update() {
-    player.frame++;
-}
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.translate(canvas.width/2 - camera.x, canvas.height/2 - camera.y);
-    
-    drawMap();
-    drawHabitats();
-    drawMapOccupants();
-    drawTrees();
-    drawPlayer();
-    
-    ctx.restore();
-}
-
-function drawMap() {
-    ctx.fillStyle = '#689f38'; ctx.fillRect(0, 0, 1600, 1200);
-    ctx.fillStyle = '#558b2f';
-    for(let i=0; i<50; i++) { ctx.fillRect(Math.sin(i)*1000 + 300, Math.cos(i)*800 + 200, 15, 5); }
-
-    ctx.lineWidth = 40; ctx.strokeStyle = '#795548'; ctx.beginPath();
-    ctx.moveTo(400, 1200); ctx.quadraticCurveTo(500, 800, 700, 600); ctx.lineTo(800, 400); ctx.stroke();
-    ctx.lineWidth = 36; ctx.strokeStyle = '#8d6e63'; ctx.stroke();
-
-    ctx.lineWidth = 80; ctx.strokeStyle = '#2196f3'; ctx.beginPath();
-    ctx.moveTo(1100, 0); ctx.lineTo(1050, 600); ctx.lineTo(1200, 1200); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fillRect(1080, 200, 30, 4); ctx.fillRect(1060, 400, 20, 4); ctx.fillRect(1150, 900, 40, 4);
-
-    ctx.fillStyle = '#42a5f5'; ctx.beginPath(); ctx.ellipse(1200, 700, 150, 100, 0, 0, Math.PI*2); ctx.fill();
-
-    ctx.fillStyle = '#78909c'; ctx.fillRect(0, 300, 1600, 60);
-    ctx.fillStyle = '#fff';
-    for (let i = 0; i < 1600; i += 60) { ctx.fillRect(i, 325, 30, 10); }
-
-    ctx.fillStyle = '#5d4037'; ctx.fillRect(200, 750, 500, 250);
-    ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 2;
-    for(let i=770; i<1000; i+=30) {
-        ctx.beginPath(); ctx.moveTo(200, i); ctx.lineTo(700, i); ctx.stroke();
-        ctx.fillStyle = '#8bc34a';
-        for(let j=220; j<680; j+=40) { ctx.beginPath(); ctx.arc(j, i, 4, 0, Math.PI*2); ctx.fill(); }
-    }
-
-    ctx.fillStyle = '#cfd8dc'; ctx.fillRect(250, 400, 400, 150);
-    ctx.strokeStyle = '#90a4ae'; ctx.lineWidth = 5;
-    for(let i=250; i<=650; i+=50) { ctx.strokeRect(i, 400, 50, 150); }
-    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(250, 400, 400, 150);
-    drawWoodSign(450, 400, '設施農業(溫室)');
-
-    ctx.fillStyle = '#9e9e9e'; ctx.fillRect(25, 600, 100, 350);
-    ctx.fillStyle = '#64b5f6'; ctx.fillRect(40, 600, 70, 350);
-
-    ctx.fillStyle = '#33691e'; ctx.fillRect(1050, 260, 350, 20);
-    ctx.fillStyle = '#558b2f'; ctx.fillRect(1050, 265, 350, 10);
-
-    ctx.fillStyle = '#e0e0e0'; ctx.fillRect(800, 550, 80, 70);
-    ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.moveTo(790, 550); ctx.lineTo(840, 500); ctx.lineTo(890, 550); ctx.fill();
-    ctx.fillStyle = '#81d4fa'; ctx.fillRect(820, 570, 20, 20);
-
-    drawWoodSign(300, 320, '山邊道路');
-}
-
-function drawWoodSign(x, y, text) {
-    ctx.font = 'bold 16px "Microsoft JhengHei"';
-    let textW = ctx.measureText(text).width;
-    let pad = 10;
-    
-    let finalX = x;
-    if (finalX - textW/2 - pad < 0) finalX = textW/2 + pad;
-    
-    ctx.fillStyle = '#8d6e63'; ctx.fillRect(finalX - textW/2 - pad, y - 15, textW + pad*2, 30);
-    ctx.fillStyle = '#424242';
-    ctx.beginPath(); ctx.arc(finalX - textW/2 - pad + 5, y, 3, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(finalX + textW/2 + pad - 5, y, 3, 0, Math.PI*2); ctx.fill();
-    
-    ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(text, finalX, y);
-}
-
-function drawTrees() {
-    trees.forEach(t => {
-        ctx.fillStyle = '#5d4037'; ctx.fillRect(t.x - 5, t.y, 10, 20);
-        ctx.fillStyle = '#1b5e20'; ctx.beginPath(); ctx.arc(t.x, t.y - 10, t.r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(t.x - 5, t.y - 15, t.r*0.8, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(t.x + 5, t.y - 20, t.r*0.6, 0, Math.PI*2); ctx.fill();
-    });
-}
-
-function drawHabitats() {
-    habitats.forEach(h => {
-        ctx.strokeStyle = h.isBonus ? '#39FF14' : 'rgba(57, 255, 20, 0.5)'; 
-        ctx.lineWidth = 3; ctx.setLineDash([10, 5]); ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]);
-        
-        if (h.isBonus) {
-            ctx.fillStyle = 'rgba(57,255,20,0.2)'; ctx.fillRect(h.x, h.y, h.w, h.h);
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Arial'; ctx.fillText('新生自然棲地', h.x + h.w/2, h.y + 20);
+        function cancelPlacement() {
+            if (pendingPlacement) {
+                let inst = pendingPlacement.instance; inst.x = pendingPlacement.coords.x - 25; inst.y = pendingPlacement.coords.y - 25; mapOccupants.push(inst);
+                pendingPlacement = null; saveProgress(); renderInventory(); // 取消放地上解鎖背包
+            }
+            document.getElementById('confirm-modal').style.display = 'none';
         }
-        if (crisisZones.includes(h.id)) {
-            ctx.fillStyle = 'rgba(255,0,0,0.3)'; ctx.beginPath();
-            ctx.arc(h.x + h.w/2, h.y + h.h/2, Math.max(h.w, h.h)/1.5, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.fillText('⚠️水源汙染', h.x + h.w/2, h.y - 10);
-        }
-        drawWoodSign(h.x + h.w/2, h.y + h.h/2, h.name);
-    });
-}
 
-function drawMapOccupants() {
-    ctx.font = '24px Arial'; ctx.textAlign = 'center';
-    mapOccupants.forEach(o => {
-        ctx.fillText(o.img, o.x, o.y);
-        if(o.score > 0) {
-            ctx.fillStyle = '#39FF14'; ctx.font = 'bold 14px Arial';
-            ctx.fillText('+'+o.score, o.x + 15, o.y - 15); ctx.font = '24px Arial';
-        }
-    });
-}
-
-function drawPlayer() {
-    ctx.font = '30px Arial'; ctx.fillText('🕵️', player.x, player.y);
-    ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText(playerName, player.x, player.y + 15);
-}
-
-function showResult() {
-    document.getElementById('res-name').innerText = playerName;
-    document.getElementById('res-score').innerText = currentScore;
-    document.getElementById('result-screen').style.display = 'flex';
-    generateMapScreenshot();
-    generateCertificate();
-}
-
-async function generateMapScreenshot() {
-    let finalScore = currentScore;
-    const tCanvas = document.createElement('canvas'); tCanvas.width = 1600; tCanvas.height = 1250;
-    const tCtx = tCanvas.getContext('2d');
-    const originalCtx = ctx; const originalWidth = canvas.width; const originalHeight = canvas.height;
-
-    try {
-        ctx = tCtx; canvas.width = 1600; canvas.height = 1200;
-        drawMap(); drawHabitats(); drawMapOccupants(); drawTrees();
-
-        tCtx.fillStyle = '#155d27'; tCtx.fillRect(0, 1200, 1600, 50);
-        tCtx.fillStyle = '#ffffff'; tCtx.font = 'bold 24px "Microsoft JhengHei", sans-serif';
-        tCtx.textAlign = 'left'; tCtx.textBaseline = 'middle';
+        const CRISIS_TYPES = ['☠️ 路殺(車禍)', '💡 過度照明(光害)', '🧪 水源汙染(農藥)', '🐕 流浪狗(犬殺)', '💨 農藥飄移', '🧱 農業設施(阻隔)'];
         
-        const infoText = `🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${eventLocation || '未選擇'} | 總成績：${finalScore} 分`;
-        tCtx.fillText(infoText, 20, 1225);
+        function checkHabitatEvolution(habitat) {
+            if (!habitat) return;
+            let correctBioCount = 0; let wrongBioCount = 0;
+            habitat.occupants.forEach(occ => {
+                if (occ.type === 'bio') { if (occ.validHabitats.includes(habitat.id) || habitat.isBonus) correctBioCount++; else wrongBioCount++; }
+            });
 
-        ctx = originalCtx; canvas.width = originalWidth; canvas.height = originalHeight;
-        const dataUrl = tCanvas.toDataURL('image/jpeg', 0.9);
-        document.getElementById('map-result-img').src = dataUrl;
-        
-        document.getElementById('download-map-btn').onclick = () => {
-            const link = document.createElement('a');
-            link.download = `探探里山_全景地圖_${playerName}.jpg`; link.href = dataUrl; link.click();
-        };
-    } catch (e) { ctx = originalCtx; }
-}
+            if (correctBioCount >= 3 && !habitat.bonusSpawned) {
+                habitat.bonusSpawned = true;
+                let nx = habitat.x + (Math.random() > 0.5 ? habitat.w + 20 : -100); let ny = habitat.y + (Math.random() > 0.5 ? habitat.h + 20 : -100);
+                habitats.push({ id: 'hb_' + Date.now(), name: '新生自然棲地', x: nx, y: ny, w: 100, h: 100, occupants: [], bonusSpawned: true, crisisSpawned: true, isBonus: true });
+                showAlert(`✨ 復育成功！【${habitat.name}】生態溢出，擴增了新的自然棲地！`);
+            }
+            if (wrongBioCount >= 3 && !habitat.crisisSpawned) {
+                habitat.crisisSpawned = true;
+                let cType = CRISIS_TYPES[Math.floor(Math.random() * CRISIS_TYPES.length)];
+                let nx = habitat.x + habitat.w / 2 + (Math.random() * 80 - 40); let ny = habitat.y + habitat.h / 2 + (Math.random() * 80 - 40);
+                crisisZones.push({ name: cType, x: nx, y: ny, r: 80, occupants: [] });
+                showAlert(`⚠️ 環境危機！錯誤的生態配置在【${habitat.name}】引發了【${cType}】陷阱！`);
+            }
+        }
 
-function generateCertificate() {
-    const certCanvas = document.getElementById('certCanvas'); const cCtx = certCanvas.getContext('2d');
-    cCtx.fillStyle = '#e8f5e9'; cCtx.fillRect(0, 0, 800, 600);
-    cCtx.strokeStyle = '#2e7d32'; cCtx.lineWidth = 10; cCtx.strokeRect(20, 20, 760, 560);
-    cCtx.strokeStyle = '#8bc34a'; cCtx.lineWidth = 4; cCtx.strokeRect(30, 30, 740, 540);
-    cCtx.fillStyle = '#1b5e20';
-    [ [20,20], [750,20], [20,550], [750,550] ].forEach(pos => cCtx.fillRect(pos[0], pos[1], 30, 30));
+        function gameLoop() {
+            if (!isGameRunning) return;
+            if (!camera.detached) {
+                camera.x += (player.x - SCREEN_W / 2 - camera.x) * 0.1;
+                camera.y += (player.y - SCREEN_H / 2 - camera.y) * 0.1;
+            }
+            
+            camera.x = Math.max(0, Math.min(MAP_W - SCREEN_W, camera.x));
+            camera.y = Math.max(0, Math.min(MAP_H - SCREEN_H, camera.y));
 
-    cCtx.fillStyle = '#1b5e20'; cCtx.textAlign = 'center'; cCtx.font = 'bold 36px "Microsoft JhengHei"';
-    cCtx.fillText('探探里山永續生態與農村風俗文化導覽', 400, 100);
-    cCtx.fillStyle = '#388e3c'; cCtx.font = 'bold 28px "Microsoft JhengHei"'; cCtx.fillText('結業證書', 400, 160);
-    cCtx.fillStyle = '#333'; cCtx.font = '20px "Microsoft JhengHei"'; cCtx.fillText('茲證明', 400, 240);
-    
-    cCtx.font = 'bold 40px "Microsoft JhengHei"'; cCtx.fillText(playerName, 400, 300);
-    cCtx.font = '20px "Microsoft JhengHei"';
-    cCtx.fillText('在生態導覽與農村風俗文化導覽活動中，認真學習，', 400, 360);
-    cCtx.fillText('獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。', 400, 400);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save(); ctx.translate(-camera.x, -camera.y);
 
-    cCtx.font = 'bold 20px "Microsoft JhengHei"';
-    cCtx.fillText('活動名稱：山里共學', 400, 470);
-    cCtx.fillText(`路線(場域)：${eventLocation || '未選擇'} | 評測總成績：${currentScore} 分`, 400, 510);
-    
-    cCtx.fillStyle = '#2e7d32'; cCtx.font = 'bold 24px "Microsoft JhengHei"'; cCtx.textAlign = 'left';
-    cCtx.fillText('🌿 探探里山永續基地', 150, 540);
+            drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawPlayer(); drawDrawings();
+            
+            if (draggingInstance) {
+                ctx.fillStyle = draggingInstance.type === 'culture' ? '#fffbeb' : 'white'; 
+                ctx.strokeStyle = '#f97316'; ctx.lineWidth = 4;
+                ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 15;
+                ctx.beginPath(); draggingInstance.type === 'culture' ? ctx.arc(draggingInstance.x + 25, draggingInstance.y + 25, 25, 0, Math.PI * 2) : ctx.roundRect(draggingInstance.x, draggingInstance.y, 50, 50, 8);
+                ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+                ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(draggingInstance.icon, draggingInstance.x + 12, draggingInstance.y + 32);
+            }
 
-    cCtx.fillStyle = '#666'; cCtx.font = '14px "Microsoft JhengHei"'; cCtx.textAlign = 'right';
-    let today = new Date();
-    cCtx.fillText(`證書編號：ESG-${Math.random().toString(36).substr(2, 6).toUpperCase()}`, 750, 530);
-    cCtx.fillText(`核發日期：${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`, 750, 555);
+            ctx.restore(); requestAnimationFrame(gameLoop);
+        }
 
-    document.getElementById('qrcode-container').innerHTML = '';
-    try {
-        new QRCode(document.getElementById('qrcode-container'), { text: "https://www.facebook.com/satoyamadining", width: 80, height: 80 });
-        setTimeout(() => {
-            let qrImg = document.querySelector('#qrcode-container img');
-            if(qrImg && qrImg.src) {
-                let img = new Image();
-                img.onload = () => { cCtx.drawImage(img, 50, 470, 80, 80); outputCert(); };
-                img.src = qrImg.src;
-            } else { outputCert(); }
-        }, 500);
-    } catch(e) { outputCert(); }
-}
+        function drawDrawings() {
+            drawings.forEach(path => {
+                ctx.beginPath(); ctx.strokeStyle = path.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                path.points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+                ctx.stroke();
+            });
+            if (isDrawingMode && currentPath) {
+                ctx.beginPath(); ctx.strokeStyle = currentPath.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                currentPath.points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+                ctx.stroke();
+            }
+        }
 
-function outputCert() {
-    const dataUrl = document.getElementById('certCanvas').toDataURL('image/jpeg', 0.9);
-    document.getElementById('cert-result-img').src = dataUrl;
-    document.getElementById('download-cert-btn').onclick = () => {
-        const link = document.createElement('a');
-        link.download = `探探里山_結業證書_${playerName}.jpg`; link.href = dataUrl; link.click();
-    };
-}
-</script>
+        function drawWoodSign(text, x, y, alignCenter = true) {
+            ctx.font = 'bold 16px "Segoe UI", sans-serif';
+            let textW = ctx.measureText(text).width;
+            let boardW = Math.max(textW + 30, 80);
+            let boardH = 36;
+            
+            let finalX = alignCenter ? x - boardW / 2 : x;
+            if (finalX < 10) finalX = 10;
+            if (finalX + boardW > MAP_W - 10) finalX = MAP_W - boardW - 10; 
+            
+            let finalY = y;
+
+            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 4;
+            ctx.fillStyle = '#8f562b'; ctx.beginPath(); ctx.roundRect(finalX, finalY, boardW, boardH, 6); ctx.fill();
+            ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+            ctx.fillStyle = '#a16638'; ctx.beginPath(); ctx.roundRect(finalX + 2, finalY + 2, boardW - 4, boardH - 4, 4); ctx.fill();
+            
+            ctx.fillStyle = '#374151'; 
+            ctx.beginPath(); ctx.arc(finalX + 6, finalY + 6, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(finalX + boardW - 6, finalY + 6, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(finalX + 6, finalY + boardH - 6, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(finalX + boardW - 6, finalY + boardH - 6, 2, 0, Math.PI*2); ctx.fill();
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(text, finalX + 16, finalY + 24);
+            ctx.fillStyle = 'white'; ctx.fillText(text, finalX + 15, finalY + 23);
+        }
+
+        function drawTrees(x, y, count) {
+            for(let i=0; i<count; i++) {
+                let tx = x + (i * 45 % 150); let ty = y + (i * 35 % 120);
+                ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(tx+15, ty+20, 22, 12, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(tx+10, ty, 10, 20); 
+                ctx.fillStyle = '#1b5e20'; ctx.beginPath(); ctx.arc(tx+15, ty-10, 26, 0, Math.PI*2); ctx.fill(); 
+                ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(tx+15, ty-12, 22, 0, Math.PI*2); ctx.fill(); 
+                ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(tx+10, ty-16, 16, 0, Math.PI*2); ctx.fill(); 
+            }
+        }
+
+        function drawGrassPatch(x, y) {
+            ctx.strokeStyle = 'rgba(76, 175, 80, 0.6)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x, y); ctx.lineTo(x-4, y-8);
+            ctx.moveTo(x+3, y); ctx.lineTo(x+3, y-10);
+            ctx.moveTo(x+6, y); ctx.lineTo(x+10, y-7);
+            ctx.stroke();
+        }
+
+        function drawMap() {
+            ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
+            for(let i=0; i<40; i++) drawGrassPatch(100 + (i*177)%1400, 100 + (i*93)%1000); // 隨機草叢
+            
+            ctx.fillStyle = '#4CAF50'; ctx.fillRect(0, 0, 300, 320);
+            drawTrees(20, 20, 8); drawTrees(150, 100, 5);
+
+            ctx.fillStyle = '#64748b'; ctx.fillRect(0, 320, MAP_W, 80);
+            ctx.fillStyle = 'white'; ctx.setLineDash([20, 20]); ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(0, 360); ctx.lineTo(MAP_W, 360); ctx.stroke(); ctx.setLineDash([]);
+            drawWoodSign('山邊道路', 150, 342, true);
+
+            ctx.fillStyle = '#388e3c'; ctx.fillRect(1150, 300, 400, 20);
+            ctx.fillStyle = '#4caf50'; ctx.fillRect(1150, 305, 400, 10);
+            drawWoodSign('生物通道(生物可利用友善設施)', 1350, 275, true);
+
+            ctx.strokeStyle = '#b45309'; ctx.lineWidth = 28; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath(); ctx.moveTo(500, 400); ctx.lineTo(600, 600); ctx.lineTo(800, 900); ctx.lineTo(1200, 1150); ctx.stroke();
+            ctx.strokeStyle = '#dca166'; ctx.lineWidth = 22;
+            ctx.beginPath(); ctx.moveTo(500, 400); ctx.lineTo(600, 600); ctx.lineTo(800, 900); ctx.lineTo(1200, 1150); ctx.stroke();
+
+            ctx.fillStyle = '#a1887f'; ctx.fillRect(200, 850, 500, 300);
+            ctx.strokeStyle = '#8d6e63'; ctx.lineWidth = 4;
+            for(let i=1; i<10; i++) {
+                ctx.beginPath(); ctx.moveTo(210, 850 + i*30); ctx.lineTo(690, 850 + i*30); ctx.stroke();
+                for(let j=0; j<8; j++) { ctx.fillStyle = '#66bb6a'; ctx.beginPath(); ctx.arc(240 + j*60, 850 + i*30, 4, 0, Math.PI*2); ctx.fill(); }
+            }
+            drawWoodSign('農田', 450, 820, true);
+
+            ctx.fillStyle = 'rgba(224, 242, 241, 0.7)'; ctx.fillRect(150, 450, 350, 250); 
+            ctx.strokeStyle = '#9e9e9e'; ctx.lineWidth = 6; ctx.strokeRect(150, 450, 350, 250); 
+            ctx.lineWidth = 2;
+            for(let i=1; i<5; i++) { ctx.beginPath(); ctx.moveTo(150, 450 + i*50); ctx.lineTo(500, 450 + i*50); ctx.stroke(); }
+            for(let j=1; j<7; j++) { ctx.beginPath(); ctx.moveTo(150 + j*50, 450); ctx.lineTo(150 + j*50, 700); ctx.stroke(); }
+            ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.moveTo(160, 460); ctx.lineTo(250, 460); ctx.lineTo(160, 550); ctx.fill(); // 玻璃反光
+            drawWoodSign('設施農業(溫室)', 325, 420, true);
+
+            ctx.fillStyle = '#f5f5f5'; ctx.fillRect(680, 520, 60, 50); ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.moveTo(670, 520); ctx.lineTo(710, 480); ctx.lineTo(750, 520); ctx.fill();
+            ctx.fillStyle = '#f5f5f5'; ctx.fillRect(780, 550, 70, 50); ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.moveTo(770, 550); ctx.lineTo(815, 500); ctx.lineTo(860, 550); ctx.fill();
+            drawWoodSign('農舍', 760, 460, true);
+
+            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.moveTo(1000, 400); ctx.lineTo(1100, 400); ctx.lineTo(1350, 1200); ctx.lineTo(1150, 1200); ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(1030, 450); ctx.lineTo(1070, 450); ctx.moveTo(1060, 550); ctx.lineTo(1090, 550); ctx.moveTo(1080, 750); ctx.lineTo(1120, 750); ctx.moveTo(1120, 950); ctx.lineTo(1170, 950); ctx.stroke(); // 水紋
+            drawWoodSign('溪流', 1100, 600, true);
+            
+            ctx.fillStyle = '#94a3b8'; ctx.fillRect(20, 650, 130, 400); 
+            ctx.fillStyle = '#42a5f5'; ctx.fillRect(30, 650, 110, 400); 
+            drawWoodSign('灌溉溝渠', 85, 620, true);
+
+            drawTrees(550, 100, 3); drawTrees(700, 80, 4); drawTrees(850, 120, 2);
+            drawWoodSign('森林', 700, 180, true);
+        }
+
+        function drawHabitats() {
+            habitats.forEach(h => {
+                // ★ 修改為螢光綠色
+                ctx.strokeStyle = h.isBonus ? '#2563eb' : '#39FF14'; ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
+                ctx.shadowColor = h.isBonus ? 'rgba(37, 99, 235, 0.5)' : 'rgba(57, 255, 20, 0.3)'; ctx.shadowBlur = 5;
+                ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]); ctx.shadowBlur = 0;
+                
+                h.occupants.forEach((occ, idx) => {
+                    let cx = h.x + 10 + (idx % 3) * 60; let cy = h.y + 10 + Math.floor(idx / 3) * 60;
+                    if(cx + 50 > h.x + h.w) { cx = h.x + h.w - 55; }
+                    ctx.fillStyle = occ.dead ? '#9ca3af' : 'white';
+                    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(cx, cy, 50, 50, 8); ctx.fill(); ctx.stroke();
+                    ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 12, cy + 32);
+                    occ.renderBox = { x: cx, y: cy, w: 50, h: 50 };
+                    
+                    if(!occ.dead) {
+                        let isCorrect = (occ.type === 'culture') || (h.isBonus && occ.type === 'bio') || (occ.validHabitats && occ.validHabitats.includes(h.id));
+                        ctx.fillStyle = isCorrect ? '#22c55e' : '#ef4444';
+                        ctx.beginPath(); ctx.arc(cx + 45, cy + 5, 10, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(isCorrect ? '+1' : '✘', cx + 38, cy + 9);
+                    }
+                });
+            });
+
+            habitats.forEach(h => { drawWoodSign(h.name, h.x + h.w / 2, h.y - 20, true); });
+        }
+
+        function drawCrisisZones() {
+            crisisZones.forEach(cz => {
+                ctx.strokeStyle = 'black'; ctx.lineWidth = 4; ctx.setLineDash([10, 10]);
+                ctx.beginPath(); ctx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+                
+                cz.occupants.forEach((occ, idx) => {
+                    let angle = (idx * 30) * Math.PI / 180; let dist = 30;
+                    let cx = cz.x + Math.cos(angle)*dist - 25; let cy = cz.y + Math.sin(angle)*dist - 25;
+                    ctx.fillStyle = '#6b7280'; ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(cx, cy, 50, 50, 8); ctx.fill(); ctx.stroke();
+                    ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 12, cy + 32);
+                    occ.renderBox = { x: cx, y: cy, w: 50, h: 50 };
+                    
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx + 45, cy + 5, 10, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('-1', cx + 38, cy + 9);
+                });
+            });
+
+            crisisZones.forEach(cz => { drawWoodSign(cz.name, cz.x, cz.y - cz.r - 20, true); });
+        }
+
+        function drawMapOccupants() {
+            mapOccupants.forEach(occ => {
+                ctx.fillStyle = occ.type === 'culture' ? '#fffbeb' : 'white'; ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af'; ctx.lineWidth = 2;
+                ctx.beginPath(); occ.type === 'culture' ? ctx.arc(occ.x + 25, occ.y + 25, 25, 0, Math.PI * 2) : ctx.roundRect(occ.x, occ.y, 50, 50, 8);
+                ctx.fill(); ctx.stroke();
+                ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, occ.x + 12, occ.y + 32);
+                occ.renderBox = { x: occ.x, y: occ.y, w: 50, h: 50 };
+            });
+
+            if (activeSelectedCard) {
+                let occ = activeSelectedCard;
+                ctx.fillStyle = occ.type === 'culture' ? '#fffbeb' : 'white'; 
+                ctx.strokeStyle = '#f97316'; ctx.lineWidth = 4;
+                ctx.shadowColor = '#fdba74'; ctx.shadowBlur = 10;
+                
+                ctx.beginPath(); occ.type === 'culture' ? ctx.arc(occ.x + 25, occ.y + 25, 25, 0, Math.PI * 2) : ctx.roundRect(occ.x, occ.y, 50, 50, 8);
+                ctx.fill(); ctx.stroke();
+                ctx.shadowBlur = 0; 
+
+                ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, occ.x + 12, occ.y + 32);
+                occ.renderBox = { x: occ.x, y: occ.y, w: 50, h: 50 };
+
+                let floatY = Math.sin(Date.now() / 200) * 5; 
+                ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.beginPath(); ctx.roundRect(occ.x - 15, occ.y - 45 + floatY, 80, 25, 12); ctx.fill();
+                ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = 'white';
+                ctx.fillText('👆 拖曳我', occ.x - 5, occ.y - 28 + floatY);
+            }
+        }
+
+        function drawPlayer() {
+            ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.dirAngle);
+            ctx.font = '30px sans-serif'; ctx.fillText(player.icon, -15, 10);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-10, 0); ctx.lineTo(10, 0); ctx.fill();
+            ctx.restore();
+            
+            ctx.font = 'bold 14px "Segoe UI"'; ctx.fillStyle = 'white';
+            ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
+            ctx.fillText(playerName, player.x - ctx.measureText(playerName).width / 2, player.y + 30);
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+        }
+
+        function calculateScore() {
+            if (quizCompleted) return;
+            
+            quizScore = 0;
+            let allAnswered = true;
+            for (let i = 0; i < QUIZ_DATA.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (!selected) { allAnswered = false; break; }
+                if (parseInt(selected.value) === QUIZ_DATA[i].ans) quizScore += 10;
+            }
+            if (!allAnswered) { alert("請回答所有測驗題目後再結算！"); return; }
+            
+            quizCompleted = true; let total = computeCurrentScore();
+            
+            let logHTML = `<ul style="list-style-type: none; padding-left: 0; font-size: 14px;">`;
+            let bonusCount = habitats.filter(h => h.isBonus).length;
+            let crisisCount = crisisZones.length;
+            
+            logHTML += `<li>✅ 加分測驗得分: <b>${quizScore}</b> 分</li>`;
+            logHTML += `<li>🌱 擴增棲地: ${bonusCount} 處 <b>(+${bonusCount * 5}分)</b></li>`;
+            if(crisisCount > 0) logHTML += `<li style="color:#ef4444;">⚠️ 環境危機: ${crisisCount} 處 <b>(-${crisisCount * 5}分)</b></li>`;
+
+            let successfullyPlacedIds = new Set();
+            habitats.forEach(h => {
+                h.occupants.forEach(occ => {
+                    if (occ.dead) return;
+                    if (h.isBonus && occ.type === 'bio') { logHTML += `<li>✔️ [${h.name}] 庇護 ${occ.name} (+1分)</li>`; successfullyPlacedIds.add(occ.id); }
+                    else if (occ.type === 'culture') { logHTML += `<li>📜 發現文化地景 ${occ.name} (+1分)</li>`; }
+                    else if (occ.validHabitats && occ.validHabitats.includes(h.id)) { logHTML += `<li>✔️ ${occ.name} 放入 [${h.name}] (+1分)</li>`; successfullyPlacedIds.add(occ.id); }
+                    else { logHTML += `<li style="color:#888;">❌ ${occ.name} 放入 [${h.name}] (無加分)</li>`; }
+                });
+            });
+
+            crisisZones.forEach(cz => {
+                cz.occupants.forEach(occ => { logHTML += `<li style="color:#ef4444;">☠️ ${occ.name} 掉入 [${cz.name}] (-1分)</li>`; });
+            });
+            
+            FOOD_CHAINS.forEach(chain => {
+                let isCompleted = chain.members.every(mId => successfullyPlacedIds.has(mId));
+                if (isCompleted) { logHTML += `<li style="color:#16a34a; font-weight:bold;">🌟 完成 ${chain.name} (+10分)</li>`; }
+            });
+
+            logHTML += `</ul>`;
+            document.getElementById('score-details').innerHTML = logHTML;
+            document.getElementById('final-score').innerText = `總成績：${total} 分！`;
+            
+            document.getElementById('quiz-section').style.display = 'none';
+            document.getElementById('calc-btn').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+            
+            saveProgress(); renderQuiz(); 
+            
+            setTimeout(() => {
+                generateMapScreenshot();
+                generateCertificate(total);
+            }, 100);
+        }
+
+        function generateMapScreenshot() {
+            try {
+                let tmpCanvas = document.createElement('canvas'); 
+                tmpCanvas.width = MAP_W; tmpCanvas.height = MAP_H; 
+                let tCtx = tmpCanvas.getContext('2d');
+                
+                let oldCtx = ctx; let oldCamX = camera.x; let oldCamY = camera.y;
+                ctx = tCtx; camera.x = 0; camera.y = 0;
+
+                ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
+                drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawDrawings();
+
+                ctx = oldCtx; camera.x = oldCamX; camera.y = oldCamY;
+                
+                tCtx.fillStyle = 'rgba(255,255,255,0.85)'; tCtx.fillRect(20, MAP_H - 100, 600, 80);
+                tCtx.fillStyle = '#14532d'; tCtx.font = 'bold 24px sans-serif';
+                tCtx.fillText(`探探里山生態任務：${eventName}`, 40, MAP_H - 60);
+                tCtx.font = '20px sans-serif'; tCtx.fillText(`偵探：${playerName} | 探索場域：${eventLocation}`, 40, MAP_H - 35);
+                
+                let dataURL = tmpCanvas.toDataURL("image/png");
+                document.getElementById('map-download-btn').style.display = 'block';
+                
+                const previewImg = document.getElementById('map-preview');
+                previewImg.src = dataURL; previewImg.style.display = 'block';
+            } catch (err) {
+                console.error("Map Generation Error", err);
+            }
+        }
+
+        function generateCertificate(score) {
+            try {
+                let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = 800; tmpCanvas.height = 600; let tCtx = tmpCanvas.getContext('2d');
+                let grad = tCtx.createLinearGradient(0, 0, 800, 600); grad.addColorStop(0, '#f0fdf4'); grad.addColorStop(1, '#dcfce7');
+                tCtx.fillStyle = grad; tCtx.fillRect(0, 0, 800, 600);
+                
+                tCtx.strokeStyle = '#166534'; tCtx.lineWidth = 15; tCtx.strokeRect(20, 20, 760, 560);
+                tCtx.strokeStyle = '#4ade80'; tCtx.lineWidth = 5; tCtx.strokeRect(30, 30, 740, 540);
+                
+                tCtx.fillStyle = '#14532d'; tCtx.textAlign = 'center'; tCtx.font = 'bold 48px "Segoe UI", sans-serif'; tCtx.fillText('探探里山 永續生態結業證書', 400, 100);
+                
+                tCtx.font = '28px "Segoe UI"'; tCtx.fillStyle = '#374151';
+                tCtx.fillText(`茲證明 優秀偵探`, 400, 180);
+                tCtx.font = 'bold 40px "Segoe UI"'; tCtx.fillStyle = '#ea580c'; tCtx.fillText(`${playerName}`, 400, 240);
+                
+                tCtx.font = '24px "Segoe UI"'; tCtx.fillStyle = '#374151';
+                tCtx.fillText(`於 ${eventName || '永續生態導覽活動'} 中`, 400, 300);
+                tCtx.fillText(`成功探索【${eventLocation}】`, 400, 340);
+                tCtx.fillText(`並展現卓越的生態棲地觀察力，獲得總積分：`, 400, 380);
+                
+                tCtx.font = 'bold 60px "Segoe UI"'; tCtx.fillStyle = '#16a34a'; tCtx.fillText(`${score} 分`, 400, 460);
+                
+                tCtx.font = '18px "Segoe UI"'; tCtx.fillStyle = '#6b7280'; let dateStr = new Date().toLocaleDateString('zh-TW');
+                // ★ 修改發證單位
+                tCtx.fillText(`發證日期：${dateStr} | 發證單位：探探里山永續基地`, 400, 530);
+
+                let qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = '';
+                let vCode = 'ESGT-' + Date.now().toString().slice(-6);
+                tCtx.font = '14px monospace'; tCtx.fillStyle = '#9ca3af'; tCtx.fillText(`防偽碼: ${vCode}`, 400, 555);
+                
+                const finalizeCert = () => {
+                    let dataURL = tmpCanvas.toDataURL("image/png");
+                    document.getElementById('cert-download-btn').style.display = 'block';
+                    
+                    const previewImg = document.getElementById('cert-preview');
+                    previewImg.src = dataURL; previewImg.style.display = 'block';
+                };
+                
+                new QRCode(qrContainer, { text: `https://farmcmd.github.io/ESGT/?cert=${vCode}`, width: 100, height: 100, colorDark : "#166534" });
+                
+                setTimeout(() => {
+                    try {
+                        let qrCanvas = qrContainer.querySelector('canvas');
+                        if (qrCanvas) tCtx.drawImage(qrCanvas, 660, 480, 100, 100);
+                    } catch (e) {}
+                    finalizeCert();
+                }, 200);
+            } catch (err) {
+                console.error("Cert Gen Error", err);
+            }
+        }
+    </script>
 </body>
 </html>
