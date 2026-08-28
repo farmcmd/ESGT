@@ -1361,4 +1361,47 @@
                 targetCtx.font = 'bold 14px "Segoe UI", sans-serif'; const w = targetCtx.measureText("⚠️" + cz.name).width + 20; const h = 26;
                 targetCtx.fillStyle = '#8b0000'; targetCtx.beginPath(); targetCtx.roundRect(cz.x - w/2, cz.y - cz.r - h/2 + 10, w, h, 6); targetCtx.fill();
                 targetCtx.strokeStyle = '#fff'; targetCtx.lineWidth = 2; targetCtx.stroke();
-                targetCtx.fillStyle = '#ffffff'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; targetCtx.fillText("⚠️" + cz.name, cz.x, cz.y -
+                targetCtx.fillStyle = '#ffffff'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; targetCtx.fillText("⚠️" + cz.name, cz.x, cz.y - cz.r + 11);
+                
+                targetCtx.restore();
+            });
+        }
+
+        function drawMapOccupants(targetCtx) {
+            const r = 20;
+            mapOccupants.forEach(occ => {
+                targetCtx.save(); 
+                if (occ.dead) { targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6; }
+                
+                targetCtx.fillStyle = '#fffbeb'; targetCtx.beginPath(); targetCtx.arc(occ.x, occ.y, r, 0, Math.PI*2); targetCtx.fill();
+                targetCtx.strokeStyle = '#f59e0b'; targetCtx.lineWidth = 2; targetCtx.stroke();
+                
+                targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; 
+                targetCtx.fillText(occ.icon, occ.x, occ.y - 4);
+                targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; 
+                targetCtx.fillText(occ.name, occ.x, occ.y + 14);
+                
+                targetCtx.save(); targetCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; targetCtx.beginPath(); targetCtx.arc(occ.x + 18, occ.y - 18, 10, 0, Math.PI * 2); targetCtx.fill();
+                targetCtx.font = 'bold 12px Arial'; targetCtx.fillStyle = '#16a34a'; targetCtx.fillText('+1', occ.x + 18, occ.y - 18);
+                targetCtx.restore();
+
+                occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
+                targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
+                targetCtx.restore(); 
+            });
+        }
+
+        function drawPlayer(targetCtx) {
+            targetCtx.save(); targetCtx.translate(player.x, player.y);
+            targetCtx.font = `${player.size}px Arial`; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
+            targetCtx.rotate(player.dirAngle); targetCtx.fillText(player.icon, 0, 0);
+            targetCtx.fillStyle = '#ef4444'; targetCtx.beginPath(); targetCtx.arc(0, -22, 4, 0, Math.PI * 2); targetCtx.fill();
+            targetCtx.restore();
+            
+            targetCtx.font = 'bold 15px Arial'; const tw = targetCtx.measureText(playerName).width + 10;
+            targetCtx.fillStyle = 'rgba(255,255,255,0.8)'; targetCtx.beginPath(); targetCtx.roundRect(player.x - tw/2, player.y + 15, tw, 20, 4); targetCtx.fill();
+            targetCtx.fillStyle = '#111'; targetCtx.textAlign = 'center'; targetCtx.fillText(playerName, player.x, player.y + 25);
+        }
+    </script>
+</body>
+</html>
