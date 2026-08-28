@@ -14,6 +14,8 @@
             --card-size: 55px;
         }
 
+        /* 修正 iOS 100vh 導致的捲動崩潰問題 */
+        html, body { height: 100%; }
         body {
             margin: 0; padding: 0; overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -23,7 +25,6 @@
         }
 
         #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
-        /* 星露谷風格底色：青翠草地 */
         canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #8BC34A; }
 
         #draw-tools {
@@ -342,12 +343,10 @@
     <div id="qrcode" style="position: absolute; left: -9999px; visibility: hidden;"></div>
 
     <script>
-        const QUIZ_DATA = [
-            { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
-            { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
-            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 },
-            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
-        ];
+        /* 確保全域函數優先宣告，防止點擊時 ReferenceError */
+        function toggleCustomLocation() {
+            document.getElementById('custom-location-group').style.display = document.getElementById('loc-other-cb').checked ? 'block' : 'none';
+        }
 
         function showShareQR() {
             document.getElementById('share-qr-modal').style.display = 'flex';
@@ -356,6 +355,13 @@
                 new QRCode(qrBox, { text: "https://farmcmd.github.io/ESGT/eco_landscape.html", width: 150, height: 150, colorDark : "#1e782a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L });
             }
         }
+
+        const QUIZ_DATA = [
+            { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
+            { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
+            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 },
+            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
+        ];
 
         const ECO_DATA = [
             { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12', 'h14', 'h11'] }, 
@@ -384,7 +390,7 @@
             { id: 'b24', type: 'bio', name: '田螺', icon: '🐚', validHabitats: ['h4', 'h7', 'h3'] }, 
             { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🦟', validHabitats: ['h4', 'h7', 'h9'] }, 
             { id: 'b26', type: 'bio', name: '食蟲虻', icon: '🪰', validHabitats: ['h5', 'h6'] },
-            { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h14', 'h5'] }, // 移除攀爬網
+            { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h14', 'h5'] },
             { id: 'b28', type: 'bio', name: '胡蜂', icon: '🐝', validHabitats: ['h6', 'h1', 'h14', 'h5'] },
             { id: 'b29', type: 'bio', name: '鷺鷥', icon: '🦢', validHabitats: ['h4', 'h7', 'h5'] }, 
             { id: 'b30', type: 'bio', name: '紅冠水雞', icon: '🦆', validHabitats: ['h4', 'h7', 'h9'] },
@@ -483,9 +489,6 @@
         }
 
         let playerName = "小偵探"; let eventName = ""; let eventLocation = "";
-        function toggleCustomLocation() {
-            document.getElementById('custom-location-group').style.display = document.getElementById('loc-other-cb').checked ? 'block' : 'none';
-        }
 
         const canvas = document.getElementById('gameCanvas'); let ctx = canvas.getContext('2d');
         const MAP_W = 1600; const MAP_H = 1200;
@@ -515,7 +518,6 @@
             let tmpScore = quizCompleted ? quizScore : 0;
             let successfullyPlacedIds = new Set();
             
-            // 觸發擴增棲地 +5 分，觸發環境危機 -5 分
             tmpScore += habitats.filter(h => h.isBonus).length * 5;
             tmpScore -= crisisZones.length * 5;
 
@@ -924,7 +926,6 @@
             let boardH = 36;
             
             let finalX = alignCenter ? x - boardW / 2 : x;
-            // 防邊界撞擊 (Boundary Collision Prevention)
             if (finalX < 10) finalX = 10;
             if (finalX + boardW > MAP_W - 10) finalX = MAP_W - boardW - 10;
             
@@ -933,7 +934,6 @@
             ctx.fillStyle = '#8f562b'; ctx.beginPath(); ctx.roundRect(finalX, finalY, boardW, boardH, 6); ctx.fill();
             ctx.fillStyle = '#a16638'; ctx.beginPath(); ctx.roundRect(finalX + 2, finalY + 2, boardW - 4, boardH - 4, 4); ctx.fill();
             
-            // 四顆鐵釘
             ctx.fillStyle = '#374151'; 
             ctx.beginPath(); ctx.arc(finalX + 6, finalY + 6, 2, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(finalX + boardW - 6, finalY + 6, 2, 0, Math.PI*2); ctx.fill();
@@ -948,36 +948,30 @@
             for(let i=0; i<count; i++) {
                 let tx = x + (i * 45 % 150); let ty = y + (i * 35 % 120);
                 ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(tx+15, ty+20, 20, 10, 0, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = '#5d4037'; ctx.fillRect(tx+10, ty, 10, 20); // 樹幹
-                ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(tx+15, ty-10, 25, 0, Math.PI*2); ctx.fill(); // 深綠葉
-                ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(tx+10, ty-15, 18, 0, Math.PI*2); ctx.fill(); // 亮綠葉
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(tx+10, ty, 10, 20); 
+                ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(tx+15, ty-10, 25, 0, Math.PI*2); ctx.fill(); 
+                ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(tx+10, ty-15, 18, 0, Math.PI*2); ctx.fill(); 
             }
         }
 
         function drawMap() {
-            // 背景與道路
             ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
             
-            // 原始森林區底色
             ctx.fillStyle = '#4CAF50'; ctx.fillRect(0, 0, 300, 450);
             drawTrees(20, 20, 8); drawTrees(150, 200, 5);
 
-            // 柏油馬路
             ctx.fillStyle = '#94a3b8'; ctx.fillRect(0, 320, MAP_W, 80);
             ctx.fillStyle = 'white'; ctx.setLineDash([20, 20]); ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(0, 360); ctx.lineTo(MAP_W, 360); ctx.stroke(); ctx.setLineDash([]);
             drawWoodSign('山邊道路', 150, 342, true);
 
-            // 生物通道 (馬路上方)
             ctx.fillStyle = '#388e3c'; ctx.fillRect(1150, 300, 400, 20);
             ctx.fillStyle = '#4caf50'; ctx.fillRect(1150, 305, 400, 10);
             drawWoodSign('生物通道(生物可利用友善設施)', 1350, 275, true);
 
-            // 泥土蜿蜒小徑
             ctx.strokeStyle = '#dca166'; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
             ctx.beginPath(); ctx.moveTo(500, 400); ctx.lineTo(600, 600); ctx.lineTo(800, 900); ctx.lineTo(1200, 1150); ctx.stroke();
 
-            // 新大農田 (下方)
             ctx.fillStyle = '#a1887f'; ctx.fillRect(200, 850, 500, 300);
             ctx.strokeStyle = '#8d6e63'; ctx.lineWidth = 4;
             for(let i=1; i<10; i++) {
@@ -986,28 +980,28 @@
             }
             drawWoodSign('農田', 450, 820, true);
 
-            // 設施農業(溫室) (上方)
-            ctx.fillStyle = 'rgba(224, 242, 241, 0.7)'; ctx.fillRect(150, 450, 350, 250); // 玻璃
-            ctx.strokeStyle = '#9e9e9e'; ctx.lineWidth = 6; ctx.strokeRect(150, 450, 350, 250); // 鋼骨
+            ctx.fillStyle = 'rgba(224, 242, 241, 0.7)'; ctx.fillRect(150, 450, 350, 250); 
+            ctx.strokeStyle = '#9e9e9e'; ctx.lineWidth = 6; ctx.strokeRect(150, 450, 350, 250); 
             ctx.lineWidth = 2;
             for(let i=1; i<5; i++) { ctx.beginPath(); ctx.moveTo(150, 450 + i*50); ctx.lineTo(500, 450 + i*50); ctx.stroke(); }
             for(let j=1; j<7; j++) { ctx.beginPath(); ctx.moveTo(150 + j*50, 450); ctx.lineTo(150 + j*50, 700); ctx.stroke(); }
             drawWoodSign('設施農業(溫室)', 325, 420, true);
 
-            // 農舍群
             ctx.fillStyle = '#f5f5f5'; ctx.fillRect(680, 520, 60, 50); ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.moveTo(670, 520); ctx.lineTo(710, 480); ctx.lineTo(750, 520); ctx.fill();
             ctx.fillStyle = '#f5f5f5'; ctx.fillRect(780, 550, 70, 50); ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.moveTo(770, 550); ctx.lineTo(815, 500); ctx.lineTo(860, 550); ctx.fill();
             drawWoodSign('農舍', 760, 460, true);
 
-            // 溪流
             ctx.fillStyle = '#42a5f5'; ctx.beginPath(); ctx.moveTo(1000, 400); ctx.lineTo(1100, 400); ctx.lineTo(1350, 1200); ctx.lineTo(1150, 1200); ctx.fill();
             ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3; ctx.setLineDash([15, 20]);
             ctx.beginPath(); ctx.moveTo(1050, 500); ctx.lineTo(1050, 800); ctx.stroke(); ctx.setLineDash([]);
             drawWoodSign('溪流', 1100, 600, true);
+            
+            ctx.fillStyle = '#b0bec5'; ctx.fillRect(40, 800, 130, 220);
+            ctx.fillStyle = '#42a5f5'; ctx.fillRect(50, 810, 110, 200);
+            drawWoodSign('灌溉溝渠', 105, 780, true);
 
-            // 淺山點綴
             drawTrees(550, 100, 3); drawTrees(700, 80, 4); drawTrees(850, 120, 2);
-            drawWoodSign('淺山', 650, 80, true);
+            drawWoodSign('森林', 700, 80, true);
         }
 
         function drawHabitats() {
@@ -1024,7 +1018,6 @@
                     ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 12, cy + 32);
                     occ.renderBox = { x: cx, y: cy, w: 50, h: 50 };
                     
-                    // 繪製 +1 / ✘ 狀態標章
                     if(!occ.dead) {
                         let isCorrect = (occ.type === 'culture') || (h.isBonus && occ.type === 'bio') || (occ.validHabitats && occ.validHabitats.includes(h.id));
                         ctx.fillStyle = isCorrect ? '#22c55e' : '#ef4444';
@@ -1034,7 +1027,6 @@
                 });
             });
 
-            // 獨立繪製木牌，保證絕對置頂防遮擋
             habitats.forEach(h => {
                 drawWoodSign(h.name, h.x + h.w / 2, h.y + 10, true);
             });
@@ -1053,7 +1045,6 @@
                     ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 12, cy + 32);
                     occ.renderBox = { x: cx, y: cy, w: 50, h: 50 };
                     
-                    // 扣分徽章
                     ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx + 45, cy + 5, 10, 0, Math.PI*2); ctx.fill();
                     ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('-1', cx + 38, cy + 9);
                 });
@@ -1187,7 +1178,6 @@
             tCtx.font = '18px "Segoe UI"'; tCtx.fillStyle = '#6b7280'; let dateStr = new Date().toLocaleDateString('zh-TW');
             tCtx.fillText(`發證日期：${dateStr} | 認證單位：臺大。山林。學院 2.0`, 400, 530);
 
-            // iOS 安全 QR Code 渲染
             let qrContainer = document.getElementById('qrcode');
             qrContainer.innerHTML = '';
             let vCode = 'ESGT-' + Date.now().toString().slice(-6);
@@ -1209,3 +1199,11 @@
                             const previewImg = document.getElementById('cert-preview');
                             previewImg.src = dataURL; previewImg.style.display = 'block';
                         };
+                        img.src = qrImg.src;
+                    }
+                } catch (e) { console.error("QR Code rendering failed", e); }
+            }, 300);
+        }
+    </script>
+</body>
+</html>
