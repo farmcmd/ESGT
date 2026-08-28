@@ -301,14 +301,10 @@
                 </div>
 
                 <img id="map-preview" alt="全景地圖預覽" style="margin-top: 15px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                <a id="map-download-link" style="display:none; width: 100%; text-decoration: none;">
-                    <button style="width: 100%; padding: 15px; margin-top: 10px; background: #2D80C6; border-bottom: 4px solid #1c7ab1; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖</button>
-                </a>
+                <button id="map-download-btn" onclick="triggerDownload('map-preview', playerName + '_里山生態全景圖.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #2D80C6; border-bottom: 4px solid #1c7ab1; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖</button>
                 
                 <img id="cert-preview" alt="結業證書預覽" style="margin-top: 20px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                <a id="cert-download-link" style="display:none; width: 100%; text-decoration: none;">
-                    <button style="width: 100%; padding: 15px; margin-top: 10px; background: #65af44; border-bottom: 4px solid #4a8730; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
-                </a>
+                <button id="cert-download-btn" onclick="triggerDownload('cert-preview', playerName + '_生態證書.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #65af44; border-bottom: 4px solid #4a8730; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
                 
                 <a href="https://farmcmd.github.io/ESGT/" target="_blank" style="width: 100%; text-decoration: none; display: block;">
                     <button style="width: 100%; padding: 15px; margin-top: 15px; background: #F5B942; border-bottom: 4px solid #c79532; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 16px;">🚀 去主站登錄減碳成就</button>
@@ -353,6 +349,17 @@
             if (qrBox.innerHTML === '') {
                 new QRCode(qrBox, { text: "https://farmcmd.github.io/ESGT/eco_landscape.html", width: 150, height: 150, colorDark : "#1e782a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L });
             }
+        }
+
+        function triggerDownload(imgId, filename) {
+            let img = document.getElementById(imgId);
+            if (!img || !img.src) return;
+            let link = document.createElement('a');
+            link.href = img.src;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         const ECO_DATA = [
@@ -1165,77 +1172,95 @@
             document.getElementById('result-section').style.display = 'block';
             
             saveProgress(); renderQuiz(); 
-            generateMapScreenshot();
-            generateCertificate(total);
-        }
-
-        function generateMapScreenshot() {
-            let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = MAP_W; tmpCanvas.height = MAP_H; let tCtx = tmpCanvas.getContext('2d');
-            tCtx.fillStyle = '#8BC34A'; tCtx.fillRect(0, 0, MAP_W, MAP_H);
-            tCtx.drawImage(canvas, 0, 0, MAP_W, MAP_H, 0, 0, MAP_W, MAP_H);
             
-            tCtx.fillStyle = 'rgba(255,255,255,0.85)'; tCtx.fillRect(20, MAP_H - 100, 600, 80);
-            tCtx.fillStyle = '#14532d'; tCtx.font = 'bold 24px sans-serif';
-            tCtx.fillText(`探探里山生態任務：${eventName}`, 40, MAP_H - 60);
-            tCtx.font = '20px sans-serif'; tCtx.fillText(`偵探：${playerName} | 探索場域：${eventLocation}`, 40, MAP_H - 35);
-            
-            let dataURL = tmpCanvas.toDataURL("image/png");
-            const dlLink = document.getElementById('map-download-link');
-            dlLink.href = dataURL; dlLink.download = `${playerName}_里山生態全景圖.png`; dlLink.style.display = 'block';
-            
-            const previewImg = document.getElementById('map-preview');
-            previewImg.src = dataURL; previewImg.style.display = 'block';
-        }
-
-        function generateCertificate(score) {
-            let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = 800; tmpCanvas.height = 600; let tCtx = tmpCanvas.getContext('2d');
-            let grad = tCtx.createLinearGradient(0, 0, 800, 600); grad.addColorStop(0, '#f0fdf4'); grad.addColorStop(1, '#dcfce7');
-            tCtx.fillStyle = grad; tCtx.fillRect(0, 0, 800, 600);
-            
-            tCtx.strokeStyle = '#166534'; tCtx.lineWidth = 15; tCtx.strokeRect(20, 20, 760, 560);
-            tCtx.strokeStyle = '#4ade80'; tCtx.lineWidth = 5; tCtx.strokeRect(30, 30, 740, 540);
-            
-            tCtx.fillStyle = '#14532d'; tCtx.textAlign = 'center'; tCtx.font = 'bold 48px "Segoe UI", sans-serif'; tCtx.fillText('探探里山 永續生態結業證書', 400, 100);
-            
-            tCtx.font = '28px "Segoe UI"'; tCtx.fillStyle = '#374151';
-            tCtx.fillText(`茲證明 優秀偵探`, 400, 180);
-            tCtx.font = 'bold 40px "Segoe UI"'; tCtx.fillStyle = '#ea580c'; tCtx.fillText(`${playerName}`, 400, 240);
-            
-            tCtx.font = '24px "Segoe UI"'; tCtx.fillStyle = '#374151';
-            tCtx.fillText(`於 ${eventName || '永續生態導覽活動'} 中`, 400, 300);
-            tCtx.fillText(`成功探索【${eventLocation}】`, 400, 340);
-            tCtx.fillText(`並展現卓越的生態棲地觀察力，獲得總積分：`, 400, 380);
-            
-            tCtx.font = 'bold 60px "Segoe UI"'; tCtx.fillStyle = '#16a34a'; tCtx.fillText(`${score} 分`, 400, 460);
-            
-            tCtx.font = '18px "Segoe UI"'; tCtx.fillStyle = '#6b7280'; let dateStr = new Date().toLocaleDateString('zh-TW');
-            tCtx.fillText(`發證日期：${dateStr} | 認證單位：臺大。山林。學院 2.0`, 400, 530);
-
-            let qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = '';
-            let vCode = 'ESGT-' + Date.now().toString().slice(-6);
-            tCtx.font = '14px monospace'; tCtx.fillStyle = '#9ca3af'; tCtx.fillText(`防偽碼: ${vCode}`, 400, 555);
-            
-            new QRCode(qrContainer, { text: `https://farmcmd.github.io/ESGT/?cert=${vCode}`, width: 100, height: 100, colorDark : "#166534" });
-            
+            // ★ 修復：確保截圖與證書在渲染週期內安全執行
             setTimeout(() => {
-                try {
-                    let qrImg = qrContainer.querySelector('img');
-                    if (qrImg && qrImg.src) {
-                        let img = new Image();
-                        img.onload = () => { 
-                            tCtx.drawImage(img, 640, 440, 100, 100); 
-                            let dataURL = tmpCanvas.toDataURL("image/png");
-                            const dlLink = document.getElementById('cert-download-link');
-                            dlLink.href = dataURL; dlLink.download = `${playerName}_生態證書.png`; dlLink.style.display = 'block';
-                            
-                            const previewImg = document.getElementById('cert-preview');
-                            previewImg.src = dataURL; previewImg.style.display = 'block';
-                        };
-                        img.src = qrImg.src;
-                    }
-                } catch (e) { console.error("QR Code rendering failed", e); }
-            }, 300);
+                generateMapScreenshot();
+                generateCertificate(total);
+            }, 100);
         }
-    </script>
-</body>
+
+        // ★ 修復：改用暫存交換 Context 完整繪製 1600x1200 全景，避免 iOS Safari IndexSizeError 崩潰
+        function generateMapScreenshot() {
+            try {
+                let tmpCanvas = document.createElement('canvas'); 
+                tmpCanvas.width = MAP_W; tmpCanvas.height = MAP_H; 
+                let tCtx = tmpCanvas.getContext('2d');
+                
+                // 暫時接管全域繪圖環境，繞過攝影機視野限制
+                let oldCtx = ctx; let oldCamX = camera.x; let oldCamY = camera.y;
+                ctx = tCtx; camera.x = 0; camera.y = 0;
+
+                ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
+                drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawDrawings();
+
+                // 恢復全域環境
+                ctx = oldCtx; camera.x = oldCamX; camera.y = oldCamY;
+                
+                // 畫上結算資訊
+                tCtx.fillStyle = 'rgba(255,255,255,0.85)'; tCtx.fillRect(20, MAP_H - 100, 600, 80);
+                tCtx.fillStyle = '#14532d'; tCtx.font = 'bold 24px sans-serif';
+                tCtx.fillText(`探探里山生態任務：${eventName}`, 40, MAP_H - 60);
+                tCtx.font = '20px sans-serif'; tCtx.fillText(`偵探：${playerName} | 探索場域：${eventLocation}`, 40, MAP_H - 35);
+                
+                let dataURL = tmpCanvas.toDataURL("image/png");
+                document.getElementById('map-download-btn').style.display = 'block';
+                
+                const previewImg = document.getElementById('map-preview');
+                previewImg.src = dataURL; previewImg.style.display = 'block';
+            } catch (err) {
+                console.error("Map Generation Error", err);
+            }
+        }
+
+        // ★ 修復：強化 QR Code 容錯機制與按鈕顯示
+        function generateCertificate(score) {
+            try {
+                let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = 800; tmpCanvas.height = 600; let tCtx = tmpCanvas.getContext('2d');
+                let grad = tCtx.createLinearGradient(0, 0, 800, 600); grad.addColorStop(0, '#f0fdf4'); grad.addColorStop(1, '#dcfce7');
+                tCtx.fillStyle = grad; tCtx.fillRect(0, 0, 800, 600);
+                
+                tCtx.strokeStyle = '#166534'; tCtx.lineWidth = 15; tCtx.strokeRect(20, 20, 760, 560);
+                tCtx.strokeStyle = '#4ade80'; tCtx.lineWidth = 5; tCtx.strokeRect(30, 30, 740, 540);
+                
+                tCtx.fillStyle = '#14532d'; tCtx.textAlign = 'center'; tCtx.font = 'bold 48px "Segoe UI", sans-serif'; tCtx.fillText('探探里山 永續生態結業證書', 400, 100);
+                
+                tCtx.font = '28px "Segoe UI"'; tCtx.fillStyle = '#374151';
+                tCtx.fillText(`茲證明 優秀偵探`, 400, 180);
+                tCtx.font = 'bold 40px "Segoe UI"'; tCtx.fillStyle = '#ea580c'; tCtx.fillText(`${playerName}`, 400, 240);
+                
+                tCtx.font = '24px "Segoe UI"'; tCtx.fillStyle = '#374151';
+                tCtx.fillText(`於 ${eventName || '永續生態導覽活動'} 中`, 400, 300);
+                tCtx.fillText(`成功探索【${eventLocation}】`, 400, 340);
+                tCtx.fillText(`並展現卓越的生態棲地觀察力，獲得總積分：`, 400, 380);
+                
+                tCtx.font = 'bold 60px "Segoe UI"'; tCtx.fillStyle = '#16a34a'; tCtx.fillText(`${score} 分`, 400, 460);
+                
+                tCtx.font = '18px "Segoe UI"'; tCtx.fillStyle = '#6b7280'; let dateStr = new Date().toLocaleDateString('zh-TW');
+                tCtx.fillText(`發證日期：${dateStr} | 認證單位：臺大。山林。學院 2.0`, 400, 530);
+
+                let qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = '';
+                let vCode = 'ESGT-' + Date.now().toString().slice(-6);
+                tCtx.font = '14px monospace'; tCtx.fillStyle = '#9ca3af'; tCtx.fillText(`防偽碼: ${vCode}`, 400, 555);
+                
+                const finalizeCert = () => {
+                    let dataURL = tmpCanvas.toDataURL("image/png");
+                    document.getElementById('cert-download-btn').style.display = 'block';
+                    
+                    const previewImg = document.getElementById('cert-preview');
+                    previewImg.src = dataURL; previewImg.style.display = 'block';
+                };
+                
+                new QRCode(qrContainer, { text: `https://farmcmd.github.io/ESGT/?cert=${vCode}`, width: 100, height: 100, colorDark : "#166534" });
+                
+                setTimeout(() => {
+                    try {
+                        let qrImg = qrContainer.querySelector('img');
+                        let qrCanvas = qrContainer.querySelector('canvas');
+                        let targetSrc = (qrImg && qrImg.src) ? qrImg.src : (qrCanvas ? qrCanvas.toDataURL() : null);
+
+                        if (targetSrc) {
+                            let img = new Image();
+                            img.onload = () => { 
+                                tCtx.drawImage(img, 640, 440, 100, 100);
