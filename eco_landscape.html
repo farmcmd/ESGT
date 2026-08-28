@@ -1030,7 +1030,6 @@
 
         function drawHabitats() {
             habitats.forEach(h => {
-                // ★ 完美依照圖片格式，還原框線顏色與半透明底色
                 ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#ef4444'; 
                 ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
                 ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.3)'; ctx.shadowBlur = 5;
@@ -1195,7 +1194,6 @@
             }, 100);
         }
 
-        // ★ 核心修復：解決手機截圖破圖，並還原深綠色底框資訊列
         function generateMapScreenshot() {
             try {
                 let tmpCanvas = document.createElement('canvas'); 
@@ -1205,7 +1203,6 @@
                 let oldCtx = ctx; let oldCamX = camera.x; let oldCamY = camera.y;
                 let oldCanvasW = canvas.width; let oldCanvasH = canvas.height;
                 
-                // 強制接管並鎖定畫布尺寸，解決手機裝置破圖問題
                 ctx = tCtx; camera.x = 0; camera.y = 0;
                 canvas.width = MAP_W; canvas.height = MAP_H;
 
@@ -1215,7 +1212,6 @@
                 ctx = oldCtx; camera.x = oldCamX; camera.y = oldCamY;
                 canvas.width = oldCanvasW; canvas.height = oldCanvasH;
                 
-                // 依照圖片繪製深綠色底部資訊列
                 tCtx.fillStyle = '#14532d';
                 tCtx.fillRect(0, MAP_H, MAP_W, 50);
                 
@@ -1225,7 +1221,8 @@
                 tCtx.textBaseline = 'middle';
                 
                 let finalScore = document.getElementById('current-score').innerText || '0';
-                tCtx.fillText(`🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${eventLocation} | 總成績：${finalScore} 分`, 20, MAP_H + 25);
+                // ★ 修正：加入 maxWidth 限制為 1560px 避免文字超出全景圖
+                tCtx.fillText(`🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${eventLocation} | 總成績：${finalScore} 分`, 20, MAP_H + 25, 1560);
                 
                 let dataURL = tmpCanvas.toDataURL("image/png");
                 document.getElementById('map-download-btn').style.display = 'block';
@@ -1237,24 +1234,19 @@
             }
         }
 
-        // ★ 核心修復：完全依照圖片重構結業證書排版
         function generateCertificate(score) {
             try {
                 let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = 800; tmpCanvas.height = 600; let tCtx = tmpCanvas.getContext('2d');
                 
-                // 淺綠色背景
                 tCtx.fillStyle = '#e8f5e9'; tCtx.fillRect(0, 0, 800, 600);
                 
-                // 內外框線
                 tCtx.strokeStyle = '#166534'; tCtx.lineWidth = 6; tCtx.strokeRect(20, 20, 760, 560);
                 tCtx.strokeStyle = '#4ade80'; tCtx.lineWidth = 2; tCtx.strokeRect(30, 30, 740, 540);
                 
-                // 邊角深綠色裝飾塊
                 tCtx.fillStyle = '#14532d';
                 tCtx.fillRect(20, 20, 25, 25); tCtx.fillRect(755, 20, 25, 25);
                 tCtx.fillRect(20, 555, 25, 25); tCtx.fillRect(755, 555, 25, 25);
                 
-                // 標題與內文排版
                 tCtx.fillStyle = '#14532d'; tCtx.textAlign = 'center'; tCtx.font = 'bold 36px "Segoe UI", sans-serif';
                 tCtx.fillText('探探里山永續生態與農村風俗文化導覽', 400, 120);
                 
@@ -1272,14 +1264,13 @@
                 tCtx.fillText('獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。', 400, 415);
                 
                 tCtx.fillStyle = '#1f2937'; tCtx.font = 'bold 20px "Segoe UI", sans-serif';
-                tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 470);
-                tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 505);
+                tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 460);
+                // ★ 修正：加入 maxWidth 限制為 680px 避免文字超框，並將 Y 軸上移至 495 避開左下角 QR Code
+                tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 495, 680);
                 
-                // 左下角：探探里山文字
                 tCtx.fillStyle = '#16a34a'; tCtx.textAlign = 'left'; tCtx.font = 'bold 22px "Segoe UI", sans-serif';
                 tCtx.fillText('🌿 探探里山', 120, 545);
                 
-                // 右下角：證書編號與日期
                 tCtx.fillStyle = '#9ca3af'; tCtx.textAlign = 'right'; tCtx.font = '14px "Segoe UI", sans-serif';
                 let dateStr = new Date().toLocaleDateString('zh-TW');
                 let vCode = 'ESG-' + Date.now().toString().slice(-6).toUpperCase();
@@ -1302,7 +1293,7 @@
                 setTimeout(() => {
                     try {
                         let qrCanvas = qrContainer.querySelector('canvas');
-                        if (qrCanvas) tCtx.drawImage(qrCanvas, 40, 500, 70, 70); // 繪製左下角 QR Code
+                        if (qrCanvas) tCtx.drawImage(qrCanvas, 40, 500, 70, 70);
                     } catch (e) {}
                     finalizeCert();
                 }, 200);
