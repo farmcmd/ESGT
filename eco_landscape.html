@@ -23,9 +23,9 @@
         }
 
         #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #c5e1a5; }
+        /* 星露谷風格底色：青翠草地 */
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #8BC34A; }
 
-        /* 畫筆工具列 */
         #draw-tools {
             position: absolute; top: 15px; left: 15px; z-index: 150;
             display: flex; flex-direction: column; gap: 8px; align-items: center;
@@ -37,7 +37,6 @@
         }
         .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
 
-        /* 浮動面板 */
         .floating-panel {
             position: absolute; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 600px; background: var(--panel-bg);
@@ -45,7 +44,7 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.5);
             display: flex; flex-direction: column; 
-            z-index: 200; /* 保證展開時覆蓋所有 UI */
+            z-index: 200; /* 強制覆蓋所有右側 UI，避免關閉按鈕點擊死角 */
         }
         .panel-header {
             padding: 12px 20px; font-weight: bold; color: var(--primary-dark);
@@ -57,17 +56,14 @@
         .floating-panel.open .panel-content {
             max-height: 550px; padding: 15px; overflow-y: auto; border-top: 1px solid #e5e7eb;
         }
-
         #bottom-panel { bottom: 15px; }
         
-        /* 單一右側卡牌收納，解放左側視野 */
         .side-inventory {
             position: absolute; top: 90px; bottom: 120px; right: 10px; width: 75px;
             display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden;
             z-index: 150; pointer-events: auto; touch-action: pan-y;
             align-items: center; padding-right: 5px;
         }
-        /* 隱藏滾動條但保持功能 */
         .side-inventory::-webkit-scrollbar { display: none; }
         
         .creature-card {
@@ -75,7 +71,6 @@
             background: #ffffff; border: 2px solid #9ca3af; border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative;
-            /* 讓卡片不要攔截系統觸控，交由 pointer 處理長按 */
             touch-action: pan-y; -webkit-touch-callout: none;
             transition: transform 0.1s;
         }
@@ -88,7 +83,6 @@
             font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 2px solid white; z-index: 10;
         }
 
-        /* 動態即時計分板 */
         #live-score-board {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.95); border: 3px solid #65af44;
@@ -121,7 +115,6 @@
         .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
         .form-input { width: 100%; padding: 10px; font-size: 15px; border: 2px solid #ccc; border-radius: 6px; box-sizing: border-box; }
         
-        /* 複選框列表樣式 */
         .checkbox-list {
             display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; 
             padding: 8px; border: 2px solid #ccc; border-radius: 6px; background: #fafafa;
@@ -228,7 +221,7 @@
                 <div class="form-group"><label>偵探名稱 (必填)</label><input type="text" id="player-name" class="form-input" placeholder="請輸入姓名"></div>
                 <div class="form-group"><label>活動名稱 (非必填)</label><input type="text" id="event-name" class="form-input" placeholder="例如：春季生態營"></div>
                 <div class="form-group">
-                    <label>探索場域 (可複選串聯活動)</label>
+                    <label>探索場域 (可複選，串聯多個活動)</label>
                     <div class="checkbox-list">
                         <label class="checkbox-label"><input type="checkbox" name="location" value="1.酪酪找生態(湧健酪梨園)"> 1. 酪酪找生態(湧健酪梨園)</label>
                         <label class="checkbox-label"><input type="checkbox" name="location" value="2.瓜呱報生態(雨社山下農場)"> 2. 瓜呱報生態(雨社山下農場)</label>
@@ -282,7 +275,7 @@
         </div>
     </div>
 
-    <!-- 單一右側卡牌收納箱 (支援滾動與長按) -->
+    <!-- 單一右側卡牌收納箱 (支援滾動與無縫拖曳) -->
     <div id="right-inventory" class="side-inventory"></div>
 
     <div id="bottom-panel" class="floating-panel">
@@ -291,7 +284,7 @@
             
             <div id="backpack-info" style="background: #ffeed4; border: 2px solid #8f562b; padding: 12px; font-size: 13px; margin-bottom: 15px; color: #5e3212; border-radius: 8px; text-align: left; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
                 💡 <b>探探里山生態微棲地探索規則：</b><br>
-                • <b>如何操作：</b>在右側卡牌庫<b style="color:#d32f2f;">「長按卡片 0.3 秒」</b>將卡片取出，再於地圖上拖曳！輕滑則為滾動選單。<br>
+                • <b>如何操作：</b>在右側卡牌庫<b style="color:#d32f2f;">「長按卡片 0.3 秒」</b>卡片黏在手指上後，即可拖曳至棲地框中！輕滑則為滾動選單。<br>
                 • <b>擴增棲地：</b>在同一棲地放入 <b>3張正確</b> 的生物卡，將觸發藍白虛線的「新生自然棲地」 <b style="color:#16a34a;">(加 5 分)</b>！<br>
                 • <b>環境危機：</b>放入 <b>3張錯誤</b> 的卡片，將引發黑白虛線的「危機地帶」(如路殺、水源汙染) <b style="color:#ef4444;">(扣 5 分)</b>。<br>
                 • ☠️ <b>生態陷阱：</b><span style="color:#b91c1c;">拖曳時若不慎「路過」危機地帶，生物會被強制吸入並死亡(卡片變灰)，結算倒扣 1 分！</span><br>
@@ -344,9 +337,18 @@
             </div>
         </div>
     </div>
+    
+    <!-- 隱藏 QR Code 生成區 (iOS 避開 display: none 當機修正) -->
+    <div id="qrcode" style="position: absolute; left: -9999px; visibility: hidden;"></div>
 
     <script>
-        // --- 0. UI 分享按鈕邏輯 ---
+        const QUIZ_DATA = [
+            { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
+            { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
+            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 },
+            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
+        ];
+
         function showShareQR() {
             document.getElementById('share-qr-modal').style.display = 'flex';
             let qrBox = document.getElementById('share-qrcode-img');
@@ -355,7 +357,6 @@
             }
         }
 
-        // --- 1. 生態數據庫 ---
         const ECO_DATA = [
             { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12', 'h14', 'h11'] }, 
             { id: 'b2', type: 'bio', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5', 'h14'] }, 
@@ -383,7 +384,7 @@
             { id: 'b24', type: 'bio', name: '田螺', icon: '🐚', validHabitats: ['h4', 'h7', 'h3'] }, 
             { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🦟', validHabitats: ['h4', 'h7', 'h9'] }, 
             { id: 'b26', type: 'bio', name: '食蟲虻', icon: '🪰', validHabitats: ['h5', 'h6'] },
-            { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h14', 'h5'] },
+            { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h14', 'h5'] }, // 移除攀爬網
             { id: 'b28', type: 'bio', name: '胡蜂', icon: '🐝', validHabitats: ['h6', 'h1', 'h14', 'h5'] },
             { id: 'b29', type: 'bio', name: '鷺鷥', icon: '🦢', validHabitats: ['h4', 'h7', 'h5'] }, 
             { id: 'b30', type: 'bio', name: '紅冠水雞', icon: '🦆', validHabitats: ['h4', 'h7', 'h9'] },
@@ -392,7 +393,7 @@
             { id: 'b33', type: 'bio', name: '蝸牛', icon: '🐌', validHabitats: ['h5', 'h6', 'h1', 'h14'] },
             { id: 'b34', type: 'bio', name: '螢火蟲', icon: '✨', validHabitats: ['h4', 'h7'] },
             { id: 'b35', type: 'bio', name: '黑冠麻鷺', icon: '🐦‍⬛', validHabitats: ['h6', 'h5', 'h14'] }, 
-            { id: 'b36', type: '大冠鷲', icon: '🦅', validHabitats: ['h6', 'h12', 'h14'] },
+            { id: 'b36', type: 'bio', name: '大冠鷲', icon: '🦅', validHabitats: ['h6', 'h12', 'h14'] },
             { id: 'b37', type: 'bio', name: '穿山甲', icon: '🦔', validHabitats: ['h6', 'h12', 'h1', 'h14', 'h11'] }, 
             { id: 'b38', type: 'bio', name: '白鼻心', icon: '🦡', validHabitats: ['h6', 'h12', 'h14', 'h11'] },
             { id: 'b39', type: 'bio', name: '黑翅鳶', icon: '🦅', validHabitats: ['h5', 'h6', 'h14'] },
@@ -426,34 +427,25 @@
             { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['b11', 'b12', 'b4'] }
         ];
 
-        // 重新排版與大尺寸的 14 種微棲地
         let habitats = [
-            { id: 'h14', name: '原始森林', x: 20, y: 20, w: 240, h: 160, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h1', name: '枯木草堆', x: 40, y: 240, w: 140, h: 90, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h12', name: '涵洞護道(生物可利用友善設施)', x: 420, y: 350, w: 150, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h6', name: '灌木欉', x: 800, y: 220, w: 150, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h2', name: '石堆', x: 1020, y: 120, w: 130, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h10', name: '昆蟲旅館', x: 300, y: 880, w: 120, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h14', name: '原始森林', x: 20, y: 20, w: 260, h: 180, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h1', name: '枯木草堆', x: 40, y: 260, w: 180, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h12', name: '涵洞護道(生物可利用友善設施)', x: 400, y: 350, w: 180, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h6', name: '灌木欉', x: 750, y: 220, w: 180, h: 150, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h2', name: '石堆', x: 1020, y: 120, w: 160, h: 110, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h10', name: '昆蟲旅館', x: 300, y: 880, w: 150, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h11', name: '攀爬網(生物可利用友善設施)', x: 25, y: 680, w: 110, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h5', name: '田埂草帶', x: 280, y: 1000, w: 320, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h13', name: '灌溉溝渠', x: 40, y: 800, w: 100, h: 200, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h3', name: '砌石溝', x: 600, y: 880, w: 180, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h4', name: '水塘', x: 1250, y: 820, w: 240, h: 160, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h9', name: '漂浮草帶', x: 1100, y: 950, w: 140, h: 80, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h7', name: '濕地', x: 1300, y: 500, w: 220, h: 180, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h8', name: '護岸', x: 1050, y: 420, w: 90, h: 320, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false }
+            { id: 'h5', name: '田埂草帶', x: 280, y: 1000, w: 360, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h13', name: '灌溉溝渠', x: 40, y: 800, w: 130, h: 220, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h3', name: '砌石溝', x: 600, y: 850, w: 200, h: 100, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h4', name: '水塘', x: 1220, y: 800, w: 280, h: 200, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h9', name: '漂浮草帶', x: 1080, y: 920, w: 160, h: 110, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h7', name: '濕地', x: 1280, y: 480, w: 260, h: 220, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h8', name: '護岸', x: 1020, y: 420, w: 120, h: 360, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false }
         ];
 
         let crisisZones = []; let inventory = []; let mapOccupants = []; 
         let isDrawingMode = false; let currentDrawColor = '#2D80C6'; let drawings = []; let currentPath = null;
-
-        // 提早題庫宣告，解決首頁啟動 ReferenceError 當機問題
-        const QUIZ_DATA = [
-            { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
-            { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
-            { q: "您認為讓農業永續的耕作有那些好處?", opts: ["土壤生態循環生生不息", "維持糧食供給", "提供健康且低碳里程的食物來源", "以上皆是"], ans: 3 },
-            { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
-        ];
 
         function toggleDrawMode() {
             isDrawingMode = !isDrawingMode;
@@ -469,7 +461,6 @@
 
         function recenterCamera() { camera.detached = false; showAlert("📍 已將視角重新對齊小偵探"); }
 
-        // --- 1.5 螢幕防休眠 ---
         let wakeLock = null;
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
@@ -478,9 +469,7 @@
         }
         document.addEventListener('visibilitychange', () => { if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock(); });
 
-        // --- 1.6 測驗題庫 ---
         let quizCompleted = false; let quizScore = 0;
-
         function renderQuiz() {
             const container = document.getElementById('quiz-container');
             if (quizCompleted) { container.innerHTML = `<div style="padding: 12px; background: #dcfce7; color: #166534; border-radius: 6px; font-size: 14px; text-align: center; font-weight: bold; border: 2px solid #8BC34A;">✨ 已完成測驗，加分：${quizScore} 分 ✨</div>`; return; }
@@ -493,7 +482,6 @@
             container.innerHTML = html;
         }
 
-        // --- 2. 核心狀態 ---
         let playerName = "小偵探"; let eventName = ""; let eventLocation = "";
         function toggleCustomLocation() {
             document.getElementById('custom-location-group').style.display = document.getElementById('loc-other-cb').checked ? 'block' : 'none';
@@ -523,7 +511,6 @@
             const box = document.getElementById('alert-box'); box.innerText = msg; box.style.opacity = 1; setTimeout(() => box.style.opacity = 0, 3000);
         }
 
-        // --- 動態即時計分邏輯 (+5 / -5 新機制) ---
         function computeCurrentScore() {
             let tmpScore = quizCompleted ? quizScore : 0;
             let successfullyPlacedIds = new Set();
@@ -605,7 +592,6 @@
                 if(!pName) { alert("請填寫偵探名稱！"); return; }
                 playerName = pName; eventName = document.getElementById('event-name').value.trim();
                 
-                // 複選框邏輯
                 let selectedLocs = [];
                 const checkboxes = document.querySelectorAll('input[name="location"]:checked');
                 checkboxes.forEach(cb => selectedLocs.push(cb.value));
@@ -646,7 +632,6 @@
             computeCurrentScore();
         }
 
-        // --- 感測與移動邏輯 ---
         function handleOrientation(e) {
             if (!isGameRunning) return; let dx = e.gamma || 0; let dy = e.beta || 0;  
             if (Math.abs(dx) > 2 || Math.abs(dy) > 2) player.dirAngle = Math.atan2(dx, -dy);
@@ -655,7 +640,7 @@
 
         function handleMotion(e) {
             if (!isGameRunning) return; 
-            // 若正在滑動地圖、拖曳卡片或等待確認，阻斷震動造成的視角重置
+            // 若正在滑動地圖、拖曳卡片或等待確認，完全阻斷震動造成的視角重置與計步
             if (isPanningMap || draggingInstance || pendingPlacement) return; 
             
             let acc = e.acceleration || {x:0, y:0, z:0}; let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
@@ -682,13 +667,11 @@
             showAlert(`👣 發現了${instance.type==='culture'?'文化地景':'生態物種'}【${instance.name}】！`);
         }
 
-        // 右側長按拖曳背包渲染
         function renderInventory() {
             const container = document.getElementById('right-inventory'); 
             if (inventory.length === 0) { container.innerHTML = ''; return; }
             
             container.innerHTML = '';
-            
             let grouped = {};
             inventory.forEach(c => { if(!grouped[c.id]) grouped[c.id] = []; grouped[c.id].push(c); });
 
@@ -701,19 +684,23 @@
                     ${count > 1 ? `<div class="c-badge">x${count}</div>` : ''}
                 `;
                 
-                // 長按演算法：改為二段式取出
                 let pressTimer = null;
                 let startX, startY;
                 let isCancelled = false;
+                let latestEvent = null;
 
                 const cancelPress = () => { isCancelled = true; if (pressTimer) clearTimeout(pressTimer); };
 
                 div.addEventListener('pointerdown', (e) => {
                     if (e.pointerType === 'mouse' && e.button !== 0) return; 
                     startX = e.clientX; startY = e.clientY;
+                    latestEvent = e;
                     isCancelled = false;
                     
-                    const checkMove = (ev) => { if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > 15) cancelPress(); };
+                    const checkMove = (ev) => { 
+                        latestEvent = ev;
+                        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) > 15) cancelPress(); 
+                    };
                     const cleanup = () => { cancelPress(); window.removeEventListener('pointermove', checkMove); window.removeEventListener('pointerup', cleanup); window.removeEventListener('pointercancel', cleanup); };
 
                     window.addEventListener('pointermove', checkMove, { passive: true });
@@ -725,23 +712,20 @@
                             if (navigator.vibrate) navigator.vibrate(50); 
                             div.style.transform = "scale(1.2)"; 
                             
-                            // 延遲一點點讓玩家看到跳動回饋，然後將卡片抽出至地圖
                             setTimeout(() => {
                                 div.style.transform = "scale(1)";
                                 
-                                // 【核心修改】：從背包中移除最後一張卡，並加入到 mapOccupants
                                 let instToExtract = group[group.length - 1];
                                 inventory = inventory.filter(i => i.uniqueId !== instToExtract.uniqueId);
                                 
-                                // 設定抽出後的初始位置 (出現在畫面中央偏右，也就是靠近背包的地方)
-                                instToExtract.x = camera.x + SCREEN_W - 150; 
-                                instToExtract.y = camera.y + SCREEN_H / 2;
-                                instToExtract.extractedFromInventory = true; // 標記這是一張剛抽出來還沒定居的卡
+                                instToExtract.x = camera.x + startX; 
+                                instToExtract.y = camera.y + startY;
+                                instToExtract.extractedFromInventory = true;
                                 
-                                mapOccupants.push(instToExtract);
-                                showAlert(`已將【${instToExtract.name}】取出，請點擊拖曳至棲地。`);
+                                draggingInstance = instToExtract;
+                                // 呼叫全域 setupDrag，讓卡片無縫吸附在手指上
+                                setupDrag(latestEvent, draggingInstance);
                                 renderInventory();
-                                saveProgress();
                             }, 150);
                         }
                         cleanup();
@@ -752,7 +736,6 @@
             });
         }
 
-        // --- 拖曳與畫筆 ---
         let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0; const dragClone = document.getElementById('drag-clone');
         let pendingPlacement = null; 
 
@@ -799,14 +782,14 @@
             if (isPanningMap) { camera.x -= (e.clientX - lastPanX); camera.y -= (e.clientY - lastPanY); lastPanX = e.clientX; lastPanY = e.clientY; e.preventDefault(); }
             
             if (draggingInstance) {
-                moveDragClone(e); e.preventDefault();
+                moveDragClone(e); if (e.preventDefault) e.preventDefault();
                 const coords = getLogicalCoords(e);
                 for (let cz of crisisZones) {
                     if (Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r + 20) {
                         draggingInstance.dead = true; 
                         cz.occupants.push(draggingInstance);
                         inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
-                        document.removeEventListener('pointermove', handleDragMove); document.removeEventListener('pointerup', handleDragEnd); 
+                        window.removeEventListener('pointermove', handleDragMove); window.removeEventListener('pointerup', handleDragEnd); 
                         dragClone.style.display = 'none';
                         showAlert(`☠️ 生態陷阱！【${draggingInstance.name}】被強制吸入了【${cz.name}】並已喪失生命力！`);
                         renderInventory(); saveProgress(); draggingInstance = null;
@@ -822,586 +805,407 @@
         });
 
         function setupDrag(e, instance) {
+            if(e && e.preventDefault) e.preventDefault();
             dragClone.className = instance.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
             dragClone.style.display = 'flex'; dragClone.querySelector('#drag-icon').innerText = instance.icon; dragClone.querySelector('#drag-name').innerText = instance.name;
-            moveDragClone(e); document.addEventListener('pointermove', handleDragMove, {passive: false}); document.addEventListener('pointerup', handleDragEnd); e.preventDefault();
+            if(e) moveDragClone(e); 
+            window.addEventListener('pointermove', handleDragMove, {passive: false}); window.addEventListener('pointerup', handleDragEnd);
         }
-
-        function handleDragStart(e, instance, el) { draggingInstance = instance; setupDrag(e, instance); }
-        function handleDragMove(e) { if (draggingInstance) { moveDragClone(e); e.preventDefault(); } }
         function moveDragClone(e) { dragClone.style.left = e.clientX + 'px'; dragClone.style.top = e.clientY + 'px'; }
-
-        function checkHabitatEvolution(h) {
-            if (h.isBonus) return;
-            let correct = 0, incorrect = 0;
-            h.occupants.forEach(occ => {
-                if (occ.type === 'bio' && !occ.dead) { if (occ.validHabitats && occ.validHabitats.includes(h.id)) correct++; else incorrect++; }
-            });
-            if (correct >= 3 && !h.bonusSpawned) {
-                h.bonusSpawned = true;
-                let nx = Math.max(50, Math.min(MAP_W - 150, h.x + (Math.random() > 0.5 ? 1 : -1) * (100 + Math.random()*50)));
-                let ny = Math.max(50, Math.min(MAP_H - 100, h.y + (Math.random() > 0.5 ? 1 : -1) * (100 + Math.random()*50)));
-                habitats.push({ id: 'bonus_' + Date.now(), name: '新生自然棲地', x: nx, y: ny, w: 160, h: 120, occupants: [], isBonus: true });
-                showAlert("🌟 生態復育有成！產生了藍白虛線的【新生自然棲地】！(+5 分)");
-            }
-            if (incorrect >= 3 && !h.crisisSpawned) {
-                h.crisisSpawned = true;
-                let types = ['路殺', '過度照明', '水源汙染', '流浪狗(犬殺)', '農藥飄移', '農業設施(棲地阻隔)'];
-                let cName = types[Math.floor(Math.random() * types.length)];
-                let nx = Math.max(60, Math.min(MAP_W - 100, h.x + (Math.random() > 0.5 ? 1 : -1) * (100 + Math.random()*50)));
-                let ny = Math.max(60, Math.min(MAP_H - 100, h.y + (Math.random() > 0.5 ? 1 : -1) * (100 + Math.random()*50)));
-                crisisZones.push({ id: 'crisis_' + Date.now(), name: cName, x: nx, y: ny, r: 80, occupants: [] });
-                showAlert(`⚠️ 生態警報！錯誤的配置引發了危機地帶：【${cName}】！(-5 分)`);
-            }
+        
+        function handleDragMove(e) { 
+            if (e.preventDefault) e.preventDefault(); 
+            moveDragClone(e); 
         }
 
         function handleDragEnd(e) {
+            window.removeEventListener('pointermove', handleDragMove); window.removeEventListener('pointerup', handleDragEnd);
+            dragClone.style.display = 'none';
             if (!draggingInstance) return;
-            document.removeEventListener('pointermove', handleDragMove); document.removeEventListener('pointerup', handleDragEnd); dragClone.style.display = 'none';
-
-            const coords = getLogicalCoords(e); const tolerance = 20; 
+            const coords = getLogicalCoords(e);
             
-            let droppedCrisis = crisisZones.find(cz => Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r + tolerance);
-            if (droppedCrisis) {
-                draggingInstance.dead = true; droppedCrisis.occupants.push(draggingInstance);
-                inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId);
-                showAlert(`☠️ 警告！【${draggingInstance.name}】掉入了危機地帶【${droppedCrisis.name}】並已喪失生命力！`);
-                renderInventory(); saveProgress(); draggingInstance = null; return;
+            let targetHabitat = null; let targetCrisis = null;
+            for (let cz of crisisZones) { if (Math.hypot(coords.x - cz.x, coords.y - cz.y) <= cz.r) { targetCrisis = cz; break; } }
+            if (!targetCrisis) {
+                for (let h of habitats) {
+                    if (coords.x >= h.x && coords.x <= h.x + h.w && coords.y >= h.y && coords.y <= h.y + h.h) { targetHabitat = h; break; }
+                }
             }
 
-            let droppedHabitat = habitats.find(h => coords.x >= h.x - tolerance && coords.x <= h.x + h.w + tolerance && coords.y >= h.y - tolerance && coords.y <= h.y + h.h + tolerance);
-
-            if (droppedHabitat) {
-                pendingPlacement = { habitat: droppedHabitat, instance: draggingInstance };
-                document.getElementById('confirm-msg').innerText = `確認是否將【${draggingInstance.name}】放置到「${droppedHabitat.name}」棲地？`;
+            if (targetCrisis || targetHabitat) {
+                let name = targetCrisis ? targetCrisis.name : targetHabitat.name;
+                document.getElementById('confirm-msg').innerText = `是否將【${draggingInstance.name}】放置於【${name}】？`;
                 document.getElementById('confirm-modal').style.display = 'flex';
+                pendingPlacement = { instance: draggingInstance, coords: coords, habitat: targetHabitat, crisis: targetCrisis };
+                draggingInstance = null;
             } else {
-                if (draggingInstance.type === 'culture') {
-                    draggingInstance.x = coords.x; draggingInstance.y = coords.y; mapOccupants.push(draggingInstance);
-                    inventory = inventory.filter(i => i.uniqueId !== draggingInstance.uniqueId); showAlert(`文化地景【${draggingInstance.name}】已佈置於地圖。`);
-                } else {
-                    if (!inventory.find(i => i.uniqueId === draggingInstance.uniqueId)) { inventory.push(draggingInstance); } showAlert(`【${draggingInstance.name}】已退回背包。`);
-                }
-                renderInventory(); saveProgress(); draggingInstance = null;
+                draggingInstance.x = coords.x; draggingInstance.y = coords.y; mapOccupants.push(draggingInstance);
+                draggingInstance = null; saveProgress();
             }
         }
 
         function confirmPlacement() {
-            if (!pendingPlacement) return;
-            let h = pendingPlacement.habitat; let inst = pendingPlacement.instance;
-            h.occupants.push(inst); inventory = inventory.filter(i => i.uniqueId !== inst.uniqueId); 
-            showAlert(`已安置於【${h.name}】。`); checkHabitatEvolution(h);
-            document.getElementById('confirm-modal').style.display = 'none'; pendingPlacement = null; draggingInstance = null;
-            renderInventory(); saveProgress();
+            if (pendingPlacement) {
+                let inst = pendingPlacement.instance;
+                if (pendingPlacement.crisis) { pendingPlacement.crisis.occupants.push(inst); }
+                else if (pendingPlacement.habitat) { pendingPlacement.habitat.occupants.push(inst); }
+                checkHabitatEvolution(pendingPlacement.habitat);
+                pendingPlacement = null; saveProgress();
+            }
+            document.getElementById('confirm-modal').style.display = 'none';
         }
-
         function cancelPlacement() {
-            if (!pendingPlacement) return; let inst = pendingPlacement.instance;
-            if (!inventory.find(i => i.uniqueId === inst.uniqueId)) { inventory.push(inst); } showAlert(`已取消，【${inst.name}】退回背包。`);
-            document.getElementById('confirm-modal').style.display = 'none'; pendingPlacement = null; draggingInstance = null;
-            renderInventory(); saveProgress();
+            if (pendingPlacement) {
+                let inst = pendingPlacement.instance; inst.x = pendingPlacement.coords.x; inst.y = pendingPlacement.coords.coords; mapOccupants.push(inst);
+                pendingPlacement = null; saveProgress();
+            }
+            document.getElementById('confirm-modal').style.display = 'none';
         }
 
-        // --- 7. 結算與證書/全景生成系統 ---
-        function calculateScore() {
-            if (!quizCompleted) {
-                let qScore = 0; let allAnswered = true;
-                for (let i = 0; i < QUIZ_DATA.length; i++) {
-                    const selected = document.querySelector(`input[name="q${i}"]:checked`);
-                    if (!selected) { allAnswered = false; break; }
-                    if (parseInt(selected.value) === QUIZ_DATA[i].ans) { qScore += 10; }
-                }
-                if (!allAnswered) { alert("請先完成加分任務小測驗的所有題目！"); return; }
-                quizScore = qScore; quizCompleted = true; renderQuiz();
-            }
-
-            let totalScore = quizScore; let logHTML = "<ul style='padding-left: 20px; color: #4b5563;'>"; let successfullyPlacedIds = new Set();
-            if (quizScore > 0) logHTML += `<li><strong style="color:#16a34a">📝 測驗加分：+${quizScore} 分</strong></li>`;
-
-            let bonusCount = habitats.filter(h => h.isBonus).length;
-            if (bonusCount > 0) {
-                totalScore += bonusCount * 5;
-                logHTML += `<li><strong style="color:#16a34a">🌟 觸發擴增棲地：+${bonusCount * 5} 分</strong></li>`;
-            }
-
-            let crisisCount = crisisZones.length;
-            if (crisisCount > 0) {
-                totalScore -= crisisCount * 5;
-                logHTML += `<li><strong style="color:#ef4444">⚠️ 觸發環境危機：-${crisisCount * 5} 分</strong></li>`;
-            }
-
-            habitats.forEach(h => {
-                h.occupants.forEach(occ => {
-                    if (occ.dead) return;
-                    if (h.isBonus && occ.type === 'bio') {
-                        totalScore += 1; successfullyPlacedIds.add(occ.id); logHTML += `<li><span style="color:green">✔</span> ${occ.name} 於 新生自然棲地 拓展成功 (+1)</li>`;
-                    } else if (occ.type === 'culture') {
-                        totalScore += 1; logHTML += `<li><span style="color:green">✔</span> 文化景觀 ${occ.name} 融入 ${h.name} (+1)</li>`;
-                    } else if (occ.validHabitats && occ.validHabitats.includes(h.id)) {
-                        totalScore += 1; successfullyPlacedIds.add(occ.id); logHTML += `<li><span style="color:green">✔</span> ${occ.name} 於 ${h.name} (+1)</li>`;
-                    } else { logHTML += `<li><span style="color:red">✖</span> ${occ.name} 不太適應 ${h.name}</li>`; }
-                });
+        const CRISIS_TYPES = ['☠️ 路殺(車禍)', '💡 過度照明(光害)', '🧪 水源汙染(農藥)', '🐕 流浪狗(犬殺)', '💨 農藥飄移', '🧱 農業設施(阻隔)'];
+        
+        function checkHabitatEvolution(habitat) {
+            if (!habitat) return;
+            let correctBioCount = 0; let wrongBioCount = 0;
+            habitat.occupants.forEach(occ => {
+                if (occ.type === 'bio') { if (occ.validHabitats.includes(habitat.id) || habitat.isBonus) correctBioCount++; else wrongBioCount++; }
             });
 
-            crisisZones.forEach(cz => { cz.occupants.forEach(occ => { totalScore -= 1; logHTML += `<li><span style="color:red">✖</span> ${occ.name} 陷入危機地帶「${cz.name}」 (-1)</li>`; }); });
-            mapOccupants.forEach(occ => { totalScore += 1; logHTML += `<li><span style="color:green">✔</span> 文化景觀 ${occ.name} 融入地圖自由區 (+1)</li>`; });
-
-            FOOD_CHAINS.forEach(chain => {
-                let isCompleted = chain.members.every(mId => successfullyPlacedIds.has(mId));
-                if (isCompleted) { totalScore += 10; logHTML += `<li><strong style="color:#ea580c">⭐ 達成 ${chain.name} (+10)</strong></li>`; }
-            });
-
-            logHTML += "</ul>";
-            document.getElementById('score-details').innerHTML = logHTML; document.getElementById('final-score').innerText = `🏆 總成績：${totalScore} 分`;
-            document.getElementById('result-section').style.display = 'block'; document.getElementById('calc-btn').style.display = 'none';
-            
-            saveProgress(); 
-            generateCertificate(totalScore);
-            generateMapScreenshot(totalScore); 
-        }
-
-        // --- 全景地圖背景輸出引擎 ---
-        function generateMapScreenshot(totalScore) {
-            const snapCanvas = document.createElement('canvas');
-            snapCanvas.width = MAP_W; snapCanvas.height = MAP_H + 80; 
-            const sCtx = snapCanvas.getContext('2d');
-
-            drawMap(sCtx); drawHabitats(sCtx); drawCrisisZones(sCtx); drawMapOccupants(sCtx); drawDrawings(sCtx);
-
-            sCtx.fillStyle = '#14532d'; sCtx.fillRect(0, MAP_H, MAP_W, 80);
-            sCtx.fillStyle = '#fff'; sCtx.font = 'bold 28px "Segoe UI", sans-serif';
-            sCtx.textAlign = 'left'; sCtx.textBaseline = 'middle';
-            
-            sCtx.fillText(`🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${eventLocation} | 總成績：${totalScore} 分`, 30, MAP_H + 40);
-
-            const dataUrl = snapCanvas.toDataURL('image/png');
-            const mapPreviewImg = document.getElementById('map-preview');
-            mapPreviewImg.src = dataUrl;
-            mapPreviewImg.style.display = 'block';
-
-            const downloadLink = document.getElementById('map-download-link');
-            downloadLink.href = dataUrl;
-            downloadLink.download = `里山全景地圖_${playerName}.png`;
-            downloadLink.style.display = 'block';
-        }
-
-        function generateCertificate(score) {
-            try {
-                const certCanvas = document.createElement('canvas'); certCanvas.width = 1200; certCanvas.height = 800; const ctx = certCanvas.getContext('2d');
-                const gradient = ctx.createLinearGradient(0, 0, 1200, 800); gradient.addColorStop(0, '#f0fdf4'); gradient.addColorStop(1, '#dcfce7');
-                ctx.fillStyle = gradient; ctx.fillRect(0, 0, 1200, 800);
-                ctx.strokeStyle = '#14532d'; ctx.lineWidth = 20; ctx.strokeRect(30, 30, 1140, 740);
-                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 4; ctx.strokeRect(60, 60, 1080, 680);
-                ctx.fillStyle = '#14532d'; ctx.fillRect(50, 50, 40, 40); ctx.fillRect(1110, 50, 40, 40); ctx.fillRect(50, 710, 40, 40); ctx.fillRect(1110, 710, 40, 40);
-                ctx.fillStyle = '#14532d'; ctx.textAlign = 'center'; ctx.font = 'bold 50px "Segoe UI", sans-serif'; ctx.fillText('探探里山永續生態與農村風俗文化導覽', 600, 200);
-                
-                ctx.font = 'bold 42px "Segoe UI", sans-serif'; ctx.fillStyle = '#16a34a'; ctx.fillText('結業證書', 600, 270);
-                ctx.fillStyle = '#1f2937'; ctx.font = '32px "Segoe UI", sans-serif'; ctx.fillText(`茲證明`, 600, 380);
-                ctx.font = 'bold 46px "Segoe UI", sans-serif'; ctx.fillStyle = '#000'; ctx.fillText(`${playerName}`, 600, 450);
-                
-                ctx.font = '28px "Segoe UI", sans-serif'; ctx.fillStyle = '#4b5563'; 
-                ctx.fillText(`在生態導覽與農村風俗文化導覽活動中，認真學習，`, 600, 510);
-                ctx.fillText(`獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。`, 600, 550);
-
-                ctx.font = 'bold 24px "Segoe UI", sans-serif'; let detailY = 620;
-                if(eventName) { ctx.fillText(`活動名稱：${eventName}`, 600, detailY); detailY += 40; }
-                
-                // 處理可能過長的串聯場域名稱
-                if (ctx.measureText(`路線(場域)：${eventLocation}`).width > 1000) {
-                    ctx.font = 'bold 18px "Segoe UI", sans-serif';
-                }
-                ctx.fillText(`路線(場域)：${eventLocation}  |  評測總成績：${score} 分`, 600, detailY);
-
-                const randomId = Math.random().toString(36).substring(2, 8).toUpperCase(); const dateStr = new Date().toLocaleDateString('zh-TW');
-                ctx.textAlign = 'right'; ctx.font = '20px monospace'; ctx.fillStyle = '#6b7280'; ctx.fillText(`證書編號: ESG-${randomId}`, 1100, 680); ctx.fillText(`核發日期: ${dateStr}`, 1100, 710);
-                
-                let qrTemp = document.getElementById('qrcode-temp'); 
-                if (!qrTemp) { 
-                    qrTemp = document.createElement('div'); 
-                    qrTemp.id = 'qrcode-temp'; 
-                    qrTemp.style.position = 'absolute'; 
-                    qrTemp.style.left = '-9999px'; 
-                    qrTemp.style.visibility = 'hidden';
-                    document.body.appendChild(qrTemp); 
-                }
-                qrTemp.innerHTML = ''; 
-                new QRCode(qrTemp, { text: "https://farmcmd.github.io/ESGT/eco_landscape.html", width: 80, height: 80, colorDark : "#14532d", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L });
-
-                const finishCert = () => {
-                    const sourceToDraw = qrTemp.querySelector('canvas') || qrTemp.querySelector('img');
-                    if(sourceToDraw) {
-                        try { ctx.drawImage(sourceToDraw, 110, 650, 75, 75); } catch(e) {}
-                    }
-                    ctx.textAlign = 'left'; ctx.fillStyle = '#16a34a'; ctx.font = 'bold 24px "Segoe UI", sans-serif'; ctx.fillText(`🌿 探探里山`, 200, 695);
-                    
-                    const imgDataUrl = certCanvas.toDataURL("image/png");
-                    const previewImg = document.getElementById('cert-preview'); previewImg.src = imgDataUrl; previewImg.style.display = 'block';
-                    
-                    const downloadLink = document.getElementById('cert-download-link'); 
-                    downloadLink.href = imgDataUrl; downloadLink.download = `里山導覽證書_${playerName}_${randomId}.png`; downloadLink.style.display = 'block';
-                    
-                    document.getElementById('ios-hint').style.display = 'block';
-                };
-
-                setTimeout(() => {
-                    let img = qrTemp.querySelector('img');
-                    if (img && !img.complete) { img.onload = finishCert; setTimeout(finishCert, 500); } 
-                    else { finishCert(); }
-                }, 150);
-
-            } catch (err) {}
-        }
-
-        // --- 8. Canvas 渲染迴圈 ---
-        function updateCamera() {
-            if (!camera.detached) { camera.x = player.x - SCREEN_W / 2; camera.y = player.y - SCREEN_H / 2; }
-            camera.x = Math.max(0, Math.min(Math.max(0, MAP_W - SCREEN_W), camera.x)); camera.y = Math.max(0, Math.min(Math.max(0, MAP_H - SCREEN_H), camera.y));
+            if (correctBioCount >= 3 && !habitat.bonusSpawned) {
+                habitat.bonusSpawned = true;
+                let nx = habitat.x + (Math.random() > 0.5 ? habitat.w + 20 : -100); let ny = habitat.y + (Math.random() > 0.5 ? habitat.h + 20 : -100);
+                habitats.push({ id: 'hb_' + Date.now(), name: '新生自然棲地', x: nx, y: ny, w: 100, h: 100, occupants: [], bonusSpawned: true, crisisSpawned: true, isBonus: true });
+                showAlert(`✨ 復育成功！【${habitat.name}】生態溢出，擴增了新的自然棲地！`);
+            }
+            if (wrongBioCount >= 3 && !habitat.crisisSpawned) {
+                habitat.crisisSpawned = true;
+                let cType = CRISIS_TYPES[Math.floor(Math.random() * CRISIS_TYPES.length)];
+                let nx = habitat.x + habitat.w / 2 + (Math.random() * 80 - 40); let ny = habitat.y + habitat.h / 2 + (Math.random() * 80 - 40);
+                crisisZones.push({ name: cType, x: nx, y: ny, r: 80, occupants: [] });
+                showAlert(`⚠️ 環境危機！錯誤的生態配置在【${habitat.name}】引發了【${cType}】陷阱！`);
+            }
         }
 
         function gameLoop() {
-            if (!isGameRunning) return; updateCamera(); ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
+            if (!isGameRunning) return;
+            if (!camera.detached) {
+                camera.x += (player.x - SCREEN_W / 2 - camera.x) * 0.1;
+                camera.y += (player.y - SCREEN_H / 2 - camera.y) * 0.1;
+            }
+            
+            camera.x = Math.max(0, Math.min(MAP_W - SCREEN_W, camera.x));
+            camera.y = Math.max(0, Math.min(MAP_H - SCREEN_H, camera.y));
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save(); ctx.translate(-camera.x, -camera.y);
-            drawMap(ctx); drawHabitats(ctx); drawCrisisZones(ctx); drawMapOccupants(ctx); drawDrawings(ctx); drawPlayer(ctx);
+
+            drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawPlayer(); drawDrawings();
+
             ctx.restore(); requestAnimationFrame(gameLoop);
         }
 
-        function drawDrawings(targetCtx) {
-            drawings.forEach(d => {
-                targetCtx.strokeStyle = d.color; targetCtx.lineWidth = 4; targetCtx.lineJoin = 'round'; targetCtx.lineCap = 'round';
-                targetCtx.beginPath();
-                if(d.points.length > 0) { targetCtx.moveTo(d.points[0].x, d.points[0].y); for(let i = 1; i < d.points.length; i++) targetCtx.lineTo(d.points[i].x, d.points[i].y); targetCtx.stroke(); }
+        function drawDrawings() {
+            drawings.forEach(path => {
+                ctx.beginPath(); ctx.strokeStyle = path.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                path.points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+                ctx.stroke();
             });
+            if (isDrawingMode && currentPath) {
+                ctx.beginPath(); ctx.strokeStyle = currentPath.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                currentPath.points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+                ctx.stroke();
+            }
         }
 
-        // 優美木牌繪製函數 (內建防溢出邊界處理)
-        function drawWoodSign(targetCtx, text, x, y, isBonus = false) {
-            targetCtx.save();
-            targetCtx.font = 'bold 16px "Segoe UI", sans-serif';
-            let textW = targetCtx.measureText(text).width;
+        function drawWoodSign(text, x, y, alignCenter = true) {
+            ctx.font = 'bold 16px "Segoe UI", sans-serif';
+            let textW = ctx.measureText(text).width;
+            let boardW = Math.max(textW + 30, 80);
+            let boardH = 36;
             
-            // 防邊界溢出邏輯：若木牌文字過長，強迫將中心點往內縮
-            let cx = x;
-            let displayW = textW + 24;
-            if (cx - displayW/2 < 10) cx = displayW/2 + 10;
-            if (cx + displayW/2 > MAP_W - 10) cx = MAP_W - displayW/2 - 10;
+            let finalX = alignCenter ? x - boardW / 2 : x;
+            // 防邊界撞擊 (Boundary Collision Prevention)
+            if (finalX < 10) finalX = 10;
+            if (finalX + boardW > MAP_W - 10) finalX = MAP_W - boardW - 10;
+            
+            let finalY = y;
 
-            const h = 30;
+            ctx.fillStyle = '#8f562b'; ctx.beginPath(); ctx.roundRect(finalX, finalY, boardW, boardH, 6); ctx.fill();
+            ctx.fillStyle = '#a16638'; ctx.beginPath(); ctx.roundRect(finalX + 2, finalY + 2, boardW - 4, boardH - 4, 4); ctx.fill();
             
-            // 陰影
-            targetCtx.fillStyle = 'rgba(0,0,0,0.3)';
-            targetCtx.beginPath(); targetCtx.roundRect(cx - displayW/2 + 2, y - h/2 + 3, displayW, h, 6); targetCtx.fill();
-            
-            // 木牌底色 (或新生棲地的藍色)
-            targetCtx.fillStyle = isBonus ? '#2D80C6' : '#b87c47';
-            targetCtx.beginPath(); targetCtx.roundRect(cx - displayW/2, y - h/2, displayW, h, 6); targetCtx.fill();
-            
-            // 邊框
-            targetCtx.strokeStyle = isBonus ? '#1c7ab1' : '#6d4327';
-            targetCtx.lineWidth = 3; targetCtx.stroke();
-            
-            // 釘子
-            targetCtx.fillStyle = '#4a2c18';
-            targetCtx.beginPath(); targetCtx.arc(cx - displayW/2 + 5, y - h/2 + 5, 2, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.beginPath(); targetCtx.arc(cx + displayW/2 - 5, y - h/2 + 5, 2, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.beginPath(); targetCtx.arc(cx - displayW/2 + 5, y + h/2 - 5, 2, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.beginPath(); targetCtx.arc(cx + displayW/2 - 5, y + h/2 - 5, 2, 0, Math.PI*2); targetCtx.fill();
-            
-            // 文字
-            targetCtx.fillStyle = '#ffffff';
-            targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
-            targetCtx.fillText(text, cx, y + 1);
-            targetCtx.restore();
+            // 四顆鐵釘
+            ctx.fillStyle = '#374151'; 
+            ctx.beginPath(); ctx.arc(finalX + 6, finalY + 6, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(finalX + boardW - 6, finalY + 6, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(finalX + 6, finalY + boardH - 6, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(finalX + boardW - 6, finalY + boardH - 6, 2, 0, Math.PI*2); ctx.fill();
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(text, finalX + 16, finalY + 24);
+            ctx.fillStyle = 'white'; ctx.fillText(text, finalX + 15, finalY + 23);
         }
 
-        // 星露谷風格立體地景繪製
-        function drawMap(targetCtx) {
-            // 基礎草地
-            targetCtx.fillStyle = '#7cd059'; 
-            targetCtx.fillRect(0, 0, MAP_W, MAP_H);
-            
-            // 草地斑塊裝飾
-            targetCtx.fillStyle = '#65af44';
-            const drawGrassPatch = (x, y) => {
-                targetCtx.beginPath(); targetCtx.arc(x, y, 15, 0, Math.PI*2); targetCtx.arc(x+12, y-6, 10, 0, Math.PI*2); targetCtx.arc(x+18, y+8, 12, 0, Math.PI*2); targetCtx.fill();
-            };
-            [[100,500], [300,800], [800,480], [1000,750], [1400,300]].forEach(p => drawGrassPatch(p[0], p[1]));
-
-            // 泥土小徑
-            targetCtx.save();
-            targetCtx.strokeStyle = '#dca166'; targetCtx.lineWidth = 25; targetCtx.lineCap = 'round'; targetCtx.lineJoin = 'round';
-            targetCtx.beginPath();
-            targetCtx.moveTo(250, 0); targetCtx.bezierCurveTo(200, 200, 500, 300, 500, 450); targetCtx.bezierCurveTo(550, 600, 800, 650, 800, 800); targetCtx.bezierCurveTo(850, 950, 1100, 1000, 1200, 1200); targetCtx.stroke();
-            targetCtx.lineWidth = 20; targetCtx.strokeStyle = '#ecc28c'; targetCtx.stroke();
-            targetCtx.restore();
-
-            // 左上角森林深色地皮
-            targetCtx.fillStyle = '#4a8730'; targetCtx.beginPath(); targetCtx.moveTo(0,0); targetCtx.lineTo(350,0); targetCtx.lineTo(250,350); targetCtx.lineTo(0,350); targetCtx.fill(); 
-            
-            // 淺山區域
-            targetCtx.fillStyle = '#5fb33e'; targetCtx.beginPath(); targetCtx.moveTo(350,0); targetCtx.lineTo(1100,0); targetCtx.quadraticCurveTo(1150,200,1050,350); targetCtx.lineTo(250,350); targetCtx.fill(); 
-            
-            // 柏油道路
-            targetCtx.fillStyle = '#8e969d'; targetCtx.fillRect(0, 350, MAP_W, 100); 
-            targetCtx.save(); targetCtx.strokeStyle = '#cbd5e1'; targetCtx.lineWidth = 6; targetCtx.setLineDash([25, 25]);
-            targetCtx.beginPath(); targetCtx.moveTo(0, 400); targetCtx.lineTo(MAP_W, 400); targetCtx.stroke(); targetCtx.restore();
-
-            // 涵洞基座
-            targetCtx.fillStyle = '#4b5563'; targetCtx.fillRect(400, 340, 150, 120); 
-
-            // 右側溪流
-            targetCtx.fillStyle = '#2e9dd9'; 
-            targetCtx.beginPath(); targetCtx.moveTo(1100, 450); targetCtx.lineTo(1250, 450); targetCtx.lineTo(1400, MAP_H); targetCtx.lineTo(1250, MAP_H); targetCtx.fill(); 
-            
-            // 右下角水塘
-            targetCtx.beginPath(); targetCtx.ellipse(1350, 900, 180, 110, 0, 0, Math.PI * 2); targetCtx.fill(); 
-            
-            // 水波紋
-            targetCtx.save(); targetCtx.strokeStyle = 'rgba(255,255,255,0.4)'; targetCtx.lineWidth = 3; targetCtx.lineCap = 'round';
-            [[1150,500,50], [1200,600,40], [1250,750,60], [1300,850,30], [1400,950,50], [1350,1050,40]].forEach(r => {
-                targetCtx.beginPath(); targetCtx.moveTo(r[0], r[1]); targetCtx.lineTo(r[0]+r[2], r[1]); targetCtx.stroke();
-            });
-            targetCtx.restore();
-
-            // 左下角灌溉溝渠
-            targetCtx.save();
-            targetCtx.fillStyle = '#9e9e9e'; targetCtx.fillRect(30, 650, 100, 500); // 水泥邊框
-            targetCtx.fillStyle = '#2e9dd9'; targetCtx.fillRect(40, 650, 80, 500); // 溝渠水流
-            targetCtx.strokeStyle = 'rgba(255,255,255,0.4)'; targetCtx.lineWidth = 2;
-            for(let y=680; y<1100; y+=60) { targetCtx.beginPath(); targetCtx.moveTo(55, y); targetCtx.lineTo(105, y+10); targetCtx.stroke(); }
-            targetCtx.restore();
-
-            // 上方溫室 (設施農業)
-            targetCtx.save(); targetCtx.translate(150, 480);
-            targetCtx.fillStyle = '#e0e0e0'; targetCtx.fillRect(0, 0, 400, 220); // 溫室地板
-            targetCtx.fillStyle = '#8d6e63'; targetCtx.fillRect(20, 20, 360, 180); // 內部土壤
-            targetCtx.fillStyle = '#a1887f'; for(let i=40; i<380; i+=40) { targetCtx.fillRect(i, 20, 20, 180); } // 畦
-            targetCtx.fillStyle = 'rgba(227, 242, 253, 0.6)'; targetCtx.fillRect(0, 0, 400, 220); // 玻璃屋頂
-            targetCtx.strokeStyle = '#b0bec5'; targetCtx.lineWidth = 4;
-            for(let i=0; i<=400; i+=50) { targetCtx.beginPath(); targetCtx.moveTo(i, 0); targetCtx.lineTo(i, 220); targetCtx.stroke(); }
-            targetCtx.strokeRect(0, 0, 400, 220);
-            targetCtx.restore();
-
-            // 下方新農田
-            targetCtx.save(); targetCtx.translate(220, 820);
-            targetCtx.fillStyle = '#a6714a'; targetCtx.fillRect(0, 0, 450, 280); // 泥地
-            targetCtx.strokeStyle = '#8c5632'; targetCtx.lineWidth = 6;
-            for(let y=30; y<280; y+=40) { targetCtx.beginPath(); targetCtx.moveTo(20, y); targetCtx.lineTo(430, y); targetCtx.stroke(); } // 耕線
-            targetCtx.fillStyle = '#7cd059'; 
-            for(let y=30; y<280; y+=40) { for(let x=40; x<430; x+=30) { targetCtx.beginPath(); targetCtx.arc(x, y, 4, 0, Math.PI*2); targetCtx.fill(); } } // 作物
-            targetCtx.restore();
-
-            // 生物通道 (跨越道路)
-            targetCtx.save();
-            targetCtx.fillStyle = '#5fb33e'; targetCtx.fillRect(1150, 330, 250, 140); // 綠色橋面
-            targetCtx.fillStyle = '#a6714a'; // 泥土小徑延伸
-            targetCtx.beginPath(); targetCtx.moveTo(1200, 330); targetCtx.quadraticCurveTo(1280, 400, 1250, 470); targetCtx.lineTo(1320, 470); targetCtx.quadraticCurveTo(1350, 400, 1270, 330); targetCtx.fill();
-            targetCtx.restore();
-
-            // 立體樹木生成函數
-            const drawPine = (ctx, x, y, scale) => {
-                ctx.save(); ctx.translate(x, y);
-                ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 5*scale, 15*scale, 6*scale, 0, 0, Math.PI*2); ctx.fill(); 
-                ctx.fillStyle = '#6e4526'; ctx.fillRect(-4*scale, -10*scale, 8*scale, 15*scale); // 樹幹
-                for(let i=0; i<3; i++) {
-                    let w = (25 - i*5) * scale; let h = 30 * scale; let ty = (-20 - i*15) * scale;
-                    ctx.fillStyle = '#0a4221'; ctx.beginPath(); ctx.moveTo(0, ty-h); ctx.lineTo(w, ty); ctx.lineTo(0, ty); ctx.fill(); 
-                    ctx.fillStyle = '#115e32'; ctx.beginPath(); ctx.moveTo(0, ty-h); ctx.lineTo(-w, ty); ctx.lineTo(0, ty); ctx.fill(); 
-                }
-                ctx.restore();
-            };
-
-            const drawOak = (ctx, x, y, scale) => {
-                ctx.save(); ctx.translate(x, y);
-                ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 5*scale, 15*scale, 6*scale, 0, 0, Math.PI*2); ctx.fill(); 
-                ctx.fillStyle = '#7a4f2e'; ctx.fillRect(-5*scale, -15*scale, 10*scale, 20*scale); // 樹幹
-                ctx.fillStyle = '#145c1a'; ctx.beginPath(); ctx.arc(0, -30*scale, 25*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-15*scale, -20*scale, 20*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(15*scale, -20*scale, 20*scale, 0, Math.PI*2); ctx.fill(); 
-                ctx.fillStyle = '#1e8027'; ctx.beginPath(); ctx.arc(0, -35*scale, 18*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-12*scale, -25*scale, 12*scale, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(12*scale, -25*scale, 12*scale, 0, Math.PI*2); ctx.fill(); 
-                ctx.restore();
-            };
-
-            // 立體農舍
-            const drawHouse = (ctx, x, y) => {
-                ctx.save(); ctx.translate(x, y);
-                ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 30, 55, 15, 0, 0, Math.PI*2); ctx.fill(); 
-                ctx.fillStyle = '#fce4c8'; ctx.fillRect(-45, -25, 90, 55); 
-                ctx.fillStyle = '#d64d42'; ctx.beginPath(); ctx.moveTo(-55, -25); ctx.lineTo(0, -65); ctx.lineTo(55, -25); ctx.fill(); 
-                ctx.fillStyle = '#ab3b32'; ctx.beginPath(); ctx.moveTo(0, -65); ctx.lineTo(55, -25); ctx.lineTo(0, -25); ctx.fill(); 
-                ctx.fillStyle = '#5c3a21'; ctx.fillRect(-12, 5, 24, 25); 
-                ctx.fillStyle = '#71bded'; ctx.fillRect(-35, -10, 15, 20); ctx.fillRect(20, -10, 15, 20); 
-                ctx.fillStyle = '#a3a3a3'; ctx.fillRect(25, -70, 10, 25); 
-                ctx.restore();
-            };
-
-            // 繪製樹林與農舍
-            [[80,80], [180,150], [280,60], [120,260], [60,320], [200,220], [320,160], [40,180]].forEach(pos => drawPine(targetCtx, pos[0], pos[1], 1.2));
-            [[450,100], [550,200], [680,80], [800,220], [950,120], [1020,250], [880,70], [750,280], [600,120], [1050, 150]].forEach(pos => drawOak(targetCtx, pos[0], pos[1], 1.0));
-            
-            // 生物通道上的樹
-            drawPine(targetCtx, 1170, 350, 0.9); drawPine(targetCtx, 1180, 440, 0.9); drawOak(targetCtx, 1370, 360, 0.9); drawOak(targetCtx, 1380, 450, 0.9);
-
-            drawHouse(targetCtx, 750, 600); drawHouse(targetCtx, 900, 650);
-
-            // 枯木堆裝飾
-            targetCtx.save(); targetCtx.translate(110, 285); 
-            targetCtx.fillStyle = '#5e3212'; targetCtx.fillRect(-30, -5, 60, 12); targetCtx.fillRect(-20, 5, 40, 10); 
-            targetCtx.restore();
-
-            // 石堆裝飾
-            targetCtx.save(); targetCtx.translate(1110, 160);
-            targetCtx.fillStyle = '#949494'; targetCtx.beginPath(); targetCtx.arc(-15, 5, 18, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.fillStyle = '#737373'; targetCtx.beginPath(); targetCtx.arc(12, 8, 22, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.fillStyle = '#b5b5b5'; targetCtx.beginPath(); targetCtx.arc(0, -10, 15, 0, Math.PI*2); targetCtx.fill();
-            targetCtx.restore();
-
-            // 浮萍裝飾
-            targetCtx.save(); targetCtx.fillStyle = '#5ca83c';
-            for(let i=0; i<8; i++) { targetCtx.beginPath(); targetCtx.ellipse(1170 + i*15, 960 + (i%2)*10, 20, 10, 0, 0, Math.PI*2); targetCtx.fill(); }
-            targetCtx.restore();
-
-            // 地標木牌標示 (避免與棲地標示擁擠)
-            drawWoodSign(targetCtx, '森林', 150, 200);
-            drawWoodSign(targetCtx, '淺山', 700, 120);
-            drawWoodSign(targetCtx, '山邊道路', 200, 400);
-            drawWoodSign(targetCtx, '溪流', 1200, 600);
-            drawWoodSign(targetCtx, '農田', 440, 960);
-            drawWoodSign(targetCtx, '設施農業(溫室)', 350, 460);
-            drawWoodSign(targetCtx, '生物通道(生物可利用友善設施)', 1275, 400);
-            drawWoodSign(targetCtx, '灌溉溝渠', 80, 630);
+        function drawTrees(x, y, count) {
+            for(let i=0; i<count; i++) {
+                let tx = x + (i * 45 % 150); let ty = y + (i * 35 % 120);
+                ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(tx+15, ty+20, 20, 10, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#5d4037'; ctx.fillRect(tx+10, ty, 10, 20); // 樹幹
+                ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(tx+15, ty-10, 25, 0, Math.PI*2); ctx.fill(); // 深綠葉
+                ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(tx+10, ty-15, 18, 0, Math.PI*2); ctx.fill(); // 亮綠葉
+            }
         }
 
-        function drawHabitats(targetCtx) {
-            const iconSize = 40; const padding = 5;
+        function drawMap() {
+            // 背景與道路
+            ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
+            
+            // 原始森林區底色
+            ctx.fillStyle = '#4CAF50'; ctx.fillRect(0, 0, 300, 450);
+            drawTrees(20, 20, 8); drawTrees(150, 200, 5);
+
+            // 柏油馬路
+            ctx.fillStyle = '#94a3b8'; ctx.fillRect(0, 320, MAP_W, 80);
+            ctx.fillStyle = 'white'; ctx.setLineDash([20, 20]); ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(0, 360); ctx.lineTo(MAP_W, 360); ctx.stroke(); ctx.setLineDash([]);
+            drawWoodSign('山邊道路', 150, 342, true);
+
+            // 生物通道 (馬路上方)
+            ctx.fillStyle = '#388e3c'; ctx.fillRect(1150, 300, 400, 20);
+            ctx.fillStyle = '#4caf50'; ctx.fillRect(1150, 305, 400, 10);
+            drawWoodSign('生物通道(生物可利用友善設施)', 1350, 275, true);
+
+            // 泥土蜿蜒小徑
+            ctx.strokeStyle = '#dca166'; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath(); ctx.moveTo(500, 400); ctx.lineTo(600, 600); ctx.lineTo(800, 900); ctx.lineTo(1200, 1150); ctx.stroke();
+
+            // 新大農田 (下方)
+            ctx.fillStyle = '#a1887f'; ctx.fillRect(200, 850, 500, 300);
+            ctx.strokeStyle = '#8d6e63'; ctx.lineWidth = 4;
+            for(let i=1; i<10; i++) {
+                ctx.beginPath(); ctx.moveTo(210, 850 + i*30); ctx.lineTo(690, 850 + i*30); ctx.stroke();
+                for(let j=0; j<8; j++) { ctx.fillStyle = '#66bb6a'; ctx.beginPath(); ctx.arc(240 + j*60, 850 + i*30, 4, 0, Math.PI*2); ctx.fill(); }
+            }
+            drawWoodSign('農田', 450, 820, true);
+
+            // 設施農業(溫室) (上方)
+            ctx.fillStyle = 'rgba(224, 242, 241, 0.7)'; ctx.fillRect(150, 450, 350, 250); // 玻璃
+            ctx.strokeStyle = '#9e9e9e'; ctx.lineWidth = 6; ctx.strokeRect(150, 450, 350, 250); // 鋼骨
+            ctx.lineWidth = 2;
+            for(let i=1; i<5; i++) { ctx.beginPath(); ctx.moveTo(150, 450 + i*50); ctx.lineTo(500, 450 + i*50); ctx.stroke(); }
+            for(let j=1; j<7; j++) { ctx.beginPath(); ctx.moveTo(150 + j*50, 450); ctx.lineTo(150 + j*50, 700); ctx.stroke(); }
+            drawWoodSign('設施農業(溫室)', 325, 420, true);
+
+            // 農舍群
+            ctx.fillStyle = '#f5f5f5'; ctx.fillRect(680, 520, 60, 50); ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.moveTo(670, 520); ctx.lineTo(710, 480); ctx.lineTo(750, 520); ctx.fill();
+            ctx.fillStyle = '#f5f5f5'; ctx.fillRect(780, 550, 70, 50); ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.moveTo(770, 550); ctx.lineTo(815, 500); ctx.lineTo(860, 550); ctx.fill();
+            drawWoodSign('農舍', 760, 460, true);
+
+            // 溪流
+            ctx.fillStyle = '#42a5f5'; ctx.beginPath(); ctx.moveTo(1000, 400); ctx.lineTo(1100, 400); ctx.lineTo(1350, 1200); ctx.lineTo(1150, 1200); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3; ctx.setLineDash([15, 20]);
+            ctx.beginPath(); ctx.moveTo(1050, 500); ctx.lineTo(1050, 800); ctx.stroke(); ctx.setLineDash([]);
+            drawWoodSign('溪流', 1100, 600, true);
+
+            // 淺山點綴
+            drawTrees(550, 100, 3); drawTrees(700, 80, 4); drawTrees(850, 120, 2);
+            drawWoodSign('淺山', 650, 80, true);
+        }
+
+        function drawHabitats() {
             habitats.forEach(h => {
-                targetCtx.save(); targetCtx.lineWidth = 3;
+                ctx.strokeStyle = h.isBonus ? '#2563eb' : '#ef4444'; ctx.lineWidth = 3; ctx.setLineDash([8, 8]);
+                ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]);
                 
-                if (h.isBonus) { targetCtx.strokeStyle = '#3b82f6'; targetCtx.fillStyle = 'rgba(59, 130, 246, 0.15)'; targetCtx.setLineDash([10, 10]);
-                } else if (h.occupants.length > 0) { targetCtx.strokeStyle = '#4a8730'; targetCtx.fillStyle = 'rgba(101, 175, 68, 0.25)'; targetCtx.setLineDash([]); 
-                } else { targetCtx.strokeStyle = 'rgba(211, 47, 47, 0.8)'; targetCtx.fillStyle = 'rgba(211, 47, 47, 0.15)'; targetCtx.setLineDash([6, 6]); }
-                
-                targetCtx.beginPath(); targetCtx.roundRect(h.x, h.y, h.w, h.h, 8); targetCtx.fill(); targetCtx.stroke();
-                if (h.isBonus && h.occupants.length === 0) { targetCtx.strokeStyle = '#fff'; targetCtx.lineDashOffset = 8; targetCtx.stroke(); }
-                
-                if (h.occupants.length > 0) {
-                    const maxCols = Math.max(1, Math.floor((h.w - padding * 2) / iconSize));
-                    targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
-                    h.occupants.forEach((occ, index) => {
-                        let col = index % maxCols; let row = Math.floor(index / maxCols);
-                        let px = h.x + padding + col * iconSize + iconSize/2; let py = h.y + padding + row * iconSize + iconSize/2;
-                        
-                        targetCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff';
-                        targetCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af';
-                        targetCtx.lineWidth = occ.type === 'culture' ? 2 : 1;
-
-                        if (occ.dead) { targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6; }
-
-                        if (occ.type === 'culture') { targetCtx.beginPath(); targetCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke(); } 
-                        else { targetCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); targetCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
-                        
-                        targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.fillText(occ.icon, px, py - 4);
-                        targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; targetCtx.fillText(occ.name, px, py + 16);
-                        
-                        let isCorrect = false;
-                        if (h.isBonus && occ.type === 'bio') isCorrect = true;
-                        else if (occ.type === 'culture') isCorrect = true;
-                        else if (occ.validHabitats && occ.validHabitats.includes(h.id)) isCorrect = true;
-
-                        targetCtx.save(); targetCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; targetCtx.beginPath(); targetCtx.arc(px + 18, py - 18, 10, 0, Math.PI * 2); targetCtx.fill();
-                        targetCtx.font = 'bold 12px Arial';
-                        if (isCorrect) { targetCtx.fillStyle = '#16a34a'; targetCtx.fillText('+1', px + 18, py - 18); } 
-                        else { targetCtx.fillStyle = '#ef4444'; targetCtx.fillText('✘', px + 18, py - 18); }
-                        targetCtx.restore();
-
-                        occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
-                        targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
-                    });
-                }
-                targetCtx.restore();
+                h.occupants.forEach((occ, idx) => {
+                    let cx = h.x + 10 + (idx % 3) * 60; let cy = h.y + 10 + Math.floor(idx / 3) * 60;
+                    if(cx + 50 > h.x + h.w) { cx = h.x + h.w - 55; }
+                    ctx.fillStyle = occ.dead ? '#9ca3af' : 'white';
+                    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(cx, cy, 50, 50, 8); ctx.fill(); ctx.stroke();
+                    ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 12, cy + 32);
+                    occ.renderBox = { x: cx, y: cy, w: 50, h: 50 };
+                    
+                    // 繪製 +1 / ✘ 狀態標章
+                    if(!occ.dead) {
+                        let isCorrect = (occ.type === 'culture') || (h.isBonus && occ.type === 'bio') || (occ.validHabitats && occ.validHabitats.includes(h.id));
+                        ctx.fillStyle = isCorrect ? '#22c55e' : '#ef4444';
+                        ctx.beginPath(); ctx.arc(cx + 45, cy + 5, 10, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(isCorrect ? '+1' : '✘', cx + 38, cy + 9);
+                    }
+                });
             });
 
-            // 確保木牌繪製在所有卡牌最上層，且立於框線正上方
+            // 獨立繪製木牌，保證絕對置頂防遮擋
             habitats.forEach(h => {
-                let cx = h.x + h.w/2; 
-                let cy = h.y; // 放在框線頂部
-                drawWoodSign(targetCtx, h.name, cx, cy, h.isBonus);
+                drawWoodSign(h.name, h.x + h.w / 2, h.y + 10, true);
             });
         }
 
-        function drawCrisisZones(targetCtx) {
-            const iconSize = 40;
+        function drawCrisisZones() {
             crisisZones.forEach(cz => {
-                targetCtx.save(); targetCtx.lineWidth = 3;
-                targetCtx.strokeStyle = '#111'; targetCtx.fillStyle = 'rgba(0, 0, 0, 0.2)'; targetCtx.setLineDash([10, 10]);
-                targetCtx.beginPath(); targetCtx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
-                targetCtx.strokeStyle = '#fff'; targetCtx.lineDashOffset = 10; targetCtx.stroke();
-
-                if (cz.occupants.length > 0) {
-                    const boxW = cz.r * 1.4; const maxCols = Math.max(1, Math.floor(boxW / iconSize));
-                    let startX = cz.x - boxW/2; let startY = cz.y - boxW/2 + 20;
-                    cz.occupants.forEach((occ, index) => {
-                        let col = index % maxCols; let row = Math.floor(index / maxCols);
-                        let px = startX + col * iconSize + iconSize/2; let py = startY + row * iconSize + iconSize/2;
-                        
-                        targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6;
-                        targetCtx.fillStyle = occ.type === 'culture' ? '#fffbeb' : '#ffffff'; targetCtx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#ef4444'; targetCtx.lineWidth = 2;
-                        if (occ.type === 'culture') { targetCtx.beginPath(); targetCtx.arc(px, py, iconSize/2 - 2, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke(); } 
-                        else { targetCtx.fillRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); targetCtx.strokeRect(px - iconSize/2 + 2, py - iconSize/2 + 2, iconSize - 4, iconSize - 4); }
-                        
-                        targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.fillText(occ.icon, px, py - 4);
-                        targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; targetCtx.fillText(occ.name, px, py + 16);
-
-                        targetCtx.save(); targetCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; targetCtx.beginPath(); targetCtx.arc(px + 18, py - 18, 10, 0, Math.PI * 2); targetCtx.fill();
-                        targetCtx.font = 'bold 12px Arial'; targetCtx.fillStyle = '#ef4444'; targetCtx.fillText('-1', px + 18, py - 18);
-                        targetCtx.restore();
-
-                        occ.renderBox = { x: px - iconSize/2 + 2, y: py - iconSize/2 + 2, w: iconSize - 4, h: iconSize - 4 };
-                        targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
-                    });
-                }
+                ctx.strokeStyle = 'black'; ctx.lineWidth = 4; ctx.setLineDash([10, 10]);
+                ctx.beginPath(); ctx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
                 
-                targetCtx.font = 'bold 14px "Segoe UI", sans-serif'; const w = targetCtx.measureText("⚠️" + cz.name).width + 20; const h = 26;
-                targetCtx.fillStyle = '#8b0000'; targetCtx.beginPath(); targetCtx.roundRect(cz.x - w/2, cz.y - cz.r - h/2 + 10, w, h, 6); targetCtx.fill();
-                targetCtx.strokeStyle = '#fff'; targetCtx.lineWidth = 2; targetCtx.stroke();
-                targetCtx.fillStyle = '#ffffff'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; targetCtx.fillText("⚠️" + cz.name, cz.x, cz.y - cz.r + 11);
-                
-                targetCtx.restore();
+                cz.occupants.forEach((occ, idx) => {
+                    let angle = (idx * 30) * Math.PI / 180; let dist = 30;
+                    let cx = cz.x + Math.cos(angle)*dist - 25; let cy = cz.y + Math.sin(angle)*dist - 25;
+                    ctx.fillStyle = '#6b7280'; ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(cx, cy, 50, 50, 8); ctx.fill(); ctx.stroke();
+                    ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 12, cy + 32);
+                    occ.renderBox = { x: cx, y: cy, w: 50, h: 50 };
+                    
+                    // 扣分徽章
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx + 45, cy + 5, 10, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('-1', cx + 38, cy + 9);
+                });
+            });
+
+            crisisZones.forEach(cz => {
+                drawWoodSign(cz.name, cz.x, cz.y - cz.r + 10, true);
             });
         }
 
-        function drawMapOccupants(targetCtx) {
-            const r = 20;
+        function drawMapOccupants() {
             mapOccupants.forEach(occ => {
-                targetCtx.save(); 
-                if (occ.dead) { targetCtx.filter = 'grayscale(100%)'; targetCtx.globalAlpha = 0.6; }
-                
-                targetCtx.fillStyle = '#fffbeb'; targetCtx.beginPath(); targetCtx.arc(occ.x, occ.y, r, 0, Math.PI*2); targetCtx.fill();
-                targetCtx.strokeStyle = '#f59e0b'; targetCtx.lineWidth = 2; targetCtx.stroke();
-                
-                targetCtx.font = '26px Arial'; targetCtx.fillStyle = '#000'; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; 
-                targetCtx.fillText(occ.icon, occ.x, occ.y - 4);
-                targetCtx.font = '10px Arial'; targetCtx.fillStyle = '#4b5563'; 
-                targetCtx.fillText(occ.name, occ.x, occ.y + 14);
-                
-                targetCtx.save(); targetCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; targetCtx.beginPath(); targetCtx.arc(occ.x + 18, occ.y - 18, 10, 0, Math.PI * 2); targetCtx.fill();
-                targetCtx.font = 'bold 12px Arial'; targetCtx.fillStyle = '#16a34a'; targetCtx.fillText('+1', occ.x + 18, occ.y - 18);
-                targetCtx.restore();
-
-                occ.renderBox = { x: occ.x - r, y: occ.y - r, w: r*2, h: r*2 };
-                targetCtx.filter = 'none'; targetCtx.globalAlpha = 1.0;
-                targetCtx.restore(); 
+                ctx.fillStyle = occ.type === 'culture' ? '#fffbeb' : 'white'; ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#9ca3af'; ctx.lineWidth = 2;
+                ctx.beginPath(); occ.type === 'culture' ? ctx.arc(occ.x + 25, occ.y + 25, 25, 0, Math.PI * 2) : ctx.roundRect(occ.x, occ.y, 50, 50, 8);
+                ctx.fill(); ctx.stroke();
+                ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, occ.x + 12, occ.y + 32);
+                occ.renderBox = { x: occ.x, y: occ.y, w: 50, h: 50 };
             });
         }
 
-        function drawPlayer(targetCtx) {
-            targetCtx.save(); targetCtx.translate(player.x, player.y);
-            targetCtx.font = `${player.size}px Arial`; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
-            targetCtx.rotate(player.dirAngle); targetCtx.fillText(player.icon, 0, 0);
-            targetCtx.fillStyle = '#ef4444'; targetCtx.beginPath(); targetCtx.arc(0, -22, 4, 0, Math.PI * 2); targetCtx.fill();
-            targetCtx.restore();
+        function drawPlayer() {
+            ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.dirAngle);
+            ctx.font = '30px sans-serif'; ctx.fillText(player.icon, -15, 10);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-10, 0); ctx.lineTo(10, 0); ctx.fill();
+            ctx.restore();
             
-            targetCtx.font = 'bold 15px Arial'; const tw = targetCtx.measureText(playerName).width + 10;
-            targetCtx.fillStyle = 'rgba(255,255,255,0.8)'; targetCtx.beginPath(); targetCtx.roundRect(player.x - tw/2, player.y + 15, tw, 20, 4); targetCtx.fill();
-            targetCtx.fillStyle = '#111'; targetCtx.textAlign = 'center'; targetCtx.fillText(playerName, player.x, player.y + 25);
+            ctx.font = 'bold 14px "Segoe UI"'; ctx.fillStyle = 'white';
+            ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
+            ctx.fillText(playerName, player.x - ctx.measureText(playerName).width / 2, player.y + 30);
+            ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
         }
-    </script>
-</body>
-</html>
+
+        function calculateScore() {
+            if (quizCompleted) return;
+            
+            quizScore = 0;
+            let allAnswered = true;
+            for (let i = 0; i < QUIZ_DATA.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (!selected) { allAnswered = false; break; }
+                if (parseInt(selected.value) === QUIZ_DATA[i].ans) quizScore += 10;
+            }
+            if (!allAnswered) { alert("請回答所有測驗題目後再結算！"); return; }
+            
+            quizCompleted = true; let total = computeCurrentScore();
+            
+            let logHTML = `<ul style="list-style-type: none; padding-left: 0; font-size: 14px;">`;
+            let bonusCount = habitats.filter(h => h.isBonus).length;
+            let crisisCount = crisisZones.length;
+            
+            logHTML += `<li>✅ 加分測驗得分: <b>${quizScore}</b> 分</li>`;
+            logHTML += `<li>🌱 擴增棲地: ${bonusCount} 處 <b>(+${bonusCount * 5}分)</b></li>`;
+            if(crisisCount > 0) logHTML += `<li style="color:#ef4444;">⚠️ 環境危機: ${crisisCount} 處 <b>(-${crisisCount * 5}分)</b></li>`;
+
+            let successfullyPlacedIds = new Set();
+            habitats.forEach(h => {
+                h.occupants.forEach(occ => {
+                    if (occ.dead) return;
+                    if (h.isBonus && occ.type === 'bio') { logHTML += `<li>✔️ [${h.name}] 庇護 ${occ.name} (+1分)</li>`; successfullyPlacedIds.add(occ.id); }
+                    else if (occ.type === 'culture') { logHTML += `<li>📜 發現文化地景 ${occ.name} (+1分)</li>`; }
+                    else if (occ.validHabitats && occ.validHabitats.includes(h.id)) { logHTML += `<li>✔️ ${occ.name} 放入 [${h.name}] (+1分)</li>`; successfullyPlacedIds.add(occ.id); }
+                    else { logHTML += `<li style="color:#888;">❌ ${occ.name} 放入 [${h.name}] (無加分)</li>`; }
+                });
+            });
+
+            crisisZones.forEach(cz => {
+                cz.occupants.forEach(occ => { logHTML += `<li style="color:#ef4444;">☠️ ${occ.name} 掉入 [${cz.name}] (-1分)</li>`; });
+            });
+            
+            FOOD_CHAINS.forEach(chain => {
+                let isCompleted = chain.members.every(mId => successfullyPlacedIds.has(mId));
+                if (isCompleted) { logHTML += `<li style="color:#16a34a; font-weight:bold;">🌟 完成 ${chain.name} (+10分)</li>`; }
+            });
+
+            logHTML += `</ul>`;
+            document.getElementById('score-details').innerHTML = logHTML;
+            document.getElementById('final-score').innerText = `總成績：${total} 分！`;
+            
+            document.getElementById('quiz-section').style.display = 'none';
+            document.getElementById('calc-btn').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+            
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+                document.getElementById('ios-hint').style.display = 'block';
+            }
+            
+            saveProgress(); renderQuiz(); 
+            generateMapScreenshot();
+            generateCertificate(total);
+        }
+
+        function generateMapScreenshot() {
+            let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = MAP_W; tmpCanvas.height = MAP_H; let tCtx = tmpCanvas.getContext('2d');
+            tCtx.fillStyle = '#8BC34A'; tCtx.fillRect(0, 0, MAP_W, MAP_H);
+            tCtx.drawImage(canvas, 0, 0, MAP_W, MAP_H, 0, 0, MAP_W, MAP_H);
+            
+            tCtx.fillStyle = 'rgba(255,255,255,0.85)'; tCtx.fillRect(20, MAP_H - 100, 600, 80);
+            tCtx.fillStyle = '#14532d'; tCtx.font = 'bold 24px sans-serif';
+            tCtx.fillText(`探探里山生態任務：${eventName}`, 40, MAP_H - 60);
+            tCtx.font = '20px sans-serif'; tCtx.fillText(`偵探：${playerName} | 探索場域：${eventLocation}`, 40, MAP_H - 35);
+            
+            let dataURL = tmpCanvas.toDataURL("image/png");
+            const dlLink = document.getElementById('map-download-link');
+            dlLink.href = dataURL; dlLink.download = `${playerName}_里山生態全景圖.png`; dlLink.style.display = 'block';
+            
+            const previewImg = document.getElementById('map-preview');
+            previewImg.src = dataURL; previewImg.style.display = 'block';
+        }
+
+        function generateCertificate(score) {
+            let tmpCanvas = document.createElement('canvas'); tmpCanvas.width = 800; tmpCanvas.height = 600; let tCtx = tmpCanvas.getContext('2d');
+            let grad = tCtx.createLinearGradient(0, 0, 800, 600); grad.addColorStop(0, '#f0fdf4'); grad.addColorStop(1, '#dcfce7');
+            tCtx.fillStyle = grad; tCtx.fillRect(0, 0, 800, 600);
+            
+            tCtx.strokeStyle = '#166534'; tCtx.lineWidth = 15; tCtx.strokeRect(20, 20, 760, 560);
+            tCtx.strokeStyle = '#4ade80'; tCtx.lineWidth = 5; tCtx.strokeRect(30, 30, 740, 540);
+            
+            tCtx.fillStyle = '#14532d'; tCtx.textAlign = 'center'; tCtx.font = 'bold 48px "Segoe UI", sans-serif'; tCtx.fillText('探探里山 永續生態結業證書', 400, 100);
+            
+            tCtx.font = '28px "Segoe UI"'; tCtx.fillStyle = '#374151';
+            tCtx.fillText(`茲證明 優秀偵探`, 400, 180);
+            tCtx.font = 'bold 40px "Segoe UI"'; tCtx.fillStyle = '#ea580c'; tCtx.fillText(`${playerName}`, 400, 240);
+            
+            tCtx.font = '24px "Segoe UI"'; tCtx.fillStyle = '#374151';
+            tCtx.fillText(`於 ${eventName || '永續生態導覽活動'} 中`, 400, 300);
+            tCtx.fillText(`成功探索【${eventLocation}】`, 400, 340);
+            tCtx.fillText(`並展現卓越的生態棲地觀察力，獲得總積分：`, 400, 380);
+            
+            tCtx.font = 'bold 60px "Segoe UI"'; tCtx.fillStyle = '#16a34a'; tCtx.fillText(`${score} 分`, 400, 460);
+            
+            tCtx.font = '18px "Segoe UI"'; tCtx.fillStyle = '#6b7280'; let dateStr = new Date().toLocaleDateString('zh-TW');
+            tCtx.fillText(`發證日期：${dateStr} | 認證單位：臺大。山林。學院 2.0`, 400, 530);
+
+            // iOS 安全 QR Code 渲染
+            let qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            let vCode = 'ESGT-' + Date.now().toString().slice(-6);
+            tCtx.font = '14px monospace'; tCtx.fillStyle = '#9ca3af'; tCtx.fillText(`防偽碼: ${vCode}`, 400, 555);
+            
+            new QRCode(qrContainer, { text: `https://farmcmd.github.io/ESGT/?cert=${vCode}`, width: 100, height: 100, colorDark : "#166534" });
+            
+            setTimeout(() => {
+                try {
+                    let qrImg = qrContainer.querySelector('img');
+                    if (qrImg && qrImg.src) {
+                        let img = new Image();
+                        img.onload = () => { 
+                            tCtx.drawImage(img, 640, 440, 100, 100); 
+                            let dataURL = tmpCanvas.toDataURL("image/png");
+                            const dlLink = document.getElementById('cert-download-link');
+                            dlLink.href = dataURL; dlLink.download = `${playerName}_生態證書.png`; dlLink.style.display = 'block';
+                            
+                            const previewImg = document.getElementById('cert-preview');
+                            previewImg.src = dataURL; previewImg.style.display = 'block';
+                        };
