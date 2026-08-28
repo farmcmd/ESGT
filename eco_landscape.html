@@ -335,7 +335,7 @@
             if(group && cb) group.style.display = cb.checked ? 'block' : 'none';
         }
         
-        window.toggleCustomLocation = toggleCustomLocation; // 強制掛載到 window，避免未定義錯誤
+        window.toggleCustomLocation = toggleCustomLocation;
 
         function showShareQR() {
             document.getElementById('share-qr-modal').style.display = 'flex';
@@ -1179,10 +1179,12 @@
             }, 100);
         }
 
+        // ★ 更新：全景地圖輸出增加深綠色資訊列
         function generateMapScreenshot() {
             try {
                 let tmpCanvas = document.createElement('canvas'); 
-                tmpCanvas.width = MAP_W; tmpCanvas.height = MAP_H; 
+                // 擴充高度 50px 給底部的資訊列
+                tmpCanvas.width = MAP_W; tmpCanvas.height = MAP_H + 50; 
                 let tCtx = tmpCanvas.getContext('2d');
                 
                 let oldCtx = ctx; let oldCamX = camera.x; let oldCamY = camera.y;
@@ -1193,10 +1195,17 @@
 
                 ctx = oldCtx; camera.x = oldCamX; camera.y = oldCamY;
                 
-                tCtx.fillStyle = 'rgba(255,255,255,0.85)'; tCtx.fillRect(20, MAP_H - 100, 600, 80);
-                tCtx.fillStyle = '#14532d'; tCtx.font = 'bold 24px sans-serif';
-                tCtx.fillText(`探探里山生態任務：${eventName}`, 40, MAP_H - 60);
-                tCtx.font = '20px sans-serif'; tCtx.fillText(`偵探：${playerName} | 探索場域：${eventLocation}`, 40, MAP_H - 35);
+                // 繪製底部深綠色資訊列
+                tCtx.fillStyle = '#14532d';
+                tCtx.fillRect(0, MAP_H, MAP_W, 50);
+                
+                tCtx.fillStyle = '#ffffff';
+                tCtx.font = 'bold 24px "Segoe UI", sans-serif';
+                tCtx.textAlign = 'left';
+                tCtx.textBaseline = 'middle';
+                
+                let finalScore = document.getElementById('current-score').innerText || '0';
+                tCtx.fillText(`🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${eventLocation} | 總成績：${finalScore} 分`, 20, MAP_H + 25);
                 
                 let dataURL = tmpCanvas.toDataURL("image/png");
                 document.getElementById('map-download-btn').style.display = 'block';
@@ -1231,7 +1240,7 @@
                 tCtx.font = 'bold 60px "Segoe UI"'; tCtx.fillStyle = '#16a34a'; tCtx.fillText(`${score} 分`, 400, 460);
                 
                 tCtx.font = '18px "Segoe UI"'; tCtx.fillStyle = '#6b7280'; let dateStr = new Date().toLocaleDateString('zh-TW');
-                // ★ 修改發證單位
+                // ★ 證書發證單位確保為「探探里山永續基地」
                 tCtx.fillText(`發證日期：${dateStr} | 發證單位：探探里山永續基地`, 400, 530);
 
                 let qrContainer = document.getElementById('qrcode');
