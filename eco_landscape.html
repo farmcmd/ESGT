@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>探探里山生態小偵探</title>
-    <!-- 引入 QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -19,7 +18,6 @@
         .btn-menu { width: 50px; height: 50px; background: #fff; border-radius: 50%; border: 2px solid #ccc; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer; }
         .score-board { background: rgba(255, 255, 255, 0.9); padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; color: #2c3e50; border: 2px solid #a3d977; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         
-        /* 背包選單 (右側滑出) */
         #backpack-menu { position: absolute; top: 0; right: -300px; width: 250px; height: 100%; background: rgba(255, 255, 255, 0.95); box-shadow: -4px 0 10px rgba(0,0,0,0.3); transition: right 0.3s ease; pointer-events: auto; display: flex; flex-direction: column; z-index: 100; }
         #backpack-menu.open { right: 0; }
         .backpack-header { padding: 15px; background: #8bc34a; color: white; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
@@ -28,7 +26,6 @@
         .bp-rule-title { font-weight: bold; color: #2e7d32; margin-bottom: 5px; }
         
         .inventory-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-        .inventory-list.locked { opacity: 0.5; pointer-events: none; } /* 鎖定狀態 */
         
         .card { background: white; border: 2px solid #ddd; border-radius: 8px; padding: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: grab; position: relative; }
         .card img { width: 50px; height: 50px; object-fit: contain; background: #f0f0f0; border-radius: 4px; pointer-events: none; }
@@ -36,7 +33,6 @@
         .card-name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
         .card-type { font-size: 12px; color: #888; }
         
-        /* 首頁設定 */
         #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000&auto=format&fit=crop') center/cover; display: flex; align-items: center; justify-content: center; z-index: 500; }
         .start-modal { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
         .start-modal h1 { margin-top: 0; color: #2e7d32; text-align: center; font-size: 24px; }
@@ -44,18 +40,15 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
         .form-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         
-        /* 複選場域選單 */
         .checkbox-group { border: 1px solid #ccc; border-radius: 5px; padding: 10px; max-height: 150px; overflow-y: auto; background: #fff; }
         .checkbox-group label { display: flex; align-items: center; font-weight: normal; margin-bottom: 8px; cursor: pointer; }
         .checkbox-group input[type="checkbox"] { margin-right: 8px; width: 18px; height: 18px; }
         
         .btn-start { width: 100%; padding: 12px; background: #ff9800; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(255,152,0,0.4); margin-top: 10px; }
         
-        /* 資訊框 */
         .info-box-green { background: #e8f5e9; border: 2px solid #8bc34a; border-radius: 8px; padding: 12px; margin-top: 15px; font-size: 12px; color: #2e7d32; line-height: 1.5; }
         .info-box-green strong { display: block; margin-bottom: 4px; color: #1b5e20; }
         
-        /* 結算視窗 */
         #result-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 600; flex-direction: column; padding: 20px; }
         .result-container { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; text-align: center; }
         .result-container h2 { color: #2e7d32; margin-top: 0; }
@@ -64,13 +57,11 @@
         .btn-download { display: inline-block; padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: none; font-size: 14px; }
         .btn-restart { display: inline-block; padding: 10px 20px; background: #ff9800; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; margin-left: 10px; }
         
-        /* 隱藏區塊 */
         #cert-canvas-container, #qrcode-container { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- 首頁設定區 -->
     <div id="start-screen">
         <div class="start-modal">
             <h1>探探里山生態小偵探</h1>
@@ -112,7 +103,6 @@
         </div>
     </div>
 
-    <!-- 遊戲主畫面 -->
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="ui-layer">
@@ -131,14 +121,13 @@
                 <div class="bp-rule-title">探探里山生態微棲地探索規則：</div>
                 成功擴增棲地 <strong>(加 5 分)</strong><br>
                 引發環境危機 <strong>(扣 5 分)</strong><br>
-                <em>操作：長按卡片 0.3 秒即可抽出，請拖曳至畫面中的發光棲地框。每次僅能處理一張卡片。</em>
+                <em>操作：長按卡片 0.3 秒即可抽出至畫面。可自由拖曳至棲地框。</em>
             </div>
             <div class="inventory-list" id="inventory-list"></div>
             <button class="btn-start" style="margin: 10px; width: auto;" onclick="showResult()">結算成果</button>
         </div>
     </div>
 
-    <!-- 結算畫面 -->
     <div id="result-screen">
         <div class="result-container">
             <h2>🎉 探索完成！</h2>
@@ -165,7 +154,6 @@
     <div id="qrcode-container"></div>
 
 <script>
-// 全域變數
 let canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d');
 let gameLoopId;
@@ -173,12 +161,8 @@ let playerName = "";
 let eventLocation = "";
 let currentScore = 0;
 
-// 攝影機與角色
 let camera = { x: 400, y: 600, zoom: 1, detached: false };
-let player = { x: 400, y: 600, speed: 5, facing: 'down', state: 'idle', frame: 0 };
-
-// 選定卡片系統 (Selected Mode)
-let activeSelectedCard = null; 
+let player = { x: 400, y: 600, speed: 10, facing: 'down', state: 'idle', frame: 0 }; // 提升速度
 
 let lastMotionTime = 0;
 let isPanningMap = false;
@@ -186,12 +170,10 @@ let panStart = { x: 0, y: 0 };
 let camStart = { x: 0, y: 0 };
 let pendingPlacement = null;
 
-// 卡片與地圖資料
 let inventory = [];
 let mapOccupants = []; 
 let crisisZones = []; 
 
-// 生態邏輯資料庫
 const ECO_DATA = [
     { id: 'c1', name: '水稻', type: '植物', img: '🌾', baseScore: 1, validHabitats: ['h1', 'h5', 'h9'] },
     { id: 'c2', name: '玉米', type: '植物', img: '🌽', baseScore: 1, validHabitats: ['h1', 'h5'] },
@@ -269,13 +251,11 @@ function toggleCustomLocation() {
 
 function startGame() {
     playerName = document.getElementById('player-name').value.trim();
-    
     let locations = [];
     document.querySelectorAll('#location-select input:checked').forEach(cb => {
         locations.push(cb.value === '其他' ? document.getElementById('custom-location').value : cb.value);
     });
     eventLocation = locations.join(' + ');
-
     if (!playerName) return alert('請輸入偵探姓名！');
     if (!eventLocation) return alert('請至少選擇或輸入一個探索場域！');
 
@@ -289,11 +269,9 @@ function initGame() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     
-    // 初始化卡牌
     inventory = ECO_DATA.map(item => ({ ...item }));
     shuffle(inventory);
     
-    // 初始化樹木 (立體感)
     for(let i=0; i<35; i++) {
         trees.push({
             x: Math.random()*1500, y: Math.random()*300,
@@ -304,11 +282,9 @@ function initGame() {
     renderInventory();
     setupControls();
     
-    // 陀螺儀計步
     if (window.DeviceMotionEvent) {
         window.addEventListener('devicemotion', handleMotion);
     }
-    
     gameLoopId = requestAnimationFrame(gameLoop);
 }
 
@@ -328,18 +304,11 @@ function toggleMenu() {
     document.getElementById('backpack-menu').classList.toggle('open');
 }
 
-// 渲染背包與 Selected Mode 邏輯
+// 移除繁瑣的鎖定，恢復直覺的長按抽出
 function renderInventory() {
     const list = document.getElementById('inventory-list');
     list.innerHTML = '';
     
-    // 如果手上有卡，鎖定背包
-    if (activeSelectedCard) {
-        list.classList.add('locked');
-    } else {
-        list.classList.remove('locked');
-    }
-
     inventory.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'card';
@@ -353,16 +322,13 @@ function renderInventory() {
         
         let pressTimer;
         div.addEventListener('pointerdown', (e) => {
-            if (activeSelectedCard) return; // 防呆
             pressTimer = setTimeout(() => {
-                // 抽出卡片
                 let inst = inventory.splice(index, 1)[0];
-                activeSelectedCard = {
-                    ...inst,
-                    x: camera.x + window.innerWidth/2 - 100, // 右側偏左
-                    y: camera.y,
-                    score: 0
-                };
+                // 直接放在地圖中央偏右，立刻可拖曳，不鎖背包
+                inst.x = camera.x + 100;
+                inst.y = camera.y;
+                inst.score = 0;
+                mapOccupants.push(inst);
                 renderInventory();
             }, 300);
         });
@@ -381,19 +347,9 @@ function setupControls() {
         const worldX = e.clientX - rect.left + camera.x - canvas.width/2;
         const worldY = e.clientY - rect.top + camera.y - canvas.height/2;
         
-        // 檢查是否點擊 activeSelectedCard
-        if (activeSelectedCard) {
-            const hitActive = (Math.abs(worldX - activeSelectedCard.x) < 40 && Math.abs(worldY - activeSelectedCard.y) < 40);
-            if (hitActive) {
-                setupDrag(e, activeSelectedCard, true);
-                return;
-            }
-        }
-        
-        // 檢查一般拖曳
         let hit = mapOccupants.slice().reverse().find(o => Math.abs(worldX - o.x) < 30 && Math.abs(worldY - o.y) < 30);
         if (hit) {
-            setupDrag(e, hit, false);
+            setupDrag(e, hit);
         } else {
             isPanningMap = true;
             panStart = { x: e.clientX, y: e.clientY };
@@ -406,7 +362,6 @@ function setupControls() {
         if (isPanningMap) {
             camera.x = camStart.x - (e.clientX - panStart.x);
             camera.y = camStart.y - (e.clientY - panStart.y);
-            // 邊界
             camera.x = Math.max(canvas.width/2, Math.min(1600 - canvas.width/2, camera.x));
             camera.y = Math.max(canvas.height/2, Math.min(1200 - canvas.height/2, camera.y));
         }
@@ -418,12 +373,10 @@ function setupControls() {
 }
 
 let draggingInstance = null;
-let isActiveDrag = false;
 
-function setupDrag(e, instance, isActive) {
+function setupDrag(e, instance) {
     if(e.cancelable) e.preventDefault();
     draggingInstance = instance;
-    isActiveDrag = isActive;
     
     const moveHandler = ev => {
         const rect = canvas.getBoundingClientRect();
@@ -434,31 +387,18 @@ function setupDrag(e, instance, isActive) {
     const upHandler = () => {
         window.removeEventListener('pointermove', moveHandler);
         window.removeEventListener('pointerup', upHandler);
-        handleDragEnd(draggingInstance, isActiveDrag);
+        handleDragEnd(draggingInstance);
         draggingInstance = null;
-        isActiveDrag = false;
     };
     
     window.addEventListener('pointermove', moveHandler);
     window.addEventListener('pointerup', upHandler);
 }
 
-function handleDragEnd(inst, wasActive) {
+function handleDragEnd(inst) {
     let targetHab = habitats.find(h => inst.x >= h.x && inst.x <= h.x + h.w && inst.y >= h.y && inst.y <= h.y + h.h);
-    
-    if (wasActive) {
-        if (targetHab) {
-            askPlacement(inst, targetHab);
-        } else {
-            // 丟在空地，轉為一般 Occupant，解鎖背包
-            mapOccupants.push(activeSelectedCard);
-            activeSelectedCard = null;
-            renderInventory();
-        }
-    } else {
-        if (targetHab) {
-            askPlacement(inst, targetHab);
-        }
+    if (targetHab) {
+        askPlacement(inst, targetHab);
     }
 }
 
@@ -477,15 +417,7 @@ function askPlacement(inst, hab) {
         } else {
             if (!crisisZones.includes(hab.id)) crisisZones.push(hab.id);
         }
-        
-        if (activeSelectedCard === inst) {
-            mapOccupants.push(inst);
-            activeSelectedCard = null;
-            renderInventory();
-        }
         computeCurrentScore();
-    } else {
-        // 取消放入，保留狀態
     }
     pendingPlacement = null;
 }
@@ -499,6 +431,7 @@ function computeCurrentScore() {
     document.getElementById('score-display').innerText = currentScore;
 }
 
+// 恢復俐落、即時的運鏡與感測
 function handleMotion(e) {
     if (isPanningMap || draggingInstance || pendingPlacement) return;
     
@@ -507,17 +440,19 @@ function handleMotion(e) {
     let total = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
     
     let now = Date.now();
-    if (total > 15 && now - lastMotionTime > 300) {
+    // 降低閾值，讓走路判定更靈敏
+    if (total > 12 && now - lastMotionTime > 200) {
         player.state = 'walk';
         player.y -= player.speed;
         if(player.y < 100) player.y = 100;
         
-        camera.x += (player.x - camera.x) * 0.1;
-        camera.y += (player.y - camera.y) * 0.1;
+        // 移除平滑運鏡，直接跟隨人物
+        camera.x = player.x;
+        camera.y = player.y;
         camera.detached = false;
         
         lastMotionTime = now;
-        setTimeout(() => player.state = 'idle', 200);
+        setTimeout(() => player.state = 'idle', 150);
     }
 }
 
@@ -531,7 +466,6 @@ function update() {
     player.frame++;
 }
 
-// 繪圖區 (星露谷史詩版)
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
@@ -547,97 +481,49 @@ function draw() {
 }
 
 function drawMap() {
-    // 草地底色
-    ctx.fillStyle = '#689f38';
-    ctx.fillRect(0, 0, 1600, 1200);
-    
-    // 草叢點綴
+    ctx.fillStyle = '#689f38'; ctx.fillRect(0, 0, 1600, 1200);
     ctx.fillStyle = '#558b2f';
-    for(let i=0; i<50; i++) {
-        ctx.fillRect(Math.sin(i)*1000 + 300, Math.cos(i)*800 + 200, 15, 5);
-    }
+    for(let i=0; i<50; i++) { ctx.fillRect(Math.sin(i)*1000 + 300, Math.cos(i)*800 + 200, 15, 5); }
 
-    // 泥土路
-    ctx.lineWidth = 40;
-    ctx.strokeStyle = '#795548';
-    ctx.beginPath();
-    ctx.moveTo(400, 1200);
-    ctx.quadraticCurveTo(500, 800, 700, 600);
-    ctx.lineTo(800, 400);
-    ctx.stroke();
-    // 路面裝飾
-    ctx.lineWidth = 36;
-    ctx.strokeStyle = '#8d6e63';
-    ctx.stroke();
+    ctx.lineWidth = 40; ctx.strokeStyle = '#795548'; ctx.beginPath();
+    ctx.moveTo(400, 1200); ctx.quadraticCurveTo(500, 800, 700, 600); ctx.lineTo(800, 400); ctx.stroke();
+    ctx.lineWidth = 36; ctx.strokeStyle = '#8d6e63'; ctx.stroke();
 
-    // 溪流 (有波紋)
-    ctx.lineWidth = 80;
-    ctx.strokeStyle = '#2196f3';
-    ctx.beginPath();
-    ctx.moveTo(1100, 0);
-    ctx.lineTo(1050, 600);
-    ctx.lineTo(1200, 1200);
-    ctx.stroke();
-    // 波紋
+    ctx.lineWidth = 80; ctx.strokeStyle = '#2196f3'; ctx.beginPath();
+    ctx.moveTo(1100, 0); ctx.lineTo(1050, 600); ctx.lineTo(1200, 1200); ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fillRect(1080, 200, 30, 4);
-    ctx.fillRect(1060, 400, 20, 4);
-    ctx.fillRect(1150, 900, 40, 4);
+    ctx.fillRect(1080, 200, 30, 4); ctx.fillRect(1060, 400, 20, 4); ctx.fillRect(1150, 900, 40, 4);
 
-    // 水塘
-    ctx.fillStyle = '#42a5f5';
-    ctx.beginPath();
-    ctx.ellipse(1200, 700, 150, 100, 0, 0, Math.PI*2);
-    ctx.fill();
+    ctx.fillStyle = '#42a5f5'; ctx.beginPath(); ctx.ellipse(1200, 700, 150, 100, 0, 0, Math.PI*2); ctx.fill();
 
-    // 柏油路
-    ctx.fillStyle = '#78909c';
-    ctx.fillRect(0, 300, 1600, 60);
+    ctx.fillStyle = '#78909c'; ctx.fillRect(0, 300, 1600, 60);
     ctx.fillStyle = '#fff';
-    for (let i = 0; i < 1600; i += 60) {
-        ctx.fillRect(i, 325, 30, 10);
-    }
+    for (let i = 0; i < 1600; i += 60) { ctx.fillRect(i, 325, 30, 10); }
 
-    // 農田 (下方)
-    ctx.fillStyle = '#5d4037';
-    ctx.fillRect(200, 750, 500, 250);
-    ctx.strokeStyle = '#3e2723';
-    ctx.lineWidth = 2;
+    ctx.fillStyle = '#5d4037'; ctx.fillRect(200, 750, 500, 250);
+    ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 2;
     for(let i=770; i<1000; i+=30) {
         ctx.beginPath(); ctx.moveTo(200, i); ctx.lineTo(700, i); ctx.stroke();
-        // 作物點綴
         ctx.fillStyle = '#8bc34a';
         for(let j=220; j<680; j+=40) { ctx.beginPath(); ctx.arc(j, i, 4, 0, Math.PI*2); ctx.fill(); }
     }
 
-    // 溫室
-    ctx.fillStyle = '#cfd8dc';
-    ctx.fillRect(250, 400, 400, 150);
-    ctx.strokeStyle = '#90a4ae';
-    ctx.lineWidth = 5;
+    ctx.fillStyle = '#cfd8dc'; ctx.fillRect(250, 400, 400, 150);
+    ctx.strokeStyle = '#90a4ae'; ctx.lineWidth = 5;
     for(let i=250; i<=650; i+=50) { ctx.strokeRect(i, 400, 50, 150); }
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.fillRect(250, 400, 400, 150);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(250, 400, 400, 150);
     drawWoodSign(450, 400, '設施農業(溫室)');
 
-    // 灌溉溝渠
-    ctx.fillStyle = '#9e9e9e';
-    ctx.fillRect(25, 600, 100, 350);
-    ctx.fillStyle = '#64b5f6';
-    ctx.fillRect(40, 600, 70, 350);
+    ctx.fillStyle = '#9e9e9e'; ctx.fillRect(25, 600, 100, 350);
+    ctx.fillStyle = '#64b5f6'; ctx.fillRect(40, 600, 70, 350);
 
-    // 生物通道
-    ctx.fillStyle = '#33691e';
-    ctx.fillRect(1050, 260, 350, 20);
-    ctx.fillStyle = '#558b2f';
-    ctx.fillRect(1050, 265, 350, 10);
+    ctx.fillStyle = '#33691e'; ctx.fillRect(1050, 260, 350, 20);
+    ctx.fillStyle = '#558b2f'; ctx.fillRect(1050, 265, 350, 10);
 
-    // 農舍
     ctx.fillStyle = '#e0e0e0'; ctx.fillRect(800, 550, 80, 70);
     ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.moveTo(790, 550); ctx.lineTo(840, 500); ctx.lineTo(890, 550); ctx.fill();
     ctx.fillStyle = '#81d4fa'; ctx.fillRect(820, 570, 20, 20);
 
-    // 獨立標籤
     drawWoodSign(300, 320, '山邊道路');
 }
 
@@ -646,201 +532,111 @@ function drawWoodSign(x, y, text) {
     let textW = ctx.measureText(text).width;
     let pad = 10;
     
-    // 邊界防撞
     let finalX = x;
     if (finalX - textW/2 - pad < 0) finalX = textW/2 + pad;
     
-    ctx.fillStyle = '#8d6e63';
-    ctx.fillRect(finalX - textW/2 - pad, y - 15, textW + pad*2, 30);
-    // 鐵釘
+    ctx.fillStyle = '#8d6e63'; ctx.fillRect(finalX - textW/2 - pad, y - 15, textW + pad*2, 30);
     ctx.fillStyle = '#424242';
     ctx.beginPath(); ctx.arc(finalX - textW/2 - pad + 5, y, 3, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(finalX + textW/2 + pad - 5, y, 3, 0, Math.PI*2); ctx.fill();
     
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(text, finalX, y);
 }
 
 function drawTrees() {
     trees.forEach(t => {
-        // 樹幹
-        ctx.fillStyle = '#5d4037';
-        ctx.fillRect(t.x - 5, t.y, 10, 20);
-        // 立體樹冠
-        ctx.fillStyle = '#1b5e20';
-        ctx.beginPath(); ctx.arc(t.x, t.y - 10, t.r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#2e7d32';
-        ctx.beginPath(); ctx.arc(t.x - 5, t.y - 15, t.r*0.8, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#4caf50';
-        ctx.beginPath(); ctx.arc(t.x + 5, t.y - 20, t.r*0.6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#5d4037'; ctx.fillRect(t.x - 5, t.y, 10, 20);
+        ctx.fillStyle = '#1b5e20'; ctx.beginPath(); ctx.arc(t.x, t.y - 10, t.r, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(t.x - 5, t.y - 15, t.r*0.8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.arc(t.x + 5, t.y - 20, t.r*0.6, 0, Math.PI*2); ctx.fill();
     });
 }
 
 function drawHabitats() {
     habitats.forEach(h => {
-        // 螢光綠框
         ctx.strokeStyle = h.isBonus ? '#39FF14' : 'rgba(57, 255, 20, 0.5)'; 
-        ctx.lineWidth = 3;
-        ctx.setLineDash([10, 5]);
-        ctx.strokeRect(h.x, h.y, h.w, h.h);
-        ctx.setLineDash([]);
+        ctx.lineWidth = 3; ctx.setLineDash([10, 5]); ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]);
         
         if (h.isBonus) {
-            ctx.fillStyle = 'rgba(57,255,20,0.2)';
-            ctx.fillRect(h.x, h.y, h.w, h.h);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 16px Arial';
-            ctx.fillText('新生自然棲地', h.x + h.w/2, h.y + 20);
+            ctx.fillStyle = 'rgba(57,255,20,0.2)'; ctx.fillRect(h.x, h.y, h.w, h.h);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Arial'; ctx.fillText('新生自然棲地', h.x + h.w/2, h.y + 20);
         }
         if (crisisZones.includes(h.id)) {
-            ctx.fillStyle = 'rgba(255,0,0,0.3)';
-            ctx.beginPath();
-            ctx.arc(h.x + h.w/2, h.y + h.h/2, Math.max(h.w, h.h)/1.5, 0, Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.fillText('⚠️水源汙染', h.x + h.w/2, h.y - 10);
+            ctx.fillStyle = 'rgba(255,0,0,0.3)'; ctx.beginPath();
+            ctx.arc(h.x + h.w/2, h.y + h.h/2, Math.max(h.w, h.h)/1.5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.fillText('⚠️水源汙染', h.x + h.w/2, h.y - 10);
         }
-        
         drawWoodSign(h.x + h.w/2, h.y + h.h/2, h.name);
     });
 }
 
 function drawMapOccupants() {
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'center';
-    
+    ctx.font = '24px Arial'; ctx.textAlign = 'center';
     mapOccupants.forEach(o => {
         ctx.fillText(o.img, o.x, o.y);
         if(o.score > 0) {
-            ctx.fillStyle = '#39FF14';
-            ctx.font = 'bold 14px Arial';
-            ctx.fillText('+'+o.score, o.x + 15, o.y - 15);
-            ctx.font = '24px Arial';
+            ctx.fillStyle = '#39FF14'; ctx.font = 'bold 14px Arial';
+            ctx.fillText('+'+o.score, o.x + 15, o.y - 15); ctx.font = '24px Arial';
         }
     });
-
-    // 繪製拿在手上的卡片
-    if (activeSelectedCard) {
-        let o = activeSelectedCard;
-        // 發光底框
-        ctx.fillStyle = 'rgba(255, 152, 0, 0.5)';
-        ctx.beginPath(); ctx.arc(o.x, o.y - 8, 25, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = '#ff9800'; ctx.lineWidth = 3; ctx.stroke();
-        
-        ctx.fillText(o.img, o.x, o.y);
-        
-        // 👆 動畫提示
-        let floatY = Math.sin(Date.now() / 200) * 5;
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 16px "Microsoft JhengHei"';
-        // 文字加陰影
-        ctx.shadowColor = 'black'; ctx.shadowBlur = 4;
-        ctx.fillText('👆 拖曳我', o.x, o.y - 30 + floatY);
-        ctx.shadowBlur = 0;
-    }
 }
 
 function drawPlayer() {
-    ctx.font = '30px Arial';
-    ctx.fillText('🕵️', player.x, player.y);
-    ctx.fillStyle = 'white';
-    ctx.font = '12px Arial';
-    ctx.fillText(playerName, player.x, player.y + 15);
+    ctx.font = '30px Arial'; ctx.fillText('🕵️', player.x, player.y);
+    ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText(playerName, player.x, player.y + 15);
 }
 
-// 結算與繪製全景/證書
 function showResult() {
     document.getElementById('res-name').innerText = playerName;
     document.getElementById('res-score').innerText = currentScore;
     document.getElementById('result-screen').style.display = 'flex';
-    
     generateMapScreenshot();
     generateCertificate();
 }
 
 async function generateMapScreenshot() {
     let finalScore = currentScore;
-    
-    const tCanvas = document.createElement('canvas');
-    tCanvas.width = 1600;
-    tCanvas.height = 1250; // 保留 50px 給資訊列
+    const tCanvas = document.createElement('canvas'); tCanvas.width = 1600; tCanvas.height = 1250;
     const tCtx = tCanvas.getContext('2d');
-
-    const originalCtx = ctx;
-    const originalWidth = canvas.width;
-    const originalHeight = canvas.height;
+    const originalCtx = ctx; const originalWidth = canvas.width; const originalHeight = canvas.height;
 
     try {
-        ctx = tCtx;
-        canvas.width = 1600;
-        canvas.height = 1200;
+        ctx = tCtx; canvas.width = 1600; canvas.height = 1200;
+        drawMap(); drawHabitats(); drawMapOccupants(); drawTrees();
 
-        drawMap();
-        drawHabitats();
-        drawMapOccupants();
-        drawTrees();
-
-        // 繪製底部資訊列
-        tCtx.fillStyle = '#155d27';
-        tCtx.fillRect(0, 1200, 1600, 50);
-
-        tCtx.fillStyle = '#ffffff';
-        tCtx.font = 'bold 24px "Microsoft JhengHei", sans-serif';
-        tCtx.textAlign = 'left';
-        tCtx.textBaseline = 'middle';
+        tCtx.fillStyle = '#155d27'; tCtx.fillRect(0, 1200, 1600, 50);
+        tCtx.fillStyle = '#ffffff'; tCtx.font = 'bold 24px "Microsoft JhengHei", sans-serif';
+        tCtx.textAlign = 'left'; tCtx.textBaseline = 'middle';
         
         const infoText = `🌿 探探里山 - 全景探索紀錄 | 偵探：${playerName} | 場域：${eventLocation || '未選擇'} | 總成績：${finalScore} 分`;
         tCtx.fillText(infoText, 20, 1225);
 
-        ctx = originalCtx;
-        canvas.width = originalWidth;
-        canvas.height = originalHeight;
-        
+        ctx = originalCtx; canvas.width = originalWidth; canvas.height = originalHeight;
         const dataUrl = tCanvas.toDataURL('image/jpeg', 0.9);
         document.getElementById('map-result-img').src = dataUrl;
         
         document.getElementById('download-map-btn').onclick = () => {
             const link = document.createElement('a');
-            link.download = `探探里山_全景地圖_${playerName}.jpg`;
-            link.href = dataUrl;
-            link.click();
+            link.download = `探探里山_全景地圖_${playerName}.jpg`; link.href = dataUrl; link.click();
         };
-    } catch (e) {
-        console.error("全景圖錯誤:", e);
-        ctx = originalCtx;
-    }
+    } catch (e) { ctx = originalCtx; }
 }
 
 function generateCertificate() {
-    const certCanvas = document.getElementById('certCanvas');
-    const cCtx = certCanvas.getContext('2d');
-    
-    // 背景
+    const certCanvas = document.getElementById('certCanvas'); const cCtx = certCanvas.getContext('2d');
     cCtx.fillStyle = '#e8f5e9'; cCtx.fillRect(0, 0, 800, 600);
-    // 邊框
     cCtx.strokeStyle = '#2e7d32'; cCtx.lineWidth = 10; cCtx.strokeRect(20, 20, 760, 560);
     cCtx.strokeStyle = '#8bc34a'; cCtx.lineWidth = 4; cCtx.strokeRect(30, 30, 740, 540);
     cCtx.fillStyle = '#1b5e20';
     [ [20,20], [750,20], [20,550], [750,550] ].forEach(pos => cCtx.fillRect(pos[0], pos[1], 30, 30));
 
-    cCtx.fillStyle = '#1b5e20';
-    cCtx.textAlign = 'center';
-    cCtx.font = 'bold 36px "Microsoft JhengHei"';
+    cCtx.fillStyle = '#1b5e20'; cCtx.textAlign = 'center'; cCtx.font = 'bold 36px "Microsoft JhengHei"';
     cCtx.fillText('探探里山永續生態與農村風俗文化導覽', 400, 100);
+    cCtx.fillStyle = '#388e3c'; cCtx.font = 'bold 28px "Microsoft JhengHei"'; cCtx.fillText('結業證書', 400, 160);
+    cCtx.fillStyle = '#333'; cCtx.font = '20px "Microsoft JhengHei"'; cCtx.fillText('茲證明', 400, 240);
     
-    cCtx.fillStyle = '#388e3c';
-    cCtx.font = 'bold 28px "Microsoft JhengHei"';
-    cCtx.fillText('結業證書', 400, 160);
-
-    cCtx.fillStyle = '#333';
-    cCtx.font = '20px "Microsoft JhengHei"';
-    cCtx.fillText('茲證明', 400, 240);
-    
-    cCtx.font = 'bold 40px "Microsoft JhengHei"';
-    cCtx.fillText(playerName, 400, 300);
-
+    cCtx.font = 'bold 40px "Microsoft JhengHei"'; cCtx.fillText(playerName, 400, 300);
     cCtx.font = '20px "Microsoft JhengHei"';
     cCtx.fillText('在生態導覽與農村風俗文化導覽活動中，認真學習，', 400, 360);
     cCtx.fillText('獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。', 400, 400);
@@ -849,32 +645,22 @@ function generateCertificate() {
     cCtx.fillText('活動名稱：山里共學', 400, 470);
     cCtx.fillText(`路線(場域)：${eventLocation || '未選擇'} | 評測總成績：${currentScore} 分`, 400, 510);
     
-    cCtx.fillStyle = '#2e7d32';
-    cCtx.font = 'bold 24px "Microsoft JhengHei"';
-    cCtx.textAlign = 'left';
+    cCtx.fillStyle = '#2e7d32'; cCtx.font = 'bold 24px "Microsoft JhengHei"'; cCtx.textAlign = 'left';
     cCtx.fillText('🌿 探探里山永續基地', 150, 540);
 
-    cCtx.fillStyle = '#666';
-    cCtx.font = '14px "Microsoft JhengHei"';
-    cCtx.textAlign = 'right';
+    cCtx.fillStyle = '#666'; cCtx.font = '14px "Microsoft JhengHei"'; cCtx.textAlign = 'right';
     let today = new Date();
     cCtx.fillText(`證書編號：ESG-${Math.random().toString(36).substr(2, 6).toUpperCase()}`, 750, 530);
     cCtx.fillText(`核發日期：${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`, 750, 555);
 
-    // QR Code
     document.getElementById('qrcode-container').innerHTML = '';
     try {
-        new QRCode(document.getElementById('qrcode-container'), {
-            text: "https://www.facebook.com/satoyamadining", width: 80, height: 80
-        });
+        new QRCode(document.getElementById('qrcode-container'), { text: "https://www.facebook.com/satoyamadining", width: 80, height: 80 });
         setTimeout(() => {
             let qrImg = document.querySelector('#qrcode-container img');
             if(qrImg && qrImg.src) {
                 let img = new Image();
-                img.onload = () => {
-                    cCtx.drawImage(img, 50, 470, 80, 80);
-                    outputCert();
-                };
+                img.onload = () => { cCtx.drawImage(img, 50, 470, 80, 80); outputCert(); };
                 img.src = qrImg.src;
             } else { outputCert(); }
         }, 500);
@@ -886,9 +672,7 @@ function outputCert() {
     document.getElementById('cert-result-img').src = dataUrl;
     document.getElementById('download-cert-btn').onclick = () => {
         const link = document.createElement('a');
-        link.download = `探探里山_結業證書_${playerName}.jpg`;
-        link.href = dataUrl;
-        link.click();
+        link.download = `探探里山_結業證書_${playerName}.jpg`; link.href = dataUrl; link.click();
     };
 }
 </script>
