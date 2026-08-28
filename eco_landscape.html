@@ -64,7 +64,7 @@
             z-index: 150; pointer-events: auto; touch-action: pan-y;
             align-items: center; padding-right: 5px; transition: opacity 0.3s;
         }
-        .side-inventory.locked { opacity: 0.5; pointer-events: none; }
+        .side-inventory.locked { opacity: 0.4; pointer-events: none; filter: grayscale(50%); }
         .side-inventory::-webkit-scrollbar { display: none; }
         
         .creature-card {
@@ -254,7 +254,6 @@
         </div>
     </div>
 
-    <!-- 動態即時計分板 -->
     <div id="live-score-board" style="display: none;">
         🌿 探索積分：<span id="current-score" style="color: #ea580c; font-size: 24px; text-shadow: none;">0</span>
     </div>
@@ -280,9 +279,9 @@
             
             <div id="backpack-info" style="background: #ffeed4; border: 2px solid #8f562b; padding: 12px; font-size: 13px; margin-bottom: 15px; color: #5e3212; border-radius: 8px; text-align: left; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
                 💡 <b>探探里山生態微棲地探索規則：</b><br>
-                • <b>如何操作：</b>在右側卡牌庫<b style="color:#d32f2f;">「長按卡片 0.3 秒」</b>，卡片會移出並顯示「拖曳我」，此時即可按住它拖入棲地中。<br>
+                • <b>如何操作：</b>在右側卡牌庫<b style="color:#d32f2f;">「長按卡片 0.3 秒」</b>抽出卡片，抽出後該卡片會顯示 👆 並成為唯一可拖曳的目標，拖入虛線框內即可放置。<br>
                 • <b>擴增棲地：</b>在同一棲地放入 <b>3張正確</b> 的生物卡，將觸發藍白虛線的「新生自然棲地」 <b style="color:#16a34a;">(加 5 分)</b>！<br>
-                • <b>環境危機：</b>放入 <b>3張錯誤</b> 的卡片，將引發黑白虛線的「危機地帶」(如路殺、水源汙染) <b style="color:#ef4444;">(扣 5 分)</b>。<br>
+                • <b>環境危機：</b>放入 <b>3張錯誤</b> 的卡片，將引發黑白虛線的「危機地帶」 <b style="color:#ef4444;">(扣 5 分)</b>。<br>
                 • ☠️ <b>生態陷阱：</b><span style="color:#b91c1c;">拖曳時若不慎「路過」危機地帶，生物會被強制吸入並死亡(卡片變灰)，結算倒扣 1 分！</span><br>
             </div>
 
@@ -339,8 +338,11 @@
             { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
         ];
 
+        // 確保這在 HTML 渲染前就存在於 global
         function toggleCustomLocation() {
-            document.getElementById('custom-location-group').style.display = document.getElementById('loc-other-cb').checked ? 'block' : 'none';
+            const group = document.getElementById('custom-location-group');
+            const cb = document.getElementById('loc-other-cb');
+            if(group && cb) group.style.display = cb.checked ? 'block' : 'none';
         }
 
         function showShareQR() {
@@ -1254,6 +1256,7 @@
                 
                 new QRCode(qrContainer, { text: `https://farmcmd.github.io/ESGT/?cert=${vCode}`, width: 100, height: 100, colorDark : "#166534" });
                 
+                // 確保 QRCode 有足夠時間渲染後再繪製到證書上
                 setTimeout(() => {
                     try {
                         let qrImg = qrContainer.querySelector('img');
@@ -1264,3 +1267,18 @@
                             let img = new Image();
                             img.onload = () => { 
                                 tCtx.drawImage(img, 640, 440, 100, 100);
+                                finalizeCert();
+                            };
+                            img.src = targetSrc;
+                        } else {
+                            finalizeCert();
+                        }
+                    } catch(e) { finalizeCert(); }
+                }, 100);
+            } catch (err) {
+                console.error("Certificate Generation Error", err);
+            }
+        }
+    </script>
+</body>
+</html>
