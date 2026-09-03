@@ -278,13 +278,19 @@
                 </div>
             </div>
             <h3 class="text-lg font-black text-gray-800 mb-2">掃描 QR Code</h3>
-            <p id="qr-event-name" class="text-[13px] font-bold text-blue-600 mb-5 bg-blue-50 py-1.5 px-3 rounded-lg truncate border border-blue-100"></p>
+            <p id="qr-event-name" class="text-[13px] font-bold text-blue-600 mb-4 bg-blue-50 py-1.5 px-3 rounded-lg truncate border border-blue-100"></p>
             
             <div class="bg-white p-2 rounded-xl border border-gray-200 shadow-sm flex justify-center items-center mb-4 mx-auto w-fit">
                 <img id="qr-code-img" src="" alt="QR Code" class="w-44 h-44 object-contain">
             </div>
             
-            <p class="text-xs text-gray-500 font-medium">讓朋友使用手機相機掃描此條碼<br>即可直接開啟專屬報名頁面</p>
+            <!-- ✨ 新增：網址顯示與複製按鈕 -->
+            <div class="flex bg-gray-50 border border-gray-200 rounded-lg overflow-hidden mb-3 shadow-inner">
+                <input type="text" id="qr-url-display" readonly class="w-full px-2 py-2 text-[10px] text-gray-500 font-mono truncate bg-transparent focus:outline-none">
+                <button onclick="window.copyQRUrl()" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 transition-colors text-white text-[11px] font-black flex items-center whitespace-nowrap shrink-0"><i class="fas fa-copy mr-1.5"></i> 複製</button>
+            </div>
+            
+            <p class="text-[11px] text-gray-400 font-medium">請使用手機相機掃描，或直接複製專屬連結</p>
         </div>
     </div>
 
@@ -796,7 +802,24 @@
                 qrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(finalUrl)}&margin=10`;
             }
             
+            // ✨ 填入網址到輸入框
+            const qrUrlDisplay = document.getElementById('qr-url-display');
+            if (qrUrlDisplay) qrUrlDisplay.value = finalUrl;
+            
             window.openModal('qrcode-modal');
+        };
+
+        // ✨ 新增：複製 QR Code 視窗內的網址
+        window.copyQRUrl = function() {
+            const qrUrlDisplay = document.getElementById('qr-url-display');
+            if (!qrUrlDisplay || !qrUrlDisplay.value) return;
+            qrUrlDisplay.select();
+            try {
+                document.execCommand('copy');
+                window.showToast('📋 專屬網址已複製！');
+            } catch (err) {
+                window.showToast('🚨 複製失敗，請手動框選複製');
+            }
         };
 
         // ✨ 核心升級 1：實作按需載入 (Lazy Loading) 的查詢名單引擎
@@ -886,16 +909,20 @@
             if (!window.currentEventsList.length) return;
             const today = new Date(); today.setHours(0,0,0,0);
             
+            // ✨ 演算法升級：計算時間戳並執行排序
             const processedEvents = [...window.currentEventsList].map(ev => { 
                 let isExpired = false; 
+                let parsedDate = 0;
                 
                 if(ev.date) { 
                     const dateMatch = ev.date.match(/\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/);
                     if (dateMatch) {
                         const evDate = new Date(dateMatch[0].replace(/[\-\.]/g, '/')); 
+                        parsedDate = evDate.getTime();
                         if(!isNaN(evDate) && evDate < today) isExpired = true; 
                     } else {
                         const fallbackDate = new Date(ev.date.replace(/[\-\.]/g, '/')); 
+                        parsedDate = fallbackDate.getTime();
                         if(!isNaN(fallbackDate) && fallbackDate < today) isExpired = true; 
                     }
                 } 
@@ -909,8 +936,15 @@
                     }
                 }
 
-                return { ...ev, isExpired }; 
-            }).sort((a,b) => (a.isExpired === b.isExpired ? 0 : (a.isExpired ? 1 : -1)));
+                return { ...ev, isExpired, parsedDate }; 
+            }).sort((a,b) => {
+                // 1. 過期的沉到底部
+                if (a.isExpired !== b.isExpired) return a.isExpired ? 1 : -1;
+                // 2. 針對未過期的，由近到遠排序 (日期小的在上面)
+                if (!a.isExpired) return a.parsedDate - b.parsedDate;
+                // 3. 針對已過期的，由近到遠排序 (剛過期的在上面)
+                return b.parsedDate - a.parsedDate;
+            });
 
             container.innerHTML = processedEvents.map((ev, index) => {
                 const isExpired = ev.isExpired;
@@ -919,6 +953,18 @@
                 const shortId = `${dateStr}-${index + 1}`;
                 const regs = window.globalEventRegistrations[ev.name] || [];
                 
+                // ✨ 體驗升級：計算倒數天數
+                let daysRemainingText = '';
+                if (!isExpired && ev.parsedDate > 0) {
+                    const timeDiff = ev.parsedDate - today.getTime();
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    if (daysDiff === 0) {
+                        daysRemainingText = '<span class="text-red-500 font-black ml-1.5 tracking-wider">(今天辦理)</span>';
+                    } else if (daysDiff > 0) {
+                        daysRemainingText = `<span class="text-emerald-600 font-black ml-1.5 tracking-wider">(倒數 ${daysDiff} 天)</span>`;
+                    }
+                }
+
                 let calendarUrl = '#';
                 if(ev.date && !isExpired) {
                     try {
@@ -1044,12 +1090,13 @@
                     // ✨ 優先讀取卡片本身存著的網址，沒有才啟動安全降級組合
                     let initUrl = savedBoardUrl || ((savedBoardType === 'ent' || savedBoardType === 'gov') ? `https://farmcmd.github.io/ESGT/#ESG-board${savedBoardCode ? '-' + savedBoardCode : ''}` : '');
 
-                    return `<div data-event-id="${shortId}" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm relative opacity-95 mb-4 transition-all hover:shadow-md">
+                    // ✨ 視覺升級：過期卡片改為灰色背景 (bg-gray-100) 與內陰影
+                    return `<div data-event-id="${shortId}" class="bg-gray-100 p-6 rounded-2xl border border-gray-300 shadow-inner relative opacity-90 mb-4 transition-all hover:opacity-100">
                         <div class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-xl z-10 flex items-center shadow-sm">
                             <i class="fas fa-flag-checkered mr-1.5"></i>活動已結束
                         </div>
-                        <h4 class="text-lg sm:text-xl font-bold text-gray-600 mb-3 pr-20 leading-snug break-words">${ev.name}</h4>
-                        <div class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded text-xs font-bold border border-gray-200 mb-4">
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-500 mb-3 pr-20 leading-snug break-words">${ev.name}</h4>
+                        <div class="inline-flex items-center px-3 py-1 bg-white text-gray-500 rounded text-xs font-bold border border-gray-200 mb-4 shadow-sm">
                             <i class="fas fa-clock mr-1.5"></i> 辦理日期: ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-60">#${shortId}</span>
                         </div>
                         
@@ -1146,8 +1193,9 @@
                         
                         <!-- ✨ 版面重組：將日期、QR Code 與分享按鈕統一移至頂部工具列，徹底解放標題寬度 -->
                         <div class="flex flex-wrap justify-between items-start mb-3 gap-y-3 gap-x-2">
+                            <!-- ✨ UI 升級：加入倒數天數 (daysRemainingText) -->
                             <div class="inline-flex items-center px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-bold border border-yellow-300 shadow-sm shrink-0">
-                                <i class="fas fa-clock mr-1.5"></i> 辦理日期: ${ev.date} <span class="ml-2 font-mono text-[10px] opacity-50">#${shortId}</span>
+                                <i class="fas fa-clock mr-1.5"></i> 辦理日期: ${ev.date} ${daysRemainingText} <span class="ml-2 font-mono text-[10px] opacity-50">#${shortId}</span>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <button onclick="window.showQRCode('${shortId}', '${safeEventName}')" class="px-2.5 py-1.5 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center" title="顯示專屬 QR Code"><i class="fas fa-qrcode text-base"></i></button>
