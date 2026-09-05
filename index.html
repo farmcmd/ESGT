@@ -169,19 +169,22 @@
             <div id="transport-section" class="mb-8 scroll-mt-4 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-mori-light relative overflow-hidden">
                 <div class="text-center mb-6">
                     <h2 class="text-xl md:text-2xl lg:text-3xl font-bold text-mori-forest flex flex-wrap items-center justify-center gap-2 mb-3">
-                        <span><i class="fas fa-hand-point-down mr-2 text-yellow-500 animate-bounce"></i> 請選擇交通方式，啟動任務</span>
+                        <span><i class="fas fa-hand-point-down mr-2 text-yellow-500 animate-bounce"></i> 請選擇交通方式，啟動個人減碳任務</span>
                         <button onclick="document.getElementById('transport-info-text').classList.toggle('hidden')" class="w-7 h-7 rounded-full bg-red-500 border-2 border-white text-white hover:bg-red-600 hover:scale-110 transition-all duration-300 flex items-center justify-center text-sm shadow-md outline-none relative -top-0.5 animate-pulse"><i class="fas fa-question font-black"></i></button>
                     </h2>
                     <div id="transport-info-text" class="hidden max-w-3xl mx-auto bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner text-sm text-gray-600 leading-relaxed text-left md:text-center mt-2 relative transition-all">
                         <button onclick="document.getElementById('transport-info-text').classList.add('hidden')" class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-lg"><i class="fas fa-times"></i></button>
                         <div class="mb-3 pr-6 space-y-2">
-                            <p><i class="fas fa-info-circle text-mori-sage mr-1"></i> 交通共乘計算依據，以<a href="https://data.moenv.gov.tw/dataset/detail/CFP_P_02" target="_blank" class="text-blue-500 hover:text-blue-700 underline mx-1 font-bold">環境部環境資料開放平臺</a>做為參考數據計算<br>認定碳抵消方式，需依貴單位永續部門/管理師核定為準。</p>
+                            <p><i class="fas fa-info-circle text-mori-sage mr-1"></i> 交通減碳計算依據，以<a href="https://data.moenv.gov.tw/dataset/detail/CFP_P_02" target="_blank" class="text-blue-500 hover:text-blue-700 underline mx-1 font-bold">環境部環境資料開放平臺</a>做為參考數據計算<br>認定碳抵消方式，需依貴單位永續部門/管理師核定為準。</p>
                             <div class="text-[12px] bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-gray-600 text-left space-y-1.5">
-                                <p class="font-black text-mori-forest"><i class="fas fa-bullseye mr-1"></i>📌 邊界界定與計算依據：</p>
-                                <p class="text-gray-700">依據台灣官方資料制定之標準係數（參考交通部運研所運具碳排放研究與環境部產品碳足跡標籤）：</p>
+                                <p class="font-black text-mori-forest"><i class="fas fa-bullseye mr-1"></i>📌 個人減碳邊界界定與計算依據：</p>
+                                <p class="text-gray-700">依據台灣官方資料制定之標準係數（參考交通部運研所運具碳排放研究與環境部產品碳足跡標籤），全數採「個人每人每公里減碳量」計算：</p>
                                 <ul class="list-disc list-inside space-y-1 pl-1 text-gray-600 font-medium">
+                                    <li><span class="font-bold text-gray-800">計算原則：</span>以「每位旅者」所貢獻的個人減碳量為唯一統計基準，杜絕整車重複申報。</li>
                                     <li><span class="font-bold text-gray-800">基準線 (Baseline)：</span>單人自駕燃油小客車（<span class="font-bold text-mori-forest">173 g CO₂e / 人-公里</span>）</li>
                                     <li><span class="font-bold text-gray-800">計算公式：</span>個人減碳量 (g/km) = 基準線 (173 g) － 該運具每人每公里排碳量</li>
+                                    <li><span class="font-bold text-gray-800">共乘巴士 (以35人滿載均攤)：</span>大型客車整車排放約 980 g/km，依 35 人搭乘計算，每人每公里排碳約 28 g CO₂e；個人每公里減碳量為 <span class="font-bold text-mori-forest">145 g CO₂e / 人-公里</span>（173 － 28）</li>
+                                    <li><span class="font-bold text-gray-800">共乘汽車/機車：</span>依各車型排碳總量均攤至同行共乘人數（2人、3人、4人、5人）計算個人減碳量</li>
                                 </ul>
                             </div>
                         </div>
@@ -646,11 +649,11 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
-        // 交通工具減碳基準係數 (依據台灣環境部碳足跡標籤與交通部運研所數據，基準線為單人自駕 173 gCO2e/km)
+        // 交通工具個人減碳基準係數 (依據台灣環境部碳足跡標籤與交通部運研所數據，基準線為單人自駕 173 gCO2e/人-公里)
         const transportData = {
             walk_bike: { name: '步行/單車', icon: '🚶🚲', reduction: 173, mode: 'WALKING' },
+            bus_train: { name: '共乘巴士(35人)', icon: '🚌', reduction: 145, mode: 'TRANSIT' },
             thsr: { name: '搭乘高鐵', icon: '🚆', reduction: 141, mode: 'TRANSIT' },
-            bus_train: { name: '共乘巴士', icon: '🚌', reduction: 133, mode: 'TRANSIT' },
             carpool_4: { name: '4人共乘', icon: '🚗', reduction: 130, mode: 'DRIVING' },
             carpool_5: { name: '5人共乘', icon: '🚐', reduction: 129, mode: 'DRIVING' },
             carpool_2_moto: { name: '機車/2人', icon: '🛵', reduction: 125, mode: 'DRIVING' },
@@ -1799,7 +1802,7 @@
                     const km = parseFloat(qmInput.value) || 0;
                     if (km > 0) {
                         const currentT = state.currentTransport || 'bus_train';
-                        const redRate = transportData[currentT]?.reduction || 133;
+                        const redRate = transportData[currentT]?.reduction || 145;
                         const reduction = Math.round(km * redRate);
                         qmResult.innerHTML = `減碳 <span class="text-emerald-700 font-black text-base">${reduction}</span> g`;
                         qmSubmit.disabled = false;
