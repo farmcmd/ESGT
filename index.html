@@ -43,7 +43,6 @@
         .group-header { cursor: pointer; transition: background-color 0.2s; }
         .group-header:hover { background-color: #f1f8f5; }
         
-        /* 針對深層連結的發光提示動畫 */
         @keyframes highlightPulse {
             0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
@@ -54,25 +53,103 @@
 </head>
 <body class="font-sans antialiased overflow-x-hidden">
     <div id="custom-toast"></div>
-    <div id="system-broadcast-container" class="relative w-full z-[100] hidden"><div id="system-broadcast-bar" class="w-full bg-yellow-500 text-white px-4 py-2.5 text-sm font-bold flex items-center justify-between shadow-md cursor-pointer hover:bg-yellow-600 transition-colors"><div class="flex items-center overflow-hidden flex-1 justify-center pl-6"><i class="fas fa-bullhorn mr-2 animate-bounce shrink-0"></i><span id="system-broadcast-text" class="tracking-wide truncate max-w-3xl">載入中...</span></div><div class="flex items-center shrink-0 ml-2"><span class="bg-yellow-600 text-yellow-100 text-[10px] px-2 py-0.5 rounded-full mr-2 hidden md:inline-block shadow-inner font-mono tracking-wider" id="broadcast-count-badge">0 則</span><i class="fas fa-chevron-down transition-transform duration-300" id="broadcast-chevron"></i></div></div><div id="system-broadcast-dropdown" class="absolute top-full left-0 w-full bg-white shadow-2xl border-b-4 border-yellow-400 transform origin-top scale-y-0 opacity-0 transition-all duration-300 max-h-[50vh] overflow-y-auto custom-scrollbar"><div class="bg-gray-50 py-2 px-4 border-b border-gray-100 flex justify-between items-center sticky top-0 z-10"><span class="text-xs font-bold text-gray-500"><i class="fas fa-history mr-1"></i>歷史廣播紀錄</span><button id="close-broadcast-btn" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times"></i></button></div><div id="broadcast-list" class="max-w-4xl mx-auto p-2"></div></div></div>
+    <div id="system-broadcast-container" class="relative w-full z-[100] hidden">
+        <div id="system-broadcast-bar" class="w-full bg-yellow-500 text-white px-4 py-2.5 text-sm font-bold flex items-center justify-between shadow-md cursor-pointer hover:bg-yellow-600 transition-colors">
+            <div class="flex items-center overflow-hidden flex-1 justify-center pl-6">
+                <i class="fas fa-bullhorn mr-2 animate-bounce shrink-0"></i>
+                <span id="system-broadcast-text" class="tracking-wide truncate max-w-3xl">載入中...</span>
+            </div>
+            <div class="flex items-center shrink-0 ml-2">
+                <span class="bg-yellow-600 text-yellow-100 text-[10px] px-2 py-0.5 rounded-full mr-2 hidden md:inline-block shadow-inner font-mono tracking-wider" id="broadcast-count-badge">0 則</span>
+                <i class="fas fa-chevron-down transition-transform duration-300" id="broadcast-chevron"></i>
+            </div>
+        </div>
+        <div id="system-broadcast-dropdown" class="absolute top-full left-0 w-full bg-white shadow-2xl border-b-4 border-yellow-400 transform origin-top scale-y-0 opacity-0 transition-all duration-300 max-h-[50vh] overflow-y-auto custom-scrollbar">
+            <div class="bg-gray-50 py-2 px-4 border-b border-gray-100 flex justify-between items-center sticky top-0 z-10">
+                <span class="text-xs font-bold text-gray-500"><i class="fas fa-history mr-1"></i>歷史廣播紀錄</span>
+                <button id="close-broadcast-btn" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="broadcast-list" class="max-w-4xl mx-auto p-2"></div>
+        </div>
+    </div>
     
     <header class="bg-gradient-to-b from-mori-forest to-mori-sage text-white text-center shadow-lg relative min-h-[300px] flex flex-col">
         <div class="w-full flex justify-between items-center gap-2 px-3 pt-3 md:px-5 md:pt-4 relative z-[100]">
-            <div id="connection-status" class="flex items-center bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all" title="資料庫連線狀態"><i class="fas fa-circle-notch fa-spin text-yellow-400 mr-2 text-xs"></i><span class="text-white/90 text-xs font-bold tracking-wide">連線中...</span></div>
+            <div id="connection-status" class="flex items-center bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all" title="資料庫連線狀態">
+                <i class="fas fa-circle-notch fa-spin text-yellow-400 mr-2 text-xs"></i>
+                <span class="text-white/90 text-xs font-bold tracking-wide">連線中...</span>
+            </div>
             <div class="flex items-center gap-2">
-                <button onclick="window.open('https://farmcmd.github.io/ESGT/lottery.html?auth=545366', '_blank')" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group cursor-pointer outline-none"><i class="fas fa-gift text-yellow-400 text-sm group-hover:scale-110 group-hover:animate-bounce transition-transform"></i><span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">抽獎中心</span></button>
-                <button id="header-share-btn" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group"><i class="fas fa-qrcode text-white/90 text-sm group-hover:scale-110 transition-transform"></i><span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">分享</span></button>
-                <div class="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm notranslate"><i class="fas fa-globe text-white/90 text-sm"></i><span class="text-white/90 text-xs font-bold tracking-wide">Language:</span><select id="custom-lang-select" class="bg-white/95 text-mori-dark text-[13px] font-bold rounded flex-1 px-2 py-0.5 outline-none cursor-pointer border border-white/50 shadow-inner min-w-[130px]"><option value="zh-TW">繁體中文 (預設)</option><option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="vi">Tiếng Việt</option></select></div>
+                <button onclick="window.open('https://farmcmd.github.io/ESGT/lottery.html?auth=545366', '_blank')" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group cursor-pointer outline-none">
+                    <i class="fas fa-gift text-yellow-400 text-sm group-hover:scale-110 group-hover:animate-bounce transition-transform"></i>
+                    <span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">抽獎中心</span>
+                </button>
+                <button id="header-share-btn" class="flex items-center gap-1.5 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm transition-all group">
+                    <i class="fas fa-qrcode text-white/90 text-sm group-hover:scale-110 transition-transform"></i>
+                    <span class="text-white/90 text-xs font-bold tracking-wide hidden md:inline">分享</span>
+                </button>
+                <div class="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 shadow-sm notranslate">
+                    <i class="fas fa-globe text-white/90 text-sm"></i>
+                    <span class="text-white/90 text-xs font-bold tracking-wide">語言:</span>
+                    <select id="custom-lang-select" class="bg-white/95 text-mori-dark text-[13px] font-bold rounded flex-1 px-2 py-0.5 outline-none cursor-pointer border border-white/50 shadow-inner min-w-[130px]">
+                        <option value="zh-TW">繁體中文 (預設)</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                        <option value="vi">Tiếng Việt</option>
+                    </select>
+                </div>
             </div>
             <div id="google_translate_element" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;"></div>
         </div>
         <canvas id="header-canvas"></canvas>
         <div class="flex-1 flex flex-col justify-center items-center pb-8 px-4 md:pb-12 w-full z-10">
-            <div class="header-content w-full max-w-4xl mx-auto"><h1 class="text-3xl md:text-5xl font-bold tracking-wide mb-2 drop-shadow-md">探探里山-永續旅遊</h1><p class="mt-2 text-[10px] md:text-xs font-light tracking-wider opacity-90">~探索里山的生活方式，學習低碳永續~行動紀錄與活動成果平台~</p></div>
-            <div class="mt-4 mb-2 flex justify-center items-center gap-2 text-sm md:text-base text-white bg-black/20 py-2.5 px-6 rounded-full backdrop-blur-md inline-flex shadow-inner border border-white/10 transition-all hover:bg-black/30"><i class="fas fa-user-circle text-white/80 mr-1 text-lg"></i><span class="font-medium tracking-wide">旅者: </span><input type="text" id="player-name" class="border-b-2 border-white/50 focus:outline-none focus:border-white text-center w-24 md:w-32 bg-transparent text-white font-bold placeholder-white/50 transition-colors" placeholder="輸入姓名"><span class="mx-2 text-white/40">|</span><span class="font-medium tracking-wide">代碼: </span><span id="player-code" class="font-mono font-bold text-yellow-300 tracking-widest text-lg drop-shadow-sm">...</span><div class="w-px h-4 bg-white/30 mx-1 md:mx-2"></div><button onclick="window.openModal('enterprise-info-modal')" class="bg-mori-forest/90 hover:bg-green-500 text-white rounded-full w-7 h-7 flex items-center justify-center transition-all shadow-md border border-white/30 group relative outline-none" title="設定所屬企業/團體"><i class="fas fa-leaf text-sm group-hover:scale-110 transition-transform"></i></button></div>
-            <div id="enterprise-badge-container" class="hidden mb-2 justify-center items-center gap-2 text-[11px] md:text-xs text-white bg-mori-forest/80 py-1.5 px-4 rounded-full backdrop-blur-md shadow-inner border border-white/20 transition-all animate-fade-in-down cursor-pointer hover:bg-mori-dark" onclick="window.openModal('enterprise-info-modal')" title="點擊修改綁定"><i class="fas fa-building mr-1 text-yellow-300"></i><span id="display-enterprise-name" class="font-bold tracking-wide"></span><span class="mx-1 text-white/40">|</span><i class="fas fa-id-badge mr-1 text-blue-300"></i><span id="display-enterprise-emp-id" class="font-mono font-bold tracking-wider"></span></div>
-            <div id="lottery-ticket-bar" class="hidden items-center justify-between bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200 shadow-sm overflow-hidden animate-fade-in-down w-full max-w-4xl mt-4 mb-2 gap-2"><div class="flex items-center overflow-hidden flex-1"><div class="flex items-center shrink-0 mr-2 sm:mr-3 border-r border-yellow-200 pr-2 sm:pr-3"><i class="fas fa-ticket-alt text-yellow-500 text-sm md:text-base mr-1.5"></i><span class="text-[11px] md:text-xs font-black text-yellow-800 tracking-wide">序號</span></div><div id="lottery-ticket-list" class="flex gap-2 overflow-x-auto ticket-scrollbar pb-1.5 items-center flex-1"><span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span></div></div><button onclick="window.openLatestEventsModal()" class="shrink-0 flex items-center bg-white/95 px-3 py-1.5 rounded-lg border-2 border-yellow-300 shadow-sm hover:shadow hover:bg-yellow-50 transition-all group active:scale-95 cursor-pointer"><i class="fas fa-gift text-red-500 mr-1.5 group-hover:animate-bounce text-[12px]"></i><span class="text-[10px] md:text-[11px] font-black text-red-600 tracking-wide mr-1.5 whitespace-nowrap">活動列表</span><div class="h-3.5 w-px bg-yellow-200 mx-1.5"></div><span id="latest-event-light" class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shadow-sm animate-pulse" title="抽獎活動關閉中"></span><i class="fas fa-chevron-right text-[10px] text-yellow-500 ml-1.5 group-hover:translate-x-0.5 transition-transform"></i></button></div>
-            <div class="flex justify-center w-full mt-4 mb-2 animate-fade-in-down" style="animation-delay:0.1s;"><a href="https://farmcmd.github.io/ESGT/events.html" target="_blank" class="px-6 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm flex items-center group animate-pulse inline-flex"><i class="fas fa-ticket-alt mr-2 group-hover:scale-110 transition-transform"></i> 前往最新活動與報名資訊</a></div>
+            <div class="header-content w-full max-w-4xl mx-auto">
+                <h1 class="text-3xl md:text-5xl font-bold tracking-wide mb-2 drop-shadow-md">探探里山-永續旅遊</h1>
+                <p class="mt-2 text-[10px] md:text-xs font-light tracking-wider opacity-90">~探索里山的生活方式，學習低碳永續~行動紀錄與活動成果平台~</p>
+            </div>
+            <div class="mt-4 mb-2 flex justify-center items-center gap-2 text-sm md:text-base text-white bg-black/20 py-2.5 px-6 rounded-full backdrop-blur-md inline-flex shadow-inner border border-white/10 transition-all hover:bg-black/30">
+                <i class="fas fa-user-circle text-white/80 mr-1 text-lg"></i>
+                <span class="font-medium tracking-wide">旅者: </span>
+                <input type="text" id="player-name" class="border-b-2 border-white/50 focus:outline-none focus:border-white text-center w-24 md:w-32 bg-transparent text-white font-bold placeholder-white/50 transition-colors" placeholder="輸入姓名">
+                <span class="mx-2 text-white/40">|</span>
+                <span class="font-medium tracking-wide">代碼: </span>
+                <span id="player-code" class="font-mono font-bold text-yellow-300 tracking-widest text-lg drop-shadow-sm">...</span>
+                <div class="w-px h-4 bg-white/30 mx-1 md:mx-2"></div>
+                <button onclick="window.openModal('enterprise-info-modal')" class="bg-mori-forest/90 hover:bg-green-500 text-white rounded-full w-7 h-7 flex items-center justify-center transition-all shadow-md border border-white/30 group relative outline-none" title="設定所屬企業/團體">
+                    <i class="fas fa-leaf text-sm group-hover:scale-110 transition-transform"></i>
+                </button>
+            </div>
+            <div id="enterprise-badge-container" class="hidden mb-2 justify-center items-center gap-2 text-[11px] md:text-xs text-white bg-mori-forest/80 py-1.5 px-4 rounded-full backdrop-blur-md shadow-inner border border-white/20 transition-all animate-fade-in-down cursor-pointer hover:bg-mori-dark" onclick="window.openModal('enterprise-info-modal')" title="點擊修改綁定">
+                <i class="fas fa-building mr-1 text-yellow-300"></i>
+                <span id="display-enterprise-name" class="font-bold tracking-wide"></span>
+                <span class="mx-1 text-white/40">|</span>
+                <i class="fas fa-id-badge mr-1 text-blue-300"></i>
+                <span id="display-enterprise-emp-id" class="font-mono font-bold tracking-wider"></span>
+            </div>
+            <div id="lottery-ticket-bar" class="hidden items-center justify-between bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200 shadow-sm overflow-hidden animate-fade-in-down w-full max-w-4xl mt-4 mb-2 gap-2">
+                <div class="flex items-center overflow-hidden flex-1">
+                    <div class="flex items-center shrink-0 mr-2 sm:mr-3 border-r border-yellow-200 pr-2 sm:pr-3">
+                        <i class="fas fa-ticket-alt text-yellow-500 text-sm md:text-base mr-1.5"></i>
+                        <span class="text-[11px] md:text-xs font-black text-yellow-800 tracking-wide">序號</span>
+                    </div>
+                    <div id="lottery-ticket-list" class="flex gap-2 overflow-x-auto ticket-scrollbar pb-1.5 items-center flex-1">
+                        <span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>
+                    </div>
+                </div>
+                <button onclick="window.openLatestEventsModal()" class="shrink-0 flex items-center bg-white/95 px-3 py-1.5 rounded-lg border-2 border-yellow-300 shadow-sm hover:shadow hover:bg-yellow-50 transition-all group active:scale-95 cursor-pointer">
+                    <i class="fas fa-gift text-red-500 mr-1.5 group-hover:animate-bounce text-[12px]"></i>
+                    <span class="text-[10px] md:text-[11px] font-black text-red-600 tracking-wide mr-1.5 whitespace-nowrap">活動列表</span>
+                    <div class="h-3.5 w-px bg-yellow-200 mx-1.5"></div>
+                    <span id="latest-event-light" class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shadow-sm animate-pulse" title="抽獎活動關閉中"></span>
+                    <i class="fas fa-chevron-right text-[10px] text-yellow-500 ml-1.5 group-hover:translate-x-0.5 transition-transform"></i>
+                </button>
+            </div>
+            <div class="flex justify-center w-full mt-4 mb-2 animate-fade-in-down" style="animation-delay:0.1s;">
+                <a href="https://farmcmd.github.io/ESGT/events.html" target="_blank" class="px-6 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm flex items-center group animate-pulse inline-flex">
+                    <i class="fas fa-ticket-alt mr-2 group-hover:scale-110 transition-transform"></i> 前往最新活動與報名資訊
+                </a>
+            </div>
         </div>
     </header>
 
@@ -89,9 +166,35 @@
                 <div class="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center"><button onclick="window.openDashboardModal('ent')" class="w-full sm:w-auto px-6 py-3.5 bg-mori-wood hover:bg-yellow-700 text-white text-[16px] font-black tracking-wide rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border-2 border-mori-wood/50 flex items-center justify-center group"><i class="fas fa-building mr-2 text-xl group-hover:scale-110 transition-transform"></i> 前往 企業永續儀表板</button><button onclick="window.openDashboardModal('gov')" class="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-[16px] font-black tracking-wide rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border-2 border-blue-400/50 flex items-center justify-center group"><i class="fas fa-landmark mr-2 text-xl group-hover:scale-110 transition-transform"></i> 前往 永續政府計畫儀表板</button></div>
             </div>
 
-            <!-- 交通任務選擇區 -->
             <div id="transport-section" class="mb-8 scroll-mt-4 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-mori-light relative overflow-hidden">
-                <div class="text-center mb-6"><h2 class="text-xl md:text-2xl lg:text-3xl font-bold text-mori-forest flex flex-wrap items-center justify-center gap-2 mb-3"><span><i class="fas fa-hand-point-down mr-2 text-yellow-500 animate-bounce"></i> 請選擇交通方式，啟動任務</span><button onclick="document.getElementById('transport-info-text').classList.toggle('hidden')" class="w-7 h-7 rounded-full bg-red-500 border-2 border-white text-white hover:bg-red-600 hover:scale-110 transition-all duration-300 flex items-center justify-center text-sm shadow-md outline-none relative -top-0.5 animate-pulse"><i class="fas fa-question font-black"></i></button></h2><div id="transport-info-text" class="hidden max-w-3xl mx-auto bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner text-sm text-gray-600 leading-relaxed text-left md:text-center mt-2 relative transition-all"><button onclick="document.getElementById('transport-info-text').classList.add('hidden')" class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-lg"><i class="fas fa-times"></i></button><div class="mb-3 pr-6 space-y-2"><p><i class="fas fa-info-circle text-mori-sage mr-1"></i> 交通共乘計算依據，以 <a href="https://data.moenv.gov.tw/dataset/detail/CFP_P_02" target="_blank" class="text-blue-500 hover:underline font-bold">環境部環境資料開放平臺</a> 做為參考數據計算<br>認定碳抵消方式，需依貴單位永續部門/管理師核定為準。</p><p class="text-[12px] bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-600 text-left"><span class="font-black text-mori-forest"><i class="fas fa-bullseye mr-1"></i>📌 邊界界定：</span>本系統減碳基準線 (Baseline) 設定為『單人駕駛燃油小客車』。</p></div><div class="bg-emerald-50/80 p-3 md:p-4 rounded-xl border border-emerald-200 shadow-sm transition-all text-left mt-2"><div class="flex flex-col sm:flex-row items-center justify-between gap-3"><div class="flex items-center gap-2 w-full sm:w-auto"><span class="text-[13px] font-bold text-emerald-800"><i class="fas fa-keyboard mr-1.5"></i>手動里程：</span><div class="flex items-center bg-white px-2 py-1.5 rounded-lg border border-emerald-200 w-full sm:w-32 shadow-inner"><input type="number" id="quick-manual-km" class="w-full bg-transparent text-sm focus:outline-none font-bold text-gray-700 text-center" placeholder="15" min="0.1" step="0.1"><span class="font-bold text-gray-500 text-[11px] mr-1">km</span></div></div><div class="flex items-center gap-4 w-full sm:w-auto justify-between"><div id="quick-manual-result" class="text-[13px] font-bold text-emerald-800 min-w-[90px] text-right">減碳 0 g</div><button id="quick-manual-submit-btn" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-black tracking-wide rounded-lg shadow-md transition opacity-50 cursor-not-allowed" disabled>登錄成就</button></div></div></div></div></div>
+                <div class="text-center mb-6">
+                    <h2 class="text-xl md:text-2xl lg:text-3xl font-bold text-mori-forest flex flex-wrap items-center justify-center gap-2 mb-3">
+                        <span><i class="fas fa-hand-point-down mr-2 text-yellow-500 animate-bounce"></i> 請選擇交通方式，啟動任務</span>
+                        <button onclick="document.getElementById('transport-info-text').classList.toggle('hidden')" class="w-7 h-7 rounded-full bg-red-500 border-2 border-white text-white hover:bg-red-600 hover:scale-110 transition-all duration-300 flex items-center justify-center text-sm shadow-md outline-none relative -top-0.5 animate-pulse"><i class="fas fa-question font-black"></i></button>
+                    </h2>
+                    <div id="transport-info-text" class="hidden max-w-3xl mx-auto bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner text-sm text-gray-600 leading-relaxed text-left md:text-center mt-2 relative transition-all">
+                        <button onclick="document.getElementById('transport-info-text').classList.add('hidden')" class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-lg"><i class="fas fa-times"></i></button>
+                        <div class="mb-3 pr-6 space-y-2">
+                            <p><i class="fas fa-info-circle text-mori-sage mr-1"></i> 交通共乘計算依據，以<a href="https://data.moenv.gov.tw/dataset/detail/CFP_P_02" target="_blank" class="text-blue-500 hover:text-blue-700 underline mx-1 font-bold">環境部環境資料開放平臺</a>做為參考數據計算<br>認定碳抵消方式，需依貴單位永續部門/管理師核定為準。</p>
+                            <p class="text-[12px] bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-600 text-left"><span class="font-black text-mori-forest"><i class="fas fa-bullseye mr-1"></i>📌 邊界界定：</span>本系統減碳基準線 (Baseline) 設定為『單人駕駛燃油小客車』。</p>
+                        </div>
+                        <div class="bg-emerald-50/80 p-3 md:p-4 rounded-xl border border-emerald-200 shadow-sm transition-all text-left mt-2">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                    <span class="text-[13px] font-bold text-emerald-800"><i class="fas fa-keyboard mr-1.5"></i>手動里程：</span>
+                                    <div class="flex items-center bg-white px-2 py-1.5 rounded-lg border border-emerald-200 w-full sm:w-32 shadow-inner">
+                                        <input type="number" id="quick-manual-km" class="w-full bg-transparent text-sm focus:outline-none font-bold text-gray-700 text-center" placeholder="15" min="0.1" step="0.1"><span class="font-bold text-gray-500 text-[11px] mr-1">km</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 w-full sm:w-auto justify-between">
+                                    <div id="quick-manual-result" class="text-[13px] font-bold text-emerald-800 min-w-[90px] text-right">減碳 0 g</div>
+                                    <button id="quick-manual-submit-btn" onclick="window.triggerConfirmQuickManual()" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-[13px] font-black tracking-wide rounded-lg shadow-md transition opacity-50 cursor-not-allowed" disabled>登錄成就</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 交通卡片容器 -->
                 <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3 bg-gray-50/80 p-3 md:p-5 rounded-xl border border-gray-100 shadow-inner" id="transport-grid"></div>
             </div>
 
@@ -150,17 +253,16 @@
              <div class="flex justify-end items-center mb-4 md:mb-6"><button id="change-transport-button" class="px-4 py-2 bg-mori-light text-mori-forest rounded-full hover:bg-mori-sage hover:text-white text-xs font-bold transition shadow-sm border border-mori-sage/20">更換交通</button></div>
              
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                <!-- 地圖顯示區 (包含浮動面板) -->
+                <!-- 地圖顯示區 -->
                 <div class="lg:col-span-2 flex flex-col gap-4 relative">
                     
-                    <!-- 🌟 永續低碳基地夥伴/官方活動列表 (移至地圖上方) -->
+                    <!-- 官方專案活動列表 -->
                     <div class="accordion-item shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative z-30">
                         <button class="accordion-header w-full p-4 font-bold text-gray-700 flex justify-between items-center text-left focus:outline-none bg-gray-50 hover:bg-gray-100 transition">
                             <span class="text-[15px]"><i class="fas fa-map-marker-alt mr-2 text-mori-forest"></i>永續低碳基地夥伴/官方活動列表</span>
                             <i class="fas fa-chevron-down transition-transform duration-300 transform rotate-180"></i>
                         </button>
                         <div class="accordion-content p-4 pt-2 block">
-                            <!-- 🌟 新增動態提示：指向探探里山永續廊道 -->
                             <div class="text-center mb-1 animate-bounce">
                                 <span class="text-[11px] font-black text-red-500 bg-red-50 px-2 py-1 rounded-full border border-red-200 shadow-sm"><i class="fas fa-hand-point-down mr-1"></i>由此處加入行程</span>
                             </div>
@@ -178,7 +280,6 @@
                                     <span class="px-5 py-1.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-[14px] font-black tracking-widest shadow-md flex items-center border-2 border-white ring-2 ring-yellow-100/50 relative z-10">
                                         <i class="fas fa-crown mr-2 text-yellow-100 animate-bounce"></i>企業 / 團體永續專案活動
                                     </span>
-                                    <!-- 🌟 新增動態提示：指向下方的活動列表 -->
                                     <div class="mt-1 animate-bounce relative z-10">
                                         <span class="text-[11px] font-black text-red-500 bg-white px-2 py-0.5 rounded-full border border-red-200 shadow-sm"><i class="fas fa-arrow-down mr-1"></i>由此處加入行程</span>
                                     </div>
@@ -193,18 +294,16 @@
                     <div class="relative bg-white p-2 rounded-xl shadow-md border border-gray-200 h-[600px] w-full overflow-hidden">
                          <div id="map" class="w-full h-full rounded-lg bg-gray-200"></div>
                          
-                         <!-- 🗺️ 覆蓋在地圖上的載入遮罩 -->
                          <div id="map-overlay" class="absolute inset-0 bg-gray-100 flex flex-col justify-center items-center z-10 transition-opacity duration-500 rounded-lg"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-mori-forest mb-4"></div><p class="text-mori-dark font-bold text-sm" id="map-loading-text">地圖準備中...</p></div>
                          
-                         <!-- 🌟 浮動路線控制面板 (Backdrop Blur) -->
-                         <div class="absolute top-4 right-4 md:top-6 md:right-6 w-[280px] md:w-[320px] bg-white/50 hover:bg-white/75 backdrop-blur-md p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/40 z-20 transition-all duration-300">
+                         <!-- 浮動路線控制面板 -->
+                         <div class="absolute top-4 right-4 md:top-6 md:right-6 w-[280px] md:w-[320px] bg-white/75 hover:bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/40 z-20 transition-all duration-300">
                              <div class="flex flex-col gap-2">
                                  <div class="flex justify-between items-center mb-1 border-b border-gray-200/60 pb-2 cursor-pointer group" onclick="document.getElementById('route-points-container').classList.toggle('hidden'); document.getElementById('route-chevron').classList.toggle('rotate-180');">
                                      <p class="text-[12px] text-gray-700 font-black tracking-wide flex items-center group-hover:text-mori-forest transition-colors"><i class="fas fa-route text-mori-forest mr-1.5"></i>加入多點行程/計算里程<i id="route-chevron" class="fas fa-chevron-up ml-2 text-[10px] text-gray-400 transition-transform duration-300"></i></p>
                                      <button onclick="event.stopPropagation(); window.clearRoute()" class="text-[10px] bg-red-50 text-red-500 px-2 py-1 rounded hover:bg-red-100 transition shadow-sm border border-red-100 shrink-0 outline-none"><i class="fas fa-trash-alt mr-1"></i>清空</button>
                                  </div>
                                  
-                                 <!-- Route List Container (Collapsible) -->
                                  <div id="route-points-container" class="transition-all duration-300 origin-top">
                                      <div id="route-points-list" class="flex flex-col gap-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mt-1">
                                          <div class="text-[11px] font-bold text-gray-400 text-center py-3 bg-white/50 rounded-lg border border-dashed border-gray-300 leading-relaxed px-1">請從探探里山永續廊道或上方「專案活動」中，<br>依序選擇地點加入路線</div>
@@ -214,7 +313,6 @@
                                  </div>
 
                                  <div class="flex flex-col gap-2 mt-2 pt-3 border-t border-gray-200/60">
-                                     <!-- 快速切換交通方式下拉選單 -->
                                      <div class="flex items-center gap-2 bg-[#F0F7F4]/80 p-2 rounded-lg border border-mori-light/50 backdrop-blur-sm">
                                          <i class="fas fa-bus text-mori-sage text-[13px] shrink-0"></i>
                                          <select id="quick-transport-select" onchange="window.selectTransport(this.value)" class="flex-1 bg-white border border-gray-200 rounded text-[12px] font-bold text-gray-700 py-1.5 px-2 focus:outline-none focus:border-mori-sage shadow-sm cursor-pointer">
@@ -225,7 +323,7 @@
                                          加入站點後，點擊計算路線
                                      </div>
                                      <div class="grid grid-cols-2 gap-2 mt-1">
-                                         <button id="preview-trip-button" class="hidden py-2 bg-mori-forest text-white rounded-lg shadow-md font-bold text-[12px] hover:bg-mori-dark transition outline-none transform active:scale-95"><i class="fas fa-calculator mr-1.5"></i>計算路線</button>
+                                         <button id="preview-trip-button" onclick="window.calculateMultiStopRoute()" class="hidden py-2 bg-mori-forest text-white rounded-lg shadow-md font-bold text-[12px] hover:bg-mori-dark transition outline-none transform active:scale-95"><i class="fas fa-calculator mr-1.5"></i>計算路線</button>
                                          <button id="confirm-trip-button" onclick="window.triggerConfirmTrip()" class="hidden py-2 bg-yellow-500 text-white rounded-lg shadow-md font-bold text-[12px] animate-pulse cursor-pointer hover:bg-yellow-600 transition-colors outline-none"><i class="fas fa-check-circle mr-1"></i>獲取積分</button>
                                      </div>
                                  </div>
@@ -234,19 +332,14 @@
                     </div>
                 </div>
 
-                <!-- 側邊欄控制區 -->
                 <div class="lg:col-span-1 flex flex-col gap-3 overflow-y-auto max-h-[80vh] no-scrollbar pb-24">
                     
-                    <!-- 跨縣市設定 -->
                     <div class="accordion-item shrink-0 bg-blue-50/50 rounded-xl shadow-sm border border-blue-100 overflow-hidden"><button class="accordion-header w-full p-4 font-bold text-blue-800 flex justify-between items-center text-left focus:outline-none hover:bg-blue-100/50 transition"><span class="text-[15px]"><i class="fas fa-map-marked-alt mr-2"></i>跨縣市大眾運輸起訖</span><i class="fas fa-chevron-down transition-transform duration-300"></i></button><div class="accordion-content p-4 pt-2 hidden"><div class="flex flex-col gap-2"><select id="city-select" class="w-full p-2 border border-blue-200 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-400"></select><div class="flex gap-2 mt-1"><button id="add-city-route-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm transition hover:bg-blue-700 shadow-sm"><i class="fas fa-plus mr-1"></i> 加入至旅遊路線</button></div></div></div></div>
 
-                    <!-- 市區短距移動 -->
                     <div class="accordion-item shrink-0 bg-emerald-50/50 rounded-xl shadow-sm border border-emerald-100 overflow-hidden"><button class="accordion-header w-full p-4 font-bold text-emerald-800 flex justify-between items-center text-left focus:outline-none hover:bg-emerald-100/50 transition"><span class="text-[15px]"><i class="fas fa-route mr-2"></i>市區短距移動</span><i class="fas fa-chevron-down transition-transform duration-300"></i></button><div class="accordion-content p-4 pt-2 hidden"><div class="grid grid-cols-4 gap-2 mb-3"><button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="3">3KM</button><button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="5">5KM</button><button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="10">10KM</button><button class="short-dist-btn py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg font-bold text-[11px] hover:bg-emerald-100 transition" data-km="15">15KM</button></div><div id="short-dist-result" class="text-xs font-bold text-mori-wood mb-2 text-center min-h-[1.5em]"></div><button id="confirm-short-dist-btn" onclick="window.triggerConfirmShortDist()" class="hidden w-full py-2 bg-yellow-500 text-white rounded-lg font-bold text-sm shadow animate-bounce mb-3 cursor-pointer">確認並獲取積分</button><div class="mt-2 pt-4 border-t border-emerald-200/60 relative"><div class="flex justify-between items-center mb-2.5"><p class="text-xs font-bold text-emerald-800 flex items-center tracking-wide"><i class="fas fa-calculator mr-1.5 text-emerald-600"></i>地圖自由試算 <span class="bg-emerald-100 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded ml-1.5">不計分</span></p><button id="trial-lock-btn" class="text-gray-400 hover:text-emerald-600 transition p-1 outline-none relative z-20" onclick="window.showToast('請至管理面板查看權限狀態');"><i class="fas fa-lock text-sm"></i></button></div><div id="trial-locked-overlay" class="absolute inset-x-0 bottom-0 top-9 bg-white/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center rounded-lg border border-gray-100 transition-all duration-300 cursor-pointer group hover:bg-white/90" onclick="window.showToast('請由管理員於此面板開啟權限');"><i class="fas fa-lock text-3xl text-gray-300 mb-2 group-hover:text-emerald-500 transition-all"></i><p class="text-[11px] font-bold text-gray-500 tracking-wide">未解鎖</p></div><div id="trial-unlocked-content"><p id="trial-expiry-text" class="text-[10px] text-emerald-600 font-bold mb-2 text-right hidden"></p><button id="enable-calc-ref-btn" class="w-full py-2.5 bg-white border border-emerald-300 text-emerald-700 rounded-lg font-bold text-xs hover:bg-emerald-50 transition shadow-sm flex justify-center items-center group outline-none"><i class="fas fa-map-marked-alt mr-2 group-hover:scale-110 transition-transform"></i> 開啟地圖點選模式</button><div id="calc-ref-status" class="text-[11px] text-emerald-700 font-bold mt-3 text-center hidden bg-emerald-100/50 py-2 rounded-lg border border-emerald-200 shadow-inner animate-pulse"></div><div id="calc-ref-result" class="text-[13px] font-black text-emerald-800 mt-3 text-center hidden bg-[#E8F8EE] py-2.5 rounded-lg border-2 border-emerald-300 shadow-sm leading-relaxed"></div></div></div></div></div>
 
-                    <!-- 實體任務 -->
                     <div class="accordion-item shrink-0 bg-purple-50/50 rounded-xl shadow-sm border border-purple-100 overflow-hidden"><button class="accordion-header w-full p-4 font-bold text-purple-800 flex justify-between items-center text-left focus:outline-none hover:bg-purple-100/50 transition"><span class="text-[15px]"><i class="fas fa-flag-checkered mr-2"></i>實體任務與驗證</span><i class="fas fa-chevron-down transition-transform duration-300"></i></button><div class="accordion-content p-4 pt-2 hidden"><div class="flex gap-2"><input type="text" id="verification-code-input" class="w-full p-2 border border-purple-200 rounded-lg text-sm outline-none bg-white focus:border-purple-400" placeholder="輸入通關代碼 (6碼)"><button id="submit-activity-log" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-sm shadow-sm whitespace-nowrap hover:bg-purple-700 transition">驗證</button></div></div></div>
                     
-                    <!-- 數位學習 -->
                     <div class="accordion-item shrink-0 bg-indigo-50/50 rounded-xl shadow-sm border border-indigo-100 overflow-hidden">
                         <button class="accordion-header w-full p-4 font-bold text-indigo-800 flex justify-between items-center text-left focus:outline-none hover:bg-indigo-100/50 transition">
                             <span class="text-[15px]"><i class="fas fa-laptop-house mr-2"></i>數位互動學習</span>
@@ -268,10 +361,8 @@
                         </div>
                     </div>
                     
-                    <!-- 永續心得 -->
                     <div class="accordion-item shrink-0 bg-[#F0F7F4] rounded-xl shadow-sm border border-mori-light overflow-hidden"><button class="accordion-header w-full p-4 font-bold text-mori-forest flex justify-between items-center text-left focus:outline-none hover:bg-[#E8EFE6] transition"><span class="text-[15px]"><i class="fas fa-edit mr-2 text-mori-sage"></i>永續行動心得</span><i class="fas fa-chevron-down transition-transform duration-300"></i></button><div class="accordion-content p-4 pt-2 hidden"><div class="flex justify-end mb-2"><button onclick="window.openChatModal()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[11px] font-bold shadow-sm transition flex items-center group border border-blue-200"><i class="fas fa-robot mr-1.5 group-hover:animate-bounce"></i>聊聊獲得靈感？</button></div><textarea id="sustainable-action-log" class="w-full p-3 border border-mori-light rounded-lg text-sm outline-none bg-white focus:border-mori-sage" rows="2" placeholder="記錄您的永續心得..."></textarea><button id="log-action-button" class="w-full mt-2 py-2 bg-mori-sage text-white rounded-lg hover:bg-mori-forest font-bold transition shadow-sm"><i class="fas fa-edit mr-1"></i> 記錄心得</button></div></div>
 
-                    <!-- 歷史紀錄 -->
                     <div class="accordion-item shrink-0 bg-gray-50 rounded-xl shadow-sm border border-gray-200 overflow-hidden"><button class="accordion-header w-full p-4 font-bold text-gray-700 flex justify-between items-center text-left focus:outline-none hover:bg-gray-100 transition"><span class="text-[15px]"><i class="fas fa-history mr-2 text-gray-500"></i>歷史紀錄與帳號管理</span><i class="fas fa-chevron-down transition-transform duration-300"></i></button><div class="accordion-content p-4 pt-2 hidden space-y-4"><div class="bg-white p-3 rounded-lg border border-gray-200 shadow-inner"><h4 class="text-xs font-bold text-gray-600 mb-2 border-b pb-1"><i class="fas fa-list-ul mr-1"></i>近期行動紀錄</h4><div id="logged-actions-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div></div><div class="bg-yellow-50/50 p-3 rounded-lg border border-yellow-100 shadow-inner"><h4 class="text-xs font-bold text-yellow-800 mb-2 border-b border-yellow-200 pb-1"><i class="fas fa-trophy mr-1"></i>歸戶結算紀錄</h4><div id="checkout-history-list" class="space-y-1.5 max-h-32 overflow-y-auto pr-1"></div></div>
                         <button id="download-blank-btn" class="w-full py-2 bg-white border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-100 transition text-xs font-bold shadow-sm flex items-center justify-center mt-2"><i class="fas fa-undo mr-2"></i> 下載空白重置檔</button>
                     </div></div>
@@ -288,9 +379,7 @@
                 <p class="text-xs text-gray-500 mt-1">點擊標題展開活動詳情與規範，完成歸戶即可自動獲取抽獎資格！</p>
             </div>
             <div class="flex-grow overflow-y-auto custom-scrollbar p-2">
-                <div id="latest-events-accordion-container" class="space-y-3">
-                    <!-- JS 動態渲染折疊內容 -->
-                </div>
+                <div id="latest-events-accordion-container" class="space-y-3"></div>
             </div>
             <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end flex-shrink-0">
                 <button class="px-5 py-2.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition shadow-sm" onclick="window.closeModal('latest-events-modal')">關閉</button>
@@ -374,7 +463,6 @@
         </div>
     </div>
 
-    <!-- 綠色消費 SROI Modal -->
     <div id="green-consumption-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content max-w-lg p-6 border-t-4 border-mori-forest bg-white relative shadow-2xl">
             <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition" onclick="window.closeModal('green-consumption-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -382,7 +470,7 @@
             <div class="space-y-4 tab-content" id="tab-green">
                 <div>
                     <label class="block text-[13px] font-bold text-gray-600 mb-2">1. 選擇標章或行動類型 (點擊選擇)</label>
-                    <div class="grid grid-cols-3 gap-2 max-h-[35vh] overflow-y-auto pr-1 custom-scrollbar pb-1">
+                    <div class="grid grid-cols-3 gap-2 max-h-[35vh] overflow-y-auto pr-1 custom-scrollbar pb-1" id="green-labels-container">
                         <div class="label-card flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-all text-center" data-type="有機農產"><i class="fas fa-leaf text-2xl text-gray-500 mb-2 transition-colors"></i><span class="text-[11px] font-bold text-gray-600 transition-colors">有機農產</span></div>
                         <div class="label-card flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-all text-center" data-type="產銷履歷"><i class="fas fa-qrcode text-2xl text-gray-500 mb-2 transition-colors"></i><span class="text-[11px] font-bold text-gray-600 transition-colors">產銷履歷</span></div>
                         <div class="label-card flex flex-col items-center justify-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-all text-center" data-type="台灣優良"><i class="fas fa-award text-2xl text-gray-500 mb-2 transition-colors"></i><span class="text-[11px] font-bold text-gray-600 transition-colors">台灣優良</span></div>
@@ -428,7 +516,7 @@
                         </div>
                         <div class="col-span-1 sm:col-span-1">
                             <label class="block text-xs font-bold text-gray-500 mb-1.5">單價 (TWD)</label>
-                            <input type="number" id="green-price" class="w-full p-2.5 border border-gray-200 rounded-xl text-center" min="0">
+                            <input type="number" id="green-price" class="w-full p-2.5 border border-gray-200 rounded-xl text-center" min="0" placeholder="0">
                         </div>
                     </div>
                 </div>
@@ -456,7 +544,6 @@
         </div>
     </div>
 
-    <!-- 🌟 管理員訓練與控制 Modal -->
     <div id="training-cert-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content max-w-4xl p-6 bg-white border-t-4 border-blue-500 rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10" onclick="window.closeModal('training-cert-modal')"><i class="fas fa-times text-xl"></i></button>
@@ -465,7 +552,6 @@
             </div>
             
             <div class="flex-grow overflow-y-auto custom-scrollbar p-2 space-y-6">
-                <!-- 全域權限控制區 -->
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <h4 class="font-bold text-gray-700 mb-3"><i class="fas fa-key mr-2 text-blue-500"></i>全域功能解鎖控制</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -509,7 +595,6 @@
         </div>
     </div>
 
-    <!-- 🌟 分享 QR Code Modal -->
     <div id="share-qrcode-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content max-w-sm p-6 bg-white border-t-4 border-blue-500 rounded-2xl shadow-2xl relative text-center">
             <button class="close-button absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition outline-none" onclick="window.closeModal('share-qrcode-modal')">
@@ -531,22 +616,16 @@
         </div>
     </div>
 
-    <div id="export-options-modal" class="modal-overlay hidden"><div class="modal-content max-w-sm p-6 bg-white"><button onclick="window.closeModal('export-options-modal')">關閉</button><p>請選擇匯出</p><button id="btn-export-local">下載</button></div></div>
     <div id="auth-modal" class="modal-overlay hidden"><div class="modal-content max-w-sm p-6"><button onclick="window.closeModal('auth-modal')" class="absolute top-4 right-4 text-gray-400">X</button><h3 id="auth-modal-title" class="font-bold text-lg mb-3"></h3><input type="password" id="auth-pwd-input" class="w-full border p-2 rounded mb-3"><button id="auth-confirm-btn" class="w-full bg-blue-600 text-white py-2 rounded font-bold">確認</button></div></div>
     <div id="confirm-modal" class="modal-overlay hidden"><div class="modal-content max-w-sm p-6"><button onclick="window.closeModal('confirm-modal')">X</button><h3 id="confirm-modal-title"></h3><p id="confirm-modal-desc"></p><button id="confirm-ok-btn">確定</button></div></div>
-    <div id="custom-prompt-modal" class="modal-overlay hidden"><div class="modal-content"><h3 id="custom-prompt-title"></h3><input type="text" id="custom-prompt-input"><button id="custom-prompt-cancel">取消</button><button id="custom-prompt-confirm">確認</button></div></div>
     <div id="chat-iframe-modal" class="modal-overlay hidden" style="z-index: 9950;"><div class="modal-content w-full max-w-md h-[92vh] p-0"><div class="bg-blue-600 text-white p-3 flex justify-between"><h3>小幫手</h3><button onclick="window.closeModal('chat-iframe-modal')">X</button></div><iframe id="chat-iframe" src="" class="w-full h-full"></iframe></div></div>
     <div id="reward-verification-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6 bg-white border-t-4 border-yellow-500 relative text-center shadow-2xl"><button class="close-button absolute top-4 right-4 text-gray-400" onclick="window.closeModal('reward-verification-modal')">X</button><h3 class="text-xl font-bold mb-2">旅程獎勵驗證</h3><input type="password" id="reward-verify-code" class="w-full p-3 border mb-4"><div class="flex flex-col gap-3"><button id="reward-verify-full-btn" onclick="window.verifyReward(1)" class="py-3 bg-yellow-500 text-white rounded-xl">確認驗證 (100%)</button><button id="reward-verify-tenth-btn" onclick="window.verifyReward(0.1)" class="py-3 bg-gray-100 rounded-xl">免驗證 (10%)</button></div></div></div>
     <div id="qr-scan-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6"><button class="absolute top-4 right-4 text-gray-400 text-xl" onclick="window.closeScannerModal()"><i class="fas fa-times"></i></button><h3 class="text-xl font-bold mb-2 text-center text-mori-forest">掃描消費憑證</h3><div id="qr-reader" class="w-full bg-black min-h-[250px] mb-4 rounded-xl overflow-hidden shadow-inner"></div><div id="qr-success-buffer" class="hidden w-full bg-green-50 p-6 min-h-[250px] flex flex-col items-center justify-center rounded-xl border border-green-200"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><p class="font-bold text-green-800 mb-4">掃描成功！</p><button id="btn-confirm-scan" class="w-full py-3 bg-green-600 hover:bg-green-700 transition text-white font-bold rounded-xl shadow-md">領取積分</button></div></div></div>
-    <div id="main-lottery-auth-modal" class="fixed inset-0 bg-black/80 z-[99999] hidden items-center justify-center p-4"><div class="bg-white max-w-sm p-6"><button onclick="window.closeLotteryAuthModal()">X</button><h2>開獎中心安全登入</h2><input type="password" id="main-lottery-pwd" class="w-full p-3"><p id="main-lottery-error" class="hidden text-red-500">密碼錯誤</p><button onclick="window.verifyLotteryAuth()" class="w-full py-3 bg-yellow-500">確認</button></div></div>
 
-    <div id="export-receipt-container" class="p-8 w-[600px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0"></div>
+    <!-- 隱藏的證書與圖卡生成容器 -->
     <div id="certificate-dom-container" class="p-8 w-[800px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans"></div>
-    
-    <!-- 新增：行程圖卡渲染隱藏容器 -->
     <div id="itinerary-card-container" class="p-8 w-[600px] absolute -left-[9999px] top-0 bg-[#F7F4EF] z-0 font-sans"></div>
 
-    <!-- Google 翻譯 -->
     <script type="text/javascript">
         function googleTranslateElementInit(){ new google.translate.TranslateElement({ pageLanguage: 'zh-TW', includedLanguages: 'zh-TW,en,ja,ko,vi,th,id,de,fr,es', autoDisplay: false }, 'google_translate_element'); }
     </script>
@@ -560,20 +639,141 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
-        const transportData={walk_bike:{name:'步行/單車',icon:'🚶🚲',reduction:950,mode:'WALKING'},bus_train:{name:'共乘巴士',icon:'🚌',reduction:400,mode:'TRANSIT'},carpool_2_moto:{name:'機車/2人',icon:'🛵',reduction:150,mode:'DRIVING'},carpool_2_car:{name:'2人共乘(汽車)',icon:'🚗',reduction:300,mode:'DRIVING'},carpool_3:{name:'3人共乘',icon:'🚗',reduction:350,mode:'DRIVING'},carpool_4:{name:'4人共乘',icon:'🚗',reduction:400,mode:'DRIVING'},carpool_5:{name:'5人共乘',icon:'🚐',reduction:450,mode:'DRIVING'},thsr:{name:'搭乘高鐵',icon:'🚆',reduction:650,mode:'TRANSIT'},drive_alone:{name:'單人自駕',icon:'🚘',reduction:0,mode:'DRIVING'}};
-        const sroiUnits=[{name:'指令教育農場',weight:1.95},{name:'阿爾喜',weight:1.95},{name:'雨社山下',weight:1.58},{name:'明揚養蜂',weight:1.58},{name:'湧健酪梨園',weight:2.66},{name:'里山餐桌團隊',weight:3.40}];
-        const taiwanCities=[{name:'基隆市',lat:25.1276,lng:121.7392},{name:'臺北市',lat:25.0330,lng:121.5654},{name:'新北市',lat:25.0110,lng:121.4653},{name:'桃園市',lat:24.9936,lng:121.3010},{name:'新竹市',lat:24.8138,lng:120.9675},{name:'新竹縣',lat:24.8298,lng:121.0126},{name:'苗栗縣',lat:24.5602,lng:120.8214},{name:'臺中市',lat:24.1477,lng:120.6736},{name:'彰化縣',lat:24.0518,lng:120.5393},{name:'南投縣',lat:23.9037,lng:120.6839},{name:'雲林縣',lat:23.7092,lng:120.4313},{name:'嘉義市',lat:23.4801,lng:120.4491},{name:'嘉義縣',lat:23.4518,lng:120.2555},{name:'臺南市',lat:22.9997,lng:120.2270},{name:'高雄市',lat:22.6273,lng:120.3014},{name:'屏東縣',lat:22.6828,lng:120.5132},{name:'宜蘭縣',lat:24.7021,lng:121.7378},{name:'花蓮縣',lat:23.9872,lng:121.6016},{name:'臺東縣',lat:22.7583,lng:121.1444},{name:'澎湖縣',lat:23.5711,lng:119.5793},{name:'金門縣',lat:24.4327,lng:118.3125},{name:'連江縣',lat:26.1505,lng:119.9360}];
+        const transportData = {
+            walk_bike: { name: '步行/單車', icon: '🚶🚲', reduction: 950, mode: 'WALKING' },
+            bus_train: { name: '共乘巴士', icon: '🚌', reduction: 400, mode: 'TRANSIT' },
+            carpool_2_moto: { name: '機車/2人', icon: '🛵', reduction: 150, mode: 'DRIVING' },
+            carpool_2_car: { name: '2人共乘(汽車)', icon: '🚗', reduction: 300, mode: 'DRIVING' },
+            carpool_3: { name: '3人共乘', icon: '🚗', reduction: 350, mode: 'DRIVING' },
+            carpool_4: { name: '4人共乘', icon: '🚗', reduction: 400, mode: 'DRIVING' },
+            carpool_5: { name: '5人共乘', icon: '🚐', reduction: 450, mode: 'DRIVING' },
+            thsr: { name: '搭乘高鐵', icon: '🚆', reduction: 650, mode: 'TRANSIT' },
+            drive_alone: { name: '單人自駕', icon: '🚘', reduction: 0, mode: 'DRIVING' }
+        };
+
+        const sroiUnits = [
+            { name: '指令教育農場', weight: 1.95 },
+            { name: '阿爾喜', weight: 1.95 },
+            { name: '雨社山下', weight: 1.58 },
+            { name: '明揚養蜂', weight: 1.58 },
+            { name: '湧健酪梨園', weight: 2.66 },
+            { name: '里山餐桌團隊', weight: 3.40 }
+        ];
+
+        const taiwanCities = [
+            { name: '基隆市', lat: 25.1276, lng: 121.7392 },
+            { name: '臺北市', lat: 25.0330, lng: 121.5654 },
+            { name: '新北市', lat: 25.0110, lng: 121.4653 },
+            { name: '桃園市', lat: 24.9936, lng: 121.3010 },
+            { name: '新竹市', lat: 24.8138, lng: 120.9675 },
+            { name: '新竹縣', lat: 24.8298, lng: 121.0126 },
+            { name: '苗栗縣', lat: 24.5602, lng: 120.8214 },
+            { name: '臺中市', lat: 24.1477, lng: 120.6736 },
+            { name: '彰化縣', lat: 24.0518, lng: 120.5393 },
+            { name: '南投縣', lat: 23.9037, lng: 120.6839 },
+            { name: '雲林縣', lat: 23.7092, lng: 120.4313 },
+            { name: '嘉義市', lat: 23.4801, lng: 120.4491 },
+            { name: '嘉義縣', lat: 23.4518, lng: 120.2555 },
+            { name: '臺南市', lat: 22.9997, lng: 120.2270 },
+            { name: '高雄市', lat: 22.6273, lng: 120.3014 },
+            { name: '屏東縣', lat: 22.6828, lng: 120.5132 },
+            { name: '宜蘭縣', lat: 24.7021, lng: 121.7378 },
+            { name: '花蓮縣', lat: 23.9872, lng: 121.6016 },
+            { name: '臺東縣', lat: 22.7583, lng: 121.1444 }
+        ];
         
-        let state={totalMileage:0,totalCarbon:0,totalScore:0,playerName:'',playerCode:'',enterpriseName:'',entScope:'',entGreenScope:'',entSustNotes:'',entWelfareNotes:'',entEmpId:'',greenProcure:0,sroiProcure:0,projectProcure:0,activityLogs:[],checkoutHistory:[],lotteryTickets:[],currentTransport:null};
-        let globalGovData={projects:[]},globalEntData={projects:[]},globalAbsolute={carbon:0,green:0,visitor_count:0,map_trial_expiry:0,qr_scan_expiry:0},globalCerts={operators:[],lecturers:[]};
-        let db=null,isOfflineMode=false;
+        let state = {
+            totalMileage: 0,
+            totalCarbon: 0,
+            totalScore: 0,
+            heroIndex: 0,
+            playerName: '',
+            playerCode: '',
+            enterpriseName: '',
+            entScope: '',
+            entGreenScope: '',
+            entSustNotes: '',
+            entWelfareNotes: '',
+            entEmpId: '',
+            greenProcure: 0,
+            sroiProcure: 0,
+            projectProcure: 0,
+            activityLogs: [],
+            checkoutHistory: [],
+            lotteryTickets: [],
+            currentTransport: null
+        };
+
+        let globalGovData = { projects: [] }, globalEntData = { projects: [] }, globalAbsolute = { carbon: 0, green: 0, visitor_count: 0, map_trial_expiry: 0, qr_scan_expiry: 0 }, globalCerts = { operators: [], lecturers: [] };
+        let db = null, isOfflineMode = false;
         
         window.currentModalPoi = null; 
         window.routePoints = []; 
         window.mapMarkers = [];
         let globalPoiGroups = []; 
-        window.pendingTrip = { distMeters:0, distKm:0, reduction:0, isValid:false };
-        window.globalLotteryEvents=[];window.partnerEnterprises=[];
+        window.pendingTrip = { distMeters: 0, distKm: 0, reduction: 0, isValid: false };
+        window.globalLotteryEvents = [];
+        window.partnerEnterprises = [];
+
+        window.renderTransportGrid = function() {
+            const grid = document.getElementById('transport-grid');
+            const quickSelect = document.getElementById('quick-transport-select');
+            if (!grid) return;
+
+            let html = '';
+            let optionsHtml = '<option value="" disabled selected>請選擇交通方式</option>';
+
+            Object.keys(transportData).forEach(key => {
+                const item = transportData[key];
+                const isSelected = state.currentTransport === key;
+                html += `
+                    <button type="button" onclick="window.selectTransport('${key}')" class="flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200 group cursor-pointer ${isSelected ? 'bg-emerald-100 border-mori-forest shadow-md scale-105 ring-2 ring-mori-sage/50' : 'bg-white border-gray-200 hover:border-mori-sage hover:bg-gray-50 shadow-sm'}">
+                        <span class="text-2xl sm:text-3xl mb-1 group-hover:scale-110 transition-transform">${item.icon}</span>
+                        <span class="text-[12px] sm:text-xs font-bold text-gray-800 text-center leading-tight">${item.name}</span>
+                        <span class="text-[9px] sm:text-[10px] text-mori-forest font-bold mt-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">減碳 ${item.reduction}g</span>
+                    </button>
+                `;
+                optionsHtml += `<option value="${key}" ${isSelected ? 'selected' : ''}>${item.icon} ${item.name} (減碳 ${item.reduction}g)</option>`;
+            });
+
+            grid.innerHTML = html;
+            if (quickSelect) quickSelect.innerHTML = optionsHtml;
+        };
+
+        window.selectTransport = function(key) {
+            if (!transportData[key]) return;
+            state.currentTransport = key;
+            window.saveData();
+
+            const missionDisplay = document.getElementById('current-transport-display-mission');
+            if (missionDisplay) {
+                missionDisplay.innerHTML = `<i class="fas fa-check-circle mr-1.5 text-yellow-300"></i>交通方式: ${transportData[key].icon} ${transportData[key].name}`;
+            }
+
+            const quickSelect = document.getElementById('quick-transport-select');
+            if (quickSelect) quickSelect.value = key;
+
+            window.renderTransportGrid();
+
+            const homePage = document.getElementById('homepage');
+            const missionPage = document.getElementById('mission-page');
+            if (homePage && missionPage && !homePage.classList.contains('hidden')) {
+                homePage.classList.add('hidden');
+                missionPage.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (window.mapsApiReady && typeof window.renderMap === 'function') {
+                    setTimeout(window.renderMap, 150);
+                } else {
+                    window.loadGoogleMaps();
+                }
+            }
+
+            if (window.routePoints && window.routePoints.length >= 2 && typeof window.calculateMultiStopRoute === 'function') {
+                window.calculateMultiStopRoute();
+            }
+
+            window.showToast(`已切換交通方式為：${transportData[key].name}`);
+        };
 
         window.triggerConfirmTrip = function() {
             if (window.pendingTrip && window.pendingTrip.isValid) {
@@ -598,15 +798,15 @@
 
         window.triggerConfirmQuickManual = function() {
             if(window.pendingTrip && window.pendingTrip.isValid){
-                const codeInput=document.getElementById('reward-verify-code');
-                if(codeInput)codeInput.value='';
+                const codeInput = document.getElementById('reward-verify-code');
+                if(codeInput) codeInput.value = '';
                 window.openModal('reward-verification-modal');
-                const qmSubmit=document.getElementById('quick-manual-submit-btn');
-                const qmInput=document.getElementById('quick-manual-km');
-                const qmResult=document.getElementById('quick-manual-result');
-                if(qmInput) qmInput.value='';
-                if(qmResult) qmResult.textContent='減碳 0 g';
-                if(qmSubmit) { qmSubmit.disabled=true; qmSubmit.classList.add('opacity-50','cursor-not-allowed'); }
+                const qmSubmit = document.getElementById('quick-manual-submit-btn');
+                const qmInput = document.getElementById('quick-manual-km');
+                const qmResult = document.getElementById('quick-manual-result');
+                if(qmInput) qmInput.value = '';
+                if(qmResult) qmResult.textContent = '減碳 0 g';
+                if(qmSubmit) { qmSubmit.disabled = true; qmSubmit.classList.add('opacity-50','cursor-not-allowed'); }
             } else { window.showToast('請輸入有效里程', true); }
         };
 
@@ -627,8 +827,48 @@
             window.closeModal('reward-verification-modal');
         };
 
+        window.processTripCompletion = async function(distKm, carbonReduction) {
+            const distMeters = Math.round(distKm * 1000);
+            const scoreGained = Math.max(10, Math.round(carbonReduction / 10));
+            
+            state.totalMileage = (state.totalMileage || 0) + distMeters;
+            state.totalCarbon = (state.totalCarbon || 0) + carbonReduction;
+            state.totalScore = (state.totalScore || 0) + scoreGained;
+            state.heroIndex = (state.heroIndex || 0) + scoreGained * 2;
+            
+            const tName = state.currentTransport ? transportData[state.currentTransport]?.name : '低碳行程';
+            window.addLog(`完成 ${tName} 行程 ${distKm.toFixed(1)} km，減少碳排 ${carbonReduction} g，獲得 ${scoreGained} 積分`);
+            
+            if (db && !isOfflineMode) {
+                try {
+                    const todayKey = `daily_${window.getTodayKey()}_carbon`;
+                    await setDoc(doc(db, 'system_stats', 'global_absolute'), {
+                        carbon: increment(carbonReduction),
+                        [todayKey]: increment(carbonReduction)
+                    }, { merge: true });
+                } catch(e) {
+                    console.error('更新雲端碳排統計失敗', e);
+                }
+            }
+            
+            window.saveData();
+            window.updateDisplays();
+            window.renderLogs();
+            window.showToast(`🎉 恭喜完成！獲得 ${scoreGained} 積分與 ${carbonReduction}g 減碳量`);
+            window.clearRoute();
+        };
+
+        window.addLog = function(text) {
+            if (!state.activityLogs) state.activityLogs = [];
+            state.activityLogs.unshift({
+                time: window.getFormattedTime(),
+                text: text
+            });
+            if (state.activityLogs.length > 60) state.activityLogs.pop();
+        };
+
         window.stopLoadingSpinners = function(errMsg) {
-            const errHtml = `<div class="p-4 text-center text-red-500 text-[13px] font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>資料庫拒絕連線<br><span class="text-[10px] text-gray-500 mt-1 block">${errMsg}</span></div>`;
+            const errHtml = `<div class="p-4 text-center text-red-500 text-[13px] font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>資料庫連線中斷<br><span class="text-[10px] text-gray-500 mt-1 block">${errMsg}</span></div>`;
             if (document.getElementById('auth-list-container')) document.getElementById('auth-list-container').innerHTML = errHtml;
             if (document.getElementById('operator-list-container')) document.getElementById('operator-list-container').innerHTML = errHtml;
             if (document.getElementById('lecturer-list-container')) document.getElementById('lecturer-list-container').innerHTML = errHtml;
@@ -640,19 +880,19 @@
         window.updateConnectionStatus = function(status, errMsg = '') {
             const el = document.getElementById('connection-status'); if(!el) return;
             if(status === 'online') { 
-                el.innerHTML = '<i class="fas fa-link text-green-400 text-sm"></i>'; 
+                el.innerHTML = '<i class="fas fa-link text-green-400 text-sm mr-2"></i><span class="text-white/90 text-xs font-bold tracking-wide">連線正常</span>'; 
                 el.classList.remove('bg-black/40', 'bg-red-600/60', 'border-red-400/50'); el.classList.add('bg-green-600/60', 'border-green-400/50'); el.title = "資料庫連線正常";
             } else { 
-                const displayErr = errMsg ? `離線: ${errMsg.substring(0, 15)}...` : '預覽/離線模式'; 
+                const displayErr = errMsg ? `離線模式` : '離線模式'; 
                 el.innerHTML = `<i class="fas fa-unlink text-red-400 mr-2 text-xs"></i><span class="text-white/90 text-xs font-bold tracking-wide">${displayErr}</span>`; 
-                el.classList.remove('bg-black/40', 'bg-green-600/60', 'border-green-400/50'); el.classList.add('bg-red-600/60', 'border-red-400/50'); el.title = errMsg ? `錯誤詳情: ${errMsg}` : "資料庫連線失敗或處於預覽沙盒中"; 
+                el.classList.remove('bg-black/40', 'bg-green-600/60', 'border-green-400/50'); el.classList.add('bg-red-600/60', 'border-red-400/50'); el.title = errMsg ? `錯誤詳情: ${errMsg}` : "資料庫連線受阻或處於預覽環境中"; 
             }
         };
 
         window.initGlobalCounters = function() {
             if(!db) return;
             const errHandler = (err) => { 
-                if(!isOfflineMode) { isOfflineMode = true; window.showToast('資料庫連線受阻，已切換至展示模式', true); window.stopLoadingSpinners('Firestore 規則阻擋連線'); } 
+                if(!isOfflineMode) { isOfflineMode = true; window.showToast('資料庫連線受阻，切換至本機模式', true); window.stopLoadingSpinners('Firestore 規則阻擋連線'); } 
             };
             
             onSnapshot(doc(db, 'system_stats', 'global_absolute'), {includeMetadataChanges:true}, (docSnap) => { 
@@ -689,7 +929,6 @@
                 if (typeof window.renderPartnerSelect === 'function') window.renderPartnerSelect();
             }, errHandler);
 
-            // 🌟 獲取操作員名冊資料
             onSnapshot(doc(db, 'system_messages', 'certifications'), (docSnap) => {
                 if(docSnap.exists()) {
                     globalCerts = docSnap.data();
@@ -761,7 +1000,7 @@
             const confirmBtn = document.getElementById('confirm-trip-button');
             const status = document.getElementById('trip-calculation-status');
 
-            if(status) status.innerHTML = '加入站點並確認交通方式後，點擊計算路線';
+            if(status) status.innerHTML = '請加入至少兩個站點，並點擊下方「計算路線」。';
             if(confirmBtn) confirmBtn.classList.add('hidden');
             window.pendingTrip = { isValid: false };
             
@@ -792,7 +1031,7 @@
         };
 
         window.renderMapMarkers = function() {
-            if(!window.mapInstance) return;
+            if(!window.mapInstance || typeof google === 'undefined' || !google.maps) return;
             if(window.mapMarkers) window.mapMarkers.forEach(m => m.setMap(null));
             window.mapMarkers = [];
             
@@ -808,7 +1047,7 @@
                     map: window.mapInstance,
                     title: p.name,
                     label: { text: labelText, color: 'white', fontWeight: 'bold' },
-                    icon: `http://maps.google.com/mapfiles/ms/icons/${color}-dot.png`,
+                    icon: `https://maps.google.com/mapfiles/ms/icons/${color}-dot.png`,
                     animation: google.maps.Animation.DROP
                 });
                 window.mapMarkers.push(marker);
@@ -834,10 +1073,27 @@
             if (window.routePoints.length < 2) return window.showToast('請至少加入兩個站點', true);
             if (!state.currentTransport) return window.showToast('請先選擇交通方式', true);
             
-            if (!window.directionsService) { if (status) status.textContent = "地圖 API 載入中，請稍後..."; return; }
-            if (status) status.innerHTML = "<i class='fas fa-spinner fa-spin mr-1'></i> 多點路線計算中...";
-            
             const tData = transportData[state.currentTransport];
+            if (status) status.innerHTML = "<i class='fas fa-spinner fa-spin mr-1'></i> 多點路線計算中...";
+
+            if (typeof google === 'undefined' || !google.maps || !window.directionsService) {
+                let distMeters = 0;
+                for(let i=1; i<window.routePoints.length; i++) {
+                    const p1 = window.routePoints[i-1].coords;
+                    const p2 = window.routePoints[i].coords;
+                    const dLat = (p2.lat - p1.lat) * 111.32;
+                    const dLng = (p2.lng - p1.lng) * 102.57;
+                    distMeters += Math.sqrt(dLat*dLat + dLng*dLng) * 1000;
+                }
+                const distKm = distMeters / 1000;
+                const reduction = Math.round(distKm * (tData.reduction / 10));
+                window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
+                if (status) status.innerHTML = `${distKm.toFixed(1)} km | 減碳 <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
+                if (confirmBtn) confirmBtn.classList.remove('hidden');
+                if (previewBtn) previewBtn.classList.add('hidden');
+                return;
+            }
+
             if (window.fallbackPolyline) window.fallbackPolyline.setMap(null);
             window.directionsRenderer.setMap(window.mapInstance);
 
@@ -863,12 +1119,9 @@
                     if (confirmBtn) confirmBtn.classList.remove('hidden');
                     if (previewBtn) previewBtn.classList.add('hidden');
                     
-                    // 計算成功後自動摺疊清單
                     if (routeContainer && routeChevron) {
                         routeContainer.classList.add('hidden');
                         routeChevron.classList.add('rotate-180');
-                        routeChevron.classList.remove('fa-chevron-up');
-                        routeChevron.classList.add('fa-chevron-down');
                     }
 
                 } else {
@@ -888,16 +1141,13 @@
                     window.fallbackPolyline = new google.maps.Polyline({ path: path, geodesic: true, strokeColor: '#4A6741', strokeOpacity: 0.8, strokeWeight: 4, map: window.mapInstance });
                     
                     window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
-                    if (status) status.innerHTML = `<span class="block text-[11px] text-yellow-600 mb-0.5"><i class="fas fa-magic mr-1"></i>採用直線估算</span>${distKm.toFixed(1)}km | 減碳 <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
+                    if (status) status.innerHTML = `<span class="block text-[11px] text-yellow-600 mb-0.5"><i class="fas fa-magic mr-1"></i>直線估算</span>${distKm.toFixed(1)}km | 減碳 <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
                     if (confirmBtn) confirmBtn.classList.remove('hidden');
                     if (previewBtn) previewBtn.classList.add('hidden');
                     
-                    // 計算成功後自動摺疊清單
                     if (routeContainer && routeChevron) {
                         routeContainer.classList.add('hidden');
                         routeChevron.classList.add('rotate-180');
-                        routeChevron.classList.remove('fa-chevron-up');
-                        routeChevron.classList.add('fa-chevron-down');
                     }
                 }
             });
@@ -918,7 +1168,7 @@
                 
                 html += `
                     <div id="poi-group-${group.id}" class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white scroll-mt-24 transition-all duration-500">
-                        <button class="group-header w-full text-left px-3 py-3 bg-gray-50 focus:outline-none flex justify-between items-center" 
+                        <button type="button" class="group-header w-full text-left px-3 py-3 bg-gray-50 focus:outline-none flex justify-between items-center" 
                                 onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180');">
                             <div class="flex flex-col">
                                 <span class="font-black text-gray-800 text-[17px] flex items-center">
@@ -935,12 +1185,21 @@
                 if (pois.length > 0) {
                     pois.forEach(poi => {
                         const poiJson = encodeURIComponent(JSON.stringify(poi));
+                        const hintPrompt = `
+                            <span class="inline-flex items-center gap-1 text-[11px] font-black text-amber-800 bg-yellow-100/90 px-2 py-0.5 rounded-full border border-yellow-300 shadow-sm animate-pulse ml-2 shrink-0">
+                                <i class="fas fa-hand-point-down text-yellow-500 text-xs animate-bounce"></i>選擇此地點計算里程
+                            </span>
+                        `;
+                        
                         html += `
                             <div class="p-2.5 bg-[#fbfdfa] border border-mori-light/50 rounded-lg hover:border-mori-sage transition cursor-pointer flex items-center justify-between group shadow-sm" onclick="window.showPoiDetails('${poiJson}')">
-                                <div class="flex items-center">
+                                <div class="flex items-center overflow-hidden flex-1">
                                     <span class="text-[22px] mr-3 group-hover:scale-110 transition-transform">${poi.icon || '📍'}</span>
-                                    <div class="flex flex-col">
-                                        <h5 class="text-[16px] font-bold text-gray-800 leading-tight">${poi.name || '未命名'}</h5>
+                                    <div class="flex flex-col min-w-0 flex-1">
+                                        <div class="flex items-center flex-wrap gap-1">
+                                            <h5 class="text-[16px] font-bold text-gray-800 leading-tight">${poi.name || '未命名'}</h5>
+                                            ${hintPrompt}
+                                        </div>
                                         <span class="text-[12px] text-gray-500 mt-1 line-clamp-2">${poi.description || '無詳細說明'}</span>
                                     </div>
                                 </div>
@@ -949,13 +1208,12 @@
                         `;
                     });
                     
-                    // 🌟 新增：打包圖卡與分享專案網址按鈕 (Grid 雙欄並排)
                     html += `
                         <div class="pt-3 pb-1 px-1 border-t border-gray-100 mt-2 grid grid-cols-2 gap-2">
-                            <button onclick="window.downloadItineraryCard('${group.id}')" class="w-full py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
+                            <button type="button" onclick="window.downloadItineraryCard('${group.id}')" class="w-full py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
                                 <i class="fas fa-camera-retro mr-2 group-hover:scale-110 transition-transform text-yellow-100"></i> 下載行程分享圖卡
                             </button>
-                            <button onclick="window.shareItinerary('${group.id}')" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
+                            <button type="button" onclick="window.shareItinerary('${group.id}')" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center outline-none group transform active:scale-95 text-[13px] tracking-wide">
                                 <i class="fas fa-link mr-2 group-hover:scale-110 transition-transform text-blue-100"></i> 分享專案網址
                             </button>
                         </div>
@@ -967,19 +1225,14 @@
                 html += `</div></div>`;
             });
             container.innerHTML = html;
-            setTimeout(window.checkAndScrollToSharedProject, 500);
+            setTimeout(window.checkAndScrollToSharedProject, 600);
         };
 
-        // 🌟 新增：產生分享網址邏輯，並直接開啟系統的 QR Modal
         window.shareItinerary = function(groupId) {
-            // 直接寫死基礎網址，避免環境被污染
             const shareUrl = `https://farmcmd.github.io/ESGT/?project_id=${groupId}`;
-            
-            // 直接呼叫系統已經存在的 QR Code 顯示 Modal，傳入新的專屬網址
             if (typeof window.openShareQRCode === 'function') {
                 window.openShareQRCode(shareUrl);
             } else {
-                // 如果 Modal 功能失效的備用方案
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(shareUrl).then(() => {
                         window.showToast('✅ 專屬網址已成功複製！快分享給夥伴吧');
@@ -992,81 +1245,40 @@
             }
         };
 
-        // 畫布模擬用的 Deep Link 測試
-        window.simulateDeepLinkTest = function(groupId) {
-            const testUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?project_id=' + groupId;
-            try {
-                window.history.pushState({path: testUrl}, '', testUrl);
-            } catch(e) {
-                // 如果在畫布(Blob)中被擋，直接觸發函式而不用真的改網址
-                console.warn('History API blocked, simulating click directly.');
-                window.location.search = `?project_id=${groupId}`; // fallback for testing if needed
-            }
-            window.showToast('🔄 正在模擬載入專屬網址...');
-            setTimeout(() => {
-                // 手動傳入 ID 給處理函式，繞過真實網址解析
-                const targetElement = document.getElementById(`poi-group-${groupId}`);
-                if (targetElement) {
-                    const homePage = document.getElementById('homepage');
-                    const missionPage = document.getElementById('mission-page');
-                    if (homePage && missionPage && missionPage.classList.contains('hidden')) {
-                        homePage.classList.add('hidden');
-                        missionPage.classList.remove('hidden');
-                        if(window.mapsApiReady && typeof window.renderMap === 'function') {
-                            setTimeout(window.renderMap, 100);
-                        }
-                    }
-
-                    const headerBtn = targetElement.querySelector('.group-header');
-                    if (headerBtn && targetElement.querySelector('.hidden')) {
-                        headerBtn.click();
-                    }
-
-                    setTimeout(() => {
-                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        targetElement.classList.add('ring-4', 'ring-yellow-400', 'transition-all', 'duration-500');
-                        setTimeout(() => targetElement.classList.remove('ring-4', 'ring-yellow-400'), 4000);
-                    }, 800);
-                }
-            }, 300);
-        };
-
         window.checkAndScrollToSharedProject = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const targetId = urlParams.get('project_id');
             if (targetId) {
                 const targetElement = document.getElementById(`poi-group-${targetId}`);
                 if (targetElement) {
-                    // 🌟 關鍵修正：因為專案列表在「任務頁面」裡，預設是隱藏的。我們必須先切換頁面！
                     const homePage = document.getElementById('homepage');
                     const missionPage = document.getElementById('mission-page');
                     
                     if (homePage && missionPage && missionPage.classList.contains('hidden')) {
                         homePage.classList.add('hidden');
                         missionPage.classList.remove('hidden');
-                        
-                        // 由於地圖從隱藏變顯示，需要重新渲染
                         if(window.mapsApiReady && typeof window.renderMap === 'function') {
                             setTimeout(window.renderMap, 100);
+                        } else {
+                            window.loadGoogleMaps();
                         }
                     }
 
-                    // 自動展開折疊面板
                     const headerBtn = targetElement.querySelector('.group-header');
-                    if (headerBtn && targetElement.querySelector('.hidden')) {
-                         headerBtn.click();
+                    const contentDiv = targetElement.querySelector('.animate-fade-in-down');
+                    if (headerBtn && contentDiv && contentDiv.classList.contains('hidden')) {
+                        headerBtn.click();
                     }
 
                     setTimeout(() => {
                         targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        targetElement.classList.add('ring-4', 'ring-yellow-400', 'transition-all', 'duration-500');
-                        setTimeout(() => targetElement.classList.remove('ring-4', 'ring-yellow-400'), 4000);
-                    }, 800); // 加長一點延遲，確保頁面切換和地圖渲染完成
+                        targetElement.classList.add('highlight-target');
+                        setTimeout(() => targetElement.classList.remove('highlight-target'), 4000);
+                    }, 400); 
                 }
             }
         };
 
-        // 🌟 新增：打包圖卡與下載邏輯
         window.downloadItineraryCard = async function(groupId) {
             window.showToast('🔄 正在產生精美行程圖卡...');
             const group = globalPoiGroups.find(g => g.id === groupId);
@@ -1075,7 +1287,6 @@
             const container = document.getElementById('itinerary-card-container');
             if (!container) return;
 
-            // 組合站點時間軸 HTML
             let poisHtml = '';
             if (group.pois && group.pois.length > 0) {
                 poisHtml = group.pois.map((poi, index) => `
@@ -1094,7 +1305,6 @@
                 poisHtml = '<div style="text-align: center; color: #999; padding: 20px;">尚無站點資料</div>';
             }
 
-            // 組合完整圖卡 HTML
             container.innerHTML = `
                 <div style="background-color: white; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-top: 10px solid #4A6741; font-family: 'Noto Sans TC', sans-serif;">
                     <div style="padding: 35px 35px 25px 35px; background: linear-gradient(to bottom, #F0F7F4, #FFFFFF);">
@@ -1128,10 +1338,9 @@
                 container.style.left = '0';
                 container.style.zIndex = '-1000';
                 
-                // 🌟 新增：產生真實的 QR Code
                 const qrContainer = document.getElementById(`itinerary-qr-${groupId}`);
                 if (qrContainer) {
-                    qrContainer.innerHTML = ''; // 清空原本內容
+                    qrContainer.innerHTML = '';
                     new QRCode(qrContainer, { 
                         text: `https://farmcmd.github.io/ESGT/?project_id=${groupId}`, 
                         width: 44, 
@@ -1142,7 +1351,6 @@
                     });
                 }
 
-                // 稍微延遲一下，確保 QR Code 渲染完成
                 await new Promise(resolve => setTimeout(resolve, 300));
                 
                 const canvas = await html2canvas(container.firstElementChild, { 
@@ -1201,9 +1409,7 @@
         };
 
         window.openExternalPoiModal = function() {
-            const iframeContainer = document.getElementById('poi-list-container');
             const url = "https://farmcmd.github.io/ESGT/spot.html";
-            
             const modalHtml = `
             <div id="external-poi-modal" class="fixed inset-0 z-[9999] flex flex-col bg-white">
                 <div class="bg-mori-forest text-white p-3 flex justify-between items-center shadow-md z-10 shrink-0">
@@ -1234,112 +1440,163 @@
             });
         };
 
-        window.openChatModal=function(){const iframe=document.getElementById('chat-iframe');if(iframe&&!iframe.dataset.loaded){iframe.src=`https://farmcmd.github.io/chat/?t=${Date.now()}`;iframe.dataset.loaded="true";}window.openModal('chat-iframe-modal');};
-        window.openDashboardModal=function(tab){const iframe=document.getElementById('dashboard-iframe');if(iframe){if(!iframe.dataset.loaded){iframe.src=`https://farmcmd.github.io/ESGT/dashboard.html?tab=${tab}&t=${Date.now()}`;iframe.dataset.loaded="true";iframe.onload=()=>{iframe.contentWindow.postMessage({action:'SYNC_FROM_MAIN',state:state,events:window.globalLotteryEvents||[]},'*');};}else{iframe.contentWindow.postMessage({action:'SWITCH_TAB',tab:tab},'*');iframe.contentWindow.postMessage({action:'SYNC_FROM_MAIN',state:state,events:window.globalLotteryEvents||[]},'*');}}window.openModal('dashboard-iframe-modal');};
-        
-        window.openLatestEventsModal=function(){
-            const container=document.getElementById('latest-events-accordion-container');
-            if(!container)return;
-            const events=[...(window.globalLotteryEvents||[])];
-            events.sort((a,b)=>{if(a.isActive!==b.isActive)return a.isActive?-1:1;return(b.createdAt?.toMillis?b.createdAt.toMillis():0)-(a.createdAt?.toMillis?a.createdAt.toMillis():0);});
+        window.openChatModal = function(){
+            const iframe = document.getElementById('chat-iframe');
+            if(iframe && !iframe.dataset.loaded){
+                iframe.src = `https://farmcmd.github.io/chat/?t=${Date.now()}`;
+                iframe.dataset.loaded = "true";
+            }
+            window.openModal('chat-iframe-modal');
+        };
+
+        window.openDashboardModal = function(tab){
+            const iframe = document.getElementById('dashboard-iframe');
+            if(iframe){
+                if(!iframe.dataset.loaded){
+                    iframe.src = `https://farmcmd.github.io/ESGT/dashboard.html?tab=${tab}&t=${Date.now()}`;
+                    iframe.dataset.loaded = "true";
+                    iframe.onload = () => {
+                        iframe.contentWindow.postMessage({action:'SYNC_FROM_MAIN', state:state, events:window.globalLotteryEvents||[]},'*');
+                    };
+                } else {
+                    iframe.contentWindow.postMessage({action:'SWITCH_TAB', tab:tab},'*');
+                    iframe.contentWindow.postMessage({action:'SYNC_FROM_MAIN', state:state, events:window.globalLotteryEvents||[]},'*');
+                }
+            }
+            window.openModal('dashboard-iframe-modal');
+        };
+
+        window.openLatestEventsModal = function(){
+            const container = document.getElementById('latest-events-accordion-container');
+            if(!container) return;
+            const events = [...(window.globalLotteryEvents || [])];
+            events.sort((a,b) => {
+                if(a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+                return (b.createdAt?.toMillis ? b.createdAt.toMillis() : 0) - (a.createdAt?.toMillis ? a.createdAt.toMillis() : 0);
+            });
             
-            if(events.length===0){
-                container.innerHTML='<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-box-open text-3xl mb-3 opacity-50"></i><br>目前尚無任何活動資料</div>';
-            }else{
-                container.innerHTML=events.map((ev)=>{
-                    const statusBadge=ev.isActive?`<span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-circle text-[8px] mr-1.5 animate-pulse text-green-500"></i>進行中</span>`:`<span class="bg-gray-100 text-gray-500 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-moon text-[10px] mr-1"></i>已結束</span>`;
+            if(events.length === 0){
+                container.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold"><i class="fas fa-box-open text-3xl mb-3 opacity-50"></i><br>目前尚無任何活動資料</div>';
+            } else {
+                container.innerHTML = events.map((ev) => {
+                    const statusBadge = ev.isActive ? `<span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-circle text-[8px] mr-1.5 animate-pulse text-green-500"></i>進行中</span>` : `<span class="bg-gray-100 text-gray-500 px-2.5 py-0.5 rounded text-[10px] font-black tracking-widest shadow-sm flex items-center shrink-0"><i class="fas fa-moon text-[10px] mr-1"></i>已結束</span>`;
                     return `<div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white group transition-all duration-300"><button class="w-full text-left px-4 py-3.5 bg-gray-50 hover:bg-yellow-50/50 focus:outline-none flex justify-between items-center transition-colors" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180');"><div class="flex items-center gap-3 pr-4 overflow-hidden w-full">${statusBadge}<span class="font-black text-gray-800 text-[14px] truncate flex-1">${ev.title||'未命名活動'}</span></div><i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 chevron-icon shrink-0"></i></button><div class="hidden px-4 py-4 bg-white border-t border-gray-100 animate-fade-in-down"><p class="text-[13px] text-gray-600 leading-relaxed mb-4 whitespace-pre-wrap"><i class="fas fa-info-circle text-gray-400 mr-1.5"></i>${ev.desc||'主辦單位暫無詳細說明'}</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-blue-50/30 p-3.5 rounded-lg border border-blue-100/50"><div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎯 歸戶限制</span><span class="text-[12px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded shadow-sm">${ev.targetBoard||'全站適用'}</span></div><div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎫 兌換門檻</span><span class="text-[12px] font-black text-red-600 font-mono bg-red-50 px-1.5 py-0.5 rounded border border-red-100 shadow-sm">${ev.requiredScore||100} pts/張</span></div><div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🎉 抽獎日期</span><span class="text-[12px] font-bold text-mori-forest bg-mori-light px-1.5 py-0.5 rounded border border-mori-sage/30 shadow-sm"><i class="fas fa-calendar-check mr-1 opacity-80"></i>${ev.lotteryDate||'依主辦公告'}</span></div><div><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">🔢 辦理梯次</span><span class="text-[12px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded border border-purple-200 shadow-sm"><i class="fas fa-layer-group mr-1 opacity-80"></i>${ev.lotteryBatch||'常態辦理'}</span></div><div class="sm:col-span-2 mt-1"><span class="text-[10px] text-gray-400 block mb-0.5 font-bold">📅 活動期間</span><span class="text-[12px] font-bold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200 shadow-sm"><i class="far fa-calendar-alt text-gray-400 mr-1"></i>${ev.startDate||'即日起'} ~ ${ev.endDate||'未定'}</span></div></div></div></div>`;
                 }).join('');
             }
             window.openModal('latest-events-modal');
         };
 
-        window.loadLocalData=function(){
-            try{const raw=localStorage.getItem(LOCAL_STORAGE_KEY);if(raw)state={...state,...JSON.parse(raw)};}catch(e){}
-            if(!state.playerCode)state.playerCode=Math.random().toString(36).substring(2,7).toUpperCase();
-            if(document.getElementById('player-name'))document.getElementById('player-name').value=state.playerName||'';
-            if(document.getElementById('player-code'))document.getElementById('player-code').textContent=state.playerCode;
-            if(document.getElementById('player-enterprise-name'))document.getElementById('player-enterprise-name').value=state.enterpriseName||'';
-            if(document.getElementById('player-ent-scope'))document.getElementById('player-ent-scope').value=state.entScope||'';
-            if(document.getElementById('player-ent-green-scope'))document.getElementById('player-ent-green-scope').value=state.entGreenScope||'';
-            if(document.getElementById('player-ent-sust-notes'))document.getElementById('player-ent-sust-notes').value=state.entSustNotes||'';
-            if(document.getElementById('player-ent-welfare-notes'))document.getElementById('player-ent-welfare-notes').value=state.entWelfareNotes||'';
-            if(document.getElementById('player-ent-emp-id'))document.getElementById('player-ent-emp-id').value=state.entEmpId||'';
-            window.updateDisplays();window.renderCheckoutHistory();window.renderLogs();
+        window.loadLocalData = function(){
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if(raw) state = { ...state, ...JSON.parse(raw) };
+            } catch(e){}
+            
+            if(!state.playerCode) state.playerCode = Math.random().toString(36).substring(2,7).toUpperCase();
+            if(document.getElementById('player-name')) document.getElementById('player-name').value = state.playerName || '';
+            if(document.getElementById('player-code')) document.getElementById('player-code').textContent = state.playerCode;
+            if(document.getElementById('player-enterprise-name')) document.getElementById('player-enterprise-name').value = state.enterpriseName || '';
+            if(document.getElementById('player-ent-scope')) document.getElementById('player-ent-scope').value = state.entScope || '';
+            if(document.getElementById('player-ent-green-scope')) document.getElementById('player-ent-green-scope').value = state.entGreenScope || '';
+            if(document.getElementById('player-ent-sust-notes')) document.getElementById('player-ent-sust-notes').value = state.entSustNotes || '';
+            if(document.getElementById('player-ent-welfare-notes')) document.getElementById('player-ent-welfare-notes').value = state.entWelfareNotes || '';
+            if(document.getElementById('player-ent-emp-id')) document.getElementById('player-ent-emp-id').value = state.entEmpId || '';
+            
+            window.renderTransportGrid();
+            window.updateDisplays();
+            window.renderCheckoutHistory();
+            window.renderLogs();
         };
 
-        window.saveData=function(){
-            if(document.getElementById('player-name'))state.playerName=document.getElementById('player-name').value;
-            try{
-                localStorage.setItem(LOCAL_STORAGE_KEY,JSON.stringify(state));
-                localStorage.setItem('esgt_sync_to_game',JSON.stringify({totalScore:state.totalScore,heroIndex:state.heroIndex,timestamp:Date.now()}));
-            }catch(e){}
+        window.saveData = function(){
+            if(document.getElementById('player-name')) state.playerName = document.getElementById('player-name').value;
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+                localStorage.setItem('esgt_sync_to_game', JSON.stringify({ totalScore: state.totalScore, heroIndex: state.heroIndex, timestamp: Date.now() }));
+            } catch(e){}
             window.dispatchEvent(new Event('storage'));
         };
 
-        window.saveEnterpriseName=async function(){
-            const input=document.getElementById('player-enterprise-name');
-            const consentCheck=document.getElementById('scope3-consent-check');
-            const detailsContainer=document.getElementById('enterprise-details-container');
-            const saveBtn=document.querySelector('#enterprise-info-modal button[onclick="window.saveEnterpriseName()"]');
-            if(input&&input.value.trim()!==''){
-                if(detailsContainer&&!detailsContainer.classList.contains('hidden')&&consentCheck&&!consentCheck.checked){
-                    return window.showToast('⚠️ 請先勾選同意 Scope 3 碳盤查涵蓋聲明',true);
+        window.saveEnterpriseName = async function(){
+            const input = document.getElementById('player-enterprise-name');
+            const consentCheck = document.getElementById('scope3-consent-check');
+            const detailsContainer = document.getElementById('enterprise-details-container');
+            const saveBtn = document.querySelector('#enterprise-info-modal button[onclick="window.saveEnterpriseName()"]');
+            
+            if(input && input.value.trim() !== ''){
+                if(detailsContainer && !detailsContainer.classList.contains('hidden') && consentCheck && !consentCheck.checked){
+                    return window.showToast('⚠️ 請先勾選同意 Scope 3 碳盤查涵蓋聲明', true);
                 }
-                if(saveBtn){saveBtn.dataset.origHtml=saveBtn.innerHTML;saveBtn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i> 同步中...';saveBtn.disabled=true;}
-                state.enterpriseName=input.value.trim();
-                if(document.getElementById('player-ent-scope'))state.entScope=document.getElementById('player-ent-scope').value.trim();
-                if(document.getElementById('player-ent-green-scope'))state.entGreenScope=document.getElementById('player-ent-green-scope').value.trim();
-                if(document.getElementById('player-ent-sust-notes'))state.entSustNotes=document.getElementById('player-ent-sust-notes').value.trim();
-                if(document.getElementById('player-ent-welfare-notes'))state.entWelfareNotes=document.getElementById('player-ent-welfare-notes').value.trim();
-                if(document.getElementById('player-ent-emp-id'))state.entEmpId=document.getElementById('player-ent-emp-id').value.trim();
-                if(db&&!isOfflineMode){
+                if(saveBtn){ saveBtn.dataset.origHtml = saveBtn.innerHTML; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 同步中...'; saveBtn.disabled = true; }
+                state.enterpriseName = input.value.trim();
+                if(document.getElementById('player-ent-scope')) state.entScope = document.getElementById('player-ent-scope').value.trim();
+                if(document.getElementById('player-ent-green-scope')) state.entGreenScope = document.getElementById('player-ent-green-scope').value.trim();
+                if(document.getElementById('player-ent-sust-notes')) state.entSustNotes = document.getElementById('player-ent-sust-notes').value.trim();
+                if(document.getElementById('player-ent-welfare-notes')) state.entWelfareNotes = document.getElementById('player-ent-welfare-notes').value.trim();
+                if(document.getElementById('player-ent-emp-id')) state.entEmpId = document.getElementById('player-ent-emp-id').value.trim();
+                
+                if(db && !isOfflineMode){
                     try{
-                        const bindData={playerCode:state.playerCode,playerName:state.playerName||'匿名旅者',enterpriseName:state.enterpriseName,empId:state.entEmpId||'未提供',scope3Consent:consentCheck?consentCheck.checked:false,boundAt:serverTimestamp()};
-                        await setDoc(doc(db,'ent_employee_bindings',state.playerCode),bindData,{merge:true});
-                    }catch(err){window.showToast('⚠️ 雲端同步失敗，但已本地儲存',true);}
+                        const bindData = {
+                            playerCode: state.playerCode,
+                            playerName: state.playerName || '匿名旅者',
+                            enterpriseName: state.enterpriseName,
+                            empId: state.entEmpId || '未提供',
+                            scope3Consent: consentCheck ? consentCheck.checked : false,
+                            boundAt: serverTimestamp()
+                        };
+                        await setDoc(doc(db, 'ent_employee_bindings', state.playerCode), bindData, {merge:true});
+                    } catch(err){
+                        window.showToast('⚠️ 雲端同步失敗，但已本機儲存', true);
+                    }
                 }
-                window.saveData();window.updateDisplays();window.showToast('✅ 企業綁定成功！');window.closeModal('enterprise-info-modal');
-                if(saveBtn){saveBtn.innerHTML=saveBtn.dataset.origHtml;saveBtn.disabled=false;}
-            }else{window.showToast('⚠️ 請點擊按鈕選擇所屬企業',true);}
+                window.saveData();
+                window.updateDisplays();
+                window.showToast('✅ 企業綁定成功！');
+                window.closeModal('enterprise-info-modal');
+                if(saveBtn){ saveBtn.innerHTML = saveBtn.dataset.origHtml; saveBtn.disabled = false; }
+            } else {
+                window.showToast('⚠️ 請點擊按鈕選擇所屬企業', true);
+            }
         };
 
-        window.renderPartnerSelect=function(){
-            const container=document.getElementById('player-enterprise-buttons');if(!container)return;
-            let html='',count=0;
-            window.partnerEnterprises.forEach(p=>{
-                if(count>=9)return;
-                html+=`<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition shadow-sm truncate" data-val="${p.id}" data-name="${p.name}">${p.name}</button>`;
+        window.renderPartnerSelect = function(){
+            const container = document.getElementById('player-enterprise-buttons');
+            if(!container) return;
+            let html = '', count = 0;
+            window.partnerEnterprises.forEach(p => {
+                if(count >= 9) return;
+                html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition shadow-sm truncate" data-val="${p.id}" data-name="${p.name}">${p.name}</button>`;
                 count++;
             });
-            while(count<9){
-                html+=`<button type="button" disabled class="w-full px-2 py-2.5 border-2 border-dashed border-gray-200 rounded-lg text-[12px] font-bold text-gray-400 bg-gray-50/50 cursor-not-allowed truncate">尚未進駐</button>`;
+            while(count < 9){
+                html += `<button type="button" disabled class="w-full px-2 py-2.5 border-2 border-dashed border-gray-200 rounded-lg text-[12px] font-bold text-gray-400 bg-gray-50/50 cursor-not-allowed truncate">尚未進駐</button>`;
                 count++;
             }
-            html+=`<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition shadow-sm truncate" data-val="other">自行輸入</button>`;
-            container.innerHTML=html;
+            html += `<button type="button" class="ent-sel-btn w-full px-2 py-2.5 border-2 border-gray-200 rounded-lg text-[13px] font-bold text-gray-600 bg-white hover:bg-gray-50 hover:border-mori-sage/60 transition shadow-sm truncate" data-val="other">自行輸入</button>`;
+            container.innerHTML = html;
             
-            if(typeof window.bindPartnerSelectEvents==='function')window.bindPartnerSelectEvents();
+            window.bindPartnerSelectEvents();
             
-            const detailsContainer=document.getElementById('enterprise-details-container');
-            const consentCheck=document.getElementById('scope3-consent-check');
-            const nameInput=document.getElementById('player-enterprise-name');
+            const detailsContainer = document.getElementById('enterprise-details-container');
+            const consentCheck = document.getElementById('scope3-consent-check');
+            const nameInput = document.getElementById('player-enterprise-name');
             if(state.enterpriseName){
-                const matched=window.partnerEnterprises.find(p=>p.name===state.enterpriseName);
-                let targetBtn=null;
+                const matched = window.partnerEnterprises.find(p => p.name === state.enterpriseName);
+                let targetBtn = null;
                 if(matched){
-                    targetBtn=container.querySelector(`button[data-val="${matched.id}"]`);
-                    if(nameInput){nameInput.value=matched.name;nameInput.classList.add('hidden');}
-                }else{
-                    targetBtn=container.querySelector(`button[data-val="other"]`);
-                    if(nameInput){nameInput.value=state.enterpriseName;nameInput.classList.remove('hidden');}
+                    targetBtn = container.querySelector(`button[data-val="${matched.id}"]`);
+                    if(nameInput){ nameInput.value = matched.name; nameInput.classList.add('hidden'); }
+                } else {
+                    targetBtn = container.querySelector(`button[data-val="other"]`);
+                    if(nameInput){ nameInput.value = state.enterpriseName; nameInput.classList.remove('hidden'); }
                 }
-                if(targetBtn){targetBtn.className="ent-sel-btn w-full px-2 py-2.5 border-2 border-mori-forest rounded-lg text-[13px] font-bold text-mori-forest bg-mori-light/50 shadow-sm truncate ring-2 ring-mori-sage ring-opacity-40";}
-                if(detailsContainer)detailsContainer.classList.remove('hidden');
-                if(consentCheck)consentCheck.checked=true;
-            }else{
-                if(detailsContainer)detailsContainer.classList.add('hidden');
-                if(consentCheck)consentCheck.checked=false;
+                if(targetBtn){ targetBtn.className = "ent-sel-btn w-full px-2 py-2.5 border-2 border-mori-forest rounded-lg text-[13px] font-bold text-mori-forest bg-mori-light/50 shadow-sm truncate ring-2 ring-mori-sage ring-opacity-40"; }
+                if(detailsContainer) detailsContainer.classList.remove('hidden');
+                if(consentCheck) consentCheck.checked = true;
+            } else {
+                if(detailsContainer) detailsContainer.classList.add('hidden');
+                if(consentCheck) consentCheck.checked = false;
             }
         };
 
@@ -1359,7 +1616,6 @@
                     const greenScope = document.getElementById('player-ent-green-scope');
                     const sustNotes = document.getElementById('player-ent-sust-notes');
                     const welfareNotes = document.getElementById('player-ent-welfare-notes');
-                    const badges = document.querySelectorAll('.green-badge');
                     
                     if (val === 'other') {
                         if(nameInput) { nameInput.classList.remove('hidden'); nameInput.value = ''; }
@@ -1367,30 +1623,17 @@
                         [scope, greenScope, sustNotes, welfareNotes].forEach(el => { 
                             if(el) { el.value = ''; el.readOnly = false; el.className = "w-full p-2.5 border border-gray-200 rounded-lg text-sm"; el.placeholder = '請手動輸入'; }
                         });
-                        badges.forEach(b => { b.className = 'green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold'; b.querySelector('i').className = 'far fa-square mr-1'; });
                     } else if (val) {
                         if(nameInput) { nameInput.classList.add('hidden'); nameInput.value = this.dataset.name; }
                         if(detailsContainer) detailsContainer.classList.remove('hidden');
                         let p = window.partnerEnterprises.find(x => x.id === val);
                         if (p) {
-                            if(scope) scope.value = p.scope || ''; if(greenScope) greenScope.value = p.greenScope || '';
-                            if(sustNotes) sustNotes.value = p.sustNotes || ''; if(welfareNotes) welfareNotes.value = p.welfareNotes || '';
+                            if(scope) scope.value = p.scope || ''; 
+                            if(greenScope) greenScope.value = p.greenScope || '';
+                            if(sustNotes) sustNotes.value = p.sustNotes || ''; 
+                            if(welfareNotes) welfareNotes.value = p.welfareNotes || '';
                             [scope, greenScope, sustNotes, welfareNotes].forEach(el => { 
                                 if(el) { el.readOnly = true; el.className = "w-full p-2.5 bg-gray-100 text-gray-500 rounded-lg text-sm"; }
-                            });
-                            const gsText = (p.greenScope || '').toLowerCase();
-                            badges.forEach(badge => {
-                                const kw = badge.dataset.keyword.toLowerCase(); const icon = badge.querySelector('i');
-                                if (gsText.includes(kw) || gsText === '全選' || gsText.includes('符合平台綠色採購')) {
-                                    let cClass = 'bg-green-50 text-green-700 border-green-200'; let iClass = 'text-green-600';
-                                    if (kw.includes('標章')) { cClass = 'bg-blue-50 text-blue-700 border-blue-200'; iClass = 'text-blue-600'; } 
-                                    else if (kw.includes('sroi')) { cClass = 'bg-yellow-50 text-yellow-700 border-yellow-200'; iClass = 'text-yellow-600'; }
-                                    badge.className = `green-badge px-2 py-1 rounded-md border font-bold ${cClass}`;
-                                    icon.className = `far fa-check-square mr-1 ${iClass}`;
-                                } else {
-                                    badge.className = 'green-badge bg-gray-50 text-gray-400 px-2 py-1 rounded-md border border-gray-200 font-bold';
-                                    icon.className = 'far fa-square mr-1';
-                                }
                             });
                         }
                     }
@@ -1399,18 +1642,60 @@
         };
 
         window.openEarthLogGame = function() { window.location.href = 'https://farmcmd.github.io/ESGT/game.html'; };
-        window.showToast = function(msg, isError = false) { const t = document.getElementById('custom-toast'); if (t) { t.textContent = msg; t.style.backgroundColor = isError ? '#EF4444' : 'rgba(31, 41, 55, 0.95)'; t.classList.add('show'); if(window.toastTimer) clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3500); } };
-        window.requireAuth = function(title, requiredPwd, onSuccess) { document.getElementById('auth-modal-title').textContent = title; const input = document.getElementById('auth-pwd-input'); input.value = ''; const btn = document.getElementById('auth-confirm-btn'); btn.onclick = () => { if (input.value === requiredPwd || input.value === 'mori2025' || input.value === '772059') { window.closeModal('auth-modal'); onSuccess(); } else { window.showToast('❌ 密碼錯誤', true); } }; window.openModal('auth-modal'); setTimeout(() => input.focus(), 100); };
-        window.requireConfirm = function(title, desc, onConfirm) { document.getElementById('confirm-modal-title').textContent = title; document.getElementById('confirm-modal-desc').innerHTML = desc; const btn = document.getElementById('confirm-ok-btn'); btn.onclick = () => { window.closeModal('confirm-modal'); onConfirm(); }; window.openModal('confirm-modal'); };
-        window.customPrompt = function(message, defaultValue, callback) { const modal = document.getElementById('custom-prompt-modal'); const titleEl = document.getElementById('custom-prompt-title'); const inputEl = document.getElementById('custom-prompt-input'); const confirmBtn = document.getElementById('custom-prompt-confirm'); const cancelBtn = document.getElementById('custom-prompt-cancel'); titleEl.textContent = message; inputEl.value = defaultValue; confirmBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(inputEl.value); }; cancelBtn.onclick = () => { window.closeModal('custom-prompt-modal'); callback(null); }; window.openModal('custom-prompt-modal'); setTimeout(() => { inputEl.focus(); inputEl.select(); }, 100); };
-        window.getFormattedTime = function() { const d = new Date(); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-        window.getTodayKey = function() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+        window.showToast = function(msg, isError = false) { 
+            const t = document.getElementById('custom-toast'); 
+            if (t) { 
+                t.textContent = msg; 
+                t.style.backgroundColor = isError ? '#EF4444' : 'rgba(31, 41, 55, 0.95)'; 
+                t.classList.add('show'); 
+                if(window.toastTimer) clearTimeout(window.toastTimer); 
+                window.toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3500); 
+            } 
+        };
+
+        window.requireAuth = function(title, requiredPwd, onSuccess) { 
+            document.getElementById('auth-modal-title').textContent = title; 
+            const input = document.getElementById('auth-pwd-input'); 
+            input.value = ''; 
+            const btn = document.getElementById('auth-confirm-btn'); 
+            btn.onclick = () => { 
+                if (input.value === requiredPwd || input.value === 'mori2025' || input.value === '772059') { 
+                    window.closeModal('auth-modal'); 
+                    onSuccess(); 
+                } else { 
+                    window.showToast('❌ 密碼錯誤', true); 
+                } 
+            }; 
+            window.openModal('auth-modal'); 
+            setTimeout(() => input.focus(), 100); 
+        };
+
+        window.getFormattedTime = function() { 
+            const d = new Date(); 
+            return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; 
+        };
+
+        window.getTodayKey = function() { 
+            const d = new Date(); 
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; 
+        };
+
         window.openShareQRCode = function(url) { 
-            const container = document.getElementById('qrcode-container'); const input = document.getElementById('share-modal-url'); 
-            container.innerHTML = ''; input.value = url; 
-            try { new QRCode(container, { text: url, width: 160, height: 160, colorDark : "#3B82F6", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); } catch(e) { container.innerHTML = '<p class="text-sm text-red-400">產生失敗</p>'; } 
+            const container = document.getElementById('qrcode-container'); 
+            const input = document.getElementById('share-modal-url'); 
+            container.innerHTML = ''; 
+            input.value = url; 
+            try { 
+                new QRCode(container, { text: url, width: 160, height: 160, colorDark : "#3B82F6", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); 
+            } catch(e) { 
+                container.innerHTML = '<p class="text-sm text-red-400">產生失敗</p>'; 
+            } 
             const copyBtn = document.getElementById('share-modal-copy-btn'); 
-            copyBtn.onclick = () => { input.select(); document.execCommand('copy'); window.showToast('🔗 連結已複製！'); }; 
+            copyBtn.onclick = () => { 
+                input.select(); 
+                document.execCommand('copy'); 
+                window.showToast('🔗 連結已複製！'); 
+            }; 
             window.openModal('share-qrcode-modal'); 
         };
 
@@ -1468,10 +1753,87 @@
 
         window.bindSystemUtilities = function() {
             document.getElementById('header-share-btn')?.addEventListener('click', () => { window.openShareQRCode('https://farmcmd.github.io/ESGT/'); });
-            document.getElementById('export-data-button')?.addEventListener('click', () => { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state)); const link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", `探探里山_永續進度_${state.playerName || '匿名'}.json`); link.click(); window.showToast('✅ 進度已匯出'); });
+            document.getElementById('export-data-button')?.addEventListener('click', () => { 
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state)); 
+                const link = document.createElement('a'); 
+                link.setAttribute("href", dataStr); 
+                link.setAttribute("download", `探探里山_永續進度_${state.playerName || '匿名'}.json`); 
+                link.click(); 
+                window.showToast('✅ 進度已匯出'); 
+            });
             document.getElementById('import-data-btn-trigger')?.addEventListener('click', () => { document.getElementById('import-data-input')?.click(); });
-            document.getElementById('import-data-input')?.addEventListener('change', (e) => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = function(e) { try { state = { ...state, ...JSON.parse(e.target.result) }; window.saveData(); window.updateDisplays(); window.renderCheckoutHistory(); window.renderLogs(); window.showToast('✅ 進度已還原'); } catch (err) { window.showToast('❌ 檔案錯誤', true); } }; r.readAsText(file); });
+            document.getElementById('import-data-input')?.addEventListener('change', (e) => { 
+                const file = e.target.files[0]; 
+                if (!file) return; 
+                const r = new FileReader(); 
+                r.onload = function(e) { 
+                    try { 
+                        state = { ...state, ...JSON.parse(e.target.result) }; 
+                        window.saveData(); 
+                        window.updateDisplays(); 
+                        window.renderCheckoutHistory(); 
+                        window.renderLogs(); 
+                        window.renderTransportGrid();
+                        window.showToast('✅ 進度已還原'); 
+                    } catch (err) { 
+                        window.showToast('❌ 檔案錯誤', true); 
+                    } 
+                }; 
+                r.readAsText(file); 
+            });
             
+            const qmInput = document.getElementById('quick-manual-km');
+            const qmSubmit = document.getElementById('quick-manual-submit-btn');
+            const qmResult = document.getElementById('quick-manual-result');
+
+            if (qmInput && qmSubmit && qmResult) {
+                qmInput.addEventListener('input', () => {
+                    const km = parseFloat(qmInput.value) || 0;
+                    if (km > 0) {
+                        const currentT = state.currentTransport || 'bus_train';
+                        const redRate = transportData[currentT]?.reduction || 400;
+                        const reduction = Math.round(km * (redRate / 10));
+                        qmResult.textContent = `減碳 ${reduction} g`;
+                        qmSubmit.disabled = false;
+                        qmSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+                        window.pendingTrip = { distMeters: km * 1000, distKm: km, reduction: reduction, isValid: true };
+                    } else {
+                        qmResult.textContent = '減碳 0 g';
+                        qmSubmit.disabled = true;
+                        qmSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+                        window.pendingTrip = { isValid: false };
+                    }
+                });
+            }
+
+            document.querySelectorAll('.short-dist-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const km = parseFloat(btn.dataset.km) || 0;
+                    const currentT = state.currentTransport || 'walk_bike';
+                    const redRate = transportData[currentT]?.reduction || 950;
+                    const reduction = Math.round(km * (redRate / 10));
+                    const resEl = document.getElementById('short-dist-result');
+                    const confirmBtn = document.getElementById('confirm-short-dist-btn');
+                    if (resEl) resEl.innerHTML = `移動 ${km}km | 減碳 <span class="text-mori-forest font-bold">${reduction}</span> g`;
+                    if (confirmBtn) confirmBtn.classList.remove('hidden');
+                    window.pendingTrip = { distMeters: km * 1000, distKm: km, reduction: reduction, isValid: true };
+                });
+            });
+
+            const citySelect = document.getElementById('city-select');
+            if (citySelect) {
+                citySelect.innerHTML = taiwanCities.map(c => `<option value="${c.lat},${c.lng}">${c.name}</option>`).join('');
+            }
+            document.getElementById('add-city-route-btn')?.addEventListener('click', () => {
+                if (!citySelect) return;
+                const coordsArr = citySelect.value.split(',');
+                const selectedCityName = citySelect.options[citySelect.selectedIndex].text;
+                window.addPointToRoute({
+                    name: `${selectedCityName}轉運站`,
+                    coords: { lat: parseFloat(coordsArr[0]), lng: parseFloat(coordsArr[1]) }
+                });
+            });
+
             document.getElementById('download-cert-btn')?.addEventListener('click', async () => {
                 window.showToast('🔄 繪製中，請勿關閉視窗...');
                 const container = document.getElementById('certificate-dom-container'); if(!container) return;
@@ -1531,552 +1893,292 @@
                     </div>
                 `;
                 try {
-                    container.style.position='fixed'; container.style.top='0'; container.style.left='0'; container.style.zIndex='-1000';
+                    container.style.position = 'fixed'; container.style.top = '0'; container.style.left = '0'; container.style.zIndex = '-1000';
                     const canvas = await html2canvas(container.firstElementChild, { scale: 2, useCORS: true, logging: false, allowTaint: true });
                     const link = document.createElement('a'); link.download = `探探里山_永續證書_${state.playerName || '旅者'}.png`; link.href = canvas.toDataURL('image/png'); link.click();
-                    container.style.left='-9999px'; window.showToast('✅ 證書下載成功！');
+                    container.style.left = '-9999px'; window.showToast('✅ 證書下載成功！');
                 } catch(err) { window.showToast('❌ 產圖失敗，請檢查瀏覽器限制', true); }
             });
+        };
 
-            const langSelect=document.getElementById('custom-lang-select');
-            if(langSelect){
-                const match=document.cookie.match(/googtrans=\/zh-TW\/([a-zA-Z-]+)/);
-                if(match&&match[1]){langSelect.value=match[1];}
-                langSelect.addEventListener('change',function(e){
-                    const lang=e.target.value; window.saveData();
-                    const triggerTranslate=(attempts=0)=>{
-                        const googleSelect=document.querySelector('.goog-te-combo');
-                        if(googleSelect){
-                            googleSelect.value=lang==='zh-TW'?'':lang;
-                            if(document.createEvent){ const evt=document.createEvent("HTMLEvents"); evt.initEvent("change",true,true); googleSelect.dispatchEvent(evt); }
-                            else{ googleSelect.dispatchEvent(new Event('change')); }
-                            window.showToast('🌍 語言切換成功！');
-                        }else{
-                            if(attempts<15){ setTimeout(()=>triggerTranslate(attempts+1),200); }
-                            else{ window.showToast('❌ 翻譯模組載入失敗，請確認無阻擋套件',true); }
-                        }
-                    };
-                    window.showToast('🌍 翻譯模組運算中...'); triggerTranslate();
-                });
+        window.bindGreenConsumptionEvents = function() {
+            let selectedType = '有機農產';
+            const cards = document.querySelectorAll('#green-labels-container .label-card');
+            const sroiContainer = document.getElementById('sroi-dropdown-container');
+            const sroiSelect = document.getElementById('sroi-unit-select');
+
+            if (sroiSelect) {
+                sroiSelect.innerHTML = sroiUnits.map(u => `<option value="${u.weight}">${u.name} (加權 x${u.weight})</option>`).join('');
             }
+
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    cards.forEach(c => {
+                        c.classList.remove('border-mori-forest', 'bg-green-50/70', 'ring-2', 'ring-mori-sage/40');
+                        c.classList.add('border-gray-200');
+                    });
+                    card.classList.remove('border-gray-200');
+                    card.classList.add('border-mori-forest', 'bg-green-50/70', 'ring-2', 'ring-mori-sage/40');
+                    selectedType = card.dataset.type;
+
+                    if (selectedType === 'SROI') {
+                        sroiContainer?.classList.remove('hidden');
+                    } else {
+                        sroiContainer?.classList.add('hidden');
+                    }
+                });
+            });
+
+            const qtyInput = document.getElementById('green-qty');
+            const priceInput = document.getElementById('green-price');
+            const totalDisplay = document.getElementById('green-total-display');
+
+            function updateTotal() {
+                const q = parseFloat(qtyInput?.value) || 0;
+                const p = parseFloat(priceInput?.value) || 0;
+                if (totalDisplay) totalDisplay.textContent = `$${(q * p).toLocaleString()}`;
+            }
+
+            qtyInput?.addEventListener('input', updateTotal);
+            priceInput?.addEventListener('input', updateTotal);
+
+            document.getElementById('log-green-procure-btn')?.addEventListener('click', () => {
+                const itemName = document.getElementById('green-item-name')?.value.trim() || '綠色商品';
+                const q = parseFloat(qtyInput?.value) || 0;
+                const p = parseFloat(priceInput?.value) || 0;
+                const amount = q * p;
+
+                if (amount <= 0) return window.showToast('請輸入有效數量與單價', true);
+
+                if (selectedType === 'SROI') {
+                    const weight = parseFloat(sroiSelect?.value) || 1.95;
+                    const sroiVal = Math.round(amount * weight);
+                    state.sroiProcure = (state.sroiProcure || 0) + sroiVal;
+                    window.addLog(`登錄 SROI 綠色消費「${itemName}」$${amount} (產生社會價值 $${sroiVal})`);
+                } else {
+                    state.greenProcure = (state.greenProcure || 0) + amount;
+                    window.addLog(`登錄綠色採購「${itemName}」$${amount}`);
+                }
+
+                state.totalScore = (state.totalScore || 0) + Math.max(5, Math.round(amount / 50));
+                window.saveData();
+                window.updateDisplays();
+                window.renderLogs();
+                window.closeModal('green-consumption-modal');
+                window.showToast(`✅ 已成功登錄消費 $${amount}`);
+            });
         };
 
-        window.renderLogs=function(){
-            const list=document.getElementById('logged-actions-list');if(!list)return;
-            if(!state.activityLogs||state.activityLogs.length===0){list.innerHTML='<p class="text-xs text-gray-400 text-center py-2">尚無活動紀錄</p>';return;}
-            list.innerHTML=state.activityLogs.map(l=>`<div class="bg-white p-2 rounded text-xs border border-gray-100 mb-1 shadow-sm"><span class="text-[10px] text-mori-forest font-bold font-mono tracking-tight">${l.time}</span><br>${l.text}</div>`).join('');
+        window.renderLogs = function(){
+            const list = document.getElementById('logged-actions-list'); if(!list) return;
+            if(!state.activityLogs || state.activityLogs.length === 0){ list.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">尚無活動紀錄</p>'; return; }
+            list.innerHTML = state.activityLogs.map(l => `<div class="bg-white p-2 rounded text-xs border border-gray-100 mb-1 shadow-sm"><span class="text-[10px] text-mori-forest font-bold font-mono tracking-tight">${l.time}</span><br>${l.text}</div>`).join('');
         };
 
-        window.renderCheckoutHistory=function(){
-            const list=document.getElementById('checkout-history-list');if(!list)return;
-            if(!state.checkoutHistory||state.checkoutHistory.length===0){list.innerHTML='<p class="text-xs text-gray-400 text-center py-2">尚無結算紀錄</p>';return;}
-            list.innerHTML=state.checkoutHistory.map(r=>{
-                let ticketsHtml='';
-                if(r.tickets&&r.tickets.length>0){ ticketsHtml=`<div class="mt-1.5 pt-1 border-t border-gray-100 flex flex-wrap gap-1">`+r.tickets.map(t=>`<span class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-1 py-0.5 rounded shadow-sm text-[9px] font-mono tracking-widest shrink-0">#${t}</span>`).join('')+`</div>`; }
+        window.renderCheckoutHistory = function(){
+            const list = document.getElementById('checkout-history-list'); if(!list) return;
+            if(!state.checkoutHistory || state.checkoutHistory.length === 0){ list.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">尚無結算紀錄</p>'; return; }
+            list.innerHTML = state.checkoutHistory.map(r => {
+                let ticketsHtml = '';
+                if(r.tickets && r.tickets.length > 0){ ticketsHtml = `<div class="mt-1.5 pt-1 border-t border-gray-100 flex flex-wrap gap-1">` + r.tickets.map(t => `<span class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-1 py-0.5 rounded shadow-sm text-[9px] font-mono tracking-widest shrink-0">#${t}</span>`).join('') + `</div>`; }
                 return `<div class="bg-white p-2 rounded border border-yellow-100 shadow-sm mb-1"><div class="flex justify-between items-start"><p class="text-xs font-bold text-gray-700">${r.target}</p><span class="text-[9px] text-gray-400 font-mono tracking-tighter mt-0.5">${r.time||''}</span></div><p class="text-[10px] text-gray-500 mt-0.5">減碳 ${r.carbon}g | 綠消 $${r.green}</p>${ticketsHtml}</div>`;
             }).join('');
         };
 
-        window.updateDisplays=function(){
-            const entContainer=document.getElementById('enterprise-badge-container');
-            const entNameDisplay=document.getElementById('display-enterprise-name');
-            const entEmpIdDisplay=document.getElementById('display-enterprise-emp-id');
+        window.updateDisplays = function(){
+            const entContainer = document.getElementById('enterprise-badge-container');
+            const entNameDisplay = document.getElementById('display-enterprise-name');
+            const entEmpIdDisplay = document.getElementById('display-enterprise-emp-id');
             if(state.enterpriseName){
-                if(entContainer){entContainer.classList.remove('hidden');entContainer.classList.add('inline-flex');}
-                if(entNameDisplay)entNameDisplay.textContent=state.enterpriseName;
-                if(entEmpIdDisplay)entEmpIdDisplay.textContent=state.entEmpId||'無編號';
-            }else{
-                if(entContainer){entContainer.classList.add('hidden');entContainer.classList.remove('inline-flex');}
+                if(entContainer){ entContainer.classList.remove('hidden'); entContainer.classList.add('inline-flex'); }
+                if(entNameDisplay) entNameDisplay.textContent = state.enterpriseName;
+                if(entEmpIdDisplay) entEmpIdDisplay.textContent = state.entEmpId || '無編號';
+            } else {
+                if(entContainer){ entContainer.classList.add('hidden'); entContainer.classList.remove('inline-flex'); }
             }
-            if(document.getElementById('display-mileage'))document.getElementById('display-mileage').textContent=((state.totalMileage||0)/1000).toFixed(1);
-            if(document.getElementById('display-carbon'))document.getElementById('display-carbon').textContent=Math.round(state.totalCarbon||0);
-            if(document.getElementById('display-score'))document.getElementById('display-score').textContent=state.totalScore||0;
-            if(document.getElementById('display-hero-index'))document.getElementById('display-hero-index').textContent=state.heroIndex||0;
-            if(document.getElementById('display-green-procurement'))document.getElementById('display-green-procurement').textContent=`$${(state.greenProcure||0).toLocaleString()}`;
-            if(document.getElementById('display-sroi-procurement'))document.getElementById('display-sroi-procurement').textContent=`$${(state.sroiProcure||0).toLocaleString()}`;
-            if(document.getElementById('display-total-green-impact'))document.getElementById('display-total-green-impact').textContent=`$${((state.greenProcure||0)+(state.sroiProcure||0)).toLocaleString()}`;
+            if(document.getElementById('display-mileage')) document.getElementById('display-mileage').textContent = ((state.totalMileage||0)/1000).toFixed(1);
+            if(document.getElementById('display-carbon')) document.getElementById('display-carbon').textContent = Math.round(state.totalCarbon||0);
+            if(document.getElementById('display-score')) document.getElementById('display-score').textContent = state.totalScore || 0;
+            if(document.getElementById('display-hero-index')) document.getElementById('display-hero-index').textContent = state.heroIndex || 0;
+            if(document.getElementById('display-green-procurement')) document.getElementById('display-green-procurement').textContent = `$${(state.greenProcure||0).toLocaleString()}`;
+            if(document.getElementById('display-sroi-procurement')) document.getElementById('display-sroi-procurement').textContent = `$${(state.sroiProcure||0).toLocaleString()}`;
+            if(document.getElementById('display-total-green-impact')) document.getElementById('display-total-green-impact').textContent = `$${((state.greenProcure||0)+(state.sroiProcure||0)).toLocaleString()}`;
             
-            const updateCircle=(id,val,max)=>{const el=document.getElementById(id);if(el)el.setAttribute('stroke-dasharray',`${Math.min(100,(val/max)*100)}, 100`);};
-            updateCircle('circle-mileage',(state.totalMileage||0)/1000,100);updateCircle('circle-carbon',state.totalCarbon||0,5000);updateCircle('circle-score',state.totalScore||0,1000);
-            updateCircle('circle-hero',state.heroIndex||0,2000);
+            const updateCircle = (id, val, max) => {
+                const el = document.getElementById(id);
+                if(el) el.setAttribute('stroke-dasharray', `${Math.min(100, (val/max)*100)}, 100`);
+            };
+            updateCircle('circle-mileage', (state.totalMileage||0)/1000, 100);
+            updateCircle('circle-carbon', state.totalCarbon||0, 5000);
+            updateCircle('circle-score', state.totalScore||0, 1000);
+            updateCircle('circle-hero', state.heroIndex||0, 2000);
 
-            const ticketList=document.getElementById('lottery-ticket-list');
-            if(state.lotteryTickets&&state.lotteryTickets.length>0){
-                if(ticketList){ticketList.innerHTML=state.lotteryTickets.map(t=>`<span class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0" title="${t.eventName}">#${t.serial}</span>`).join('');}
-            }else{
-                if(ticketList){ticketList.innerHTML=`<span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>`;}
+            const ticketList = document.getElementById('lottery-ticket-list');
+            if(state.lotteryTickets && state.lotteryTickets.length > 0){
+                if(ticketList){ ticketList.innerHTML = state.lotteryTickets.map(t => `<span class="bg-white border border-yellow-300 text-yellow-700 px-2 py-0.5 rounded shadow-sm text-[10px] sm:text-[11px] font-mono tracking-widest shrink-0" title="${t.eventName}">#${t.serial}</span>`).join(''); }
+            } else {
+                if(ticketList){ ticketList.innerHTML = `<span class="text-[11px] text-gray-400 font-bold">尚未獲得序號</span>`; }
             }
-            const iframe=document.getElementById('dashboard-iframe');
-            if(iframe&&iframe.contentWindow){iframe.contentWindow.postMessage({action:'SYNC_FROM_MAIN',state:state,events:window.globalLotteryEvents||[]},'*');}
+            const iframe = document.getElementById('dashboard-iframe');
+            if(iframe && iframe.contentWindow){ iframe.contentWindow.postMessage({action:'SYNC_FROM_MAIN', state:state, events:window.globalLotteryEvents||[]}, '*'); }
         };
 
-        window.updateGlobalSummary=function(){
-            const serverCarbon=Math.max(0,Number(globalAbsolute.carbon||0));
-            let serverGreen=Math.max(0,Number(globalAbsolute.green||0));
-            const visitorCount=Math.max(0,Number(globalAbsolute.visitor_count||0));
+        window.updateGlobalSummary = function(){
+            const serverCarbon = Math.max(0, Number(globalAbsolute.carbon||0));
+            let serverGreen = Math.max(0, Number(globalAbsolute.green||0));
+            const visitorCount = Math.max(0, Number(globalAbsolute.visitor_count||0));
             
-            if(serverGreen===0){
-                let historicalGreen=0;
+            if(serverGreen === 0){
+                let historicalGreen = 0;
                 (globalEntData.projects||[]).forEach(p=>historicalGreen+=(Number(p.green)||0));
                 (globalGovData.projects||[]).forEach(p=>historicalGreen+=(Number(p.green)||0));
-                if(historicalGreen>0){
-                    serverGreen=historicalGreen;
-                    if(db&&!isOfflineMode){setDoc(doc(db,'system_stats','global_absolute'),{green:historicalGreen},{merge:true}).catch(()=>{});}
+                if(historicalGreen > 0){
+                    serverGreen = historicalGreen;
+                    if(db && !isOfflineMode){ setDoc(doc(db,'system_stats','global_absolute'), {green:historicalGreen}, {merge:true}).catch(()=>{}); }
                 }
             }
-            if(document.getElementById('network-total-carbon-reduction'))document.getElementById('network-total-carbon-reduction').textContent=Math.round(serverCarbon).toLocaleString();
-            if(document.getElementById('display-grand-total-green'))document.getElementById('display-grand-total-green').textContent=`$${serverGreen.toLocaleString()}`;
-            if(document.getElementById('trees-planted-count'))document.getElementById('trees-planted-count').textContent=(serverCarbon/12000).toFixed(2);
+            if(document.getElementById('network-total-carbon-reduction')) document.getElementById('network-total-carbon-reduction').textContent = Math.round(serverCarbon).toLocaleString();
+            if(document.getElementById('display-grand-total-green')) document.getElementById('display-grand-total-green').textContent = `$${serverGreen.toLocaleString()}`;
+            if(document.getElementById('trees-planted-count')) document.getElementById('trees-planted-count').textContent = (serverCarbon/12000).toFixed(2);
             
-            const todayKey=`daily_${window.getTodayKey()}_carbon`;
-            const todayCarbon=Math.max(0,Number(globalAbsolute[todayKey]||0));
-            if(document.getElementById('daily-carbon-addition'))document.getElementById('daily-carbon-addition').textContent=Math.round(todayCarbon).toLocaleString();
-            if(document.getElementById('visitor-count'))document.getElementById('visitor-count').textContent=visitorCount.toLocaleString();
+            const todayKey = `daily_${window.getTodayKey()}_carbon`;
+            const todayCarbon = Math.max(0, Number(globalAbsolute[todayKey]||0));
+            if(document.getElementById('daily-carbon-addition')) document.getElementById('daily-carbon-addition').textContent = Math.round(todayCarbon).toLocaleString();
+            if(document.getElementById('visitor-count')) document.getElementById('visitor-count').textContent = visitorCount.toLocaleString();
 
-            const now=Date.now();
-            const trialExpiry=Number(globalAbsolute.map_trial_expiry||0);
-            const isTrialUnlocked=trialExpiry>now;
-            const adminBadge=document.getElementById('admin-trial-status-badge');
+            const now = Date.now();
+            const trialExpiry = Number(globalAbsolute.map_trial_expiry||0);
+            const isTrialUnlocked = trialExpiry > now;
+            const adminBadge = document.getElementById('admin-trial-status-badge');
             if(adminBadge){
                 if(isTrialUnlocked){
-                    adminBadge.className='ml-1 px-2 py-0.5 bg-green-800 border border-green-500 text-green-100 rounded-full font-bold shadow-inner flex items-center';
-                    adminBadge.innerHTML=`<i class="fas fa-circle text-[8px] mr-1 text-green-400 animate-pulse"></i>已解鎖 (剩 ${Math.ceil((trialExpiry-now)/60000)} 分)`;
-                }else{
-                    adminBadge.className='ml-1 px-2 py-0.5 bg-red-800 border border-red-500 text-red-100 rounded-full font-bold shadow-inner flex items-center';
-                    adminBadge.innerHTML=`<i class="fas fa-circle text-[8px] mr-1 text-red-400"></i>目前鎖定中`;
+                    adminBadge.className = 'ml-1 px-2 py-0.5 bg-green-800 border border-green-500 text-green-100 rounded-full font-bold shadow-inner flex items-center';
+                    adminBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-green-400 animate-pulse"></i>已解鎖 (剩 ${Math.ceil((trialExpiry-now)/60000)} 分)`;
+                } else {
+                    adminBadge.className = 'ml-1 px-2 py-0.5 bg-red-800 border border-red-500 text-red-100 rounded-full font-bold shadow-inner flex items-center';
+                    adminBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-red-400"></i>目前鎖定中`;
                 }
             }
-            const overlay=document.getElementById('trial-locked-overlay');
-            const content=document.getElementById('trial-unlocked-content');
-            const lockBtn=document.getElementById('trial-lock-btn');
-            if(overlay&&content&&lockBtn){
+            const overlay = document.getElementById('trial-locked-overlay');
+            const content = document.getElementById('trial-unlocked-content');
+            const lockBtn = document.getElementById('trial-lock-btn');
+            if(overlay && content && lockBtn){
                 if(isTrialUnlocked){
-                    overlay.classList.add('hidden');overlay.classList.remove('flex');content.classList.remove('hidden');
-                    lockBtn.innerHTML='<i class="fas fa-unlock text-emerald-500 text-sm"></i>';lockBtn.onclick=()=>window.showToast('地圖試算目前為解鎖狀態');
-                }else{
-                    overlay.classList.remove('hidden');overlay.classList.add('flex');content.classList.add('hidden');
-                    lockBtn.innerHTML='<i class="fas fa-lock text-sm"></i>';lockBtn.onclick=()=>window.showToast('請至管理面板查看權限狀態');
-                    if(window.calcRefMode)document.getElementById('enable-calc-ref-btn')?.click();
+                    overlay.classList.add('hidden'); overlay.classList.remove('flex'); content.classList.remove('hidden');
+                    lockBtn.innerHTML = '<i class="fas fa-unlock text-emerald-500 text-sm"></i>'; lockBtn.onclick = () => window.showToast('地圖試算目前為解鎖狀態');
+                } else {
+                    overlay.classList.remove('hidden'); overlay.classList.add('flex'); content.classList.add('hidden');
+                    lockBtn.innerHTML = '<i class="fas fa-lock text-sm"></i>'; lockBtn.onclick = () => window.showToast('請至管理面板查看權限狀態');
                 }
             }
 
-            const qrExpiry=Number(globalAbsolute.qr_scan_expiry||0);
-            const isQrUnlocked=qrExpiry>now;
-            const adminQrBadge=document.getElementById('admin-qr-status-badge');
+            const qrExpiry = Number(globalAbsolute.qr_scan_expiry||0);
+            const isQrUnlocked = qrExpiry > now;
+            const adminQrBadge = document.getElementById('admin-qr-status-badge');
             if(adminQrBadge){
                 if(isQrUnlocked){
-                    adminQrBadge.className='ml-1 px-2 py-0.5 bg-green-800 border border-green-500 text-green-100 rounded-full font-bold shadow-inner flex items-center';
-                    adminQrBadge.innerHTML=`<i class="fas fa-circle text-[8px] mr-1 text-green-400 animate-pulse"></i>已解鎖 (剩 ${Math.ceil((qrExpiry-now)/60000)} 分)`;
-                }else{
-                    adminQrBadge.className='ml-1 px-2 py-0.5 bg-red-800 border border-red-500 text-red-100 rounded-full font-bold shadow-inner flex items-center';
-                    adminQrBadge.innerHTML=`<i class="fas fa-circle text-[8px] mr-1 text-red-400"></i>目前鎖定中`;
+                    adminQrBadge.className = 'ml-1 px-2 py-0.5 bg-green-800 border border-green-500 text-green-100 rounded-full font-bold shadow-inner flex items-center';
+                    adminQrBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-green-400 animate-pulse"></i>已解鎖 (剩 ${Math.ceil((qrExpiry-now)/60000)} 分)`;
+                } else {
+                    adminQrBadge.className = 'ml-1 px-2 py-0.5 bg-red-800 border border-red-500 text-red-100 rounded-full font-bold shadow-inner flex items-center';
+                    adminQrBadge.innerHTML = `<i class="fas fa-circle text-[8px] mr-1 text-red-400"></i>目前鎖定中`;
                 }
             }
-            const btnQrScanner=document.getElementById('btn-open-qr-scanner');
-            const iconQrScanner=document.getElementById('icon-qr-scanner');
-            if(btnQrScanner&&iconQrScanner){
+            const btnQrScanner = document.getElementById('btn-open-qr-scanner');
+            const iconQrScanner = document.getElementById('icon-qr-scanner');
+            if(btnQrScanner && iconQrScanner){
                 if(isQrUnlocked){
-                    btnQrScanner.className="w-12 h-10 md:w-auto md:px-4 bg-white border-2 border-mori-forest text-mori-forest rounded-full shadow hover:bg-mori-light transition flex items-center justify-center group outline-none";
-                    btnQrScanner.title="開啟相機掃描產品或發票條碼";iconQrScanner.className="fas fa-qrcode text-lg group-hover:scale-110 transition";
-                    window.isQrScannerLocked=false;
-                }else{
-                    btnQrScanner.className="w-12 h-10 md:w-auto md:px-4 bg-gray-100 border-2 border-gray-300 text-gray-400 rounded-full shadow transition flex items-center justify-center group outline-none";
-                    btnQrScanner.title="掃描功能未解鎖，請洽管理員";iconQrScanner.className="fas fa-lock text-lg group-hover:scale-110 transition";
-                    window.isQrScannerLocked=true;
+                    btnQrScanner.className = "w-12 h-10 md:w-auto md:px-4 bg-white border-2 border-mori-forest text-mori-forest rounded-full shadow hover:bg-mori-light transition flex items-center justify-center group outline-none";
+                    btnQrScanner.title = "開啟相機掃描產品或發票條碼"; iconQrScanner.className = "fas fa-qrcode text-lg group-hover:scale-110 transition";
+                    window.isQrScannerLocked = false;
+                } else {
+                    btnQrScanner.className = "w-12 h-10 md:w-auto md:px-4 bg-gray-100 border-2 border-gray-300 text-gray-400 rounded-full shadow transition flex items-center justify-center group outline-none";
+                    btnQrScanner.title = "掃描功能未解鎖，請洽管理員"; iconQrScanner.className = "fas fa-lock text-lg group-hover:scale-110 transition";
+                    window.isQrScannerLocked = true;
                 }
             }
         };
 
-        window.unlockMapTrial=async function(){
-            if(!db)return window.showToast('資料庫未連線',true);
-            const mins=parseInt(document.getElementById('admin-trial-duration').value)||30;
-            try{await setDoc(doc(db,'system_stats','global_absolute'),{map_trial_expiry:Date.now()+mins*60*1000},{merge:true});window.showToast(`✅ 已全網解鎖地圖試算 ${mins} 分鐘`);}catch(e){window.showToast('解鎖失敗',true);}
+        window.unlockMapTrial = async function(){
+            if(!db) return window.showToast('資料庫未連線', true);
+            const mins = parseInt(document.getElementById('admin-trial-duration').value) || 30;
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: Date.now() + mins*60*1000 }, { merge: true }); window.showToast(`✅ 已全網解鎖地圖試算 ${mins} 分鐘`); } catch(e){ window.showToast('解鎖失敗', true); }
         };
-        window.lockMapTrial=async function(){
-            if(!db)return window.showToast('資料庫未連線',true);
-            try{await setDoc(doc(db,'system_stats','global_absolute'),{map_trial_expiry:0},{merge:true});window.showToast('🔒 已收回地圖試算權限');}catch(e){window.showToast('收回失敗',true);}
+        window.lockMapTrial = async function(){
+            if(!db) return window.showToast('資料庫未連線', true);
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { map_trial_expiry: 0 }, { merge: true }); window.showToast('🔒 已收回地圖試算權限'); } catch(e){ window.showToast('收回失敗', true); }
         };
-        window.unlockQrScan=async function(){
-            if(!db)return window.showToast('資料庫未連線',true);
-            const mins=parseInt(document.getElementById('admin-qr-duration').value)||30;
-            try{await setDoc(doc(db,'system_stats','global_absolute'),{qr_scan_expiry:Date.now()+mins*60*1000},{merge:true});window.showToast(`✅ 已全網解鎖掃描器 ${mins} 分鐘`);}catch(e){window.showToast('解鎖失敗',true);}
+        window.unlockQrScan = async function(){
+            if(!db) return window.showToast('資料庫未連線', true);
+            const mins = parseInt(document.getElementById('admin-qr-duration').value) || 30;
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { qr_scan_expiry: Date.now() + mins*60*1000 }, { merge: true }); window.showToast(`✅ 已全網解鎖掃描器 ${mins} 分鐘`); } catch(e){ window.showToast('解鎖失敗', true); }
         };
-        window.lockQrScan=async function(){
-            if(!db)return window.showToast('資料庫未連線',true);
-            try{await setDoc(doc(db,'system_stats','global_absolute'),{qr_scan_expiry:0},{merge:true});window.showToast('🔒 已收回掃描器權限');}catch(e){window.showToast('收回失敗',true);}
+        window.lockQrScan = async function(){
+            if(!db) return window.showToast('資料庫未連線', true);
+            try { await setDoc(doc(db, 'system_stats', 'global_absolute'), { qr_scan_expiry: 0 }, { merge: true }); window.showToast('🔒 已收回掃描器權限'); } catch(e){ window.showToast('收回失敗', true); }
         };
 
-        window.renderAdminLists=function(){
-            const authContainer=document.getElementById('auth-list-container');
+        window.renderAdminLists = function(){
+            const authContainer = document.getElementById('auth-list-container');
             if(authContainer){
-                let authHtml='';
-                const allProjects=[...(globalEntData.projects||[]).map(p=>({...p,_type:'ENTERPRISE'})),...(globalGovData.projects||[]).map(p=>({...p,_type:'GOVERNMENT'}))];
-                if(allProjects.length===0){authHtml='<div class="p-4 text-center text-gray-400 text-[13px]">目前無任何專案</div>';}else{
-                    authHtml=allProjects.map(p=>{
-                        const title=p._type==='ENTERPRISE'?p.orgName:p.name;
-                        const authStatus=p.isAuthorized?`<button onclick="window.requireAuth('收回歸戶權限', '772059', () => window.toggleProjectAuth('${p._type}', '${p.id}', false))" class="text-green-700 font-bold bg-green-100 hover:bg-red-100 hover:text-red-600 border border-green-300 hover:border-red-300 px-3 py-1 rounded text-[11px] transition shadow-sm group"><i class="fas fa-lock-open mr-1 group-hover:hidden"></i><i class="fas fa-lock mr-1 hidden group-hover:inline"></i><span class="group-hover:hidden">已解鎖</span><span class="hidden group-hover:inline">上鎖</span></button>`:`<button onclick="window.requireAuth('解鎖歸戶權限', '772059', () => window.toggleProjectAuth('${p._type}', '${p.id}', true))" class="bg-gray-100 hover:bg-yellow-400 text-gray-600 hover:text-yellow-900 border border-gray-300 hover:border-yellow-500 font-bold px-3 py-1 rounded text-[11px] shadow transition-colors"><i class="fas fa-lock mr-1"></i>解鎖</button>`;
+                let authHtml = '';
+                const allProjects = [...(globalEntData.projects||[]).map(p=>({...p,_type:'ENTERPRISE'})), ...(globalGovData.projects||[]).map(p=>({...p,_type:'GOVERNMENT'}))];
+                if(allProjects.length === 0){ authHtml = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無任何專案</div>'; } else {
+                    authHtml = allProjects.map(p => {
+                        const title = p._type === 'ENTERPRISE' ? p.orgName : p.name;
+                        const authStatus = p.isAuthorized ? `<button onclick="window.requireAuth('收回歸戶權限', '772059', () => window.toggleProjectAuth('${p._type}', '${p.id}', false))" class="text-green-700 font-bold bg-green-100 hover:bg-red-100 hover:text-red-600 border border-green-300 hover:border-red-300 px-3 py-1 rounded text-[11px] transition shadow-sm group"><i class="fas fa-lock-open mr-1 group-hover:hidden"></i><i class="fas fa-lock mr-1 hidden group-hover:inline"></i><span class="group-hover:hidden">已解鎖</span><span class="hidden group-hover:inline">上鎖</span></button>` : `<button onclick="window.requireAuth('解鎖歸戶權限', '772059', () => window.toggleProjectAuth('${p._type}', '${p.id}', true))" class="bg-gray-100 hover:bg-yellow-400 text-gray-600 hover:text-yellow-900 border border-gray-300 hover:border-yellow-500 font-bold px-3 py-1 rounded text-[11px] shadow transition-colors"><i class="fas fa-lock mr-1"></i>解鎖</button>`;
                         return `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="w-1/3 text-[13px] font-bold text-gray-700 truncate pr-2" title="${title}">${title}</span><div class="w-1/3 text-center">${authStatus}</div><span class="w-1/3 text-right text-[10px] font-mono text-gray-400 tracking-wider">${p._type}</span></div>`;
                     }).join('');
                 }
-                authContainer.innerHTML=authHtml;
+                authContainer.innerHTML = authHtml;
             }
-            const opContainer=document.getElementById('operator-list-container');
+            const opContainer = document.getElementById('operator-list-container');
             if(opContainer){
-                if(!globalCerts.operators||globalCerts.operators.length===0)opContainer.innerHTML='<div class="p-4 text-center text-gray-400 text-[13px]">目前無操作員資料</div>';
-                else opContainer.innerHTML=globalCerts.operators.map(op=>`<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${op.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${op.name}</span></div>`).join('');
+                if(!globalCerts.operators || globalCerts.operators.length === 0) opContainer.innerHTML = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無操作員資料</div>';
+                else opContainer.innerHTML = globalCerts.operators.map(op => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${op.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${op.name}</span></div>`).join('');
             }
-            const lecContainer=document.getElementById('lecturer-list-container');
+            const lecContainer = document.getElementById('lecturer-list-container');
             if(lecContainer){
-                if(!globalCerts.lecturers||globalCerts.lecturers.length===0)lecContainer.innerHTML='<div class="p-4 text-center text-gray-400 text-[13px]">目前無講師資料</div>';
-                else lecContainer.innerHTML=globalCerts.lecturers.map(lec=>`<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${lec.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${lec.name}</span></div>`).join('');
+                if(!globalCerts.lecturers || globalCerts.lecturers.length === 0) lecContainer.innerHTML = '<div class="p-4 text-center text-gray-400 text-[13px]">目前無講師資料</div>';
+                else lecContainer.innerHTML = globalCerts.lecturers.map(lec => `<div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50/50 transition"><span class="flex-1 text-[13px] font-bold text-gray-700">${lec.unit}</span><span class="w-32 text-right text-[13px] text-gray-600">${lec.name}</span></div>`).join('');
             }
         };
 
-        window.toggleProjectAuth=async function(type,id,isAuthorize){
-            if(!db)return window.showToast('資料庫未連線',true);
-            const collectionName=type==='ENTERPRISE'?'ent_projects':'gov_projects';
-            try{window.showToast('🔄 處理中...');await updateDoc(doc(db,collectionName,id),{isAuthorized:isAuthorize});window.showToast(isAuthorize?'🔓 已解鎖！遊客已可進行歸戶':'🔒 已上鎖！暫停遊客歸戶');}
-            catch(e){window.showToast('❌ 操作失敗，請確認權限',true);}
+        window.toggleProjectAuth = async function(type, id, isAuthorize){
+            if(!db) return window.showToast('資料庫未連線', true);
+            const collectionName = type === 'ENTERPRISE' ? 'ent_projects' : 'gov_projects';
+            try { window.showToast('🔄 處理中...'); await updateDoc(doc(db, collectionName, id), { isAuthorized: isAuthorize }); window.showToast(isAuthorize ? '🔓 已解鎖！遊客已可進行歸戶' : '🔒 已上鎖！暫停遊客歸戶'); }
+            catch(e){ window.showToast('❌ 操作失敗，請確認權限', true); }
         };
 
-        window.addLog=function(msg){
-            state.activityLogs.unshift({text:msg,time:window.getFormattedTime()});if(state.activityLogs.length>20)state.activityLogs.pop();
-            window.renderLogs();
-        };
-
-        window.addToGlobalTotal = async function(carbonAmt, greenAmt) {
-            if (!db || isOfflineMode) return true; 
-            try {
-                const dateStr = window.getTodayKey();
-                const updates = {};
-                if (carbonAmt > 0) {
-                    updates['carbon'] = increment(carbonAmt);
-                    updates[`daily_${dateStr}_carbon`] = increment(carbonAmt);
-                }
-                if (greenAmt > 0) {
-                    updates['green'] = increment(greenAmt);
-                    updates[`daily_${dateStr}_green`] = increment(greenAmt);
-                }
-                await setDoc(doc(db, 'system_stats', 'global_absolute'), updates, { merge: true });
-                return true;
-            } catch (err) {
-                console.error("更新全域數據失敗", err);
-                window.showToast("雲端同步異常，請稍後再試", true);
-                return false;
+        window.initMap = function(){
+            window.mapsApiReady = true;
+            if(document.getElementById('mission-page') && !document.getElementById('mission-page').classList.contains('hidden')){
+                window.renderMap();
             }
         };
 
-        window.processTripCompletion=async function(distKm,carbon){
-            if(!window.pendingTrip.isValid) return; 
-            window.pendingTrip.isValid = false; 
-
-            window.showToast('🔄 正在同步數據至雲端...');
-            const success=await window.addToGlobalTotal(carbon,0);
-            if(success){
-                state.totalMileage+=(distKm*1000);state.totalCarbon+=carbon;const pts=Math.round(carbon/10);state.totalScore+=pts;
-                window.updateDisplays();window.saveData();window.addLog(`完成旅程: ${distKm.toFixed(1)}km, 獲得減碳 ${carbon}g`);window.showToast('✅ 積分已記錄！');
-            } else {
-                window.pendingTrip.isValid = true; 
-            }
+        window.loadGoogleMaps = function(){
+            if(document.querySelector('script[src*="maps.googleapis.com"]')) return;
+            const script = document.createElement('script');
+            const mk = atob('QUl6YVN5QWpOdjQ5QlBhX1gyU1N3aHR5SFR1eWZqTUFieEVHVS04');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${mk}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
         };
-
-        window.bindMapAndTransportEvents=function(){
-            const tGrid=document.getElementById('transport-grid');
-            if(tGrid){tGrid.innerHTML=Object.entries(transportData).map(([k,d])=>`<div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer text-center hover:border-mori-forest transition" onclick="window.selectTransport('${k}')"><div class="text-3xl mb-2">${d.icon}</div><div class="text-xs font-bold text-gray-700">${d.name}</div></div>`).join('');}
-            
-            // 綁定快速下拉選單的選項
-            const quickSelect = document.getElementById('quick-transport-select');
-            if (quickSelect) {
-                quickSelect.innerHTML = '<option value="" disabled selected>請選擇交通方式</option>' + 
-                    Object.entries(transportData).map(([k, d]) => `<option value="${k}">${d.icon} ${d.name}</option>`).join('');
-            }
-
-            const selects=[document.getElementById('city-select')];
-            const cityHtml='<option value="">-- 選擇 --</option>'+taiwanCities.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
-            if(selects[0])selects[0].innerHTML=cityHtml;
-            
-            document.getElementById('add-city-route-btn')?.addEventListener('click',()=>{
-                const s=document.getElementById('city-select');
-                if(!s||!s.value)return window.showToast('請先選擇縣市',true);
-                const c=taiwanCities.find(x=>x.name===s.value);
-                if(c){
-                    window.addPointToRoute({coords:{lat:c.lat,lng:c.lng},name:c.name});
-                }
-            });
-        };
-
-        window.selectTransport=function(key){
-            state.currentTransport=key;
-            
-            // 同步更新浮動面板中的下拉選單
-            const quickSelect = document.getElementById('quick-transport-select');
-            if(quickSelect) quickSelect.value = key;
-
-            document.getElementById('homepage').classList.add('hidden');document.getElementById('mission-page').classList.remove('hidden');
-            document.getElementById('current-transport-display-mission').innerHTML=`<i class="fas fa-info-circle mr-1.5 opacity-80"></i>交通方式: ${transportData[key].name}`;
-            
-            if(window.routePoints.length >= 2) {
-                document.getElementById('preview-trip-button').classList.remove('hidden');
-            }
-            if(window.mapsApiReady)window.renderMap();else window.loadGoogleMaps();
-            
-            // 手機版切換時，自動捲動定位到「官方活動列表」
-            setTimeout(() => {
-                const listContainer = document.querySelector('.accordion-item.shrink-0.bg-white.relative.z-30');
-                if(listContainer) listContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                else document.getElementById('mission-page').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-        };
-
-        window.initMap=function(){window.mapsApiReady=true;if(document.getElementById('mission-page')&&!document.getElementById('mission-page').classList.contains('hidden')){window.renderMap();}};
-        window.loadGoogleMaps=function(){if(document.querySelector('script[src*="maps.googleapis.com"]'))return;const script=document.createElement('script');const mk=atob('QUl6YVN5QWpOdjQ5QlBhX1gyU1N3aHR5SFR1eWZqTUFieEVHVS04');script.src=`https://maps.googleapis.com/maps/api/js?key=${mk}&callback=initMap`;script.async=true;script.defer=true;document.head.appendChild(script);};
         
-        window.renderMap=function(){
-            if(!window.google){window.loadGoogleMaps();return;}
-            const mapEl=document.getElementById('map');if(!mapEl||mapEl.offsetWidth===0){setTimeout(window.renderMap,100);return;}
+        window.renderMap = function(){
+            if(!window.google){ window.loadGoogleMaps(); return; }
+            const mapEl = document.getElementById('map');
+            if(!mapEl || mapEl.offsetWidth === 0){ setTimeout(window.renderMap, 100); return; }
             if(!window.mapInstance){
-                window.mapInstance=new google.maps.Map(mapEl,{center:{lat:23.810,lng:120.850},zoom:13,mapTypeControl:false});
-                if(!window.directionsService)window.directionsService=new google.maps.DirectionsService();
-                if(!window.directionsRenderer)window.directionsRenderer=new google.maps.DirectionsRenderer({map:window.mapInstance,suppressMarkers:true,polylineOptions:{strokeColor:'#4A6741',strokeOpacity:0.8,strokeWeight:5}});
+                window.mapInstance = new google.maps.Map(mapEl, { center: { lat: 23.810, lng: 120.850 }, zoom: 13, mapTypeControl: false });
+                if(!window.directionsService) window.directionsService = new google.maps.DirectionsService();
+                if(!window.directionsRenderer) window.directionsRenderer = new google.maps.DirectionsRenderer({ map: window.mapInstance, suppressMarkers: true, polylineOptions: { strokeColor: '#4A6741', strokeOpacity: 0.8, strokeWeight: 5 } });
             }
             window.renderMapMarkers();
             document.getElementById('map-overlay')?.classList.add('hidden');
-        };
-
-        window.bindMapAndActions = function() {
-            document.getElementById('preview-trip-button')?.addEventListener('click', window.calculateMultiStopRoute);
-            
-            document.querySelectorAll('.short-dist-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const km = parseFloat(e.target.dataset.km);
-                    if (!state.currentTransport) return window.showToast('請先選擇交通方式', true);
-                    const reduction = Math.round(km * (transportData[state.currentTransport].reduction || 0));
-                    document.getElementById('short-dist-result').innerHTML = `預估減碳: <span class="text-emerald-600">${reduction}g</span>`;
-                    window.pendingTrip = { distKm: km, reduction: reduction, isValid: true };
-                    document.getElementById('confirm-short-dist-btn')?.classList.remove('hidden');
-                });
-            });
-
-            const qmInput = document.getElementById('quick-manual-km');
-            const qmResult = document.getElementById('quick-manual-result');
-            const qmSubmit = document.getElementById('quick-manual-submit-btn');
-            if (qmInput && qmResult && qmSubmit) {
-                qmInput.addEventListener('input', (e) => {
-                    const km = parseFloat(e.target.value);
-                    if (isNaN(km) || km <= 0) {
-                        qmResult.textContent = '減碳 0 g';
-                        qmSubmit.disabled = true;
-                        qmSubmit.classList.add('opacity-50', 'cursor-not-allowed');
-                        window.pendingTrip.isValid = false;
-                        return;
-                    }
-                    const reduction = Math.round(km * 100);
-                    qmResult.innerHTML = `減碳 <span class="text-emerald-600 font-black text-lg">${reduction}</span> g`;
-                    qmSubmit.disabled = false;
-                    qmSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
-                    window.pendingTrip = { distKm: km, reduction: reduction, isValid: true };
-                });
-                
-                qmSubmit.addEventListener('click', window.triggerConfirmQuickManual);
-            }
-
-            document.getElementById('submit-activity-log')?.addEventListener('click', () => {
-                const code = document.getElementById('verification-code-input')?.value;
-                if (!code) return window.showToast('請輸入通關代碼', true);
-                window.addLog(`完成實體任務驗證 (代碼: ${code})`);
-                state.totalScore += 50;
-                window.updateDisplays();
-                window.saveData();
-                window.showToast('✅ 驗證成功！獲得 50 積分');
-                document.getElementById('verification-code-input').value = '';
-            });
-
-            document.getElementById('log-action-button')?.addEventListener('click', function() {
-                const logInput = document.getElementById('sustainable-action-log');
-                if (!logInput) return;
-                if (this.dataset.locked === 'true') {
-                    if (logInput.value.trim().length === 8) {
-                        this.dataset.locked = 'false';
-                        this.innerHTML = '<i class="fas fa-edit mr-1"></i> 記錄心得';
-                        this.classList.replace('bg-gray-500', 'bg-mori-sage');
-                        this.classList.replace('hover:bg-mori-forest', 'hover:bg-mori-cream');
-                        logInput.value = '';
-                        window.showToast('🔓 心得專區已解鎖');
-                    }
-                    return;
-                }
-                if (!logInput.value.trim()) return window.showToast('請輸入心得內容', true);
-                window.addLog(`記錄心得: ${logInput.value.substring(0, 15)}...`);
-                state.totalScore += 10;
-                window.updateDisplays();
-                window.saveData();
-                window.showToast('✅ 心得已記錄！獲得 10 積分');
-                logInput.value = '';
-                this.dataset.locked = 'true';
-                this.innerHTML = '<i class="fas fa-lock mr-1"></i> 已上鎖';
-                this.classList.replace('bg-mori-sage', 'bg-gray-500');
-                this.classList.replace('hover:bg-mori-forest', 'hover:bg-gray-600');
-            });
-
-            document.getElementById('enable-calc-ref-btn')?.addEventListener('click', () => {
-                let calcRefMode = window.calcRefMode || false;
-                if (!state.currentTransport) return window.showToast('請先選擇交通方式', true);
-                if (!window.mapInstance) return window.showToast('地圖尚未載入，請稍候', true);
-                
-                window.calcRefMode = !calcRefMode;
-                const btn = document.getElementById('enable-calc-ref-btn');
-                const status = document.getElementById('calc-ref-status');
-                const result = document.getElementById('calc-ref-result');
-                
-                if (window.calcRefMode) {
-                    btn.innerHTML = '<i class="fas fa-times mr-1.5"></i> 關閉地圖點選模式';
-                    btn.classList.replace('bg-white', 'bg-emerald-100');
-                    btn.classList.add('border-emerald-400');
-                    status.classList.remove('hidden');
-                    status.innerHTML = '<i class="fas fa-mouse-pointer mr-1"></i> 提示：請直接在地圖上點擊以將座標加入行程中';
-                    result.classList.add('hidden');
-                    document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    window.mapClickListener = window.mapInstance.addListener('click', (e) => {
-                        window.addPointToRoute({
-                            coords: { lat: e.latLng.lat(), lng: e.latLng.lng() },
-                            name: '自訂地圖座標'
-                        });
-                    });
-                    window.showToast('📍 點選模式已開啟！請直接點擊上方地圖加入路線。');
-                } else {
-                    btn.innerHTML = '<i class="fas fa-map-marked-alt mr-1.5"></i> 開啟地圖點選模式';
-                    btn.classList.replace('bg-emerald-100', 'bg-white');
-                    btn.classList.remove('border-emerald-400');
-                    status.classList.add('hidden');
-                    result.classList.add('hidden');
-                    if (window.mapClickListener) google.maps.event.removeListener(window.mapClickListener);
-                }
-            });
-        };
-
-        window.bindGreenConsumptionEvents=function(){
-            const sroiSelect = document.getElementById('sroi-unit-select'); 
-            if(sroiSelect) { 
-                sroiSelect.innerHTML = sroiUnits.map(u => `<option value="${u.weight}">${u.name} (加權 x${u.weight})</option>`).join(''); 
-            }
-
-            const updateGreenTotal = () => { 
-                const q = parseFloat(document.getElementById('green-qty')?.value) || 0; 
-                const p = parseFloat(document.getElementById('green-price')?.value) || 0; 
-                let weight = 1;
-                if (window.selectedGreenLabel === 'SROI' && sroiSelect) {
-                    const selectedOption = sroiSelect.options[sroiSelect.selectedIndex];
-                    if (selectedOption) weight = parseFloat(selectedOption.value) || 1;
-                }
-                const total = Math.round(q * p * weight);
-                const display = document.getElementById('green-total-display'); 
-                if(display) display.textContent = `$${total.toLocaleString()}`; 
-            };
-
-            document.querySelectorAll('.label-card').forEach(card=>{
-                card.addEventListener('click',(e)=>{
-                    document.querySelectorAll('.label-card').forEach(c=>{
-                        c.classList.remove('border-mori-forest', 'bg-mori-light', 'shadow-md');
-                        c.classList.add('border-gray-200', 'hover:bg-gray-50');
-                        c.querySelector('i').classList.remove('text-mori-forest');
-                        c.querySelector('i').classList.add('text-gray-500');
-                        c.querySelector('span').classList.remove('text-mori-forest');
-                        c.querySelector('span').classList.add('text-gray-600');
-                    });
-                    e.currentTarget.classList.remove('border-gray-200', 'hover:bg-gray-50');
-                    e.currentTarget.classList.add('border-mori-forest', 'bg-mori-light', 'shadow-md');
-                    e.currentTarget.querySelector('i').classList.remove('text-gray-500');
-                    e.currentTarget.querySelector('i').classList.add('text-mori-forest');
-                    e.currentTarget.querySelector('span').classList.remove('text-gray-600');
-                    e.currentTarget.querySelector('span').classList.add('text-mori-forest');
-                    window.selectedGreenLabel=e.currentTarget.dataset.type;
-
-                    if (window.selectedGreenLabel === 'SROI') {
-                        document.getElementById('sroi-dropdown-container').classList.remove('hidden');
-                    } else {
-                        document.getElementById('sroi-dropdown-container').classList.add('hidden');
-                    }
-                    updateGreenTotal();
-                });
-            });
-
-            document.getElementById('green-qty')?.addEventListener('input', updateGreenTotal); 
-            document.getElementById('green-price')?.addEventListener('input', updateGreenTotal);
-            if(sroiSelect) sroiSelect.addEventListener('change', updateGreenTotal);
-            
-            document.getElementById('log-green-procure-btn')?.addEventListener('click', async () => {
-                const qty = parseFloat(document.getElementById('green-qty').value) || 0; 
-                const price = parseFloat(document.getElementById('green-price').value) || 0; 
-                const labelName = window.selectedGreenLabel || '未指定標章';
-                const itemName = document.getElementById('green-item-name').value.trim() || '未填寫品項';
-                const unitSelect = document.getElementById('green-unit-select');
-                const unitOther = document.getElementById('green-unit-other');
-                
-                let unit = unitSelect ? unitSelect.value : '份';
-                if(unit === 'other') unit = unitOther ? (unitOther.value.trim() || '份') : '份';
-
-                let weight = 1;
-                let farmName = "";
-                if (labelName === 'SROI' && sroiSelect) {
-                    const selectedOption = sroiSelect.options[sroiSelect.selectedIndex];
-                    if(selectedOption){
-                        weight = parseFloat(selectedOption.value) || 1;
-                        farmName = selectedOption.text.split('(')[0].trim();
-                    }
-                }
-
-                if(qty > 0 && price > 0) {
-                    const total = Math.round(qty * price * weight); 
-                    const btn = document.getElementById('log-green-procure-btn'); 
-                    const origHtml = btn.innerHTML; 
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 同步中...'; 
-                    btn.disabled = true;
-                    
-                    const success = typeof window.addToGlobalTotal === 'function' ? await window.addToGlobalTotal(0, total) : true; 
-                    btn.innerHTML = origHtml; btn.disabled = false;
-                    
-                    if (success) { 
-                        if (labelName === 'SROI') {
-                            state.sroiProcure += total; 
-                        } else {
-                            state.greenProcure += total; 
-                        }
-                        
-                        const earnedPts = Math.floor(total / 30); 
-                        state.totalScore += earnedPts; 
-                        window.saveData(); 
-                        
-                        let detailStr = `${itemName} (${qty}${unit} x $${price})`;
-                        let tagStr = labelName === 'SROI' ? `SROI-${farmName}` : labelName;
-                        let weightStr = weight !== 1 ? ` (加權 x${weight})` : '';
-
-                        window.addLog(`消費 [${tagStr}]${weightStr}: ${detailStr} = $${total.toLocaleString()}`); 
-                        
-                        window.updateDisplays(); 
-                        window.closeModal('green-consumption-modal'); 
-                        window.showToast(`✅ 消費登錄成功！獲得 ${earnedPts} 積分`); 
-                        
-                        document.getElementById('green-qty').value = '1'; 
-                        document.getElementById('green-price').value = ''; 
-                        document.getElementById('green-item-name').value = ''; 
-                        if(unitSelect) unitSelect.value = '份';
-                        if(unitOther) { unitOther.value = ''; unitOther.classList.add('hidden'); }
-                        
-                        if(document.getElementById('green-total-display')) document.getElementById('green-total-display').textContent = '$0'; 
-                        document.querySelectorAll('.label-card').forEach(c => { 
-                            c.classList.remove('border-mori-forest', 'bg-mori-light', 'shadow-md'); 
-                            c.classList.add('border-gray-200', 'hover:bg-gray-50'); 
-                            c.querySelector('i').classList.remove('text-mori-forest'); 
-                            c.querySelector('i').classList.add('text-gray-500'); 
-                            c.querySelector('span').classList.remove('text-mori-forest'); 
-                            c.querySelector('span').classList.add('text-gray-600'); 
-                        }); 
-                        window.selectedGreenLabel = null; 
-                        document.getElementById('sroi-dropdown-container')?.classList.add('hidden');
-                    }
-                } else { window.showToast('⚠️ 請輸入正確的數量與單價', true); }
-            });
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -2093,49 +2195,65 @@
                         window.saveData(); window.updateDisplays(); window.showToast(`🌍 收到來自地球日誌的同步！勇者指數已更新為 ${state.heroIndex}`);
                     }
                 }
-                if (event.data && event.data.action === 'SCROLL_TO_IFRAME') { const iframe = document.getElementById('dashboard-iframe'); if (iframe) { iframe.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
             });
 
             window.addEventListener('storage', (e) => {
-                if (e.key === LOCAL_STORAGE_KEY || !e.key) { try { const raw = localStorage.getItem(LOCAL_STORAGE_KEY); if (raw) { state = { ...state, ...JSON.parse(raw) }; window.updateDisplays(); window.renderCheckoutHistory(); window.renderLogs(); } } catch(err){} }
-                if (e.key === 'esgt_hero_index_update' && e.newValue) {
-                    try {
-                        const data = JSON.parse(e.newValue); let isUpdated = false;
-                        if (typeof data.heroIndex !== 'undefined' && state.heroIndex !== parseInt(data.heroIndex)) { state.heroIndex = parseInt(data.heroIndex) || 0; isUpdated = true; }
-                        if (typeof data.totalScore !== 'undefined' && state.totalScore !== parseInt(data.totalScore)) { state.totalScore = parseInt(data.totalScore) || 0; isUpdated = true; }
-                        if (isUpdated) { window.saveData(); window.updateDisplays(); window.showToast(`🌍 遊戲同步完成！目前積分: ${state.totalScore} pts`); }
-                    } catch(err){}
+                if (e.key === LOCAL_STORAGE_KEY || !e.key) { 
+                    try { 
+                        const raw = localStorage.getItem(LOCAL_STORAGE_KEY); 
+                        if (raw) { state = { ...state, ...JSON.parse(raw) }; window.updateDisplays(); window.renderCheckoutHistory(); window.renderLogs(); window.renderTransportGrid(); } 
+                    } catch(err){} 
                 }
             });
             
             if(typeof window.bindSystemUtilities === 'function') window.bindSystemUtilities();
-            if(typeof window.bindMapAndTransportEvents === 'function') window.bindMapAndTransportEvents();
             if(typeof window.bindGreenConsumptionEvents === 'function') window.bindGreenConsumptionEvents();
-            if(typeof window.bindMapAndActions === 'function') window.bindMapAndActions();
             if(typeof window.bindPartnerSelectEvents === 'function') window.bindPartnerSelectEvents();
 
             document.querySelectorAll('.accordion-header').forEach(header => {
-                header.addEventListener('click', () => { const content = header.nextElementSibling; const icon = header.querySelector('i.fa-chevron-down'); content.classList.toggle('hidden'); if(icon) icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)'; });
+                header.addEventListener('click', () => { 
+                    const content = header.nextElementSibling; 
+                    const icon = header.querySelector('i.fa-chevron-down'); 
+                    content.classList.toggle('hidden'); 
+                    if(icon) icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)'; 
+                });
             });
             
             document.getElementById('player-name')?.addEventListener('input', window.saveData);
-            document.getElementById('player-name')?.addEventListener('blur', () => { if(!state.playerName) { document.getElementById('player-name').value = '匿名旅者'; window.saveData(); } window.updateDisplays(); });
+            document.getElementById('player-name')?.addEventListener('blur', () => { 
+                if(!state.playerName) { document.getElementById('player-name').value = '匿名旅者'; window.saveData(); } 
+                window.updateDisplays(); 
+            });
             
-            document.getElementById('change-transport-button')?.addEventListener('click', () => { document.getElementById('mission-page').classList.add('hidden'); document.getElementById('homepage').classList.remove('hidden'); document.getElementById('transport-section').scrollIntoView({behavior: 'smooth'}); });
-            document.getElementById('back-to-home')?.addEventListener('click', () => { document.getElementById('homepage').classList.remove('hidden'); document.getElementById('mission-page').classList.add('hidden'); });
+            document.getElementById('change-transport-button')?.addEventListener('click', () => { 
+                document.getElementById('mission-page').classList.add('hidden'); 
+                document.getElementById('homepage').classList.remove('hidden'); 
+                document.getElementById('transport-section').scrollIntoView({behavior: 'smooth'}); 
+            });
+            document.getElementById('back-to-home')?.addEventListener('click', () => { 
+                document.getElementById('homepage').classList.remove('hidden'); 
+                document.getElementById('mission-page').classList.add('hidden'); 
+            });
 
-            const bBar = document.getElementById('system-broadcast-bar'); const bDrop = document.getElementById('system-broadcast-dropdown'); const bChev = document.getElementById('broadcast-chevron'); const bClose = document.getElementById('close-broadcast-btn');
-            if(bBar && bDrop) { bBar.addEventListener('click', () => { const isClosed = bDrop.classList.contains('scale-y-0'); if(isClosed) { bDrop.classList.remove('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(180deg)'; } else { bDrop.classList.add('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(0deg)'; } }); }
-            if(bClose && bDrop) { bClose.addEventListener('click', (e) => { e.stopPropagation(); bDrop.classList.add('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(0deg)'; }); }
-            
-            const hash = window.location.hash;
-            const targetIframe = document.getElementById('dashboard-iframe');
-            if (hash && hash.includes('-board-')) {
-                const targetTab = hash.includes('ent-') ? 'ent' : 'gov';
-                window.openDashboardModal(targetTab);
-                if (targetIframe) { setTimeout(() => { targetIframe.contentWindow.postMessage({ action: 'LOCATE_BOARD', hash: hash }, '*'); window.showToast('🎯 正在為您定位專屬計畫卡片...'); }, 1500); }
+            const bBar = document.getElementById('system-broadcast-bar'); 
+            const bDrop = document.getElementById('system-broadcast-dropdown'); 
+            const bChev = document.getElementById('broadcast-chevron'); 
+            const bClose = document.getElementById('close-broadcast-btn');
+            if(bBar && bDrop) { 
+                bBar.addEventListener('click', () => { 
+                    const isClosed = bDrop.classList.contains('scale-y-0'); 
+                    if(isClosed) { bDrop.classList.remove('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(180deg)'; } 
+                    else { bDrop.classList.add('scale-y-0', 'opacity-0'); if(bChev) bChev.style.transform = 'rotate(0deg)'; } 
+                }); 
             }
-
+            if(bClose && bDrop) { 
+                bClose.addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    bDrop.classList.add('scale-y-0', 'opacity-0'); 
+                    if(bChev) bChev.style.transform = 'rotate(0deg)'; 
+                }); 
+            }
+            
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     document.body.classList.add('power-save-mode');
@@ -2146,6 +2264,9 @@
                     document.body.classList.remove('power-save-mode');
                 }
             });
+
+            // 檢查網址帶入的專案 ID 並進行定位
+            setTimeout(window.checkAndScrollToSharedProject, 700);
         });
     </script>
 </body>
