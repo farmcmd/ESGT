@@ -176,7 +176,14 @@
                         <button onclick="document.getElementById('transport-info-text').classList.add('hidden')" class="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-lg"><i class="fas fa-times"></i></button>
                         <div class="mb-3 pr-6 space-y-2">
                             <p><i class="fas fa-info-circle text-mori-sage mr-1"></i> 交通共乘計算依據，以<a href="https://data.moenv.gov.tw/dataset/detail/CFP_P_02" target="_blank" class="text-blue-500 hover:text-blue-700 underline mx-1 font-bold">環境部環境資料開放平臺</a>做為參考數據計算<br>認定碳抵消方式，需依貴單位永續部門/管理師核定為準。</p>
-                            <p class="text-[12px] bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm text-gray-600 text-left"><span class="font-black text-mori-forest"><i class="fas fa-bullseye mr-1"></i>📌 邊界界定：</span>本系統減碳基準線 (Baseline) 設定為『單人駕駛燃油小客車』。</p>
+                            <div class="text-[12px] bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-gray-600 text-left space-y-1.5">
+                                <p class="font-black text-mori-forest"><i class="fas fa-bullseye mr-1"></i>📌 邊界界定與計算依據：</p>
+                                <p class="text-gray-700">依據台灣官方資料制定之標準係數（參考交通部運研所運具碳排放研究與環境部產品碳足跡標籤）：</p>
+                                <ul class="list-disc list-inside space-y-1 pl-1 text-gray-600 font-medium">
+                                    <li><span class="font-bold text-gray-800">基準線 (Baseline)：</span>單人自駕燃油小客車（<span class="font-bold text-mori-forest">173 g CO₂e / 人-公里</span>）</li>
+                                    <li><span class="font-bold text-gray-800">計算公式：</span>個人減碳量 (g/km) = 基準線 (173 g) － 該運具每人每公里排碳量</li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="bg-emerald-50/80 p-3 md:p-4 rounded-xl border border-emerald-200 shadow-sm transition-all text-left mt-2">
                             <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -639,15 +646,16 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
+        // 交通工具減碳基準係數 (依據台灣環境部碳足跡標籤與交通部運研所數據，基準線為單人自駕 173 gCO2e/km)
         const transportData = {
-            walk_bike: { name: '步行/單車', icon: '🚶🚲', reduction: 950, mode: 'WALKING' },
-            bus_train: { name: '共乘巴士', icon: '🚌', reduction: 400, mode: 'TRANSIT' },
-            carpool_2_moto: { name: '機車/2人', icon: '🛵', reduction: 150, mode: 'DRIVING' },
-            carpool_2_car: { name: '2人共乘(汽車)', icon: '🚗', reduction: 300, mode: 'DRIVING' },
-            carpool_3: { name: '3人共乘', icon: '🚗', reduction: 350, mode: 'DRIVING' },
-            carpool_4: { name: '4人共乘', icon: '🚗', reduction: 400, mode: 'DRIVING' },
-            carpool_5: { name: '5人共乘', icon: '🚐', reduction: 450, mode: 'DRIVING' },
-            thsr: { name: '搭乘高鐵', icon: '🚆', reduction: 650, mode: 'TRANSIT' },
+            walk_bike: { name: '步行/單車', icon: '🚶🚲', reduction: 173, mode: 'WALKING' },
+            thsr: { name: '搭乘高鐵', icon: '🚆', reduction: 141, mode: 'TRANSIT' },
+            bus_train: { name: '共乘巴士', icon: '🚌', reduction: 133, mode: 'TRANSIT' },
+            carpool_4: { name: '4人共乘', icon: '🚗', reduction: 130, mode: 'DRIVING' },
+            carpool_5: { name: '5人共乘', icon: '🚐', reduction: 129, mode: 'DRIVING' },
+            carpool_2_moto: { name: '機車/2人', icon: '🛵', reduction: 125, mode: 'DRIVING' },
+            carpool_3: { name: '3人共乘', icon: '🚗', reduction: 115, mode: 'DRIVING' },
+            carpool_2_car: { name: '2人共乘(汽車)', icon: '🚗', reduction: 86, mode: 'DRIVING' },
             drive_alone: { name: '單人自駕', icon: '🚘', reduction: 0, mode: 'DRIVING' }
         };
 
@@ -730,10 +738,10 @@
                     <button type="button" onclick="window.selectTransport('${key}')" class="flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200 group cursor-pointer ${isSelected ? 'bg-emerald-100 border-mori-forest shadow-md scale-105 ring-2 ring-mori-sage/50' : 'bg-white border-gray-200 hover:border-mori-sage hover:bg-gray-50 shadow-sm'}">
                         <span class="text-2xl sm:text-3xl mb-1 group-hover:scale-110 transition-transform">${item.icon}</span>
                         <span class="text-[12px] sm:text-xs font-bold text-gray-800 text-center leading-tight">${item.name}</span>
-                        <span class="text-[9px] sm:text-[10px] text-mori-forest font-bold mt-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">減碳 ${item.reduction}g</span>
+                        <span class="text-[9px] sm:text-[10px] text-mori-forest font-bold mt-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-200">${item.reduction > 0 ? `減碳 ${item.reduction} g/km` : '基準線 (0g)'}</span>
                     </button>
                 `;
-                optionsHtml += `<option value="${key}" ${isSelected ? 'selected' : ''}>${item.icon} ${item.name} (減碳 ${item.reduction}g)</option>`;
+                optionsHtml += `<option value="${key}" ${isSelected ? 'selected' : ''}>${item.icon} ${item.name} (${item.reduction > 0 ? `減碳 ${item.reduction}g/km` : '基準線'})</option>`;
             });
 
             grid.innerHTML = html;
@@ -1086,7 +1094,7 @@
                     distMeters += Math.sqrt(dLat*dLat + dLng*dLng) * 1000;
                 }
                 const distKm = distMeters / 1000;
-                const reduction = Math.round(distKm * (tData.reduction / 10));
+                const reduction = Math.round(distKm * tData.reduction);
                 window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
                 if (status) status.innerHTML = `${distKm.toFixed(1)} km | 減碳 <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
                 if (confirmBtn) confirmBtn.classList.remove('hidden');
@@ -1113,7 +1121,7 @@
                     result.routes[0].legs.forEach(leg => distMeters += leg.distance.value);
                     
                     const distKm = distMeters / 1000;
-                    const reduction = Math.round(distKm * (tData.reduction / 10));
+                    const reduction = Math.round(distKm * tData.reduction);
                     window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
                     if (status) status.innerHTML = `總路網距離 ${distKm.toFixed(1)}km | 預估減碳: <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
                     if (confirmBtn) confirmBtn.classList.remove('hidden');
@@ -1137,7 +1145,7 @@
                         }
                     }
                     const distKm = distMeters / 1000;
-                    const reduction = Math.round(distKm * (tData.reduction / 10));
+                    const reduction = Math.round(distKm * tData.reduction);
                     window.fallbackPolyline = new google.maps.Polyline({ path: path, geodesic: true, strokeColor: '#4A6741', strokeOpacity: 0.8, strokeWeight: 4, map: window.mapInstance });
                     
                     window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
@@ -1791,9 +1799,9 @@
                     const km = parseFloat(qmInput.value) || 0;
                     if (km > 0) {
                         const currentT = state.currentTransport || 'bus_train';
-                        const redRate = transportData[currentT]?.reduction || 400;
-                        const reduction = Math.round(km * (redRate / 10));
-                        qmResult.textContent = `減碳 ${reduction} g`;
+                        const redRate = transportData[currentT]?.reduction || 133;
+                        const reduction = Math.round(km * redRate);
+                        qmResult.innerHTML = `減碳 <span class="text-emerald-700 font-black text-base">${reduction}</span> g`;
                         qmSubmit.disabled = false;
                         qmSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
                         window.pendingTrip = { distMeters: km * 1000, distKm: km, reduction: reduction, isValid: true };
@@ -1810,8 +1818,8 @@
                 btn.addEventListener('click', () => {
                     const km = parseFloat(btn.dataset.km) || 0;
                     const currentT = state.currentTransport || 'walk_bike';
-                    const redRate = transportData[currentT]?.reduction || 950;
-                    const reduction = Math.round(km * (redRate / 10));
+                    const redRate = transportData[currentT]?.reduction || 173;
+                    const reduction = Math.round(km * redRate);
                     const resEl = document.getElementById('short-dist-result');
                     const confirmBtn = document.getElementById('confirm-short-dist-btn');
                     if (resEl) resEl.innerHTML = `移動 ${km}km | 減碳 <span class="text-mori-forest font-bold">${reduction}</span> g`;
