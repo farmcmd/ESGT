@@ -45,7 +45,6 @@
         .floating-panel.open .panel-content {
             max-height: 550px; padding: 15px; overflow-y: auto; border-top: 1px solid #e5e7eb;
         }
-        /* 防擋到底部橫條 */
         #bottom-panel { bottom: calc(env(safe-area-inset-bottom, 0px) + 15px); }
         
         .side-inventory {
@@ -68,7 +67,6 @@
             touch-action: pan-y; -webkit-touch-callout: none;
             transition: transform 0.1s; cursor: pointer;
         }
-        /* 魔法棒模式下的卡片外觀 */
         .magic-mode-active .creature-card {
             border-color: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
         }
@@ -81,7 +79,6 @@
             font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 2px solid white; z-index: 10;
         }
 
-        /* ★ 核心修正：大幅提升 z-index 並加入 safe-area，防止計分板被遮掩 */
         #live-score-board {
             position: absolute; 
             top: calc(env(safe-area-inset-top, 0px) + 20px); 
@@ -90,10 +87,9 @@
             padding: 8px 25px; border-radius: 30px; font-weight: bold; font-size: 18px; color: #1e782a;
             box-shadow: 0 6px 15px rgba(0,0,0,0.25); z-index: 500; pointer-events: none;
             display: flex; align-items: center; gap: 8px; text-shadow: 1px 1px 0px white;
-            white-space: nowrap; /* 防斷行 */
+            white-space: nowrap; 
         }
         
-        /* ★ 新增：中央浮動魔法棒按鈕 */
         #magic-wand-fab {
             position: absolute;
             bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
@@ -270,7 +266,6 @@
     <div id="canvas-wrapper"><canvas id="gameCanvas"></canvas></div>
     <div id="compass" onclick="recenterCamera()" title="點擊找回小偵探"><div id="compass-arrow"></div></div>
 
-    <!-- ★ 新增：中央浮動魔法棒按鈕 -->
     <div id="magic-wand-fab" onclick="toggleMagicMode()">🪄 啟用魔法棒</div>
 
     <div id="right-inventory" class="side-inventory"></div>
@@ -303,10 +298,10 @@
                 </div>
 
                 <img id="map-preview" alt="全景地圖預覽" style="margin-top: 15px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                <button id="map-download-btn" onclick="triggerDownload('map-preview', playerName + '_里山生態全景圖.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #2D80C6; border-bottom: 4px solid #1c7ab1; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖</button>
+                <button id="map-download-btn" onclick="triggerDownload('map-preview', playerName + '_里山生態全景圖.jpg')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #2D80C6; border-bottom: 4px solid #1c7ab1; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖</button>
                 
                 <img id="cert-preview" alt="結業證書預覽" style="margin-top: 20px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                <button id="cert-download-btn" onclick="triggerDownload('cert-preview', playerName + '_生態證書.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #65af44; border-bottom: 4px solid #4a8730; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
+                <button id="cert-download-btn" onclick="triggerDownload('cert-preview', playerName + '_生態證書.jpg')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #65af44; border-bottom: 4px solid #4a8730; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
                 
                 <a href="https://farmcmd.github.io/ESGT/" target="_blank" style="width: 100%; text-decoration: none; display: block;">
                     <button style="width: 100%; padding: 15px; margin-top: 15px; background: #F5B942; border-bottom: 4px solid #c79532; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 16px;">🚀 去主站登錄減碳成就</button>
@@ -345,7 +340,6 @@
             const cb = document.getElementById('loc-other-cb');
             if(group && cb) group.style.display = cb.checked ? 'block' : 'none';
         }
-        
         window.toggleCustomLocation = toggleCustomLocation;
 
         function showShareQR() {
@@ -456,15 +450,12 @@
 
         let crisisZones = []; let inventory = []; let mapOccupants = []; 
         
-        // ★ 魔法棒狀態管理
         let isMagicMode = false;
         let magicTargetHabitat = null;
-        
         let activeSelectedCard = null; 
         let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0; 
         let pendingPlacement = null;
 
-        // ★ 切換魔法棒模式
         function toggleMagicMode() {
             isMagicMode = !isMagicMode;
             const btn = document.getElementById('magic-wand-fab');
@@ -489,6 +480,29 @@
                 try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
             }
         }
+
+        let isAntiLeaveEnabled = false;
+
+        function enableAntiLeave() {
+            if (isAntiLeaveEnabled) return;
+            isAntiLeaveEnabled = true;
+
+            window.addEventListener('beforeunload', function (e) {
+                if (isGameRunning) {
+                    e.preventDefault();
+                    e.returnValue = '遊戲仍在進行中，確定要離開嗎？進度可能會遺失！';
+                }
+            });
+
+            history.pushState(null, null, location.href);
+            window.addEventListener('popstate', function () {
+                if (isGameRunning) {
+                    history.pushState(null, null, location.href); 
+                    showAlert('⚠️ 遊戲進行中，請勿離開頁面！');
+                }
+            });
+        }
+
         document.addEventListener('visibilitychange', () => { if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock(); });
 
         let quizCompleted = false; let quizScore = 0;
@@ -627,6 +641,8 @@
                 renderQuiz(); saveProgress();
             }
 
+            enableAntiLeave();
+
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     let p1 = await DeviceOrientationEvent.requestPermission(); let p2 = typeof DeviceMotionEvent !== 'undefined' ? await DeviceMotionEvent.requestPermission() : 'granted';
@@ -719,7 +735,6 @@
                 div.addEventListener('pointerdown', (e) => {
                     if (e.pointerType === 'mouse' && e.button !== 0) return; 
                     
-                    // ★ 魔法棒模式：點擊卡片直接傳送
                     if (isMagicMode) {
                         if (!magicTargetHabitat) {
                             showAlert("請先在地圖上點擊要接收的棲地！");
@@ -729,7 +744,7 @@
                         inventory = inventory.filter(i => i.uniqueId !== instToExtract.uniqueId);
                         let coords = { x: magicTargetHabitat.x + magicTargetHabitat.w/2, y: magicTargetHabitat.y + magicTargetHabitat.h/2 };
                         askPlacement(instToExtract, magicTargetHabitat, null, coords);
-                        return; // 結束，不進入長按邏輯
+                        return; 
                     }
 
                     if (activeSelectedCard) return; 
@@ -777,7 +792,6 @@
         canvas.addEventListener('pointerdown', (e) => {
             if (!isGameRunning) return; const coords = getLogicalCoords(e);
             
-            // ★ 魔法棒模式：點擊地圖鎖定棲地
             if (isMagicMode) {
                 let foundHabitat = false;
                 for (let h of habitats) {
@@ -792,7 +806,7 @@
                 if (!foundHabitat) {
                     isPanningMap = true; camera.detached = true; lastPanX = e.clientX; lastPanY = e.clientY; canvas.setPointerCapture(e.pointerId);
                 }
-                return; // 魔法棒模式下，點擊畫布不觸發拖曳
+                return;
             }
 
             if (activeSelectedCard) {
@@ -886,7 +900,6 @@
             }
         }
 
-        // ★ 統一的 Placement 邏輯 (供魔法棒與拖曳共用)
         function askPlacement(inst, targetHabitat, targetCrisis, coords) {
             let name = targetCrisis ? targetCrisis.name : targetHabitat.name;
             document.getElementById('confirm-msg').innerText = `是否將【${inst.name}】放置於【${name}】？`;
@@ -897,7 +910,6 @@
         function confirmPlacement() {
             if (pendingPlacement) {
                 let inst = pendingPlacement.instance;
-                // 如果是魔法棒來的，補上最終座標
                 if (isMagicMode || !draggingInstance) {
                     inst.x = pendingPlacement.coords.x - 25;
                     inst.y = pendingPlacement.coords.y - 25;
@@ -924,7 +936,6 @@
             if (pendingPlacement) {
                 let inst = pendingPlacement.instance; 
                 if (isMagicMode) {
-                    // 放回背包
                     inventory.push(inst);
                 } else {
                     inst.x = pendingPlacement.coords.x - 25; inst.y = pendingPlacement.coords.y - 25; mapOccupants.push(inst);
@@ -971,7 +982,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save(); ctx.translate(-camera.x, -camera.y);
 
-            drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawPlayer();
+            drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawPlayer(); 
             
             if (draggingInstance) {
                 ctx.fillStyle = draggingInstance.type === 'culture' ? '#fffbeb' : 'white'; 
@@ -1088,19 +1099,14 @@
 
         function drawHabitats() {
             habitats.forEach(h => {
-                // ★ 魔法棒鎖定高光
+                ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#ef4444'; 
+                ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
                 if (isMagicMode && magicTargetHabitat === h) {
-                    let glow = Math.sin(Date.now() / 150) * 10 + 10;
-                    ctx.strokeStyle = '#fcd34d'; ctx.lineWidth = 6;
-                    ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = glow;
-                    ctx.strokeRect(h.x, h.y, h.w, h.h);
-                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#fcd34d'; ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 15;
                 } else {
-                    ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#39FF14'; 
-                    ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
-                    ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(57, 255, 20, 0.3)'; ctx.shadowBlur = 5;
-                    ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]); ctx.shadowBlur = 0;
+                    ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.3)'; ctx.shadowBlur = 5;
                 }
+                ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]); ctx.shadowBlur = 0;
                 
                 if (h.isBonus) {
                     ctx.fillStyle = 'rgba(59, 130, 246, 0.15)'; ctx.fillRect(h.x, h.y, h.w, h.h);
@@ -1274,7 +1280,7 @@
                 canvas.width = MAP_W; canvas.height = MAP_H;
 
                 ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, MAP_W, MAP_H);
-                drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); 
+                drawMap(); drawCrisisZones(); drawHabitats(); drawMapOccupants();
 
                 ctx = oldCtx; camera.x = oldCamX; camera.y = oldCamY;
                 canvas.width = oldCanvasW; canvas.height = oldCanvasH;
@@ -1331,8 +1337,6 @@
                 
                 tCtx.fillStyle = '#1f2937'; tCtx.font = 'bold 20px "Segoe UI", sans-serif';
                 tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 460);
-                
-                // ★ 限制最大寬度為 680px，防止文字超出綠框，並微調 Y 軸避開 QRCode
                 tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 495, 680);
                 
                 tCtx.fillStyle = '#16a34a'; tCtx.textAlign = 'left'; tCtx.font = 'bold 22px "Segoe UI", sans-serif';
