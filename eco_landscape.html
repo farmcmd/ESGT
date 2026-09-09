@@ -158,7 +158,7 @@
             position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 80px); left: 20px; width: 60px; height: 60px;
             background: rgba(255,255,255,0.9); border-radius: 50%; border: 4px solid #8f562b;
             z-index: 500; display: flex; justify-content: center; align-items: center; cursor: pointer;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3); transition: transform 0.3s, opacity 0.3s;
         }
         #compass-arrow {
             width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent;
@@ -169,10 +169,19 @@
             position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 80px); left: 90px; width: 60px; height: 60px;
             background: rgba(255,255,255,0.95); border-radius: 50%; border: 4px solid #4a8730; color: #1e782a;
             z-index: 500; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 24px; font-weight: bold;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3); transition: transform 0.1s;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3); transition: transform 0.3s, opacity 0.3s;
         }
         #manual-walk-btn:active { transform: scale(0.9); }
         
+        /* ★ 新增：當規則面板開啟時，隱藏干擾的控制元件 */
+        body.panel-open #compass, 
+        body.panel-open #manual-walk-btn {
+            opacity: 0; pointer-events: none; transform: translateY(40px);
+        }
+        body.panel-open #magic-wand-fab {
+            opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(40px);
+        }
+
         .quiz-question { margin-bottom: 15px; text-align: left; font-size: 13px; color: #333; }
         .quiz-question p { margin: 0 0 8px 0; font-weight: bold; color: #1f2937; line-height: 1.4; }
         .quiz-option { display: block; margin-bottom: 6px; cursor: pointer; padding: 6px; border-radius: 6px; transition: background 0.2s; border: 1px solid transparent;}
@@ -276,7 +285,6 @@
     <div id="canvas-wrapper"><canvas id="gameCanvas"></canvas></div>
     <div id="compass" onclick="recenterCamera()" title="點擊找回小偵探"><div id="compass-arrow"></div></div>
     
-    <!-- 手動走步按鈕 (無感測器裝置測試用) -->
     <div id="manual-walk-btn" onclick="manualStep()" title="手動前進 (無感測器適用)">👣</div>
 
     <div id="magic-wand-fab" onclick="toggleMagicMode()">🪄 啟用魔法棒</div>
@@ -340,7 +348,17 @@
     <div id="qrcode" style="position: absolute; left: -9999px; visibility: hidden;"></div>
 
     <script>
-        // 核心變數與全域函數
+        // ★ 終極 iOS Safari 防雙指放大 / 雙擊放大防呆機制
+        document.addEventListener('touchstart', function(event) {
+            if (event.touches.length > 1) { event.preventDefault(); }
+        }, { passive: false });
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            let now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+            lastTouchEnd = now;
+        }, { passive: false });
+
         const QUIZ_DATA = [
             { q: "請問在農田維持多孔隙微棲地對作物有什麼好處?", opts: ["微氣候緩衝（溫濕度調節）", "水土保持與肥份鎖定", "土壤通氣性與根系強韌化", "以上皆是"], ans: 3 },
             { q: "多孔隙微棲地對周遭生態有什麼樣的影響?", opts: ["建立基層生物庇護所", "重塑區域食物網平衡", "串聯生態廊道", "以上皆是"], ans: 3 },
@@ -367,11 +385,8 @@
             let img = document.getElementById(imgId);
             if (!img || !img.src) return;
             let link = document.createElement('a');
-            link.href = img.src;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            link.href = img.src; link.download = filename; document.body.appendChild(link);
+            link.click(); document.body.removeChild(link);
         }
 
         const ECO_DATA = [
@@ -481,6 +496,7 @@
                 btn.classList.remove('active');
                 btn.innerText = '🪄 啟用魔法棒';
                 magicTargetHabitat = null;
+                camera.detached = false; 
             }
             document.getElementById('right-inventory').classList.toggle('magic-mode-active', isMagicMode);
         }
@@ -495,14 +511,7 @@
             player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x));
             player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
             checkMovement(stepSize);
-            camera.detached = false;
-        }
-
-        let wakeLock = null;
-        async function requestWakeLock() {
-            if ('wakeLock' in navigator) {
-                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
-            }
+            if (!magicTargetHabitat) camera.detached = false;
         }
 
         let isAntiLeaveEnabled = false;
@@ -526,8 +535,6 @@
                 }
             });
         }
-
-        document.addEventListener('visibilitychange', () => { if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock(); });
 
         let quizCompleted = false; let quizScore = 0;
         function renderQuiz() {
@@ -558,9 +565,11 @@
             const panel = document.getElementById(panelId); const icon = panel.querySelector('.toggle-icon');
             if (panel.classList.contains('open')) {
                 panel.classList.remove('open'); icon.innerText = '▲';
+                document.body.classList.remove('panel-open'); // 關閉面板，顯示魔法棒與方向鍵
             } else {
                 document.querySelectorAll('.floating-panel').forEach(p => { p.classList.remove('open'); if(p.id === 'bottom-panel') p.querySelector('.toggle-icon').innerText = '▲'; });
                 panel.classList.add('open'); icon.innerText = '✖';
+                document.body.classList.add('panel-open'); // 開啟面板，隱藏防礙物
             }
         }
 
@@ -641,7 +650,6 @@
         window.onload = checkExistingSave;
 
         async function startGame(isResume = false) {
-            requestWakeLock(); 
             if (isResume) {
                 if(!loadProgress()) { alert("讀取進度失敗，請重新開始。"); return; }
             } else {
@@ -667,7 +675,6 @@
 
             enableAntiLeave();
 
-            // ★ 修正：將陀螺儀與加速度計的權限檢查與註冊嚴格分離，避免單一缺失導致全面卡死
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission().then(permissionState => {
                     if (permissionState === 'granted') window.addEventListener('deviceorientation', handleOrientation);
@@ -688,7 +695,7 @@
                 const speed = 15; 
                 if(e.key==='ArrowUp') { 
                     player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed; checkMovement(speed); 
-                    camera.detached = false;
+                    if(!magicTargetHabitat) camera.detached = false;
                 }
                 if(e.key==='ArrowLeft') player.dirAngle -= 0.2; if(e.key==='ArrowRight') player.dirAngle += 0.2;
             });
@@ -709,9 +716,8 @@
         let lastMag = 0;
         function handleMotion(e) {
             if (!isGameRunning) return; 
-            if (isPanningMap || draggingInstance || pendingPlacement || activeSelectedCard) return; 
+            if (isPanningMap || draggingInstance || pendingPlacement || activeSelectedCard || magicTargetHabitat) return; 
             
-            // ★ 修正：引入 Delta 變化量過濾演算法，無懼各裝置 Gravity 誤差，走步保證靈敏
             let acc = e.acceleration;
             if (!acc || (acc.x === null && acc.y === null)) acc = e.accelerationIncludingGravity;
             if (!acc) return;
@@ -721,14 +727,14 @@
             let delta = Math.abs(mag - lastMag);
             lastMag = mag;
 
-            if (delta > 1.5) { // 靈敏的走路抖動閾值
+            if (delta > 1.5) { 
                 const stepSize = 6; 
                 player.x += Math.sin(player.dirAngle) * stepSize; 
                 player.y -= Math.cos(player.dirAngle) * stepSize; 
                 player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x)); 
                 player.y = Math.max(player.size, Math.min(MAP_H - player.size, player.y));
                 checkMovement(stepSize);
-                camera.detached = false;
+                if(!magicTargetHabitat) camera.detached = false;
             }
         }
 
@@ -843,6 +849,12 @@
                     if (coords.x >= h.x && coords.x <= h.x + h.w && coords.y >= h.y && coords.y <= h.y + h.h) {
                         magicTargetHabitat = h;
                         foundHabitat = true;
+                        
+                        // ★ 鎖定視角到被點擊的棲地中央
+                        camera.x = h.x + h.w / 2 - SCREEN_W / 2;
+                        camera.y = h.y + h.h / 2 - SCREEN_H / 2;
+                        camera.detached = true;
+
                         showAlert(`🪄 已鎖定【${h.name}】，請點擊右側生物卡片傳送！`);
                         document.getElementById('magic-wand-fab').innerText = `✨ 已鎖定: ${h.name}`;
                         break;
@@ -970,6 +982,7 @@
                     document.getElementById('magic-wand-fab').innerText = '🪄 啟用魔法棒';
                     isMagicMode = false;
                     document.getElementById('right-inventory').classList.remove('magic-mode-active');
+                    camera.detached = false; // 解除視角鎖定
                 }
                 
                 pendingPlacement = null; saveProgress(); renderInventory(); 
@@ -1144,9 +1157,20 @@
 
         function drawHabitats() {
             habitats.forEach(h => {
-                ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#39FF14'; 
-                ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
-                ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(57, 255, 20, 0.3)'; ctx.shadowBlur = 5;
+                let isTarget = (magicTargetHabitat && magicTargetHabitat.id === h.id);
+                // ★ 新增閃爍定位特效
+                let blink = isTarget && (Math.floor(Date.now() / 300) % 2 === 0);
+
+                if (isTarget) {
+                    ctx.strokeStyle = blink ? '#fde047' : '#eab308'; // 閃爍的黃線
+                    ctx.lineWidth = 6; ctx.setLineDash([12, 8]);
+                    ctx.shadowColor = 'rgba(234, 179, 8, 0.8)'; ctx.shadowBlur = blink ? 15 : 5;
+                } else {
+                    ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#ef4444'; 
+                    ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
+                    ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.3)'; ctx.shadowBlur = 5;
+                }
+
                 ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]); ctx.shadowBlur = 0;
                 
                 if (h.isBonus) {
@@ -1377,8 +1401,8 @@
                 tCtx.fillText('獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。', 400, 415);
                 
                 tCtx.fillStyle = '#1f2937'; tCtx.font = 'bold 20px "Segoe UI", sans-serif';
-                tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 460);
-                tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 495, 680);
+                tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 470);
+                tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 505, 680);
                 
                 tCtx.fillStyle = '#16a34a'; tCtx.textAlign = 'left'; tCtx.font = 'bold 22px "Segoe UI", sans-serif';
                 tCtx.fillText('🌿 探探里山', 120, 545);
