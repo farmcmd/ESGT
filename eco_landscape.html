@@ -45,7 +45,6 @@
         .floating-panel.open .panel-content {
             max-height: 550px; padding: 15px; overflow-y: auto; border-top: 1px solid #e5e7eb;
         }
-        /* 防擋設定：運用安全區域與較高 Z-index */
         #bottom-panel { bottom: calc(env(safe-area-inset-bottom, 0px) + 15px); }
         
         .side-inventory {
@@ -91,7 +90,6 @@
             white-space: nowrap; 
         }
         
-        /* 魔法棒按鈕 (置中懸浮，保證不會被面板遮擋) */
         #magic-wand-fab {
             position: absolute;
             bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
@@ -120,6 +118,7 @@
             background: white; color: var(--text-dark); padding: 25px; border-radius: 16px;
             text-align: center; width: 90%; max-width: 450px; margin: 20px 0;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
         }
         
         .warning-box, .info-box-green { padding: 12px; margin-bottom: 20px; font-size: 12px; text-align: left; line-height: 1.6; border-radius: 0 6px 6px 0; }
@@ -147,6 +146,31 @@
         .btn-secondary { background: #dca166; border-bottom: 4px solid #b66f36; }
         .btn-danger { background: transparent; color: #ef4444; border: 2px solid #ef4444; padding: 10px 30px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; width: 100%; }
 
+        /* 圖鑑與說明按鈕 */
+        .btn-guide { background: #2563eb; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; width: 100%; box-shadow: 0 4px 0 #1d4ed8; transition: transform 0.1s, box-shadow 0.1s;}
+        .btn-guide:active { transform: translateY(4px); box-shadow: none; }
+
+        /* 圖鑑 Modal */
+        #guide-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); z-index: 10005;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .guide-box {
+            background: #fff; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px;
+            max-height: 85vh; overflow-y: auto; text-align: left; position: relative; border: 4px solid #3b82f6;
+        }
+        .guide-close {
+            position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer;
+            color: #ef4444; font-weight: bold; line-height: 1; background: #fee2e2; border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center;
+        }
+        .guide-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #ccc; }
+        .guide-section h3 { color: #1e40af; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        .guide-card-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .guide-mini-card { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; padding: 5px; text-align: center; width: 50px; font-size: 10px; }
+        .guide-chain { background: #fef3c7; padding: 10px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 10px; font-size: 13px; color: #92400e; }
+        .guide-chain span { font-size: 18px; vertical-align: middle; }
+
         #alert-box {
             position: fixed; top: 120px; left: 50%; transform: translateX(-50%);
             background: rgba(45, 128, 198, 0.95); color: white; padding: 12px 25px; border-radius: 30px; 
@@ -173,7 +197,6 @@
         }
         #manual-walk-btn:active { transform: scale(0.9); }
         
-        /* ★ 新增：當規則面板開啟時，隱藏干擾的控制元件 */
         body.panel-open #compass, 
         body.panel-open #manual-walk-btn {
             opacity: 0; pointer-events: none; transform: translateY(40px);
@@ -221,25 +244,14 @@
         <div class="start-box">
             <h2 style="color: #1e782a; margin-top: 0; margin-bottom: 10px; font-size: 24px; text-shadow: 1px 1px 0px #ccc;">探探里山<br>永續生態與農村文化導覽</h2>
             
+            <button class="btn-guide" onclick="openGuide()">📖 探索圖鑑與規則說明</button>
+
             <div id="new-game-form">
                 <div class="warning-box">
                     <strong style="font-size:14px;">📋 行前通知與安全須知：</strong><br>
                     1. 🚷 <b>注意安全：</b>導覽行進間請勿注視手機。請緊跟講師，抵達定點後再操作系統。<br>
                     2. 🌿 <b>尊重自然：</b>探索農村風俗與生態時，請保持安靜觀察，切勿破壞棲地環境。<br>
                     3. 🎒 <b>裝備確認：</b>請確保手機電量充足，並備妥防蚊、防曬用品。
-                </div>
-                
-                <div class="info-box-green">
-                    <b>計畫支持：</b>教育部大學社會責任推動計畫 臺大。山林。學院 2.0 水里里山生態廊道計畫<br><br>
-                    <b>🧑‍🌾 種子講師：</b><br>
-                    1. 指令教育農場 陳宏瑋 (農業部第七屆百大青農)<br>
-                    2. 湧健酪梨/梅園 林裕翔 (農業部第八屆百大青農)<br>
-                    3. 雨社山下農場 梁維軒 (農業部第八屆百大青農)<br>
-                    4. 阿爾喜檸檬園 范振育 (農業部第七屆百大青農)<br>
-                    5. 小茶米農場 連宴瑩 (農業部第七屆百大青農)
-                    <div style="margin-top: 10px; font-size: 11px; color: #166534; border-top: 1px solid #bbf7d0; padding-top: 5px;">
-                        系統開發： farmcmd@gmail.com (陳宏瑋)
-                    </div>
                 </div>
                 
                 <div class="form-group"><label>偵探名稱 (必填)</label><input type="text" id="player-name" class="form-input" placeholder="請輸入姓名"></div>
@@ -265,6 +277,35 @@
                 <p style="font-size: 16px; font-weight: bold; color: #ea580c; margin-bottom: 15px;">💾 偵測到未完成的生態任務！</p>
                 <button class="btn-secondary" onclick="startGame(true)">繼續上次探索</button>
                 <button class="btn-danger" onclick="clearSaveData()">🗑️ 清除進度重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 圖鑑與說明 Modal -->
+    <div id="guide-modal">
+        <div class="guide-box">
+            <div class="guide-close" onclick="closeGuide()">✖</div>
+            <h2 style="color: #1d4ed8; text-align: center; margin-top: 0; border-bottom: 3px solid #bfdbfe; padding-bottom: 10px;">📖 探索圖鑑與規則說明</h2>
+            
+            <div class="guide-section">
+                <h3>🌟 生態演化與加分規則</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: #374151;">
+                    ✔️ <b>基本得分：</b>將生物放入正確棲地，或發現文化地景，皆可 <b>+1分</b>。<br>
+                    ✨ <b>新生自然棲地：</b>在同一個棲地中，放入 <b>3張正確</b> 的生物，將觸發藍色虛線框的生態擴增獎勵！<b>(額外 +5分)</b><br>
+                    ⚠️ <b>環境危機陷阱：</b>若在同一棲地放入 <b>3張錯誤</b> 的生物，將引發黑色虛線的汙染源 <b>(扣 5分)</b>。拖曳時若路過危機陷阱，生物會死亡被吸入 <b>(再扣 1分)</b>！
+                </p>
+            </div>
+
+            <div class="guide-section">
+                <h3>🔗 隱藏食物鏈任務 (一組 +10分)</h3>
+                <p style="font-size: 14px; color: #4b5563; margin-bottom: 10px;">只要在同一個棲地內湊齊以下組合，系統會畫出金色能量線，並給予高額加分！</p>
+                <div class="guide-chain"><b>田野捕食鏈 (生物防治)：</b><br><span>🦠</span> 蚜蟲 ➜ <span>🐞</span> 瓢蟲 ➜ <span>🐦</span> 鳥類</div>
+                <div class="guide-chain"><b>水岸生態鏈 (能量流動)：</b><br><span>🐜</span> 螞蟻 ➜ <span>🐸</span> 蛙類 ➜ <span>🐍</span> 蛇類</div>
+            </div>
+
+            <div class="guide-section">
+                <h3>🎒 可收集卡片一覽</h3>
+                <div id="guide-cards-container" class="guide-card-grid"></div>
             </div>
         </div>
     </div>
@@ -319,10 +360,10 @@
                 </div>
 
                 <img id="map-preview" alt="全景地圖預覽" style="margin-top: 15px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                <button id="map-download-btn" onclick="triggerDownload('map-preview', playerName + '_里山生態全景圖.jpg')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #2D80C6; border-bottom: 4px solid #1c7ab1; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖</button>
+                <button id="map-download-btn" onclick="triggerDownload('map-preview', playerName + '_里山生態全景圖.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #2D80C6; border-bottom: 4px solid #1c7ab1; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🗺️ 下載全景地圖</button>
                 
                 <img id="cert-preview" alt="結業證書預覽" style="margin-top: 20px; width: 100%; border-radius: 8px; border: 2px solid #8f562b; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                <button id="cert-download-btn" onclick="triggerDownload('cert-preview', playerName + '_生態證書.jpg')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #65af44; border-bottom: 4px solid #4a8730; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
+                <button id="cert-download-btn" onclick="triggerDownload('cert-preview', playerName + '_生態證書.png')" style="display:none; width: 100%; padding: 15px; margin-top: 10px; background: #65af44; border-bottom: 4px solid #4a8730; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">📥 下載精美證書</button>
                 
                 <a href="https://farmcmd.github.io/ESGT/" target="_blank" style="width: 100%; text-decoration: none; display: block;">
                     <button style="width: 100%; padding: 15px; margin-top: 15px; background: #F5B942; border-bottom: 4px solid #c79532; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 16px;">🚀 去主站登錄減碳成就</button>
@@ -455,9 +496,23 @@
         const CARD_POOL = [...ECO_DATA, ...CULTURE_DATA];
 
         const FOOD_CHAINS = [
-            { id: 'chain1', name: '田野捕食鏈 (蚜蟲➜瓢蟲➜鳥類)', members: ['b10', 'b9', 'b7'] }, 
-            { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['b11', 'b12', 'b4'] }
+            { id: 'chain1', name: '田野捕食鏈', members: ['b10', 'b9', 'b7'] }, 
+            { id: 'chain2', name: '水岸生態鏈', members: ['b11', 'b12', 'b4'] }
         ];
+
+        // 載入時將卡片填入圖鑑
+        window.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('guide-cards-container');
+            CARD_POOL.forEach(c => {
+                let div = document.createElement('div');
+                div.className = 'guide-mini-card';
+                div.innerHTML = `<div style="font-size:20px;">${c.icon}</div><div>${c.name}</div>`;
+                container.appendChild(div);
+            });
+        });
+
+        function openGuide() { document.getElementById('guide-modal').style.display = 'flex'; }
+        function closeGuide() { document.getElementById('guide-modal').style.display = 'none'; }
 
         let habitats = [
             { id: 'h14', name: '原始森林', x: 20, y: 20, w: 260, h: 180, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
@@ -850,7 +905,6 @@
                         magicTargetHabitat = h;
                         foundHabitat = true;
                         
-                        // ★ 鎖定視角到被點擊的棲地中央
                         camera.x = h.x + h.w / 2 - SCREEN_W / 2;
                         camera.y = h.y + h.h / 2 - SCREEN_H / 2;
                         camera.detached = true;
@@ -1155,20 +1209,20 @@
             drawWoodSign('森林', 700, 180, true);
         }
 
+        // ★ 新增：食物鏈視覺檢查與高光連線
         function drawHabitats() {
             habitats.forEach(h => {
                 let isTarget = (magicTargetHabitat && magicTargetHabitat.id === h.id);
-                // ★ 新增閃爍定位特效
                 let blink = isTarget && (Math.floor(Date.now() / 300) % 2 === 0);
 
                 if (isTarget) {
-                    ctx.strokeStyle = blink ? '#fde047' : '#eab308'; // 閃爍的黃線
+                    ctx.strokeStyle = blink ? '#fde047' : '#eab308'; 
                     ctx.lineWidth = 6; ctx.setLineDash([12, 8]);
                     ctx.shadowColor = 'rgba(234, 179, 8, 0.8)'; ctx.shadowBlur = blink ? 15 : 5;
                 } else {
-                    ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#ef4444'; 
+                    ctx.strokeStyle = h.isBonus ? '#3b82f6' : '#39FF14'; 
                     ctx.lineWidth = 4; ctx.setLineDash([8, 8]);
-                    ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(239, 68, 68, 0.3)'; ctx.shadowBlur = 5;
+                    ctx.shadowColor = h.isBonus ? 'rgba(59, 130, 246, 0.5)' : 'rgba(57, 255, 20, 0.3)'; ctx.shadowBlur = 5;
                 }
 
                 ctx.strokeRect(h.x, h.y, h.w, h.h); ctx.setLineDash([]); ctx.shadowBlur = 0;
@@ -1177,12 +1231,30 @@
                     ctx.fillStyle = 'rgba(59, 130, 246, 0.15)'; ctx.fillRect(h.x, h.y, h.w, h.h);
                 }
 
+                // 檢查該棲地是否有達成任何食物鏈
+                let completedChains = [];
+                let placedIds = h.occupants.map(o => o.id);
+                FOOD_CHAINS.forEach(chain => {
+                    if (chain.members.every(mId => placedIds.includes(mId))) {
+                        completedChains.push(chain);
+                    }
+                });
+
                 h.occupants.forEach((occ, idx) => {
                     let cx = h.x + 10 + (idx % 3) * 60; let cy = h.y + 10 + Math.floor(idx / 3) * 60;
                     if(cx + 50 > h.x + h.w) { cx = h.x + h.w - 55; }
+                    
+                    // 若此卡片屬於達成的食物鏈，給予金色光暈
+                    let isChainMember = completedChains.some(c => c.members.includes(occ.id));
+                    
                     ctx.fillStyle = occ.dead ? '#9ca3af' : 'white';
-                    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2;
+                    ctx.strokeStyle = isChainMember ? '#f59e0b' : '#9ca3af'; 
+                    ctx.lineWidth = isChainMember ? 4 : 2;
+                    if(isChainMember) { ctx.shadowColor = '#fcd34d'; ctx.shadowBlur = 10; }
+                    
                     ctx.beginPath(); ctx.roundRect(cx, cy, 50, 50, 8); ctx.fill(); ctx.stroke();
+                    ctx.shadowBlur = 0; // 重置陰影
+
                     ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 12, cy + 32);
                     occ.renderBox = { x: cx, y: cy, w: 50, h: 50 };
                     
@@ -1193,6 +1265,27 @@
                         ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(isCorrect ? '+1' : '✘', cx + 38, cy + 9);
                     }
                 });
+
+                // 若有食物鏈，在棲地中央繪製連接線與提示文字
+                if (completedChains.length > 0) {
+                    ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)'; ctx.lineWidth = 4; ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    let first = true;
+                    h.occupants.forEach(occ => {
+                        if(completedChains[0].members.includes(occ.id)) {
+                            if(first) { ctx.moveTo(occ.renderBox.x + 25, occ.renderBox.y + 25); first = false; }
+                            else { ctx.lineTo(occ.renderBox.x + 25, occ.renderBox.y + 25); }
+                        }
+                    });
+                    ctx.stroke(); ctx.setLineDash([]);
+                    
+                    // 浮動文字提示
+                    let floatY = Math.sin(Date.now() / 300) * 5; 
+                    ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+                    ctx.beginPath(); ctx.roundRect(h.x + h.w/2 - 60, h.y + h.h/2 - 15 + floatY, 120, 25, 4); ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.font = 'bold 14px "Segoe UI"'; ctx.textAlign = 'center';
+                    ctx.fillText('🌟 食物鏈達成', h.x + h.w/2, h.y + h.h/2 + 3 + floatY);
+                }
             });
 
             habitats.forEach(h => { 
@@ -1401,8 +1494,8 @@
                 tCtx.fillText('獲得優異成績，期待您繼續為生態多樣性及農村永續盡一份心力。', 400, 415);
                 
                 tCtx.fillStyle = '#1f2937'; tCtx.font = 'bold 20px "Segoe UI", sans-serif';
-                tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 470);
-                tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 505, 680);
+                tCtx.fillText(`活動名稱：${eventName || '山里共學'}`, 400, 465);
+                tCtx.fillText(`路線(場域)：${eventLocation} | 評測總成績：${score} 分`, 400, 495, 680);
                 
                 tCtx.fillStyle = '#16a34a'; tCtx.textAlign = 'left'; tCtx.font = 'bold 22px "Segoe UI", sans-serif';
                 tCtx.fillText('🌿 探探里山', 120, 545);
@@ -1411,7 +1504,7 @@
                 let dateStr = new Date().toLocaleDateString('zh-TW');
                 let vCode = 'ESG-' + Date.now().toString().slice(-6).toUpperCase();
                 tCtx.fillText(`證書編號：${vCode}`, 750, 530);
-                tCtx.fillText(`發證日期：${dateStr} | 發證單位：探探里山永續基地`, 750, 555);
+                tCtx.fillText(`核發日期：${dateStr}`, 750, 555);
 
                 let qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = '';
