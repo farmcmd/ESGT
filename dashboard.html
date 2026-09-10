@@ -2472,83 +2472,70 @@
                     window.checkHashAndLocate(event.data.hash);
                 }
                 
-                // 🌟 【新增】接收主站的「快速歸戶自動開啟」指令 (具備智能等待機制)
+                // 🌟 【終極修復】接收主站的「快速歸戶自動開啟」指令 (直接程式化開啟，繞過按鈕失效問題)
                 if (event.data && event.data.action === 'AUTO_OPEN_CHECKOUT') {
-                    const targetTab = event.data.tab;       // 'ent' 或 'gov'
-                    const targetProjectId = event.data.projectId; // 要歸戶的專案 ID 或卡片特徵碼
+                    const targetTab = event.data.tab;
+                    const rawId = event.data.projectId || '';
+                    const targetProjectId = rawId.replace('#', '').trim(); // 自動清除可能帶有的 # 號或空白
 
-                    // 1. 先切換到對應的 Tab
-                    if (targetTab === 'gov') {
-                        document.getElementById('tab-btn-gov')?.click();
-                    } else {
-                        document.getElementById('tab-btn-ent')?.click();
-                    }
+                    if (targetTab === 'gov') document.getElementById('tab-btn-gov')?.click();
+                    else document.getElementById('tab-btn-ent')?.click();
 
-                    // 2. 建立智能重試機制 (等待 Firebase 資料載入並渲染到選單中)
                     let retryCount = 0;
-                    const maxRetries = 15; // 最多重試 15 次 (約 7.5 秒)
-                    
+                    const maxRetries = 20; // 最多重試 20 次 (約 10 秒)
+
                     const attemptAutoOpen = () => {
-                        let selectElement = null;
-                        let confirmButton = null;
-
-                        // 根據切換的 Tab，抓取正確的下拉選單與確認按鈕 ID
-                        if (targetTab === 'gov') {
-                            selectElement = document.getElementById('user-proj-select'); 
-                            confirmButton = document.getElementById('log-user-proj-btn');   
-                        } else {
-                            selectElement = document.getElementById('ent-proj-select'); 
-                            confirmButton = document.getElementById('log-ent-proj-btn');   
-                        }
-
-                        // 🌟 智能尋找專案 ID (允許主站傳入 id, cardCode 或 serialNumber)
-                        let realProjectId = targetProjectId;
                         const projectList = targetTab === 'gov' ? globalGovData.projects : globalEntData.projects;
                         
-                        if (projectList && projectList.length > 0) {
-                            const targetProj = projectList.find(p => 
-                                p.id === targetProjectId || 
-                                (p.cardCode && p.cardCode.toUpperCase() === targetProjectId.toUpperCase()) || 
-                                (p.serialNumber && p.serialNumber.toUpperCase() === targetProjectId.toUpperCase())
-                            );
-                            if (targetProj) realProjectId = targetProj.id;
+                        // 等待 Firebase 資料載入
+                        if (!projectList || projectList.length === 0) {
+                            retryCount++;
+                            if (retryCount <= maxRetries) return setTimeout(attemptAutoOpen, 500);
+                            return window.showToast('⚠️ 系統載入逾時，請手動選擇卡片', true);
                         }
 
-                        if (selectElement && confirmButton && realProjectId) {
-                            // 檢查選單中是否已經有該目標選項
-                            let optionExists = Array.from(selectElement.options).some(opt => opt.value === realProjectId);
-                            
-                            if (optionExists) {
-                                // 找到選項了！執行自動選取
-                                selectElement.value = realProjectId;
-                                
-                                // 🌟 關鍵修復：給予 300ms 的延遲，確保 Tab 切換的動畫與 DOM 可見性已完成
-                                // 若立即點擊，部分瀏覽器會因為按鈕還在 hidden 狀態轉換中而忽略 click()
-                                setTimeout(() => {
-                                    confirmButton.click();
-                                    window.showToast('🚀 已為您自動開啟快速歸戶問卷！');
-                                }, 300);
-                            } else {
-                                // 資料可能還在從 Firebase 抓取，或是選單尚未重繪
-                                retryCount++;
-                                if (retryCount <= maxRetries) {
-                                    setTimeout(attemptAutoOpen, 500); 
-                                } else {
-                                    window.showToast('⚠️ 無法自動開啟：找不到對應的活動或載入逾時', true);
-                                }
-                            }
-                        } else {
-                            // projectList 還沒載入完畢
+                        // 智能尋找專案 ID
+                        const targetProj = projectList.find(p => 
+                            p.id === targetProjectId || 
+                            (p.cardCode && p.cardCode.toUpperCase() === targetProjectId.toUpperCase()) || 
+                            (p.serialNumber && p.serialNumber.toUpperCase() === targetProjectId.toUpperCase())
+                        );
+
+                        if (!targetProj) {
                             retryCount++;
-                            if (retryCount <= maxRetries) {
-                                setTimeout(attemptAutoOpen, 500); 
-                            } else {
-                                window.showToast('⚠️ 無法自動開啟：載入逾時', true);
-                            }
+                            if (retryCount <= maxRetries) return setTimeout(attemptAutoOpen, 500);
+                            return window.showToast('⚠️ 找不到指定的活動，請手動選擇', true);
                         }
+
+                        // 🌟 終極解法：不再依賴按鈕點擊 (.click())，直接從底層程式呼叫開啟彈窗並寫入數據！
+                        setTimeout(() => {
+                            if (targetTab === 'gov') {
+                                const selectEl = document.getElementById('user-proj-select');
+                                if (selectEl && Array.from(selectEl.options).some(opt => opt.value === targetProj.id)) {
+                                    selectEl.value = targetProj.id;
+                                }
+                                if(document.getElementById('gov-eval-target-name')) document.getElementById('gov-eval-target-name').textContent = targetProj.name || '';
+                                if(document.getElementById('gov-eval-target-carbon')) document.getElementById('gov-eval-target-carbon').textContent = Math.round(state.totalCarbon);
+                                if(document.getElementById('gov-eval-target-green')) document.getElementById('gov-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
+                                document.querySelectorAll('.gov-eval-q .number-rating i').forEach(i => { i.classList.remove('text-yellow-400', 'drop-shadow-sm'); i.classList.add('text-gray-300'); });
+                                if (document.getElementById('gov-eval-feedback')) document.getElementById('gov-eval-feedback').value = '';
+                                window.openModal('gov-eval-modal');
+                            } else {
+                                const selectEl = document.getElementById('ent-proj-select');
+                                if (selectEl && Array.from(selectEl.options).some(opt => opt.value === targetProj.id)) {
+                                    selectEl.value = targetProj.id;
+                                }
+                                if(document.getElementById('ent-eval-target-name')) document.getElementById('ent-eval-target-name').textContent = targetProj.orgName || '';
+                                if(document.getElementById('ent-eval-target-carbon')) document.getElementById('ent-eval-target-carbon').textContent = Math.round(state.totalCarbon);
+                                if(document.getElementById('ent-eval-target-green')) document.getElementById('ent-eval-target-green').textContent = Math.round(state.greenProcure + state.sroiProcure);
+                                document.querySelectorAll('.ent-eval-q .number-rating i').forEach(i => { i.classList.remove('text-yellow-400', 'drop-shadow-sm'); i.classList.add('text-gray-300'); });
+                                if (document.getElementById('ent-eval-feedback')) document.getElementById('ent-eval-feedback').value = '';
+                                window.openModal('ent-eval-modal');
+                            }
+                            window.showToast('🚀 已為您自動開啟快速歸戶問卷！');
+                        }, 400); // 確保 Tab 切換的動畫播放完畢，避免畫面閃爍
                     };
                     
-                    // 啟動第一次嘗試
                     attemptAutoOpen();
                 }
                 
