@@ -2466,7 +2466,7 @@
                     else document.getElementById('tab-btn-ent')?.click();
                 }
 
-                // 🌟 讓主網頁能強制傳送 Hash 進行定位
+                // 🌟 新增：讓主網頁能強制傳送 Hash 進行定位
                 if (event.data && event.data.action === 'LOCATE_BOARD') {
                     window.hasAutoLocated = false;
                     window.checkHashAndLocate(event.data.hash);
@@ -2475,7 +2475,7 @@
                 // 🌟 【新增】接收主站的「快速歸戶自動開啟」指令 (具備智能等待機制)
                 if (event.data && event.data.action === 'AUTO_OPEN_CHECKOUT') {
                     const targetTab = event.data.tab;       // 'ent' 或 'gov'
-                    const targetProjectId = event.data.projectId; // 要歸戶的專案 ID
+                    const targetProjectId = event.data.projectId; // 要歸戶的專案 ID 或卡片特徵碼
 
                     // 1. 先切換到對應的 Tab
                     if (targetTab === 'gov') {
@@ -2501,24 +2501,49 @@
                             confirmButton = document.getElementById('log-ent-proj-btn');   
                         }
 
-                        if (selectElement && confirmButton) {
+                        // 🌟 智能尋找專案 ID (允許主站傳入 id, cardCode 或 serialNumber)
+                        let realProjectId = targetProjectId;
+                        const projectList = targetTab === 'gov' ? globalGovData.projects : globalEntData.projects;
+                        
+                        if (projectList && projectList.length > 0) {
+                            const targetProj = projectList.find(p => 
+                                p.id === targetProjectId || 
+                                (p.cardCode && p.cardCode.toUpperCase() === targetProjectId.toUpperCase()) || 
+                                (p.serialNumber && p.serialNumber.toUpperCase() === targetProjectId.toUpperCase())
+                            );
+                            if (targetProj) realProjectId = targetProj.id;
+                        }
+
+                        if (selectElement && confirmButton && realProjectId) {
                             // 檢查選單中是否已經有該目標選項
-                            let optionExists = Array.from(selectElement.options).some(opt => opt.value === targetProjectId);
+                            let optionExists = Array.from(selectElement.options).some(opt => opt.value === realProjectId);
                             
                             if (optionExists) {
-                                // 找到選項了！執行自動選取與開啟彈窗
-                                selectElement.value = targetProjectId;
-                                selectElement.dispatchEvent(new Event('change'));
-                                confirmButton.click();
-                                window.showToast('🚀 已為您自動開啟快速歸戶問卷！');
+                                // 找到選項了！執行自動選取
+                                selectElement.value = realProjectId;
+                                
+                                // 🌟 關鍵修復：給予 300ms 的延遲，確保 Tab 切換的動畫與 DOM 可見性已完成
+                                // 若立即點擊，部分瀏覽器會因為按鈕還在 hidden 狀態轉換中而忽略 click()
+                                setTimeout(() => {
+                                    confirmButton.click();
+                                    window.showToast('🚀 已為您自動開啟快速歸戶問卷！');
+                                }, 300);
                             } else {
-                                // 資料可能還在從 Firebase 抓取，啟動重試機制
+                                // 資料可能還在從 Firebase 抓取，或是選單尚未重繪
                                 retryCount++;
                                 if (retryCount <= maxRetries) {
-                                    setTimeout(attemptAutoOpen, 500); // 半秒後重試
+                                    setTimeout(attemptAutoOpen, 500); 
                                 } else {
                                     window.showToast('⚠️ 無法自動開啟：找不到對應的活動或載入逾時', true);
                                 }
+                            }
+                        } else {
+                            // projectList 還沒載入完畢
+                            retryCount++;
+                            if (retryCount <= maxRetries) {
+                                setTimeout(attemptAutoOpen, 500); 
+                            } else {
+                                window.showToast('⚠️ 無法自動開啟：載入逾時', true);
                             }
                         }
                     };
