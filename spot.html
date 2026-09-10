@@ -28,12 +28,12 @@
 <body class="p-4 md:p-6 custom-scrollbar h-screen overflow-y-auto bg-white rounded-xl shadow-inner border border-gray-100 relative">
 
     <!-- 頁首標題 -->
-    <div class="mb-5 flex flex-col sm:flex-row sm:items-center justify-between border-b border-mori-light pb-3 sticky top-0 bg-white/95 backdrop-blur-sm z-10 gap-2 pt-2">
-        <h2 class="text-xl md:text-2xl font-black text-mori-forest flex items-center tracking-wide">
-            <i class="fas fa-map-marked-alt text-mori-sage mr-2"></i>探探里山永續廊道
+    <div class="mb-5 flex flex-col border-b border-mori-light pb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-10 pt-2">
+        <h2 class="text-xl md:text-2xl font-black text-mori-forest flex items-center tracking-wide mb-2">
+            <i class="fas fa-map-marked-alt text-mori-sage mr-2"></i>探探里山生態永續農業
         </h2>
-        <span class="text-xs font-bold text-gray-400 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200 shadow-sm inline-flex items-center w-fit">
-            <i class="fas fa-link mr-1.5 text-blue-400 animate-pulse"></i>外部連動模組
+        <span class="text-xs font-bold text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 shadow-sm inline-flex items-center w-full sm:w-fit leading-relaxed">
+            <i class="fas fa-info-circle mr-1.5 text-mori-sage"></i>核心規劃團隊，提供生態旅遊與 ESG (範疇三)旅遊專案規劃。
         </span>
     </div>
 
@@ -68,7 +68,7 @@
                 
                 <!-- 景點基本資訊 -->
                 <h3 id="poi-modal-title" class="text-xl font-bold text-mori-dark mb-2 leading-tight"></h3>
-                <div id="poi-modal-description" class="text-[13px] text-gray-600 leading-relaxed mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100"></div>
+                <div id="poi-modal-description" class="text-[13px] text-gray-600 leading-relaxed mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100 whitespace-pre-line"></div>
                 
                 <!-- 動態按鈕區 (FB、官網等) -->
                 <div id="poi-modal-dynamic-buttons" class="flex flex-col gap-2 mb-4"></div>
@@ -84,8 +84,10 @@
         <i class="fas fa-check-circle text-green-400 mr-2 text-lg"></i><span id="toast-msg">訊息</span>
     </div>
 
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/zh_TW/sdk.js#xfbml=1&version=v19.0" nonce="L1G5vT0x"></script>
+
     <script>
-        // === 資料定義 (從主頁提取出來的景點清單) ===
+        // === 資料定義 ===
         const poiCategories = [
             { id: 4, title: '1. 水里里山基地', desc: '基地推行里山倡議，串聯商圈與青農之永續據點。' }, 
             { id: 1, title: '2. 里山餐桌團隊', desc: '核心規劃團隊，提供生態旅遊與 ESG 專案規劃。' }, 
@@ -95,29 +97,37 @@
         ];
 
         const pois = [
-            {categoryId:4,id:'poi1',name:'水里溪畔驛站',coords:{lat:23.809799,lng:120.849286},icon:'🌲',esgEligible:true,fbUrl:'https://www.facebook.com/profile.php?id=100076220760859'},
-            {categoryId:4,id:'poi25',name:'台大林管處水里營林區',coords:{lat:23.814313,lng:120.853435},icon:'🏛️',fbUrl:'https://www.facebook.com/xitou.nature.education'},
-            {categoryId:1,id:'poi12',name:'湧健酪梨園/梅園 SROI (✓)',coords:{lat:23.725349,lng:120.846123},icon:'🥑',esgEligible:true,fbUrl:'https://www.facebook.com/profile.php?id=100085673588742'},
-            {categoryId:1,id:'poi11',name:'阿爾喜莊園 SROI (✓)',coords:{lat:23.803119,lng:120.926340},icon:'🍋',esgEligible:true,fbUrl:'https://www.facebook.com/AHEIemon'},
-            {categoryId:1,id:'poi10',name:'雨社山下 SROI (✓)',coords:{lat:23.790644,lng:120.896569},icon:'🥒',esgEligible:true,fbUrl:'https://www.facebook.com/YusheLand'},
-            {categoryId:1,id:'poi8',name:'明揚養蜂 SROI (✓)',coords:{lat:23.803787,lng:120.862401},icon:'🐝',esgEligible:true,fbUrl:'https://www.facebook.com/MingYangBee'},
-            {categoryId:1,id:'poi7',name:'指令教育農場 SROI (✓)',coords:{lat:23.802776,lng:120.864715},icon:'👆',esgEligible:true,fbUrl:'https://www.facebook.com/FarmCMD'},
-            {categoryId:1,id:'poi19',name:'小茶米農場 SROI (✓)',coords:{lat:23.839892,lng:120.632520},icon:'🍵',esgEligible:true},
-            {categoryId:1,id:'poi3',name:'鑫鮮菇園',coords:{lat:23.794049,lng:120.859407},icon:'🍄',esgEligible:true},
-            {categoryId:1,id:'poi26',name:'饕農園',coords:{lat:23.806217,lng:120.746781},icon:'🧑‍🌾',esgEligible:true},
-            {categoryId:1,id:'poi27',name:'Hó-lah! 星澍柢家',coords:{lat:24.102351,lng:120.666805},icon:'🌱',esgEligible:true},
-            {categoryId:5,id:'poi30',name:'墨梵農場香草莊園',coords:{lat:23.722627,lng:120.850277},icon:'🪴'},
-            {categoryId:5,id:'poi20',name:'集元果觀光工廠',coords:{lat:23.825288,lng:120.814236},icon:'🍌'},
-            {categoryId:5,id:'poi21',name:'山水裡愛玉園',coords:{lat:23.827702,lng:120.814354},icon:'🌿'},
-            {categoryId:5,id:'poi28',name:'新豐農場(冷泉米)',coords:{lat:24.065240,lng:120.937692},icon:'🌾'},
-            {categoryId:5,id:'poi29',name:'逸和園檸檬宿',coords:{lat:24.049875,lng:120.861594},icon:'🍋'},
-            {categoryId:3,id:'poi_new1',name:'水里槑休閒農業區',coords:{lat:23.734616,lng:120.856968},icon:'🛖'},
-            {categoryId:2,id:'poi16',name:'水里里山村(低碳旅店)',coords:{lat:23.813514,lng:120.853722},icon:'🏡',esgEligible:true},
-            {categoryId:2,id:'poi14',name:'機車貓聯盟(食店)',coords:{lat:23.810883,lng:120.855798},icon:'🍚'},
-            {categoryId:3,id:'poi23',name:'車程林班道',coords:{lat:23.833913,lng:120.866191},icon:'🚂'},
-            {categoryId:3,id:'poi24',name:'車埕木業展示館',coords:{lat:23.833549,lng:120.865796},icon:'🪵'},
-            {categoryId:3,id:'poi18',name:'森音 Morinooto',coords:{lat:23.742587,lng:120.866954},icon:'🎶'},
-            {categoryId:3,id:'poi9',name:'蛇窯文化園區',coords:{lat:23.801177,lng:120.864479},icon:'🏺'}
+            // 分類 4: 水里里山基地
+            {categoryId:4, id:'poi1', name:'水里溪畔驛站', coords:{lat:23.809799,lng:120.849286}, icon:'🌲', esgEligible:true, description: '營業時間上午8:00~17:00。\n位於水里圖書館內的小憩咖啡座，適合做為永續行程的起點與中繼休閒去處。亦是社團法人水里鄉商圈創生共好協會總部。', iframeUrl:'https://www.facebook.com/profile.php?id=100076220760859'},
+            {categoryId:4, id:'poi25', name:'國立臺灣大學生物資源暨農學院實驗林管理處-水里營林區', coords:{lat:23.814313,lng:120.853435}, icon:'🏛️', description: '業務活動: 除造林與資源保育、研究與教育外，推動里山倡議及大學社會責任等活動。', iframeUrl:'https://www.facebook.com/xitou.nature.education?locale=zh_TW'},
+            
+            // 分類 1: 里山餐桌團隊
+            {categoryId:1, id:'poi12', name:'湧健酪梨園/梅園 SROI (✓)', coords:{lat:23.725349,lng:120.846123}, icon:'🥑', esgEligible:true, description: '生產: 酪梨、青梅、梅精\n特定活動:酪酪找生態/ 6小時/收費1299/人 / 含午餐、生態導覽、土壤觀察/DIY活動/沉浸式數位導覽應用\n協作單位:里山餐桌團隊\n預約活動: 食農教育、生態黨覽', iframeUrl:'https://www.facebook.com/profile.php?id=100085673588742&locale=zh_TW'},
+            {categoryId:1, id:'poi11', name:'阿爾喜莊園 SROI (✓)', coords:{lat:23.803119,lng:120.926340}, icon:'🍋', esgEligible:true, description: '生產: 檸檬、國蘭\n特定活動:瓜呱報生態/ 6小時/收費1299/人 / 含午餐、生態導覽、設施導覽/DIY活動/沉浸式數位導覽應用\n協作單位:里山餐桌團隊\n預約活動: 食農教育、生態導覽、循環經濟教學', iframeUrl:'https://www.facebook.com/AHEIemon?locale=zh_TW'},
+            {categoryId:1, id:'poi10', name:'雨社山下 SROI (✓)', coords:{lat:23.790644,lng:120.896569}, icon:'🥒', esgEligible:true, description: '生產: 絲瓜、石虎蓮霧\n特定活動:瓜呱報生態/ 6小時/收費1299/人 / 含午餐、生態導覽、河堤生態導覽/DIY活動/沉浸式數位導覽應用\n協作單位:里山餐桌團隊\n預約活動: 食農教育、生態導覽', iframeUrl:'https://www.facebook.com/YusheLand?locale=zh_TW'},
+            {categoryId:1, id:'poi8', name:'明揚養蜂 SROI (✓)', coords:{lat:23.803787,lng:120.862401}, icon:'🐝', esgEligible:true, description: '生產: 國產蜂蜜、酪梨\n特定活動:里山生態慢走/ 6小時/收費1299/人 / 含午餐、生態導覽、農村生活智慧/DIY活動/沉浸式數位導覽應用\n協作單位:里山餐桌團隊\n預約活動: 食農教育、生態導覽、金線連紓壓包', iframeUrl:'https://www.facebook.com/MingYangBee?locale=zh_TW'},
+            {categoryId:1, id:'poi7', name:'指令教育農場 SROI (✓)', coords:{lat:23.802776,lng:120.864715}, icon:'👆', esgEligible:true, description: '生產: 短期蔬菜\n特定活動:里山生態慢走/ 6小時/收費1299/人 / 含午餐、生態導覽、農村生活智慧/DIY活動/沉浸式數位導覽應用\n協作單位:里山餐桌團隊\n預約活動: 食農教育、生態導覽、金線連紓壓包', iframeUrl:'https://www.facebook.com/FarmCMD?locale=zh_TW'},
+            
+            // 分類 5: 南投青農
+            {categoryId:5, id:'poi19', name:'小茶米農場', coords:{lat:23.839892,lng:120.632520}, icon:'🍵', description: '預約活動:食農教育1.爆打檸檬茶 2.調茶體驗', iframeUrl:'https://www.facebook.com/p/%E5%B0%8F%E8%8C%B6%E7%B1%B3%E8%BE%B2%E5%A0%B4-100057082105603/?locale=zh_TW'},
+            {categoryId:5, id:'poi20', name:'集元果觀光工廠', coords:{lat:23.825288,lng:120.814236}, icon:'🍌', iframeUrl:'https://www.facebook.com/jijibanana?locale=zh_TW'},
+            {categoryId:5, id:'poi21', name:'山水裡愛玉園', coords:{lat:23.827702,lng:120.814354}, icon:'🌿', description: '預約活動:食農教育1.手洗愛玉DIY 2.石虎園區導覽', iframeUrl:'https://www.facebook.com/SunShuiLi?locale=zh_TW'},
+            {categoryId:5, id:'poi28', name:'新豐農場(冷泉米)', coords:{lat:24.065240,lng:120.937692}, icon:'🌾', description: '預約活動: 食農教育 米食教育  客家文化活動\n協作單位:糯米橋休閒農業區', iframeUrl:'https://www.facebook.com/Sinfeng50?locale=zh_TW'},
+            {categoryId:5, id:'poi29', name:'逸和園檸檬宿', coords:{lat:24.049875,lng:120.861594}, icon:'🍋', description: '預約活動: 食農教育 有機農業導覽活動\n協作單位:國姓鄉農會', iframeUrl:'https://www.facebook.com/angelwing0521?locale=zh_TW'},
+            {categoryId:5, id:'poi26', name:'饕農園 (據點1)', coords:{lat:23.806217,lng:120.746781}, icon:'🧑‍🌾', description: '業務活動: 食農教育 市集 手做農產', iframeUrl:'https://www.taofarm.tw/%E9%A5%95%E8%BE%B2%E5%9C%92%E5%B8%82%E9%9B%86%E6%99%82%E9%96%93'},
+            {categoryId:5, id:'poi26_2', name:'饕農園 (據點2)', coords:{lat:23.787581,lng:120.732877}, icon:'🧑‍🌾', description: '業務活動: 食農教育 市集 手做農產', iframeUrl:'https://www.taofarm.tw/%E9%A5%95%E8%BE%B2%E5%9C%92%E5%B8%82%E9%9B%86%E6%99%82%E9%96%93'},
+            {categoryId:5, id:'poi27', name:'Hó-lah! 星澍柢家', coords:{lat:24.102351,lng:120.666805}, icon:'🌱', description: '預約活動: 食農教育 生態導覽'},
+            
+            // 分類 3: 水里觀光商圈
+            {categoryId:3, id:'poi_new1', name:'水里槑休閒農業區(鵲橋小白屋)', coords:{lat:23.734616,lng:120.856968}, icon:'🛖', description: '預約活動:1.食農教育活動，活動詳情請洽櫃台，2.賞梅導覽預約', iframeUrl:'https://www.facebook.com/profile.php?id=61573732140351&locale=zh_TW'},
+            {categoryId:3, id:'poi23', name:'車程林班道', coords:{lat:23.833913,lng:120.866191}, icon:'🚂', description: '預約活動:導覽預約及場館活動', iframeUrl:'https://www.facebook.com/search/top?q=%E6%9E%97%E7%8F%AD%E5%88%B0&locale=zh_TW'},
+            {categoryId:3, id:'poi24', name:'車埕木業展示館', coords:{lat:23.833549,lng:120.865796}, icon:'🪵', description: '預約活動:導覽預約', iframeUrl:'https://www.facebook.com/profile.php?id=100057533984428&locale=zh_TW'},
+            {categoryId:3, id:'poi18', name:'森音 Morinooto', coords:{lat:23.742587,lng:120.866954}, icon:'🎶', description: '預約活動: 食農教育、森態導覽', iframeUrl:'https://www.facebook.com/morinooto111?locale=zh_TW'},
+            {categoryId:3, id:'poi9', name:'蛇窯文化園區', coords:{lat:23.801177,lng:120.864479}, icon:'🏺', description: '門票:100~160元\n體驗項目\n手拉坯｜手捏陶｜彩繪撲滿｜釉下彩瓷｜古裝漢服體驗｜日本和服體驗', iframeUrl:'https://www.facebook.com/sskshop/?locale=zh_TW'},
+
+            // 分類 2: 低碳食宿
+            {categoryId:2, id:'poi16', name:'水里里山村(低碳旅店)', coords:{lat:23.813514,lng:120.853722}, icon:'🏡', esgEligible:true, description: '預約活動:1.食農教育教室夜間開放，活動詳情請洽飯店櫃台，2.牛轀轆森林社區導覽', iframeUrl:'https://www.facebook.com/TGSatoyamaHotel?locale=zh_TW'},
+            {categoryId:2, id:'poi14', name:'機車貓聯盟(食店)', coords:{lat:23.810883,lng:120.855798}, icon:'🍚', description: '預約活動: 無菜單料理、披薩\n一般飲食:在地特色餐盒', iframeUrl:'https://www.facebook.com/changehsi/?locale=zh_TW'}
         ];
 
         let currentModalPoi = null; 
@@ -144,6 +154,9 @@
             modal.classList.add('opacity-0');
             content.classList.remove('scale-100');
             content.classList.add('scale-95');
+            
+            // 移除可能殘留的 iframe 以免背景播放或載入問題
+            document.getElementById('poi-iframe-container').innerHTML = '';
             
             // 等待動畫結束後隱藏 DOM
             setTimeout(() => { modal.classList.add('hidden'); }, 300);
@@ -256,7 +269,7 @@
             if (titleEl) titleEl.innerHTML = `<span class="text-2xl mr-2">${poi.icon}</span>${poi.name.replace('SROI (✓)','')}`;
             
             const descEl = document.getElementById('poi-modal-description');
-            if (descEl) descEl.innerHTML = poi.description || '<i class="fas fa-map-pin mr-1 opacity-70"></i>此景點位於南投縣水里鄉，是您探索低碳永續與體驗在地生活的好去處。';
+            if (descEl) descEl.innerHTML = poi.description || '<i class="fas fa-map-pin mr-1 opacity-70"></i>此景點位於南投縣，是您探索低碳永續與體驗在地生活的好去處。';
             
             const btnContainer = document.getElementById('poi-modal-dynamic-buttons');
             if (btnContainer) {
@@ -271,11 +284,13 @@
             if (iframeContainer) {
                 if (poi.iframeUrl) {
                     if (poi.iframeUrl.includes('facebook.com') || poi.iframeUrl.includes('fb.com')) {
-                        iframeContainer.innerHTML = `<div class="w-full bg-white flex justify-center py-2"><div class="fb-page" data-href="${poi.iframeUrl}" data-tabs="timeline" data-width="380" data-height="350" data-small-header="false" data-adapt-container-width="true" data-hide-cover="false" data-show-facepile="false"><blockquote cite="${poi.iframeUrl}" class="fb-xfbml-parse-ignore"><a href="${poi.iframeUrl}" target="_blank" class="text-blue-500 text-sm font-bold"><i class="fab fa-facebook mr-1"></i>載入中...</a></blockquote></div></div>`;
+                        // 使用 Facebook Social Plugin iframe 格式
+                        const encodedUrl = encodeURIComponent(poi.iframeUrl);
+                        iframeContainer.innerHTML = `<iframe src="https://www.facebook.com/plugins/page.php?href=${encodedUrl}&tabs=timeline&width=380&height=350&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false&appId=803120779511252" width="380" height="350" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
                         iframeContainer.classList.remove('hidden');
-                        setTimeout(() => { if (window.FB) window.FB.XFBML.parse(iframeContainer); }, 150);
                     } else {
-                        iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[250px] border-none bg-gray-50" allowfullscreen></iframe>`;
+                        // 一般網站 iframe
+                        iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[250px] border-none bg-gray-50 rounded-lg" allowfullscreen></iframe>`;
                         iframeContainer.classList.remove('hidden');
                     }
                 } else {
