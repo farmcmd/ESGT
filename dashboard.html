@@ -2459,15 +2459,72 @@
                 window.showToast('⚠️ 偵測到網路斷線，系統已自動切換為「離線暫存模式」。', true);
             });
 
+            // 🌟 跨網域通訊與活動接收器
             window.addEventListener('message', (event) => {
                 if (event.data && event.data.action === 'SWITCH_TAB') {
                     if (event.data.tab === 'gov') document.getElementById('tab-btn-gov')?.click();
                     else document.getElementById('tab-btn-ent')?.click();
                 }
 
+                // 🌟 讓主網頁能強制傳送 Hash 進行定位
                 if (event.data && event.data.action === 'LOCATE_BOARD') {
                     window.hasAutoLocated = false;
                     window.checkHashAndLocate(event.data.hash);
+                }
+                
+                // 🌟 【新增】接收主站的「快速歸戶自動開啟」指令 (具備智能等待機制)
+                if (event.data && event.data.action === 'AUTO_OPEN_CHECKOUT') {
+                    const targetTab = event.data.tab;       // 'ent' 或 'gov'
+                    const targetProjectId = event.data.projectId; // 要歸戶的專案 ID
+
+                    // 1. 先切換到對應的 Tab
+                    if (targetTab === 'gov') {
+                        document.getElementById('tab-btn-gov')?.click();
+                    } else {
+                        document.getElementById('tab-btn-ent')?.click();
+                    }
+
+                    // 2. 建立智能重試機制 (等待 Firebase 資料載入並渲染到選單中)
+                    let retryCount = 0;
+                    const maxRetries = 15; // 最多重試 15 次 (約 7.5 秒)
+                    
+                    const attemptAutoOpen = () => {
+                        let selectElement = null;
+                        let confirmButton = null;
+
+                        // 根據切換的 Tab，抓取正確的下拉選單與確認按鈕 ID
+                        if (targetTab === 'gov') {
+                            selectElement = document.getElementById('user-proj-select'); 
+                            confirmButton = document.getElementById('log-user-proj-btn');   
+                        } else {
+                            selectElement = document.getElementById('ent-proj-select'); 
+                            confirmButton = document.getElementById('log-ent-proj-btn');   
+                        }
+
+                        if (selectElement && confirmButton) {
+                            // 檢查選單中是否已經有該目標選項
+                            let optionExists = Array.from(selectElement.options).some(opt => opt.value === targetProjectId);
+                            
+                            if (optionExists) {
+                                // 找到選項了！執行自動選取與開啟彈窗
+                                selectElement.value = targetProjectId;
+                                selectElement.dispatchEvent(new Event('change'));
+                                confirmButton.click();
+                                window.showToast('🚀 已為您自動開啟快速歸戶問卷！');
+                            } else {
+                                // 資料可能還在從 Firebase 抓取，啟動重試機制
+                                retryCount++;
+                                if (retryCount <= maxRetries) {
+                                    setTimeout(attemptAutoOpen, 500); // 半秒後重試
+                                } else {
+                                    window.showToast('⚠️ 無法自動開啟：找不到對應的活動或載入逾時', true);
+                                }
+                            }
+                        }
+                    };
+                    
+                    // 啟動第一次嘗試
+                    attemptAutoOpen();
                 }
                 
                 if (event.data && event.data.action === 'SYNC_FROM_MAIN') {
