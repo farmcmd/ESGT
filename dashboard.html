@@ -1321,10 +1321,13 @@
                     wrapper.appendChild(card); 
                     groupGrid.appendChild(wrapper);
                     
-                    let optionHtml = `<option value="${proj.id}" ${isExpired ? 'disabled' : ''}>`;
-                    optionHtml += !proj.isAuthorized ? '🟡 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 ');
-                    optionHtml += `${proj.orgName} ${isExpired ? '(已截止)' : ''}</option>`;
-                    select.innerHTML += optionHtml;
+                    // 🌟 升級：下拉選單智能過濾，隱藏已截止的活動
+                    if (!isExpired) {
+                        let optionHtml = `<option value="${proj.id}">`;
+                        optionHtml += !proj.isAuthorized ? '🟡 [等待授權] ' : '🟢 ';
+                        optionHtml += `${proj.orgName}</option>`;
+                        select.innerHTML += optionHtml;
+                    }
                 }); 
             });
             window.checkHashAndLocate();
@@ -1636,20 +1639,20 @@
                     wrapper.appendChild(card); 
                     groupGrid.appendChild(wrapper);
                     
-                    let optionHtml = `<option value="${proj.id}" ${isExpired ? 'disabled' : ''}>`;
-                    optionHtml += !proj.isAuthorized ? '🟡 [等待授權] ' : (isExpired ? '🔴 ' : '🟢 ');
-                    optionHtml += `${proj.name} ${isExpired ? '(已截止)' : ''}</option>`;
-                    select.innerHTML += optionHtml;
+                    // 🌟 升級：下拉選單智能過濾，隱藏已截止的活動
+                    if (!isExpired) {
+                        let optionHtml = `<option value="${proj.id}">`;
+                        optionHtml += !proj.isAuthorized ? '🟡 [等待授權] ' : '🟢 ';
+                        optionHtml += `${proj.name}</option>`;
+                        select.innerHTML += optionHtml;
+                    }
                 });
             });
             window.checkHashAndLocate();
         };
 
-        function bindSummaryEvents() {
-            const entToggle = document.getElementById('toggle-ent-summary-btn');
-            if(entToggle) entToggle.onclick = () => { summaryState.entMode = true; summaryState.entSelected.clear(); document.getElementById('ent-summary-count').textContent = '0'; document.getElementById('ent-summary-action-bar')?.classList.remove('hidden'); if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard(); };
-            
-            const entCancel = document.getElementById('cancel-ent-summary-btn');
+        // ==========================================
+        // 7. 總承報表生成引擎 (Summary Reports)
             if(entCancel) entCancel.onclick = () => { summaryState.entMode = false; summaryState.entSelected.clear(); document.getElementById('ent-summary-action-bar')?.classList.add('hidden'); if(typeof renderEntProjectsDashboard === 'function') renderEntProjectsDashboard(); };
             
             const entGen = document.getElementById('generate-ent-summary-btn');
