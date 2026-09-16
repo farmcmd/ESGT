@@ -1486,6 +1486,23 @@
         window.bindSystemUtilities = function() {
             document.getElementById('header-share-btn')?.addEventListener('click', () => { window.openShareQRCode('https://farmcmd.github.io/ESGT/'); });
             document.getElementById('export-data-button')?.addEventListener('click', () => { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state)); const link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", `探探里山_永續進度_${state.playerName || '匿名'}.json`); link.click(); window.showToast('✅ 進度已匯出'); });
+            
+            // 新增：下載空白重置檔的功能
+            document.getElementById('download-blank-btn')?.addEventListener('click', () => {
+                const blankState = {
+                    totalMileage: 0, totalCarbon: 0, totalScore: 0, 
+                    playerName: '', playerCode: '', enterpriseName: '', entEmpId: '',
+                    greenProcure: 0, sroiProcure: 0, projectProcure: 0,
+                    activityLogs: [], checkoutHistory: [], lotteryTickets: [], currentTransport: null
+                };
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(blankState));
+                const link = document.createElement('a');
+                link.setAttribute("href", dataStr);
+                link.setAttribute("download", `探探里山_空白重置檔.json`);
+                link.click();
+                window.showToast('✅ 空白重置檔已下載，請使用「匯入進度檔」功能匯入以重置');
+            });
+
             document.getElementById('import-data-btn-trigger')?.addEventListener('click', () => { document.getElementById('import-data-input')?.click(); });
             document.getElementById('import-data-input')?.addEventListener('change', (e) => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = function(e) { try { state = { ...state, ...JSON.parse(e.target.result) }; window.saveData(); window.updateDisplays(); window.renderCheckoutHistory(); window.renderLogs(); window.renderTransportGrid(); window.showToast('✅ 進度已還原'); } catch (err) { window.showToast('❌ 檔案錯誤', true); } }; r.readAsText(file); });
             
