@@ -28,13 +28,18 @@
 <body class="p-4 md:p-6 custom-scrollbar h-screen overflow-y-auto bg-white rounded-xl shadow-inner border border-gray-100 relative">
 
     <!-- 頁首標題 -->
-    <div class="mb-5 flex flex-col border-b border-mori-light pb-4 sticky top-0 bg-white/95 backdrop-blur-sm z-10 pt-2">
+    <div class="mb-6 flex flex-col border-b border-mori-light pb-6 pt-2">
         <h2 class="text-xl md:text-2xl font-black text-mori-forest flex items-center tracking-wide mb-2">
             <i class="fas fa-map-marked-alt text-mori-sage mr-2"></i>探探里山生態永續農業
         </h2>
-        <span class="text-xs font-bold text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 shadow-sm inline-flex items-center w-full sm:w-fit leading-relaxed">
+        <span class="text-xs font-bold text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 shadow-sm inline-flex items-center w-full sm:w-fit leading-relaxed mb-4">
             <i class="fas fa-info-circle mr-1.5 text-mori-sage"></i>核心規劃團隊，提供生態旅遊與 ESG (範疇三)旅遊專案規劃。
         </span>
+        
+        <!-- 🌟 新增：Facebook 粉絲專頁預覽 -->
+        <div class="w-full flex justify-center bg-gray-50 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+            <iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FSatoyamadining&tabs=timeline&width=380&height=300&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId=803120779511252" width="100%" height="300" style="border:none;overflow:hidden; max-width: 380px;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+        </div>
     </div>
 
     <!-- 景點列表容器 -->
@@ -229,22 +234,22 @@
                 const catPois = pois.filter(p => p.categoryId === cat.id);
                 if (catPois.length > 0) {
                     html += `
-                        <div class="mb-6 last:mb-0">
-                            <!-- 分類標題 -->
-                            <div class="bg-gray-50 border-l-[5px] border-mori-sage px-4 py-3 rounded-r-xl mb-3 shadow-sm border-t border-r border-b border-gray-100">
-                                <h4 class="font-black text-mori-dark text-[15px] tracking-wide">${cat.title}</h4>
-                                <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">${cat.desc}</p>
+                        <div class="mb-8 last:mb-0 bg-[#F9FBF8] rounded-2xl shadow-sm border border-mori-light overflow-hidden">
+                            <!-- 🌟 分類標題 (增加漸層底色與明顯區隔) -->
+                            <div class="bg-gradient-to-r from-[#DCE8D8] to-[#F0F5EE] border-l-[6px] border-mori-forest px-4 py-3.5 mb-3 border-b border-mori-light">
+                                <h4 class="font-black text-mori-dark text-[16px] tracking-wide flex items-center"><i class="fas fa-seedling text-mori-sage mr-2 text-sm opacity-90"></i>${cat.title}</h4>
+                                <p class="text-[12px] text-mori-forest mt-1.5 leading-relaxed font-bold opacity-90">${cat.desc}</p>
                             </div>
                             
                             <!-- 景點項目網格 -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-1">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 pt-0">
                                 ${catPois.map(poi => `
                                     <div class="p-3.5 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-blue-400 hover:shadow-md transition-all duration-300 cursor-pointer flex items-center justify-between group transform hover:-translate-y-0.5" onclick="showDetails('${poi.id}')">
                                         <div class="flex items-center overflow-hidden">
                                             <span class="text-2xl mr-3 group-hover:scale-110 transition-transform bg-gray-50 w-11 h-11 flex items-center justify-center rounded-full border border-gray-100 shrink-0 shadow-inner">${poi.icon}</span>
                                             <div class="truncate pr-2">
                                                 <h5 class="text-[14px] font-bold text-gray-800 leading-tight truncate">${poi.name.replace('SROI (✓)','<span class="text-green-600 font-black ml-1 bg-green-50 px-1 py-0.5 rounded text-[10px] border border-green-200 shadow-sm whitespace-nowrap">SROI ✓</span>')}</h5>
-                                                ${poi.esgEligible ? '<span class="text-[10px] text-mori-sage font-bold inline-block mt-1 bg-mori-light/50 px-1.5 py-0.5 rounded"><i class="fas fa-leaf mr-1"></i>ESG 合作點</span>' : ''}
+                                                ${poi.esgEligible ? '<span class="text-[10px] text-mori-sage font-bold inline-block mt-1 bg-mori-light/50 px-1.5 py-0.5 rounded"><i class="fas fa-leaf mr-1"></i>永續與低碳合作農場，食農/生態體驗活動</span>' : ''}
                                             </div>
                                         </div>
                                         <div class="shrink-0 flex items-center justify-center bg-gray-50 w-8 h-8 rounded-full group-hover:bg-blue-50 transition-colors">
@@ -274,7 +279,10 @@
             const btnContainer = document.getElementById('poi-modal-dynamic-buttons');
             if (btnContainer) {
                 let btnsHtml = '';
-                if (poi.fbUrl) btnsHtml += `<a href="${poi.fbUrl}" target="_blank" class="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[13px] text-center border border-blue-200 w-full flex items-center justify-center mb-2 shadow-sm hover:bg-blue-100 transition tracking-wide"><i class="fab fa-facebook mr-2 text-base"></i>查看 Facebook 粉絲頁</a>`;
+                // 智慧判斷：如果有設定 fbUrl 或 iframeUrl 包含 facebook 字樣，就顯示按鈕
+                const fbLink = poi.fbUrl || (poi.iframeUrl && (poi.iframeUrl.includes('facebook') || poi.iframeUrl.includes('fb.com')) ? poi.iframeUrl : null);
+                
+                if (fbLink) btnsHtml += `<a href="${fbLink}" target="_blank" class="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-[13px] text-center border border-blue-200 w-full flex items-center justify-center mb-2 shadow-sm hover:bg-blue-100 transition tracking-wide"><i class="fab fa-facebook mr-2 text-base"></i>查看 Facebook 粉絲頁</a>`;
                 if (poi.websiteUrl) btnsHtml += `<a href="${poi.websiteUrl}" target="_blank" class="px-4 py-2.5 bg-gray-50 text-gray-700 rounded-lg font-bold text-[13px] text-center border border-gray-200 w-full flex items-center justify-center mb-2 shadow-sm hover:bg-gray-100 transition tracking-wide"><i class="fas fa-external-link-alt mr-2 text-base"></i>前往官方網站</a>`;
                 if (poi.esgEligible && !poi.websiteUrl) { btnsHtml += `<a href="https://farmcmd.github.io/JOY/" target="_blank" class="px-4 py-2.5 bg-yellow-50 text-yellow-700 rounded-lg font-bold text-[13px] text-center border border-yellow-200 w-full flex items-center justify-center shadow-sm hover:bg-yellow-100 transition tracking-wide"><i class="fas fa-ticket-alt mr-2 text-base"></i>查看活動與預約</a>`; }
                 btnContainer.innerHTML = btnsHtml;
@@ -284,10 +292,12 @@
             if (iframeContainer) {
                 if (poi.iframeUrl) {
                     if (poi.iframeUrl.includes('facebook.com') || poi.iframeUrl.includes('fb.com')) {
-                        // 使用 Facebook Social Plugin iframe 格式
-                        const encodedUrl = encodeURIComponent(poi.iframeUrl);
-                        iframeContainer.innerHTML = `<iframe src="https://www.facebook.com/plugins/page.php?href=${encodedUrl}&tabs=timeline&width=380&height=350&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false&appId=803120779511252" width="380" height="350" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
+                        // 恢復使用 Facebook SDK 解析模式，支援度較高且有完美的失敗降級顯示
+                        iframeContainer.innerHTML = `<div class="w-full bg-white flex justify-center py-2 overflow-hidden"><div class="fb-page" data-href="${poi.iframeUrl}" data-tabs="timeline" data-width="380" data-height="350" data-small-header="false" data-adapt-container-width="true" data-hide-cover="false" data-show-facepile="false"><blockquote cite="${poi.iframeUrl}" class="fb-xfbml-parse-ignore"><a href="${poi.iframeUrl}" target="_blank" class="text-blue-500 text-[13px] font-bold tracking-wide"><i class="fab fa-facebook mr-1"></i>載入粉絲頁中...</a></blockquote></div></div>`;
                         iframeContainer.classList.remove('hidden');
+                        
+                        // 通知 Facebook SDK 重新解析剛動態加入的區塊
+                        setTimeout(() => { if(window.FB) window.FB.XFBML.parse(iframeContainer); }, 150);
                     } else {
                         // 一般網站 iframe
                         iframeContainer.innerHTML = `<iframe src="${poi.iframeUrl}" class="w-full h-[250px] border-none bg-gray-50 rounded-lg" allowfullscreen></iframe>`;
