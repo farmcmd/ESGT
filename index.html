@@ -540,7 +540,7 @@
     <div id="qr-scan-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6"><button class="absolute top-4 right-4 text-gray-400 text-xl" onclick="window.closeScannerModal()"><i class="fas fa-times"></i></button><h3 class="text-xl font-bold mb-2 text-center text-mori-forest">掃描消費憑證</h3><div id="qr-reader" class="w-full bg-black min-h-[250px] mb-4 rounded-xl overflow-hidden shadow-inner"></div><div id="qr-success-buffer" class="hidden w-full bg-green-50 p-6 min-h-[250px] flex flex-col items-center justify-center rounded-xl border border-green-200"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><p class="font-bold text-green-800 mb-4">掃描成功！</p><button id="btn-confirm-scan" class="w-full py-3 bg-green-600 hover:bg-green-700 transition text-white font-bold rounded-xl shadow-md">領取積分</button></div></div></div>
     <div id="main-lottery-auth-modal" class="fixed inset-0 bg-black/80 z-[99999] hidden items-center justify-center p-4"><div class="bg-white max-w-sm p-6"><button onclick="window.closeLotteryAuthModal()">X</button><h2>開獎中心安全登入</h2><input type="password" id="main-lottery-pwd" class="w-full p-3"><p id="main-lottery-error" class="hidden text-red-500">密碼錯誤</p><button onclick="window.verifyLotteryAuth()" class="w-full py-3 bg-yellow-500">確認</button></div></div>
 
-    <!-- 🌟 快速指引 Modal (最穩定版本) -->
+    <!-- 🌟 快速指引 Modal -->
     <div id="quick-guide-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-content w-full max-w-md md:max-w-xl p-0 bg-white border-t-4 border-rose-500 rounded-2xl shadow-2xl relative flex flex-col h-[85vh] md:h-[80vh] overflow-hidden">
             <div class="bg-gray-50 p-3 border-b border-gray-100 flex justify-between items-center shrink-0">
@@ -548,6 +548,7 @@
                 <button class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center transition outline-none" onclick="window.closeQuickGuideModal()"><i class="fas fa-times"></i></button>
             </div>
             
+            <!-- 🌟 YouTube 播放器區域 (加入 strict-origin 屬性) -->
             <div class="w-full bg-black shrink-0 relative pt-[56.25%]">
                 <iframe id="guide-video-iframe" class="absolute inset-0 w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
             </div>
@@ -575,31 +576,39 @@
         import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, increment, enableMultiTabIndexedDbPersistence, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
+        // 🌟 確保全域變數宣告完整
+        let db; 
+        let isOfflineMode = false;
+        let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', enterpriseName: '', entEmpId: '', entScope: '', entGreenScope: '', entSustNotes: '', entWelfareNotes: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], currentTransport: null, heroIndex: 0 };
+        let globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 };
+        let globalGovData = { projects: [] };
+        let globalEntData = { projects: [] };
+        let globalCerts = { operators: [], lecturers: [] };
+        let globalPoiGroups = [];
+        window.routePoints = [];
+        window.pendingTrip = { isValid: false };
+        const sroiUnits = [ { name: "不指定 (無加權)", weight: 1 }, { name: "湧健酪梨園", weight: 3.5 }, { name: "阿爾喜莊園", weight: 4.2 }, { name: "雨社山下", weight: 3.8 }, { name: "明揚養蜂", weight: 2.9 }, { name: "指令教育農場", weight: 5.1 }, { name: "小茶米農場", weight: 3.2 } ];
+        const taiwanCities = [ { name: "台北", lat: 25.0330, lng: 121.5654 }, { name: "新北", lat: 25.0113, lng: 121.4617 }, { name: "桃園", lat: 24.9936, lng: 121.3010 }, { name: "台中", lat: 24.1477, lng: 120.6736 }, { name: "台南", lat: 22.9997, lng: 120.2270 }, { name: "高雄", lat: 22.6273, lng: 120.3014 }, { name: "新竹", lat: 24.8138, lng: 120.9675 }, { name: "苗栗", lat: 24.5602, lng: 120.8214 }, { name: "彰化", lat: 24.0518, lng: 120.5393 }, { name: "雲林", lat: 23.7092, lng: 120.4313 }, { name: "嘉義", lat: 23.4801, lng: 120.4539 }, { name: "屏東", lat: 22.6715, lng: 120.4880 }, { name: "宜蘭", lat: 24.7303, lng: 121.7582 }, { name: "花蓮", lat: 23.9770, lng: 121.6044 }, { name: "台東", lat: 22.7583, lng: 121.1444 } ];
+
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
         const transportData={walk_bike:{name:'步行/單車',icon:'🚶🚲',reduction:173,mode:'WALKING'},thsr:{name:'搭乘高鐵',icon:'🚆',reduction:141,mode:'TRANSIT'},bus_train:{name:'共乘巴士(35人)',icon:'🚌',reduction:145,mode:'TRANSIT'},carpool_4:{name:'4人共乘',icon:'🚗',reduction:130,mode:'DRIVING'},carpool_5:{name:'5人共乘',icon:'🚐',reduction:129,mode:'DRIVING'},carpool_3:{name:'3人共乘',icon:'🚗',reduction:115,mode:'DRIVING'},carpool_2_car:{name:'2人共乘(汽車)',icon:'🚗',reduction:86,mode:'DRIVING'},carpool_2_moto:{name:'機車/2人',icon:'🛵',reduction:125,mode:'DRIVING'},drive_alone:{name:'單人自駕',icon:'🚘',reduction:0,mode:'DRIVING'}};
-        const sroiUnits=[{name:'指令教育農場',weight:1.95},{name:'阿爾喜',weight:1.95},{name:'雨社山下',weight:1.58},{name:'明揚養蜂',weight:1.58},{name:'湧健酪梨園',weight:2.66},{name:'里山餐桌團隊',weight:3.40}];
-        const taiwanCities=[{name:'基隆市',lat:25.1276,lng:121.7392},{name:'臺北市',lat:25.0330,lng:121.5654},{name:'新北市',lat:25.0110,lng:121.4653},{name:'桃園市',lat:24.9936,lng:121.3010},{name:'新竹市',lat:24.8138,lng:120.9675},{name:'新竹縣',lat:24.8298,lng:121.0126},{name:'苗栗縣',lat:24.5602,lng:120.8214},{name:'臺中市',lat:24.1477,lng:120.6736},{name:'彰化縣',lat:24.0518,lng:120.5393},{name:'南投縣',lat:23.9037,lng:120.6839},{name:'雲林縣',lat:23.7092,lng:120.4313},{name:'嘉義市',lat:23.4801,lng:120.4491},{name:'嘉義縣',lat:23.4518,lng:120.2555},{name:'臺南市',lat:22.9997,lng:120.2270},{name:'高雄市',lat:22.6273,lng:120.3014},{name:'屏東縣',lat:22.6828,lng:120.5132},{name:'宜蘭縣',lat:24.7021,lng:121.7378},{name:'花蓮縣',lat:23.9872,lng:121.6016},{name:'臺東縣',lat:22.7583,lng:121.1444},{name:'澎湖縣',lat:23.5711,lng:119.5793},{name:'金門縣',lat:24.4327,lng:118.3125},{name:'連江縣',lat:26.1505,lng:119.9360}];
-        
-        let state={totalMileage:0,totalCarbon:0,totalScore:0,playerName:'',playerCode:'',enterpriseName:'',entScope:'',entGreenScope:'',entSustNotes:'',entWelfareNotes:'',entEmpId:'',greenProcure:0,sroiProcure:0,projectProcure:0,activityLogs:[],checkoutHistory:[],lotteryTickets:[],currentTransport:null};
-        let globalGovData={projects:[]},globalEntData={projects:[]},globalAbsolute={carbon:0,green:0,visitor_count:0,map_trial_expiry:0,qr_scan_expiry:0},globalCerts={operators:[],lecturers:[]};
-        let db=null,isOfflineMode=false;
-        
-        window.currentModalPoi = null; window.routePoints = []; window.mapMarkers = [];
-        let globalPoiGroups = []; window.pendingTrip = { distMeters:0, distKm:0, reduction:0, isValid:false };
-        window.globalLotteryEvents=[]; window.partnerEnterprises=[]; window.guideVideos = [];
+        window.guideVideos = [];
 
         window.extractYouTubeID = function(url) {
             if (!url) return '';
-            const match = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-            return match ? match[1] : url.trim();
+            let cleanUrl = String(url).trim();
+            if (/^[a-zA-Z0-9_-]{11}$/.test(cleanUrl)) return cleanUrl;
+            const match = cleanUrl.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            return match ? match[1] : '';
         };
 
         window.openQuickGuideModal = function() {
             window.openModal('quick-guide-modal');
             window.renderGuidePlaylist();
             if (window.guideVideos && window.guideVideos.length > 0) {
+                // 自動播放第一支影片
                 window.playGuideVideo(window.guideVideos[0].id, 0);
             }
         };
@@ -616,7 +625,8 @@
             
             const iframe = document.getElementById('guide-video-iframe');
             if (iframe) {
-                iframe.src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`; 
+                // 🌟 修正：加入 mute=1 確保瀏覽器允許自動播放，並加入 loop=1&playlist=${videoId} 實現無限循環
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1`; 
             }
             
             document.querySelectorAll('.guide-playlist-item').forEach((el, i) => {
