@@ -540,9 +540,8 @@
     <div id="qr-scan-modal" class="modal-overlay hidden" style="z-index: 9999;"><div class="modal-content max-w-sm p-6"><button class="absolute top-4 right-4 text-gray-400 text-xl" onclick="window.closeScannerModal()"><i class="fas fa-times"></i></button><h3 class="text-xl font-bold mb-2 text-center text-mori-forest">掃描消費憑證</h3><div id="qr-reader" class="w-full bg-black min-h-[250px] mb-4 rounded-xl overflow-hidden shadow-inner"></div><div id="qr-success-buffer" class="hidden w-full bg-green-50 p-6 min-h-[250px] flex flex-col items-center justify-center rounded-xl border border-green-200"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><p class="font-bold text-green-800 mb-4">掃描成功！</p><button id="btn-confirm-scan" class="w-full py-3 bg-green-600 hover:bg-green-700 transition text-white font-bold rounded-xl shadow-md">領取積分</button></div></div></div>
     <div id="main-lottery-auth-modal" class="fixed inset-0 bg-black/80 z-[99999] hidden items-center justify-center p-4"><div class="bg-white max-w-sm p-6"><button onclick="window.closeLotteryAuthModal()">X</button><h2>開獎中心安全登入</h2><input type="password" id="main-lottery-pwd" class="w-full p-3"><p id="main-lottery-error" class="hidden text-red-500">密碼錯誤</p><button onclick="window.verifyLotteryAuth()" class="w-full py-3 bg-yellow-500">確認</button></div></div>
 
-    <!-- 🌟 快速指引 Modal -->
-    <div id="quick-guide-modal" class="modal-overlay hidden" style="z-index: 9999;">
-        <!-- 縮減整體高度並加入手風琴結構 -->
+    <!-- 🌟 快速指引 Modal (修改透明度與手風琴結構) -->
+    <div id="quick-guide-modal" class="modal-overlay hidden" style="z-index: 9999; backdrop-filter: none; background: rgba(0,0,0,0.2);">
         <div class="modal-content w-full max-w-md md:max-w-xl p-0 bg-white border-t-4 border-rose-500 rounded-2xl shadow-2xl relative flex flex-col max-h-[75vh] md:max-h-[70vh] overflow-hidden transform mt-auto md:mt-0 mb-4 md:mb-0">
             <div class="bg-gray-50 p-3 border-b border-gray-100 flex justify-between items-center shrink-0">
                 <h3 class="text-lg font-black text-rose-600 flex items-center tracking-wide"><i class="fas fa-play-circle mr-2"></i>快速指引與教學影片</h3>
@@ -586,6 +585,7 @@
         // 🌟 確保全域變數宣告完整
         let db; 
         let isOfflineMode = false;
+        // ⭐ 將 state 物件加回
         let state = { totalMileage: 0, totalCarbon: 0, totalScore: 0, playerName: '', playerCode: '', enterpriseName: '', entEmpId: '', entScope: '', entGreenScope: '', entSustNotes: '', entWelfareNotes: '', greenProcure: 0, sroiProcure: 0, projectProcure: 0, activityLogs: [], checkoutHistory: [], lotteryTickets: [], currentTransport: null, heroIndex: 0 };
         let globalAbsolute = { carbon: 0, green: 0, visitor_count: 0 };
         let globalGovData = { projects: [] };
@@ -632,7 +632,7 @@
             
             const iframe = document.getElementById('guide-video-iframe');
             if (iframe) {
-                // 🌟 修正：加入 mute=1 確保瀏覽器允許自動播放，並加入 loop=1&playlist=${videoId} 實現無限循環
+                // 🌟 最穩定的設定：自動播放、靜音、循環播放
                 iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&rel=0&modestbranding=1`; 
             }
             
@@ -661,10 +661,11 @@
             }
             container.innerHTML = window.guideVideos.map((v, i) => {
                 const vid = window.extractYouTubeID(v.id);
+                const thumbnailHtml = vid ? `<img src="https://img.youtube.com/vi/${vid}/mqdefault.jpg" class="w-full h-full object-cover" alt="thumbnail" onerror="this.src='https://placehold.co/320x180/F43F5E/white?text=Video'">` : `<div class="w-full h-full flex items-center justify-center bg-gray-300"><i class="fas fa-video-slash text-gray-500"></i></div>`;
                 return `
                 <div class="guide-playlist-item flex items-center p-2.5 rounded-lg border border-gray-100 bg-white hover:bg-rose-50 hover:border-rose-200 transition cursor-pointer group" onclick="window.playGuideVideo('${vid}', ${i})">
                     <div class="w-24 h-14 bg-gray-200 rounded shrink-0 mr-3 overflow-hidden relative shadow-sm border border-gray-200">
-                        <img src="https://img.youtube.com/vi/${vid}/mqdefault.jpg" class="w-full h-full object-cover" alt="thumbnail" onerror="this.src='https://placehold.co/320x180/F43F5E/white?text=Video'">
+                        ${thumbnailHtml}
                         <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition"></div>
                     </div>
                     <div class="flex-1 min-w-0">
