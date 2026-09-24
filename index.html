@@ -542,21 +542,28 @@
 
     <!-- 🌟 快速指引 Modal -->
     <div id="quick-guide-modal" class="modal-overlay hidden" style="z-index: 9999;">
-        <div class="modal-content w-full max-w-md md:max-w-xl p-0 bg-white border-t-4 border-rose-500 rounded-2xl shadow-2xl relative flex flex-col h-[85vh] md:h-[80vh] overflow-hidden">
+        <!-- 縮減整體高度並加入手風琴結構 -->
+        <div class="modal-content w-full max-w-md md:max-w-xl p-0 bg-white border-t-4 border-rose-500 rounded-2xl shadow-2xl relative flex flex-col max-h-[75vh] md:max-h-[70vh] overflow-hidden transform mt-auto md:mt-0 mb-4 md:mb-0">
             <div class="bg-gray-50 p-3 border-b border-gray-100 flex justify-between items-center shrink-0">
                 <h3 class="text-lg font-black text-rose-600 flex items-center tracking-wide"><i class="fas fa-play-circle mr-2"></i>快速指引與教學影片</h3>
                 <button class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center transition outline-none" onclick="window.closeQuickGuideModal()"><i class="fas fa-times"></i></button>
             </div>
             
-            <!-- 🌟 YouTube 播放器區域 (加入 strict-origin 屬性) -->
+            <!-- 🌟 YouTube 播放器區域 -->
             <div class="w-full bg-black shrink-0 relative pt-[56.25%]">
                 <iframe id="guide-video-iframe" class="absolute inset-0 w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
             </div>
             
-            <div class="flex-grow overflow-y-auto custom-scrollbar p-3 bg-gray-50">
-                <h4 class="text-xs font-bold text-gray-500 mb-2 px-1"><i class="fas fa-list-ul mr-1"></i>播放清單</h4>
-                <div id="guide-playlist-container" class="space-y-2">
-                    <div class="text-center text-xs text-gray-400 py-4"><i class="fas fa-spinner fa-spin mr-1"></i> 載入播放清單中...</div>
+            <!-- 🌟 手風琴折疊播放清單 -->
+            <div class="accordion-item shrink-0 bg-white overflow-hidden border-t border-gray-200">
+                <button class="accordion-header w-full p-3 font-bold text-gray-600 flex justify-between items-center text-left focus:outline-none hover:bg-rose-50 transition-colors" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron-icon').classList.toggle('rotate-180');">
+                    <span class="text-xs flex items-center tracking-wide"><i class="fas fa-list-ul mr-2 text-rose-500"></i>展開其他教學播放清單</span>
+                    <i class="fas fa-chevron-down text-gray-400 transition-transform duration-300 chevron-icon text-xs"></i>
+                </button>
+                <div class="accordion-content hidden p-2 bg-gray-50 border-t border-gray-100 max-h-[30vh] overflow-y-auto custom-scrollbar">
+                    <div id="guide-playlist-container" class="space-y-2">
+                        <div class="text-center text-xs text-gray-400 py-4"><i class="fas fa-spinner fa-spin mr-1"></i> 載入播放清單中...</div>
+                    </div>
                 </div>
             </div>
         </div>
