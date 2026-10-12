@@ -181,9 +181,20 @@
         }
         #manual-walk-btn:active { transform: scale(0.9); }
         
+        #wake-lock-btn {
+            position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); left: 20px;
+            background: rgba(255,255,255,0.95); border-radius: 8px; border: 3px solid #8f562b; color: #5e3212;
+            padding: 8px 12px; font-size: 14px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3); z-index: 500; transition: all 0.3s;
+        }
+        #wake-lock-btn.active {
+            background: #fef08a; border-color: #ca8a04; color: #854d0e;
+        }
+
         /* ★ 面板展開時自動隱藏下方按鈕，防遮擋 */
         body.panel-open #compass, 
-        body.panel-open #manual-walk-btn {
+        body.panel-open #manual-walk-btn,
+        body.panel-open #wake-lock-btn {
             opacity: 0; pointer-events: none; transform: translateY(40px);
         }
         body.panel-open #magic-wand-fab {
@@ -386,6 +397,7 @@
     
     <div id="compass" onclick="recenterCamera()" title="點擊找回小偵探"><div id="compass-arrow"></div></div>
     <div id="manual-walk-btn" onclick="manualStep()" title="手動前進 (無感測器適用)">👣</div>
+    <div id="wake-lock-btn" onclick="toggleWakeLock()" title="保持螢幕常亮">🌙 允許休眠</div>
     <div id="magic-wand-fab" onclick="toggleMagicMode()">🪄 啟用魔法棒</div>
 
     <div id="right-inventory" class="side-inventory"></div>
@@ -604,6 +616,44 @@
 
         function recenterCamera() { camera.detached = false; showAlert("📍 已將視角重新對齊小偵探"); }
 
+        let wakeLock = null;
+        async function toggleWakeLock() {
+            const btn = document.getElementById('wake-lock-btn');
+            if (wakeLock !== null) {
+                try {
+                    await wakeLock.release();
+                    wakeLock = null;
+                    btn.innerText = '🌙 允許休眠';
+                    btn.classList.remove('active');
+                    showAlert('🔋 螢幕休眠機制已恢復');
+                } catch(e) {}
+            } else {
+                if ('wakeLock' in navigator) {
+                    try {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        btn.innerText = '☀️ 螢幕常亮中';
+                        btn.classList.add('active');
+                        showAlert('☀️ 螢幕常亮已開啟，防中斷');
+                        wakeLock.addEventListener('release', () => {
+                            if (wakeLock === null) return;
+                            wakeLock = null;
+                            btn.innerText = '🌙 允許休眠';
+                            btn.classList.remove('active');
+                        });
+                    } catch (err) {
+                        showAlert('⚠️ 您的瀏覽器不支援螢幕常亮功能');
+                    }
+                } else {
+                    showAlert('⚠️ 您的裝置或瀏覽器不支援螢幕常亮功能');
+                }
+            }
+        }
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
+            }
+        });
+
         function manualStep() {
             if (!isGameRunning) return;
             const stepSize = 15;
@@ -780,21 +830,25 @@
 
             enableAntiLeave();
 
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(permissionState => {
-                    if (permissionState === 'granted') window.addEventListener('deviceorientation', handleOrientation);
-                }).catch(e => { window.addEventListener('deviceorientation', handleOrientation); });
-            } else {
-                window.addEventListener('deviceorientation', handleOrientation);
-            }
+            try {
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission().then(permissionState => {
+                        if (permissionState === 'granted') window.addEventListener('deviceorientation', handleOrientation);
+                    }).catch(e => { window.addEventListener('deviceorientation', handleOrientation); });
+                } else {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                }
+            } catch(e) { window.addEventListener('deviceorientation', handleOrientation); }
 
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                DeviceMotionEvent.requestPermission().then(permissionState => {
-                    if (permissionState === 'granted') window.addEventListener('devicemotion', handleMotion);
-                }).catch(e => { window.addEventListener('devicemotion', handleMotion); });
-            } else {
-                window.addEventListener('devicemotion', handleMotion);
-            }
+            try {
+                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                    DeviceMotionEvent.requestPermission().then(permissionState => {
+                        if (permissionState === 'granted') window.addEventListener('devicemotion', handleMotion);
+                    }).catch(e => { window.addEventListener('devicemotion', handleMotion); });
+                } else {
+                    window.addEventListener('devicemotion', handleMotion);
+                }
+            } catch(e) { window.addEventListener('devicemotion', handleMotion); }
 
             window.addEventListener('keydown', (e) => {
                 const speed = 15; 
@@ -829,11 +883,14 @@
 
             let x = acc.x || 0; let y = acc.y || 0; let z = acc.z || 0;
             let mag = Math.sqrt(x*x + y*y + z*z);
+            
+            if (lastMag === 0) { lastMag = mag; return; } // 防呆：過濾第一次的巨大重力落差
+            
             let delta = Math.abs(mag - lastMag);
             lastMag = mag;
 
-            if (delta > 1.5) { 
-                const stepSize = 6; 
+            if (delta > 1.2) { // 調降閾值，走路觸發更靈敏
+                const stepSize = 8; // 稍微加大步伐
                 player.x += Math.sin(player.dirAngle) * stepSize; 
                 player.y -= Math.cos(player.dirAngle) * stepSize; 
                 player.x = Math.max(player.size, Math.min(MAP_W - player.size, player.x)); 
