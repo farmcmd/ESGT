@@ -159,6 +159,9 @@
                 <button onclick="switchTab('cards')" class="bg-satoyama-earth hover:bg-amber-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5">
                     <i class="fas fa-image"></i> 下載圖卡 (.png)
                 </button>
+                <button onclick="openQrShareModal()" class="bg-white hover:bg-emerald-50 text-satoyama-dark px-3.5 py-2 rounded-xl text-xs font-black shadow-md transition flex items-center gap-1.5 border border-emerald-300">
+                    <i class="fas fa-qrcode text-satoyama-main text-sm"></i> 分享 QR Code
+                </button>
             </div>
         </div>
     </header>
@@ -1168,6 +1171,60 @@
             <div class="flex justify-end gap-2 pt-3 border-t">
                 <button onclick="closePublishModal()" class="px-4 py-2 text-xs font-bold text-slate-500">取消</button>
                 <button onclick="confirmPublishData()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-2 rounded-xl text-xs font-black">驗證並發布</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="qrShareModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="if(event.target===this) closeQrShareModal()">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-emerald-200 space-y-4 text-center relative overflow-hidden">
+            <div class="bg-gradient-to-r from-satoyama-dark via-emerald-800 to-satoyama-main text-white -mx-6 -mt-6 p-5 pb-4 mb-2">
+                <div class="flex justify-between items-center">
+                    <span class="bg-white/20 text-emerald-100 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                        <i class="fas fa-share-alt"></i> Share Workbench
+                    </span>
+                    <button onclick="closeQrShareModal()" class="text-white/80 hover:text-white w-7 h-7 rounded-full bg-white/10 flex items-center justify-center transition">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                <h3 class="text-lg font-black mt-2 tracking-wide">水里里山生態廊道 SROI 數位工作台</h3>
+                <p class="text-[11px] text-emerald-100 font-light mt-0.5">掃描下方 QR Code 或複製網址即可開啟並分享此系統</p>
+            </div>
+
+            <!-- QR Code Display Card -->
+            <div id="qrCodeDownloadCard" class="bg-emerald-50/70 p-5 rounded-2xl border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center space-y-2.5">
+                <div class="bg-white p-3.5 rounded-2xl shadow-md border border-emerald-100">
+                    <img id="qrCodeImageEl" src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&color=0f4c3a&data=https%3A%2F%2Ffarmcmd.github.io%2FESGT%2FSROI.html" alt="SROI Workbench QR Code" class="w-48 h-48 mx-auto object-contain rounded-lg" crossorigin="anonymous" onerror="this.onerror=null; this.src='https://placehold.co/260x260/ecfdf5/0f4c3a?text=QR+Code';" />
+                </div>
+                <div class="text-center">
+                    <span class="text-xs font-black text-satoyama-dark block">📱 請使用手機相機或 LINE 掃描開啟</span>
+                    <span class="text-[10px] text-emerald-700 font-bold">臺大。山林。學院 2.0 ｜ 里山生態廊道 ESG 報告系統</span>
+                </div>
+            </div>
+
+            <!-- Share URL Copy Input Box -->
+            <div class="text-left space-y-1.5">
+                <label class="text-[11px] font-black text-slate-600 flex items-center justify-between">
+                    <span><i class="fas fa-link text-satoyama-main mr-1"></i>專屬分享網址：</span>
+                    <a href="https://farmcmd.github.io/ESGT/SROI.html" target="_blank" rel="noopener noreferrer" class="text-[10px] text-satoyama-water hover:underline font-bold flex items-center gap-1">
+                        新分頁開啟 <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </label>
+                <div class="flex items-center gap-1.5">
+                    <input type="text" id="shareWebsiteUrlInput" value="https://farmcmd.github.io/ESGT/SROI.html" readonly class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 select-all focus:outline-none">
+                    <button onclick="copyShareWebsiteUrl()" class="bg-satoyama-main hover:bg-satoyama-dark text-white px-3.5 py-2 rounded-xl text-xs font-black transition shadow shrink-0 flex items-center gap-1">
+                        <i class="fas fa-copy"></i> 複製網址
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="flex justify-between items-center gap-2 pt-2 border-t border-slate-100">
+                <button onclick="downloadQrCodeCard()" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-satoyama-dark py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5">
+                    <i class="fas fa-download"></i> 下載 QR 圖卡 (.png)
+                </button>
+                <button onclick="closeQrShareModal()" class="py-2 px-5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition">
+                    關閉視窗
+                </button>
             </div>
         </div>
     </div>
@@ -3640,6 +3697,38 @@
                 a.download = `${name}_${getActiveTeamObj().name}.png`;
                 a.click();
                 showToast('PNG 圖卡已下載完成！');
+            });
+        }
+
+        function openQrShareModal() {
+            const modal = document.getElementById('qrShareModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeQrShareModal() {
+            const modal = document.getElementById('qrShareModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function copyShareWebsiteUrl() {
+            const input = document.getElementById('shareWebsiteUrlInput');
+            if (!input) return;
+            input.select();
+            input.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showToast('已複製分享網址：https://farmcmd.github.io/ESGT/SROI.html');
+        }
+
+        function downloadQrCodeCard() {
+            const cardEl = document.getElementById('qrCodeDownloadCard');
+            if (!cardEl) return;
+            showToast('正在產生 QR Code 分享圖卡...', 'fa-spinner fa-spin text-amber-400');
+            html2canvas(cardEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = 'Shuili_Satoyama_SROI_QRCode.png';
+                a.click();
+                showToast('QR Code 圖卡已下載完成！');
             });
         }
 
