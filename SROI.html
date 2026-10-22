@@ -143,6 +143,10 @@
 
             <!-- Export & Data Controls -->
             <div class="flex flex-wrap items-center gap-2">
+                <!-- Auto Save Status & Snapshot Manager Button -->
+                <button onclick="openRecordManagerModal()" id="autoSaveIndicatorBtn" class="bg-emerald-700/80 hover:bg-emerald-600 text-emerald-100 px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 border border-emerald-400/50 shadow-sm" title="點擊開啟填報記錄與歷史快照管理視窗">
+                    <i class="fas fa-save text-satoyama-main"></i> <span id="autoSaveStatusLabel">填報自動記錄中</span>
+                </button>
                 <label class="cursor-pointer bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-emerald-600/50">
                     <i class="fas fa-folder-open"></i> 匯入打包檔 (.json)
                     <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="importJSON(event)">
@@ -2499,175 +2503,328 @@
                                     ${teamOptionsHtml}
                                 </select>
                             </div>
+                            <button onclick="saveFarmRecord(${f.id})" class="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-lg font-bold transition flex items-center gap-1 shadow-sm" title="儲存此農場填報數據">
+                                <i class="fas fa-save"></i> 記錄存檔
+                            </button>
                             <button onclick="openEditFarmModal(${f.id})" class="text-[10px] bg-white border border-sky-300 hover:bg-sky-50 text-sky-800 px-2 py-1 rounded-lg font-bold transition flex items-center gap-1">
                                 <i class="fas fa-edit"></i> 編輯農場
                             </button>
-                            <button onclick="exportSingleFarmJSON(${f.id})" class="text-[10px] bg-emerald-700 hover:bg-emerald-800 text-white px-2 py-1 rounded-lg font-bold transition" title="匯出此農場 JSON">
-                                單場匯出
-                            </button>
-                            <button onclick="removeFarm(${f.id})" class="text-[10px] bg-rose-100 hover:bg-rose-600 text-rose-700 hover:text-white px-2 py-1 rounded-lg font-bold transition flex items-center gap-1">
-                                <i class="fas fa-trash-alt"></i> 刪除農場
+                            <button onclick="removeFarm(${f.id})" class="text-[10px] bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 px-2 py-1 rounded-lg font-bold transition flex items-center gap-1">
+                                <i class="fas fa-trash-alt"></i> 刪除
                             </button>
                         </div>
                     </div>
 
-                    <!-- Team Guidance Banner inside Farm Card -->
-                    <div class="bg-emerald-900 text-white px-3 py-2 rounded-xl text-[11px] flex flex-wrap justify-between items-center gap-2">
-                        <div>
-                            <span class="text-amber-300 font-black"><i class="fas fa-award mr-1"></i>認列團隊指導：</span>
-                            <span class="font-bold">${fTeam.name}｜${fTeam.guidanceTitle}</span>
+                    <!-- Habitat & Eco Metrics Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div class="bg-sky-50 p-2 rounded-xl border border-sky-200">
+                            <span class="text-[10px] text-sky-800 font-bold block">💧 水域微棲地 (處)</span>
+                            <input type="number" value="${f.water}" min="0" oninput="updateFarmField(${f.id}, 'water', this.value)" class="clean-num-input w-full bg-white border border-sky-300 rounded px-2 py-1 font-black text-satoyama-dark mt-0.5">
                         </div>
-                        <span class="bg-white/15 px-2 py-0.5 rounded text-[10px] text-emerald-100">產出：${fTeam.keyOutputs}</span>
-                    </div>
-
-                    <!-- Farm Basic Profile Inputs -->
-                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                        <div>
-                            <span class="text-slate-400 font-bold block text-[10px]">📍 農場面積與地段號</span>
-                            <input type="text" value="${f.areaDesc || ''}" onchange="updateFarmField(${f.id}, 'areaDesc', this.value, true)" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 font-bold text-slate-700">
+                        <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+                            <span class="text-[10px] text-emerald-800 font-bold block">🌿 陸域微棲地 (處)</span>
+                            <input type="number" value="${f.land}" min="0" oninput="updateFarmField(${f.id}, 'land', this.value)" class="clean-num-input w-full bg-white border border-emerald-300 rounded px-2 py-1 font-black text-satoyama-dark mt-0.5">
                         </div>
-                        <div>
-                            <span class="text-slate-400 font-bold block text-[10px]">🏅 友善程度與認證</span>
-                            <input type="text" value="${f.certDesc || ''}" onchange="updateFarmField(${f.id}, 'certDesc', this.value, true)" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 font-bold text-emerald-800">
+                        <div class="bg-amber-50 p-2 rounded-xl border border-amber-200">
+                            <span class="text-[10px] text-amber-800 font-bold block">🦋 當期物種數 (種)</span>
+                            <input type="number" value="${f.species || 6}" min="1" oninput="updateFarmField(${f.id}, 'species', this.value)" class="clean-num-input w-full bg-white border border-amber-300 rounded px-2 py-1 font-black text-satoyama-dark mt-0.5">
                         </div>
-                        <div>
-                            <span class="text-slate-400 font-bold block text-[10px]">🦉 監測與保護物種名錄</span>
-                            <input type="text" value="${f.speciesDesc || ''}" onchange="updateFarmField(${f.id}, 'speciesDesc', this.value, true)" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 font-medium text-slate-700">
-                        </div>
-                        <div>
-                            <span class="text-slate-400 font-bold block text-[10px]">🗺️ 生態旅遊導覽路線與棲地說明</span>
-                            <input type="text" value="${f.routeDesc || ''}" onchange="updateFarmField(${f.id}, 'routeDesc', this.value, true)" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 font-medium text-slate-700">
+                        <div class="bg-amber-50 p-2 rounded-xl border border-amber-200">
+                            <span class="text-[10px] text-amber-900 font-bold block">📈 生物數量觀測 (%)</span>
+                            <input type="number" value="${dyn.bioObsPct}" step="1" oninput="updateFarmField(${f.id}, 'bioObsPct', this.value)" class="clean-num-input w-full bg-white border border-amber-300 rounded px-2 py-1 font-black text-satoyama-dark mt-0.5">
                         </div>
                     </div>
 
-                    <!-- Ecological Statistics: Baseline 2025 vs Current -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px] text-slate-900">
-                        <div class="bg-slate-100/90 p-2.5 rounded-xl border border-slate-200 space-y-2">
-                            <span class="font-black text-slate-700 block">📌 農場填報生態統計 (基期 2025)：</span>
-                            <div class="grid grid-cols-3 gap-1.5">
-                                <div class="bg-white p-1.5 rounded border border-slate-200"><span class="text-[10px] text-slate-500 block">💧水域棲地</span><input type="number" value="${f.waterBase}" onchange="updateFarmField(${f.id}, 'waterBase', this.value)" class="clean-num-input w-full bg-white text-slate-900 font-black text-xs"></div>
-                                <div class="bg-white p-1.5 rounded border border-slate-200"><span class="text-[10px] text-slate-500 block">🌿陸域棲地</span><input type="number" value="${f.landBase}" onchange="updateFarmField(${f.id}, 'landBase', this.value)" class="clean-num-input w-full bg-white text-slate-900 font-black text-xs"></div>
-                                <div class="bg-white p-1.5 rounded border border-slate-200"><span class="text-[10px] text-slate-500 block">🦋基期物種</span><input type="number" value="${f.speciesPrev}" onchange="updateFarmField(${f.id}, 'speciesPrev', this.value)" class="clean-num-input w-full bg-white text-slate-900 font-black text-xs"></div>
-                                <div class="bg-white p-1.5 rounded border border-slate-200"><span class="text-[10px] text-slate-500 block">🗺️導覽路線</span><input type="number" value="${f.routesBase}" onchange="updateFarmField(${f.id}, 'routesBase', this.value)" class="clean-num-input w-full bg-white text-slate-900 font-black text-xs"></div>
-                                <div class="bg-white p-1.5 rounded border border-slate-200"><span class="text-[10px] text-slate-500 block">🚩導覽員數</span><input type="number" value="${f.guidesBase}" onchange="updateFarmField(${f.id}, 'guidesBase', this.value)" class="clean-num-input w-full bg-white text-slate-900 font-black text-xs"></div>
-                                <div class="bg-white p-1.5 rounded border border-slate-200"><span class="text-[10px] text-slate-500 block">👩‍🌾培力總人</span><input type="number" value="${f.traineesBase}" onchange="updateFarmField(${f.id}, 'traineesBase', this.value)" class="clean-num-input w-full bg-white text-slate-900 font-black text-xs"></div>
+                    <!-- Itemized Management Costs (A vs B) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-100 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-slate-700 text-[11px]">【A】前期友善生產管理費用</span>
+                                <span class="font-black text-slate-800">$${(f.oldCost2025 || 0).toLocaleString()}</span>
                             </div>
-                            <div class="bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex justify-between items-center">
-                                <span class="text-[10px] font-bold text-slate-600">📈 基期生物數量觀測：</span>
-                                <span class="font-black text-slate-800 text-xs">基準 100% (0%)</span>
+                            <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                                <div>
+                                    <span class="text-slate-500 block">草生除草管理費</span>
+                                    <input type="number" value="${f.convHerbicideCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'convHerbicideCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
+                                </div>
+                                <div>
+                                    <span class="text-slate-500 block">友善資材防治費</span>
+                                    <input type="number" value="${f.convPesticideCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'convPesticideCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
+                                </div>
+                                <div>
+                                    <span class="text-slate-500 block">其他管理資材費</span>
+                                    <input type="number" value="${f.convOtherCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'convOtherCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
+                                </div>
+                                <div>
+                                    <span class="text-slate-500 block">棲地周邊維護費</span>
+                                    <input type="number" value="${f.convMaintCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'convMaintCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200 space-y-2">
-                            <span class="font-black text-satoyama-dark block">🚀 農場填報生態統計 (當期)：</span>
-                            <div class="grid grid-cols-3 gap-1.5">
-                                <div class="bg-white p-1.5 rounded border border-emerald-200"><span class="text-[10px] text-sky-700 font-bold block">💧水域棲地</span><input type="number" value="${f.water}" onchange="updateFarmField(${f.id}, 'water', this.value)" class="clean-num-input w-full bg-white font-black text-xs text-slate-900"></div>
-                                <div class="bg-white p-1.5 rounded border border-emerald-200"><span class="text-[10px] text-emerald-700 font-bold block">🌿陸域棲地</span><input type="number" value="${f.land}" onchange="updateFarmField(${f.id}, 'land', this.value)" class="clean-num-input w-full bg-white font-black text-xs text-slate-900"></div>
-                                <div class="bg-white p-1.5 rounded border border-emerald-200"><span class="text-[10px] text-amber-700 font-bold block">🦋當期物種</span><input type="number" value="${f.species}" onchange="updateFarmField(${f.id}, 'species', this.value)" class="clean-num-input w-full bg-white font-black text-xs text-slate-900"></div>
-                                <div class="bg-white p-1.5 rounded border border-emerald-200"><span class="text-[10px] text-purple-700 font-bold block">🗺️導覽路線</span><input type="number" value="${f.routes}" onchange="updateFarmField(${f.id}, 'routes', this.value)" class="clean-num-input w-full bg-white font-black text-xs text-slate-900"></div>
-                                <div class="bg-white p-1.5 rounded border border-emerald-200"><span class="text-[10px] text-slate-600 font-bold block">🚩導覽員數</span><input type="number" value="${f.guides}" onchange="updateFarmField(${f.id}, 'guides', this.value)" class="clean-num-input w-full bg-white font-black text-xs text-slate-900"></div>
-                                <div class="bg-white p-1.5 rounded border border-emerald-200"><span class="text-[10px] text-slate-600 font-bold block">👩‍🌾培力總人</span><input type="number" value="${f.trainees}" onchange="updateFarmField(${f.id}, 'trainees', this.value)" class="clean-num-input w-full bg-white font-black text-xs text-slate-900"></div>
+                        <div class="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200 space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-emerald-900 text-[11px]">【B】當期友善生產管理費用</span>
+                                <span class="font-black text-emerald-800">$${(f.newCost2025 || 0).toLocaleString()}</span>
                             </div>
-                            <div class="bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-300 flex justify-between items-center">
-                                <span class="text-[10px] font-black text-amber-950">📈 生物數量觀測 (% 增減)：</span>
-                                <div class="flex items-center gap-1">
-                                    <span class="font-black text-amber-800 text-xs">${dyn.bioObsPct >= 0 ? '+' : ''}</span>
-                                    <input type="number" step="1" value="${dyn.bioObsPct}" onchange="updateFarmField(${f.id}, 'bioObsPct', this.value)" class="clean-num-input w-16 bg-white border border-amber-400 rounded px-1.5 py-0.5 text-center font-black text-xs text-slate-900">
-                                    <span class="font-black text-amber-900 text-xs">%</span>
+                            <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                                <div>
+                                    <span class="text-emerald-700 block">草生除草管理費</span>
+                                    <input type="number" value="${f.ecoWeedingCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'ecoWeedingCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
+                                </div>
+                                <div>
+                                    <span class="text-emerald-700 block">友善資材防治費</span>
+                                    <input type="number" value="${f.ecoMaterialCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'ecoMaterialCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
+                                </div>
+                                <div>
+                                    <span class="text-emerald-700 block">其他管理資材費</span>
+                                    <input type="number" value="${f.ecoOtherCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'ecoOtherCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
+                                </div>
+                                <div>
+                                    <span class="text-emerald-700 block">棲地周邊維護費</span>
+                                    <input type="number" value="${f.ecoMaintCost || 0}" step="100" oninput="updateFarmField(${f.id}, 'ecoMaintCost', this.value)" class="clean-num-input w-full bg-white border rounded px-1.5 py-0.5 font-bold">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-sky-50/90 border border-sky-200 rounded-xl p-2.5 text-[11px] text-slate-800 space-y-1">
-                        <div class="flex flex-wrap justify-between items-center gap-1 font-black text-sky-950">
-                            <span><i class="fas fa-exchange-alt text-satoyama-water mr-1"></i>📊 生態統計填報「增加／減少」對 SROI 之即時影響提示：</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full ${dyn.ecoMultiplier >= 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-                                生態耦合修正係數 α = ×${dyn.ecoMultiplier.toFixed(2)}
-                            </span>
+                    <!-- Yield and Value Displays -->
+                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-2 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-slate-500">當期產量(kg):</span>
+                            <input type="number" value="${f.yield2026 || 1000}" oninput="updateFarmField(${f.id}, 'yield2026', this.value)" class="clean-num-input w-16 bg-slate-50 border rounded px-1.5 py-0.5 font-bold">
+                            <span class="text-[11px] font-bold text-slate-500">單價:</span>
+                            <input type="number" value="${f.cropPrice || 50}" oninput="updateFarmField(${f.id}, 'cropPrice', this.value)" class="clean-num-input w-14 bg-slate-50 border rounded px-1.5 py-0.5 font-bold">
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-0.5 text-[10.5px]">
-                            <div class="bg-white px-2 py-1 rounded border border-sky-100">
-                                <span class="text-slate-500 block">① 微棲地處數 (${dyn.habBase}➔${dyn.habCurr}處)</span>
-                                <strong class="${dyn.habCurr - dyn.habBase >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
-                                    ${dyn.habCurr - dyn.habBase > 0 ? `▲ 增加 ${dyn.habCurr - dyn.habBase} 處 (基礎價值上調)` : (dyn.habCurr - dyn.habBase < 0 ? `▼ 減少 ${Math.abs(dyn.habCurr - dyn.habBase)} 處 (基礎價值下修)` : '▬ 維持不變 (穩定守護)')}
-                                </strong>
-                            </div>
-                            <div class="bg-white px-2 py-1 rounded border border-sky-100">
-                                <span class="text-slate-500 block">② 物種(${dyn.sPrev}➔${dyn.sCurr}種) & 生物量(${dyn.bioObsPct >= 0 ? '+' : ''}${dyn.bioObsPct}%)</span>
-                                <strong class="${dyn.ecoValueDelta >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
-                                    ${dyn.ecoValueDelta >= 0 ? `▲ 棲地與物種毛價值 +$${dyn.ecoValueDelta.toLocaleString()}` : `▼ 棲地毛價值據實下修 $${dyn.ecoValueDelta.toLocaleString()}`}
-                                </strong>
-                            </div>
-                            <div class="bg-white px-2 py-1 rounded border border-sky-100">
-                                <span class="text-slate-500 block">③ 導覽(${ f.guidesBase}➔${f.guides}人) & 路線(${dyn.rBase}➔${dyn.rCurr}條)</span>
-                                <strong class="text-sky-800">
-                                    ▲ 創造環教與遊程價值 +$${dyn.eduTourismTotalValue.toLocaleString()}
-                                </strong>
-                            </div>
-                        </div>
-                        <p class="text-[10px] text-slate-500 leading-snug pt-0.5">
-                            💡 <strong>連動規則：</strong>當期填報之「水域/陸域棲地、物種數、生物觀測%」若<strong>增加</strong>，系統將依比例上調微棲地生態服務毛價值與友善資材物種復育紅利；若因氣候或管理不善導致數據<strong>減少</strong>，系統亦會自動下修毛價值，確保防漂綠誠信。
-                        </p>
-                    </div>
-
-                    <!-- Friendly Production Management Cost Itemized [A] vs [B] -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px] text-slate-900">
-                        <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
-                            <div class="flex justify-between items-center font-black text-slate-800 border-b border-slate-100 pb-1.5 gap-1">
-                                <span>【A】前期友善生產管理費用</span>
-                                <span class="text-slate-900 shrink-0">$${dyn.prodMgmtCostPrev.toLocaleString()}</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div><span class="text-[10px] text-slate-500 font-bold block mb-0.5">草生除草管理費</span><input type="number" value="${f.convHerbicideCost}" onchange="updateFarmField(${f.id}, 'convHerbicideCost', this.value)" class="clean-num-input w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                                <div><span class="text-[10px] text-slate-500 font-bold block mb-0.5">友善資材防治費</span><input type="number" value="${f.convPesticideCost}" onchange="updateFarmField(${f.id}, 'convPesticideCost', this.value)" class="clean-num-input w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                                <div><span class="text-[10px] text-slate-500 font-bold block mb-0.5">其他管理費</span><input type="number" value="${f.convOtherCost}" onchange="updateFarmField(${f.id}, 'convOtherCost', this.value)" class="clean-num-input w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                                <div><span class="text-[10px] text-slate-500 font-bold block mb-0.5">微棲地維護費</span><input type="number" value="${f.convMaintCost}" onchange="updateFarmField(${f.id}, 'convMaintCost', this.value)" class="clean-num-input w-full bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-3 rounded-xl border border-emerald-300 space-y-2">
-                            <div class="flex justify-between items-center font-black text-satoyama-dark border-b border-emerald-100 pb-1.5 gap-1">
-                                <span>【B】當期友善生產管理費用</span>
-                                <span class="text-satoyama-main shrink-0">$${dyn.prodMgmtCostCurr.toLocaleString()}</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div><span class="text-[10px] text-emerald-800 font-bold block mb-0.5">草生除草管理費</span><input type="number" value="${f.ecoWeedingCost}" onchange="updateFarmField(${f.id}, 'ecoWeedingCost', this.value)" class="clean-num-input w-full bg-emerald-50/50 border border-emerald-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                                <div><span class="text-[10px] text-emerald-800 font-bold block mb-0.5">友善資材防治費</span><input type="number" value="${f.ecoMaterialCost}" onchange="updateFarmField(${f.id}, 'ecoMaterialCost', this.value)" class="clean-num-input w-full bg-emerald-50/50 border border-emerald-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                                <div><span class="text-[10px] text-emerald-800 font-bold block mb-0.5">其他管理費</span><input type="number" value="${f.ecoOtherCost}" onchange="updateFarmField(${f.id}, 'ecoOtherCost', this.value)" class="clean-num-input w-full bg-emerald-50/50 border border-emerald-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                                <div><span class="text-[10px] text-emerald-800 font-bold block mb-0.5">微棲地維護費</span><input type="number" value="${f.ecoMaintCost}" onchange="updateFarmField(${f.id}, 'ecoMaintCost', this.value)" class="clean-num-input w-full bg-emerald-50/50 border border-emerald-300 rounded-lg px-2 py-1 font-black text-slate-900"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Annual Yield Statistics -->
-                    <div class="bg-amber-50/80 p-3 rounded-xl border border-amber-300 flex flex-wrap justify-between items-center gap-2 text-[11px] text-slate-900">
-                        <span class="font-black text-amber-950">📦 年度生產量統計：</span>
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            <label class="flex items-center gap-1"><span class="text-slate-700 font-bold">前期(kg):</span><input type="number" value="${f.yieldBase}" onchange="updateFarmField(${f.id}, 'yieldBase', this.value)" class="clean-num-input w-20 bg-white border border-amber-300 rounded-lg px-2 py-1 font-black text-slate-900"></label>
-                            <label class="flex items-center gap-1"><span class="text-slate-700 font-bold">當期(kg):</span><input type="number" value="${f.yield2026}" onchange="updateFarmField(${f.id}, 'yield2026', this.value)" class="clean-num-input w-20 bg-white border border-amber-300 rounded-lg px-2 py-1 font-black text-satoyama-dark"></label>
-                            <label class="flex items-center gap-1"><span class="text-slate-700 font-bold">單價(元/kg):</span><input type="number" value="${f.cropPrice}" onchange="updateFarmField(${f.id}, 'cropPrice', this.value)" class="clean-num-input w-16 bg-white border border-amber-300 rounded-lg px-2 py-1 font-black text-slate-900"></label>
-                        </div>
-                    </div>
-
-                    <!-- Instant Summary of Friendly Material -> Species Value & Guide/Route -> Edu-Tourism Value -->
-                    <div class="bg-gradient-to-r from-emerald-50 via-sky-50 to-amber-50 p-2.5 rounded-xl border border-emerald-200 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                        <div class="bg-white/90 p-2 rounded-lg border border-emerald-200 flex justify-between items-center">
-                            <div>
-                                <span class="font-black text-emerald-900 block">🦋 友善資材對應棲地物種增加價值</span>
-                                <span class="text-[10px] text-slate-500">資材維護 $${dyn.friendlyMaterialSpend.toLocaleString()} ➔ 物種 ${f.speciesPrev}→${f.species}種 (${dyn.bioObsPct >= 0 ? '+' : ''}${dyn.bioObsPct}%)</span>
-                            </div>
-                            <span class="font-black text-satoyama-main text-xs">+$${dyn.friendlyMaterialSpeciesValue.toLocaleString()}</span>
-                        </div>
-                        <div class="bg-white/90 p-2 rounded-lg border border-sky-200 flex justify-between items-center">
-                            <div>
-                                <span class="font-black text-sky-900 block">🧭 培訓導覽員與旅遊路線環教價值</span>
-                                <span class="text-[10px] text-slate-500">${f.guides}位導覽員 ($${dyn.guideEduValue.toLocaleString()}) + ${f.routes}條路線 ($${dyn.routeTourValue.toLocaleString()})</span>
-                            </div>
-                            <span class="font-black text-satoyama-water text-xs">+$${dyn.eduTourismTotalValue.toLocaleString()}</span>
+                        <div class="flex items-center gap-3 text-[11px]">
+                            <span>生態毛值(E): <strong class="text-satoyama-water">$${dyn.adjustedAnnualEco.toLocaleString()}</strong></span>
+                            <span>農務效益(G): <strong class="text-satoyama-earth">$${dyn.mgmtCurr.toLocaleString()}</strong></span>
                         </div>
                     </div>
                 </div>
-            `}).join('');
+                `;
+            }).join('');
+        }
+
+        function toggleSection(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(id + 'Icon');
+            if (el) el.classList.toggle('hidden');
+            if (icon) icon.classList.toggle('rotate-180');
+        }
+
+        function switchTab(tabName) {
+            ['report', 'methodology', 'charts', 'cards'].forEach(t => {
+                const content = document.getElementById(`tab-content-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (content) {
+                    if (t === tabName) content.classList.remove('hidden');
+                    else content.classList.add('hidden');
+                }
+                if (btn) {
+                    btn.className = (t === tabName)
+                        ? 'flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 bg-satoyama-dark text-white shadow-sm'
+                        : 'flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-100';
+                }
+            });
+            recalculateAll();
+        }
+
+        function getFormattedToday() {
+            const d = new Date();
+            return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function getFormattedTime() {
+            const d = new Date();
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+        }
+
+        function getMethodVersionDisplay(mode) {
+            if (mode === '2025') return '2025 (V3.0)';
+            if (mode === '2026') return '2026 (V4.2)';
+            if (mode === 'annual') return `${targetEvalYear} (V5.0)`;
+            return `2025-${targetEvalYear}`;
+        }
+
+        function saveWorkspaceToLocalStorage(silent = true) {
+            try {
+                const payload = buildCompleteWorkspacePayload();
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+                const indicator = document.getElementById('autoSaveStatusLabel');
+                if (indicator) indicator.innerText = `已記錄 (${getFormattedTime()})`;
+                if (!silent) showToast('已成功保存當前填報數據！');
+            } catch (err) {
+                console.warn('localStorage save failed:', err);
+            }
+        }
+
+        function loadWorkspaceFromLocalStorage() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                if (Array.isArray(data.teamsData) && data.teamsData.length > 0) {
+                    teamsData = data.teamsData;
+                }
+                if (Array.isArray(data.farms) && data.farms.length > 0) {
+                    farmsData = data.farms;
+                }
+                if (data.publishedBoard) publishedBoard = data.publishedBoard;
+                if (data.activeTeamId) activeTeamId = data.activeTeamId;
+                if (data.activeSingleFarmId) activeSingleFarmId = data.activeSingleFarmId;
+                if (data.currentMode) currentMode = data.currentMode;
+                if (data.targetEvalYear) targetEvalYear = data.targetEvalYear;
+                if (data.reportScope) reportScope = data.reportScope;
+                return true;
+            } catch (err) {
+                console.warn('localStorage load failed:', err);
+                return false;
+            }
+        }
+
+        function saveFarmRecord(farmId) {
+            const farm = farmsData.find(f => f.id === farmId);
+            saveWorkspaceToLocalStorage(false);
+            if (farm) showToast(`已記錄並儲存「${farm.name}」的最新填報數據！`);
+        }
+
+        function openRecordManagerModal() {
+            renderSnapshotList();
+            const modal = document.getElementById('recordManagerModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeRecordManagerModal() {
+            const modal = document.getElementById('recordManagerModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function getSnapshotsList() {
+            try {
+                const raw = localStorage.getItem(SNAPSHOTS_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (err) {
+                return [];
+            }
+        }
+
+        function saveSnapshotsList(list) {
+            try {
+                localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(list));
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
+        function createManualSnapshot() {
+            const titleInput = document.getElementById('snapshotTitleInput');
+            const title = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : `填報快照 (${getFormattedToday()} ${getFormattedTime()})`;
+            const list = getSnapshotsList();
+            const newSnapshot = {
+                id: 'snap_' + Date.now(),
+                title,
+                timestamp: new Date().toISOString(),
+                dateStr: `${getFormattedToday()} ${getFormattedTime()}`,
+                payload: buildCompleteWorkspacePayload()
+            };
+            list.unshift(newSnapshot);
+            saveSnapshotsList(list);
+            if (titleInput) titleInput.value = '';
+            renderSnapshotList();
+            showToast(`已建立快照：「${title}」`);
+        }
+
+        function restoreSnapshot(snapId) {
+            const list = getSnapshotsList();
+            const snap = list.find(s => s.id === snapId);
+            if (!snap || !snap.payload) return;
+            const data = snap.payload;
+            if (Array.isArray(data.teamsData)) teamsData = data.teamsData;
+            if (Array.isArray(data.farms)) farmsData = data.farms;
+            if (data.publishedBoard) publishedBoard = data.publishedBoard;
+            if (data.activeTeamId) activeTeamId = data.activeTeamId;
+            if (data.activeSingleFarmId) activeSingleFarmId = data.activeSingleFarmId;
+            if (data.currentMode) currentMode = data.currentMode;
+            if (data.targetEvalYear) targetEvalYear = data.targetEvalYear;
+            if (data.reportScope) reportScope = data.reportScope;
+
+            hasUnpublishedChanges = true;
+            syncTeamInputsToUI();
+            renderPublishedBanner();
+            renderSelectionControls();
+            renderFarmsList();
+            recalculateAll();
+            saveWorkspaceToLocalStorage(true);
+            closeRecordManagerModal();
+            showToast(`已成功還原快照：「${snap.title}」`);
+        }
+
+        function deleteSnapshot(snapId) {
+            let list = getSnapshotsList();
+            list = list.filter(s => s.id !== snapId);
+            saveSnapshotsList(list);
+            renderSnapshotList();
+            showToast('已刪除該歷史快照');
+        }
+
+        function resetToDefaultData() {
+            farmsData = JSON.parse(JSON.stringify(DEFAULT_5_FARMS));
+            teamsData = [{
+                id: 'team_1',
+                name: '水里里山餐桌團隊',
+                guidanceTitle: '計畫指導 (2025) 臺大。山林。學院 2.0',
+                execPeriod: '2025/01/01 ~ 2026/10/31',
+                keyOutputs: '微棲地盤點 / 生態學習 / 生態旅遊路線',
+                projectInput: 70000,
+                habitatGrantPerFarm: 10000,
+                maintGrantPerFarm: 2000,
+                farmIds: [1, 2, 3, 4, 5]
+            }];
+            activeTeamId = 'team_1';
+            activeSingleFarmId = 1;
+            currentMode = '2025';
+            reportScope = 'multi';
+            hasUnpublishedChanges = true;
+
+            syncTeamInputsToUI();
+            renderPublishedBanner();
+            renderSelectionControls();
+            renderFarmsList();
+            recalculateAll();
+            saveWorkspaceToLocalStorage(true);
+            closeRecordManagerModal();
+            showToast('已重設為系統初始預設範本！');
+        }
+
+        function renderSnapshotList() {
+            const container = document.getElementById('snapshotListContainer');
+            const countEl = document.getElementById('snapshotCountDisplay');
+            if (!container) return;
+            const list = getSnapshotsList();
+            if (countEl) countEl.innerText = list.length;
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed">目前尚無手動建立的歷史快照。</div>`;
+                return;
+            }
+
+            container.innerHTML = list.map(s => `
+                <div class="flex flex-wrap justify-between items-center p-2.5 rounded-xl border bg-slate-50 hover:bg-emerald-50/50 transition gap-2 text-xs">
+                    <div>
+                        <strong class="text-satoyama-dark block">${s.title}</strong>
+                        <span class="text-[10px] text-slate-400">📅 ${s.dateStr}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="restoreSnapshot('${s.id}')" class="bg-satoyama-main hover:bg-satoyama-dark text-white px-2.5 py-1 rounded-lg text-[11px] font-bold transition shadow-sm">
+                            還原此快照
+                        </button>
+                        <button onclick="deleteSnapshot('${s.id}')" class="text-slate-400 hover:text-rose-600 p-1 transition" title="刪除快照">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         // ==========================================
@@ -2794,24 +2951,16 @@
                 reportScope,
                 activeTeam,
                 nFarms,
-                includeProdCost,
-                totalProdInputCurr,
-                currentPeriodInput,
-                cumulativeInput,
                 totalInput,
                 totalHabitatInput,
                 totalTrainingInput: sharedTraining,
-                totalHabitats: activeFarms.reduce((sum, f) => sum + f.water + f.land, 0),
-                totalWater: activeFarms.reduce((sum, f) => sum + f.water, 0),
-                totalLand: activeFarms.reduce((sum, f) => sum + f.land, 0),
-                totalTrainees: activeFarms.reduce((sum, f) => sum + f.trainees, 0),
-                totalGuides: activeFarms.reduce((sum, f) => sum + f.guides, 0),
-                speciesCount: parseInt(document.getElementById('paramSpeciesCount')?.value) || 15,
-                tourRoutes: activeFarms.reduce((sum, f) => sum + (f.routes || 1), 0),
-                totalTrainingBaseVal,
-                totalEduTourismVal,
-                totalHabitatBaseEcoVal,
-                totalFriendlyMaterialSpeciesVal,
+                totalWater: activeFarms.reduce((sum, f) => sum + (f.water || 0), 0),
+                totalLand: activeFarms.reduce((sum, f) => sum + (f.land || 0), 0),
+                totalHabitats: activeFarms.reduce((sum, f) => sum + ((f.water || 0) + (f.land || 0)), 0),
+                totalTrainees: activeFarms.reduce((sum, f) => sum + (f.trainees || 0), 0),
+                totalGuides: activeFarms.reduce((sum, f) => sum + (f.guides || 0), 0),
+                speciesCount: parseInt(document.getElementById('paramSpeciesCount')?.value, 10) || 15,
+                tourRoutes: parseInt(document.getElementById('paramTourRoutes')?.value, 10) || 3,
                 grossHuman,
                 grossEco,
                 grossMgmt,
@@ -2824,19 +2973,24 @@
                 totalGrossValue: grossHuman + grossEco + grossMgmt,
                 totalNetValue,
                 sroiRatio,
-                farmResults,
+                currentPeriodInput,
+                cumulativeInput,
+                includeProdCost,
+                totalProdInputCurr,
+                totalTrainingBaseVal,
+                totalEduTourismVal,
+                totalHabitatBaseEcoVal,
+                totalFriendlyMaterialSpeciesVal,
                 includeProc,
                 procClientName,
                 procProdDesc,
                 procProdAmount,
-                procTourPax,
                 procTourSpend,
-                procCourseSessions,
-                procCourseStudents,
                 procCourseSpend,
                 procTotalSpend,
                 procImpactValue,
-                procSroiRatio
+                procSroiRatio,
+                farmResults
             };
         }
 
@@ -2853,14 +3007,15 @@
                 document.getElementById('procTourPax').value = 0;
                 document.getElementById('procCourseSessions').value = 0;
             } else if (preset === 'tour_workshop') {
-                document.getElementById('procProdAmount').value = 0;
-                document.getElementById('procTourPax').value = 25;
-                document.getElementById('procTourPrice').value = 1000;
+                document.getElementById('procProdAmount').value = 10000;
+                document.getElementById('procTourPax').value = 20;
+                document.getElementById('procTourPrice').value = 1200;
                 document.getElementById('procCourseSessions').value = 1;
-                document.getElementById('procCourseFee').value = 20000;
-            } else {
-                document.getElementById('procProdAmount').value = 2000;
-                document.getElementById('procTourPax').value = 2;
+                document.getElementById('procCourseFee').value = 15000;
+                document.getElementById('procCourseStudents').value = 20;
+            } else if (preset === 'consumer_personal') {
+                document.getElementById('procProdAmount').value = 2500;
+                document.getElementById('procTourPax').value = 1;
                 document.getElementById('procTourPrice').value = 1200;
                 document.getElementById('procCourseSessions').value = 0;
             }
@@ -3733,6 +3888,8 @@
         }
 
         window.onload = function() {
+            // Restore persistent state if available
+            loadWorkspaceFromLocalStorage();
             syncTeamInputsToUI();
             renderPublishedBanner();
             renderSelectionControls();
