@@ -18,7 +18,14 @@
 
         /* ★ iOS / iPad 終極防護：鎖死背景滾動、橡皮筋回彈與雙指縮放 */
         html, body {
-        #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; z-index: 1; perspective: 1200px; }
+            margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden;
+            position: fixed; top: 0; left: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0f172a; color: var(--text-dark);
+            touch-action: none; overscroll-behavior: none;
+            -webkit-user-select: none; user-select: none;
+        }
+        #canvas-wrapper { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; overflow: hidden; z-index: 1; perspective: 1200px; }
         canvas {
             display: block; width: 100%; height: 100%; touch-action: none;
             transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.55s ease;
@@ -31,32 +38,45 @@
             border-radius: 28px;
         }
 
-        /* ★ Heart-Island 風格頂部極簡膠囊導覽列 */
+        /* ★ Heart-Island 風格頂部極簡膠囊導覽列 (自動換行、固定最上層防擠出螢幕) */
         #top-island-nav {
-            position: absolute;
-            top: calc(env(safe-area-inset-top, 0px) + 12px);
+            position: fixed;
+            top: max(8px, env(safe-area-inset-top, 8px));
             left: 50%; transform: translateX(-50%);
-            display: none; align-items: center; gap: 6px;
+            display: none; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;
             background: var(--pill-bg); backdrop-filter: blur(12px);
-            padding: 6px 10px; border-radius: 999px;
-            box-shadow: 0 8px 25px rgba(20, 83, 45, 0.18), 0 0 0 1.5px rgba(255,255,255,0.8);
-            z-index: 500; white-space: nowrap; max-width: 96vw; overflow-x: auto;
+            padding: 6px 10px; border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(20, 83, 45, 0.22), 0 0 0 1.5px rgba(255,255,255,0.85);
+            z-index: 9500; width: 96vw; max-width: 720px; box-sizing: border-box;
         }
-        #top-island-nav::-webkit-scrollbar { display: none; }
         .nav-pill-btn {
-            background: transparent; border: none; padding: 6px 12px;
-            border-radius: 999px; font-size: 13px; font-weight: 700; color: #334155;
-            cursor: pointer; display: flex; align-items: center; gap: 5px;
-            transition: all 0.2s;
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 5px 9px;
+            border-radius: 999px; font-size: 12px; font-weight: 700; color: #334155;
+            cursor: pointer; display: flex; align-items: center; gap: 4px;
+            transition: all 0.2s; flex-shrink: 0;
         }
         .nav-pill-btn:hover, .nav-pill-btn.active {
-            background: #14532d; color: #ffffff;
+            background: #14532d; color: #ffffff; border-color: #14532d;
         }
         .nav-score-pill {
             background: #f0fdf4; border: 1.5px solid #86efac;
-            padding: 5px 14px; border-radius: 999px;
-            font-size: 14px; font-weight: 800; color: #166534;
-            display: flex; align-items: center; gap: 4px;
+            padding: 4px 11px; border-radius: 999px;
+            font-size: 13px; font-weight: 800; color: #166534;
+            display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+        }
+
+        /* ★ 陀螺儀狀態燈號指示器 */
+        .gyro-light-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #ef4444; display: inline-block;
+            box-shadow: 0 0 6px #ef4444; transition: all 0.25s;
+        }
+        .nav-pill-btn.gyro-on {
+            background: #ecfdf5; border-color: #6ee7b7; color: #065f46;
+        }
+        .nav-pill-btn.gyro-on .gyro-light-dot {
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e, 0 0 12px #4ade80;
         }
 
         /* ★ 抽卡按鈕燈號與閃爍特效 */
@@ -95,29 +115,29 @@
 
         /* 畫筆工具列 (Heart-Island 圓潤膠囊風) */
         #draw-tools {
-            position: absolute; top: calc(env(safe-area-inset-top, 0px) + 68px); left: 14px; z-index: 450;
+            position: fixed; top: calc(env(safe-area-inset-top, 0px) + 92px); left: 10px; z-index: 9000;
             display: flex; flex-direction: column; gap: 8px; align-items: center;
             transition: opacity 0.3s, transform 0.3s;
         }
         .tool-btn {
-            width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.9);
-            background: var(--pill-bg); font-size: 18px; cursor: pointer;
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.9);
+            background: var(--pill-bg); font-size: 17px; cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);
         }
-        .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+        .color-btn { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
 
-        /* 底部懸浮面板 */
+        /* 底部懸浮面板 (規則條) */
         .floating-panel {
-            position: absolute; left: 50%; transform: translateX(-50%);
+            position: fixed; left: 50%; transform: translateX(-50%);
             width: 94%; max-width: 600px; background: var(--panel-bg);
-            border-radius: 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+            border-radius: 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(14px); border: 2px solid rgba(255,255,255,0.85);
-            display: flex; flex-direction: column; z-index: 480;
+            display: flex; flex-direction: column; z-index: 9400;
         }
         .panel-header {
-            padding: 13px 22px; font-weight: 800; font-size: 15px; color: var(--primary-dark);
+            padding: 12px 18px; font-weight: 800; font-size: 14px; color: var(--primary-dark);
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
             border-radius: 20px; transition: background-color 0.3s;
         }
@@ -125,20 +145,22 @@
             max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 18px;
         }
         .floating-panel.open .panel-content {
-            max-height: 60vh; padding: 16px 18px; overflow-y: auto; border-top: 1px solid #e2e8f0;
+            max-height: 55dvh; padding: 14px 18px; overflow-y: auto; border-top: 1px solid #e2e8f0;
             -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
         }
-        #bottom-panel { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+        #bottom-panel { bottom: max(10px, env(safe-area-inset-bottom, 10px)); }
 
-        /* 右側生物卡牌背包 */
+        /* 右側生物卡牌背包 (卡片條) */
         .side-inventory {
-            position: absolute;
-            top: calc(env(safe-area-inset-top, 0px) + 72px);
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
-            right: max(10px, env(safe-area-inset-right)); width: 76px;
+            position: fixed;
+            top: calc(env(safe-area-inset-top, 0px) + 92px);
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+            right: max(8px, env(safe-area-inset-right)); width: 72px;
             display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden;
-            z-index: 450; pointer-events: auto;
-            align-items: center; padding: 6px 4px; transition: opacity 0.3s;
+            z-index: 9100; pointer-events: auto;
+            align-items: center; padding: 8px 4px; transition: opacity 0.3s;
+            background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(6px);
+            border-radius: 20px; border: 1.5px solid rgba(255, 255, 255, 0.75);
             -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
         }
         .side-inventory.locked { opacity: 0.38; pointer-events: none; filter: grayscale(60%); }
@@ -185,31 +207,31 @@
 
         /* ★ 畫面中央下方浮動「🪄 魔法棒」按鈕 */
         #magic-wand-fab {
-            position: absolute;
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
             left: 50%; transform: translateX(-50%);
-            z-index: 490;
+            z-index: 9300;
             background: linear-gradient(135deg, #fbbf24, #d97706);
             color: #ffffff; border: 3px solid #fef08a;
-            padding: 11px 24px; border-radius: 999px;
-            font-size: 15px; font-weight: 900; letter-spacing: 0.5px;
+            padding: 10px 20px; border-radius: 999px;
+            font-size: 14px; font-weight: 900; letter-spacing: 0.5px;
             box-shadow: 0 8px 25px rgba(217, 119, 6, 0.45);
-            display: none; align-items: center; gap: 8px; cursor: pointer;
+            display: none; align-items: center; gap: 6px; cursor: pointer;
             white-space: nowrap; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         #magic-wand-fab.active {
             background: linear-gradient(135deg, #facc15, #ea580c);
             box-shadow: 0 0 25px rgba(250, 204, 21, 0.95), 0 0 0 4px rgba(254, 240, 138, 0.6);
-            transform: translateX(-50%) scale(1.08);
+            transform: translateX(-50%) scale(1.06);
             color: #0f172a;
         }
 
-        /* 左下角控制群 (羅盤 + 手動走步 + 常亮) */
+        /* 左下角控制群 (羅盤 + 手動走步) */
         #bottom-left-controls {
-            position: absolute;
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
-            left: 14px; z-index: 450;
-            display: flex; align-items: center; gap: 10px;
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
+            left: 10px; z-index: 9100;
+            display: flex; align-items: center; gap: 8px;
             transition: opacity 0.3s, transform 0.3s;
         }
         .circle-ctrl-btn {
@@ -463,19 +485,23 @@
         </div>
     </div>
 
-    <!-- ★ Heart-Island 風格頂部膠囊導覽列 -->
+    <!-- ★ Heart-Island 風格頂部膠囊導覽列 (狀態條) -->
     <div id="top-island-nav">
         <div class="nav-score-pill">
             🌿 <span id="current-score">0</span> 分
         </div>
+        <button class="nav-pill-btn" id="gyro-status-btn" onclick="enableSensorsManual()" title="點擊重新授權並啟用手機陀螺儀與計步感測">
+            <span class="gyro-light-dot"></span>
+            <span id="gyro-btn-label">陀螺儀:待命(點我啟用)</span>
+        </button>
         <button class="nav-pill-btn draw-disabled" id="draw-card-btn" onclick="useDrawChance()" title="達成3大條件即可獲得抽卡機會">
             <span class="draw-light-dot"></span>
             🎁 <span id="draw-btn-label">抽卡 (0)</span>
         </button>
         <button class="nav-pill-btn" id="bird-eye-btn" onclick="toggleBirdEye()" title="切換45度立體鳥瞰視角">🦅 45°鳥瞰</button>
-        <button class="nav-pill-btn" id="zoom-in-btn" onclick="changeZoom(0.2)" title="放大地圖畫面">➕ 放大</button>
-        <button class="nav-pill-btn" id="zoom-out-btn" onclick="changeZoom(-0.2)" title="縮小地圖畫面看全景">➖ 縮小</button>
-        <button class="nav-pill-btn" id="zoom-reset-btn" onclick="resetZoom()" title="點擊恢復 100% 原始倍率" style="padding: 5px 9px; background:#f1f5f9; font-size:12px;">100%</button>
+        <button class="nav-pill-btn" id="zoom-in-btn" onclick="changeZoom(0.2)" title="放大地圖畫面">➕</button>
+        <button class="nav-pill-btn" id="zoom-out-btn" onclick="changeZoom(-0.2)" title="縮小地圖畫面看全景">➖</button>
+        <button class="nav-pill-btn" id="zoom-reset-btn" onclick="resetZoom()" title="點擊恢復 100% 原始倍率" style="padding: 5px 8px; background:#f1f5f9; font-size:11px;">100%</button>
         <button class="nav-pill-btn" onclick="openAvatarModal()">☺ 角色</button>
         <button class="nav-pill-btn" id="time-mode-btn" onclick="cycleTimeOfDay()">☀️ 白天</button>
         <button class="nav-pill-btn" onclick="openGuideModal()">☰ 圖鑑</button>
@@ -847,132 +873,293 @@
             targetCtx.stroke();
 
             // 5. 圓潤頭部
-            targetCtx.fillStyle = avatar.skinColor || '#fde68a';
+            targetCtx.fillStyle = avatar.skinColor || '#fcd34d';
             targetCtx.strokeStyle = '#1e293b';
             targetCtx.lineWidth = 2;
             targetCtx.beginPath();
-            targetCtx.arc(0, -19 + bobY, 13.5, 0, Math.PI * 2);
+            targetCtx.arc(0, -19 + bobY, 13, 0, Math.PI * 2);
             targetCtx.fill();
             targetCtx.stroke();
 
-            // 6. 腮紅與豆豆眼、微笑 (•ᴗ•)
-            let faceOffsetX = Math.sin(dirAngle || 0) * 3;
+            // 6. 腮紅與眼睛微笑
             targetCtx.fillStyle = 'rgba(244, 63, 94, 0.35)';
             targetCtx.beginPath();
-            targetCtx.arc(-6 + faceOffsetX, -16 + bobY, 2.5, 0, Math.PI * 2);
-            targetCtx.arc(6 + faceOffsetX, -16 + bobY, 2.5, 0, Math.PI * 2);
+            targetCtx.arc(-7, -17 + bobY, 2.5, 0, Math.PI * 2);
+            targetCtx.arc(7, -17 + bobY, 2.5, 0, Math.PI * 2);
             targetCtx.fill();
 
             targetCtx.fillStyle = '#0f172a';
             targetCtx.beginPath();
-            targetCtx.arc(-4.5 + faceOffsetX, -19 + bobY, 1.8, 0, Math.PI * 2);
-            targetCtx.arc(4.5 + faceOffsetX, -19 + bobY, 1.8, 0, Math.PI * 2);
+            targetCtx.arc(-4.5, -20 + bobY, 1.8, 0, Math.PI * 2);
+            targetCtx.arc(4.5, -20 + bobY, 1.8, 0, Math.PI * 2);
             targetCtx.fill();
 
             targetCtx.strokeStyle = '#0f172a';
             targetCtx.lineWidth = 1.6;
             targetCtx.beginPath();
-            targetCtx.arc(faceOffsetX, -16.5 + bobY, 2.8, 0.15 * Math.PI, 0.85 * Math.PI);
+            targetCtx.arc(0, -17 + bobY, 3, 0.15 * Math.PI, 0.85 * Math.PI);
             targetCtx.stroke();
 
             // 7. 髮型
-            targetCtx.fillStyle = '#27272a';
+            targetCtx.fillStyle = '#1e293b';
             if (avatar.hair === 'bob') {
                 targetCtx.beginPath();
-                targetCtx.arc(0, -21 + bobY, 14, Math.PI * 0.85, Math.PI * 2.15);
+                targetCtx.arc(0, -21 + bobY, 13.5, Math.PI, 0);
                 targetCtx.fill();
+                targetCtx.fillRect(-13.5, -21 + bobY, 4, 10);
+                targetCtx.fillRect(9.5, -21 + bobY, 4, 10);
             } else if (avatar.hair === 'bun') {
                 targetCtx.beginPath();
-                targetCtx.arc(0, -35 + bobY, 6, 0, Math.PI * 2);
-                targetCtx.arc(0, -22 + bobY, 13.8, Math.PI, Math.PI * 2);
+                targetCtx.arc(0, -22 + bobY, 13, Math.PI, 0);
+                targetCtx.arc(0, -35 + bobY, 5.5, 0, Math.PI * 2);
                 targetCtx.fill();
             } else if (avatar.hair === 'curly') {
-                [-9, -3, 3, 9].forEach(hx => {
-                    targetCtx.beginPath();
-                    targetCtx.arc(hx, -30 + bobY, 5.5, 0, Math.PI * 2);
-                    targetCtx.fill();
-                });
-            } else {
                 targetCtx.beginPath();
-                targetCtx.arc(0, -22 + bobY, 13.8, Math.PI * 1.05, Math.PI * 1.95);
+                targetCtx.arc(-9, -27 + bobY, 6, 0, Math.PI * 2);
+                targetCtx.arc(0, -30 + bobY, 6.5, 0, Math.PI * 2);
+                targetCtx.arc(9, -27 + bobY, 6, 0, Math.PI * 2);
+                targetCtx.fill();
+            } else {
+                // 清爽短髮
+                targetCtx.beginPath();
+                targetCtx.arc(0, -22 + bobY, 13, Math.PI, 0);
                 targetCtx.fill();
             }
 
-            // 8. 帽子配件 (斗笠 / 探險帽 / 小黃帽 / 安全帽)
+            // 8. 帽子與頭飾
             if (avatar.hat === 'straw') {
+                // 農村斗笠
                 targetCtx.fillStyle = '#eab308';
                 targetCtx.strokeStyle = '#713f12';
                 targetCtx.lineWidth = 2;
                 targetCtx.beginPath();
                 targetCtx.moveTo(-22, -26 + bobY);
-                targetCtx.quadraticCurveTo(0, -44 + bobY, 22, -26 + bobY);
+                targetCtx.lineTo(0, -40 + bobY);
+                targetCtx.lineTo(22, -26 + bobY);
                 targetCtx.closePath();
-                targetCtx.fill(); targetCtx.stroke();
+                targetCtx.fill();
+                targetCtx.stroke();
             } else if (avatar.hat === 'explorer') {
+                // 生態探險帽
                 targetCtx.fillStyle = '#d97706';
-                targetCtx.strokeStyle = '#451a03';
+                targetCtx.strokeStyle = '#78350f';
                 targetCtx.lineWidth = 2;
                 targetCtx.beginPath();
-                targetCtx.ellipse(0, -28 + bobY, 19, 5, 0, 0, Math.PI * 2);
-                targetCtx.fill(); targetCtx.stroke();
+                targetCtx.ellipse(0, -28 + bobY, 18, 4.5, 0, 0, Math.PI * 2);
+                targetCtx.fill();
+                targetCtx.stroke();
                 targetCtx.beginPath();
-                targetCtx.arc(0, -29 + bobY, 11, Math.PI, 0);
-                targetCtx.fill(); targetCtx.stroke();
+                targetCtx.arc(0, -28 + bobY, 10, Math.PI, 0);
+                targetCtx.fill();
+                targetCtx.stroke();
             } else if (avatar.hat === 'yellow') {
+                // 學童小黃帽
                 targetCtx.fillStyle = '#facc15';
                 targetCtx.strokeStyle = '#854d0e';
                 targetCtx.lineWidth = 2;
                 targetCtx.beginPath();
-                targetCtx.arc(0, -26 + bobY, 13.5, Math.PI, 0);
-                targetCtx.fill(); targetCtx.stroke();
-                targetCtx.fillRect(-16, -28 + bobY, 32, 3.5);
+                targetCtx.arc(0, -26 + bobY, 12.5, Math.PI, 0);
+                targetCtx.fill();
+                targetCtx.stroke();
+                targetCtx.beginPath();
+                targetCtx.ellipse(0, -26 + bobY, 16, 3.5, 0, 0, Math.PI * 2);
+                targetCtx.fill();
+                targetCtx.stroke();
             } else if (avatar.hat === 'helmet') {
-                targetCtx.fillStyle = '#f97316';
-                targetCtx.strokeStyle = '#7c2d12';
+                // 巡守安全帽
+                targetCtx.fillStyle = '#38bdf8';
+                targetCtx.strokeStyle = '#0369a1';
                 targetCtx.lineWidth = 2;
                 targetCtx.beginPath();
-                targetCtx.arc(0, -25 + bobY, 14.5, Math.PI, 0);
-                targetCtx.fill(); targetCtx.stroke();
+                targetCtx.arc(0, -26 + bobY, 13, Math.PI, 0);
+                targetCtx.fill();
+                targetCtx.stroke();
                 targetCtx.fillStyle = '#fef08a';
                 targetCtx.beginPath();
-                targetCtx.arc(0, -31 + bobY, 3.5, 0, Math.PI * 2);
+                targetCtx.arc(0, -31 + bobY, 3, 0, Math.PI * 2);
                 targetCtx.fill();
             }
 
-            // 9. 手持探索道具
-            if (avatar.handItem && avatar.handItem !== 'none') {
-                targetCtx.font = '16px sans-serif';
-                let itemIcon = avatar.handItem === 'magnifier' ? '🔍' :
-                               avatar.handItem === 'net' ? '🦋' :
-                               avatar.handItem === 'staff' ? '🦯' : '🧺';
-                targetCtx.fillText(itemIcon, 12, 8 + bobY);
+            // 9. 手持探索裝備
+            const itemEmojiMap = {
+                magnifier: '🔍',
+                net: '🦋',
+                staff: '🦯',
+                basket: '🧺'
+            };
+            if (avatar.handItem && itemEmojiMap[avatar.handItem]) {
+                targetCtx.font = '15px sans-serif';
+                targetCtx.textAlign = 'center';
+                targetCtx.textBaseline = 'middle';
+                targetCtx.fillText(itemEmojiMap[avatar.handItem], 18, 3 + bobY);
             }
 
             targetCtx.restore();
         }
 
         function refreshAvatarPreviews() {
-            const c1 = document.getElementById('home-avatar-canvas');
-            if (c1) {
-                const ctx1 = c1.getContext('2d');
-                ctx1.clearRect(0, 0, c1.width, c1.height);
-                drawChibiAvatar(ctx1, 38, 56, 1.15, playerAvatar, 0, 0, true);
+            const homeCanvas = document.getElementById('home-avatar-canvas');
+            if (homeCanvas) {
+                const hCtx = homeCanvas.getContext('2d');
+                hCtx.clearRect(0, 0, homeCanvas.width, homeCanvas.height);
+                drawChibiAvatar(hCtx, 38, 54, 1.15, playerAvatar, 0, 0, true);
             }
-            const c2 = document.getElementById('modal-avatar-canvas');
-            if (c2) {
-                const ctx2 = c2.getContext('2d');
-                ctx2.clearRect(0, 0, c2.width, c2.height);
-                drawChibiAvatar(ctx2, 55, 82, 1.6, playerAvatar, 0.5, 0, true);
+            const modalCanvas = document.getElementById('modal-avatar-canvas');
+            if (modalCanvas) {
+                const mCtx = modalCanvas.getContext('2d');
+                mCtx.clearRect(0, 0, modalCanvas.width, modalCanvas.height);
+                drawChibiAvatar(mCtx, 55, 76, 1.55, playerAvatar, 0, 0, true);
             }
-            document.getElementById('home-role-label').innerText = playerAvatar.roleName || '里山探索者';
-            document.getElementById('modal-role-title').innerText = playerAvatar.roleName || '里山探索者';
+            const homeLabel = document.getElementById('home-role-label');
+            if (homeLabel) homeLabel.innerText = playerAvatar.roleName || '里山小農';
+            const modalLabel = document.getElementById('modal-role-title');
+            if (modalLabel) modalLabel.innerText = playerAvatar.roleName || '里山小農';
+
+            document.querySelectorAll('#hat-group .opt-pill').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.val === playerAvatar.hat);
+            });
+            document.querySelectorAll('#hair-group .opt-pill').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.val === playerAvatar.hair);
+            });
+            document.querySelectorAll('#item-group .opt-pill').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.val === playerAvatar.handItem);
+            });
         }
 
-        function applyAvatarPreset(key) {
-            if (AVATAR_PRESETS[key]) {
-                playerAvatar = { ...AVATAR_PRESETS[key] };
+        function applyAvatarPreset(presetKey) {
+            if (AVATAR_PRESETS[presetKey]) {
+                playerAvatar = { ...AVATAR_PRESETS[presetKey] };
                 refreshAvatarPreviews();
                 saveProgress();
+            }
+        }
+
+        // ★ 補回陀螺儀方向轉向與走路移動抽卡邏輯
+        let lastAccMag = null;
+        let lastStepTime = 0;
+        let stepShakeCount = 0; // 記錄晃動或走步次數
+        let nextCardTargetSteps = Math.floor(Math.random() * 6) + 10; // ★ 每 10~15 次晃動/走步獲得一張卡片
+        let gyroActive = false;
+        let motionActive = false;
+
+        function updateGyroStatusUI(isWorking, msgText) {
+            const btn = document.getElementById('gyro-status-btn');
+            const label = document.getElementById('gyro-btn-label');
+            if (!btn || !label) return;
+            if (isWorking) {
+                btn.classList.add('gyro-on');
+                label.innerText = msgText || `陀螺儀:運作中(${stepShakeCount}/${nextCardTargetSteps}步)`;
+            } else {
+                btn.classList.remove('gyro-on');
+                label.innerText = msgText || '陀螺儀:未啟用(點我開啟)';
+            }
+        }
+
+        function handleOrientation(e) {
+            if (!isGameRunning) return;
+            if (e.gamma !== null || e.beta !== null) {
+                if (!gyroActive) {
+                    gyroActive = true;
+                    updateGyroStatusUI(true);
+                }
+                let dx = e.gamma || 0;
+                let dy = e.beta || 0;
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                    player.dirAngle = Math.atan2(dx, -dy);
+                }
+                const arrow = document.getElementById('compass-arrow');
+                if (arrow) {
+                    arrow.style.transform = `translateY(-6px) rotate(${player.dirAngle}rad)`;
+                }
+            }
+        }
+
+        async function enableSensorsManual(showMsg = true) {
+            let granted = false;
+            try {
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    const res1 = await DeviceOrientationEvent.requestPermission();
+                    if (res1 === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientation, true);
+                        granted = true;
+                    }
+                } else {
+                    window.addEventListener('deviceorientation', handleOrientation, true);
+                    granted = true;
+                }
+            } catch (err) {
+                window.addEventListener('deviceorientation', handleOrientation, true);
+            }
+
+            try {
+                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                    const res2 = await DeviceMotionEvent.requestPermission();
+                    if (res2 === 'granted') {
+                        window.addEventListener('devicemotion', handleMotion, true);
+                        granted = true;
+                    }
+                } else {
+                    window.addEventListener('devicemotion', handleMotion, true);
+                    granted = true;
+                }
+            } catch (err) {
+                window.addEventListener('devicemotion', handleMotion, true);
+            }
+
+            if (granted) {
+                gyroActive = true;
+                updateGyroStatusUI(true);
+                if (showMsg) showAlert('🧭 陀螺儀與計步感測器已啟動！請搖晃或走動前進');
+            } else {
+                updateGyroStatusUI(false);
+                if (showMsg) showAlert('⚠️ 請確認瀏覽器已允許「動作與方向」權限，或使用左下角 👣 按鈕前進');
+            }
+        }
+
+        function handleMotion(e) {
+            if (!isGameRunning) return;
+            if (isPanningMap || draggingInstance || pendingPlacement || isMagicWandMode) return;
+            let acc = e.accelerationIncludingGravity || e.acceleration;
+            if (!acc) return;
+
+            if (!motionActive && (acc.x !== null || acc.y !== null)) {
+                motionActive = true;
+                gyroActive = true;
+                updateGyroStatusUI(true);
+            }
+
+            let mag = Math.sqrt((acc.x || 0) ** 2 + (acc.y || 0) ** 2 + (acc.z || 0) ** 2);
+            if (lastAccMag === null) { lastAccMag = mag; return; }
+            let delta = Math.abs(mag - lastAccMag);
+            lastAccMag = mag;
+
+            let now = Date.now();
+            // 加入 260ms 步頻防彈跳，確保每次真實邁步或搖晃計為 1 次，不會瞬間連續觸發十幾次
+            if (delta > 1.4 && (now - lastStepTime > 260)) {
+                lastStepTime = now;
+                const stepSize = 18;
+                player.walkPhase += 0.75;
+                player.x += Math.sin(player.dirAngle) * stepSize;
+                player.y -= Math.cos(player.dirAngle) * stepSize;
+                player.x = Math.max(40, Math.min(MAP_W - 40, player.x));
+                player.y = Math.max(40, Math.min(MAP_H - 40, player.y));
+                checkMovement(1); // 每次晃動計為 1 步
+                checkProximityInteractions(); // ★ 陀螺儀走路時檢查是否遇到車子或角色
+                camera.detached = false;
+            }
+        }
+
+        function checkMovement(stepIncrement = 1) {
+            stepShakeCount += stepIncrement;
+            updateGyroStatusUI(gyroActive, `${gyroActive ? '陀螺儀:運作中' : '計步中'}(${stepShakeCount}/${nextCardTargetSteps}步)`);
+
+            // ★ 累積晃動或走路達 10~15 次時，獲得一張卡片並重置下一次目標次數 (10~15次)
+            if (stepShakeCount >= nextCardTargetSteps) {
+                stepShakeCount = 0;
+                nextCardTargetSteps = Math.floor(Math.random() * 6) + 10; // 重新隨機設定 10~15 次
+                updateGyroStatusUI(gyroActive, `${gyroActive ? '陀螺儀:運作中' : '計步中'}(0/${nextCardTargetSteps}步)`);
+                saveProgress();
+                triggerEncounter('累積走動探索發現');
             }
         }
         function setAvatarProp(prop, val) {
@@ -1421,43 +1608,6 @@
             }
         }
 
-        // ★ 補回走路移動與隨機抽卡邏輯
-        let lastAccMag = null;
-        function handleMotion(e) {
-            if (!isGameRunning) return;
-            if (isPanningMap || draggingInstance || pendingPlacement || isMagicWandMode) return;
-            let acc = e.accelerationIncludingGravity || e.acceleration;
-            if (!acc) return;
-            let mag = Math.sqrt((acc.x || 0) ** 2 + (acc.y || 0) ** 2 + (acc.z || 0) ** 2);
-            if (lastAccMag === null) { lastAccMag = mag; return; }
-            let delta = Math.abs(mag - lastAccMag);
-            lastAccMag = mag;
-
-            if (delta > 1.3) {
-                const stepSize = 12;
-                player.walkPhase += 0.65;
-                player.x += Math.sin(player.dirAngle) * stepSize;
-                player.y -= Math.cos(player.dirAngle) * stepSize;
-                player.x = Math.max(40, Math.min(MAP_W - 40, player.x));
-                player.y = Math.max(40, Math.min(MAP_H - 40, player.y));
-                checkMovement(stepSize);
-                checkProximityInteractions(); // ★ 陀螺儀走路時檢查是否遇到車子或角色
-                camera.detached = false;
-            }
-        }
-
-        function checkMovement(dist) {
-            distanceTraveled += dist;
-            // ★ 調整走路獲得卡片的機率為 30%：每累積 55 步距有 30% 機率獲得卡片！
-            if (distanceTraveled >= 55) {
-                distanceTraveled = 0;
-                saveProgress();
-                if (Math.random() < 0.30) {
-                    triggerEncounter('走路探索發現');
-                }
-            }
-        }
-
         // ★ 更新頂部「🎁 抽卡」按鈕燈號與剩餘次數顯示
         function updateDrawButtonUI() {
             const btn = document.getElementById('draw-card-btn');
@@ -1512,13 +1662,13 @@
 
         function manualStep() {
             if (!isGameRunning) return;
-            const stepSize = 28;
+            const stepSize = 26;
             player.walkPhase += 0.9;
             player.x += Math.sin(player.dirAngle) * stepSize;
             player.y -= Math.cos(player.dirAngle) * stepSize;
             player.x = Math.max(40, Math.min(MAP_W - 40, player.x));
             player.y = Math.max(40, Math.min(MAP_H - 40, player.y));
-            checkMovement(stepSize);
+            checkMovement(1); // ★ 每次手動走步同樣計為 1 次，走 10~15 次獲得一張卡
             checkProximityInteractions(); // ★ 手動走步同樣可觸發遇到車子或農夫的對話
             camera.detached = false;
         }
@@ -1696,10 +1846,10 @@
 
         async function startGame(isResume = false) {
             if (isResume) {
-                if (!loadProgress()) { alert("讀取進度失敗，請重新開始。"); return; }
+                if (!loadProgress()) { showAlert("⚠️ 讀取進度失敗，請重新開始。"); return; }
             } else {
                 let pName = document.getElementById('player-name').value.trim();
-                if (!pName) { alert("請填寫偵探名稱！"); return; }
+                if (!pName) { showAlert("⚠️ 請填寫偵探名稱！"); return; }
                 playerName = pName; eventName = document.getElementById('event-name').value.trim();
 
                 let selectedLocs = [];
@@ -1711,7 +1861,7 @@
                 }
 
                 if (selectedLocs.length === 0) {
-                    alert("請至少選擇一個探索場域！"); return;
+                    showAlert("⚠️ 請至少選擇一個探索場域！"); return;
                 }
                 eventLocation = selectedLocs.join(' + ');
 
@@ -1728,38 +1878,28 @@
                 renderQuiz(); saveProgress();
             }
 
-            // 獨立安全請求陀螺儀與加速度計權限
-            try {
-                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    DeviceOrientationEvent.requestPermission().then(res => {
-                        if (res === 'granted') window.addEventListener('deviceorientation', handleOrientation);
-                    }).catch(() => window.addEventListener('deviceorientation', handleOrientation));
-                } else {
-                    window.addEventListener('deviceorientation', handleOrientation);
-                }
-            } catch(e) { window.addEventListener('deviceorientation', handleOrientation); }
-
-            try {
-                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                    DeviceMotionEvent.requestPermission().then(res => {
-                        if (res === 'granted') window.addEventListener('devicemotion', handleMotion);
-                    }).catch(() => window.addEventListener('devicemotion', handleMotion));
-                } else {
-                    window.addEventListener('devicemotion', handleMotion);
-                }
-            } catch(e) { window.addEventListener('devicemotion', handleMotion); }
+            // ★ 在點擊「確認登島出發」的當下直接呼叫陀螺儀與動作感測授權（符合 iOS 使用者手勢要求）
+            await enableSensorsManual(false);
 
             window.addEventListener('keydown', (e) => {
-                const speed = 15;
+                const speed = 18;
                 if (e.key === 'ArrowUp') {
                     player.walkPhase += 0.8;
                     player.x += Math.sin(player.dirAngle) * speed; player.y -= Math.cos(player.dirAngle) * speed;
-                    checkMovement(speed);
+                    checkMovement(1);
                     checkProximityInteractions();
                     camera.detached = false;
                 }
-                if (e.key === 'ArrowLeft') player.dirAngle -= 0.2;
-                if (e.key === 'ArrowRight') player.dirAngle += 0.2;
+                if (e.key === 'ArrowLeft') {
+                    player.dirAngle -= 0.2;
+                    const arrow = document.getElementById('compass-arrow');
+                    if (arrow) arrow.style.transform = `translateY(-6px) rotate(${player.dirAngle}rad)`;
+                }
+                if (e.key === 'ArrowRight') {
+                    player.dirAngle += 0.2;
+                    const arrow = document.getElementById('compass-arrow');
+                    if (arrow) arrow.style.transform = `translateY(-6px) rotate(${player.dirAngle}rad)`;
+                }
             });
 
             document.getElementById('start-overlay').style.display = 'none';
