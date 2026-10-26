@@ -183,11 +183,13 @@
 
             <!-- Interactive Team & Individual Farms Public Dashboard -->
             <div>
-                <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1.5 px-1">
-                    <span class="font-bold text-slate-700"><i class="fa-solid fa-table-columns text-emerald-600"></i> 公開透明資訊看板：點擊下方「里山團隊總覽」或「個別合作農場卡片」可立即切換檢視獨立填報數據與專屬報告書</span>
-                    <span id="dashboardComparisonHint" class="text-emerald-700 font-bold">公開顯示前後期棲地、物種、【A】vs.【B】成本與產量對照</span>
+                <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-500 mb-2 px-1 gap-1">
+                    <span class="font-bold text-slate-700"><i class="fa-solid fa-sitemap text-emerald-600"></i> 公開透明階層式資訊看板：逐一顯示「各里山團隊獨立看板（含團隊 SROI）」，點擊「展開成員農場」可下拉檢視各成員農場獨立 SROI 與完整數據</span>
+                    <span id="dashboardComparisonHint" class="text-emerald-700 font-bold">各團隊與各成員農場 SROI 獨立即時核算｜支援折疊下拉檢視與一鍵切換報告</span>
                 </div>
-                <div id="topInteractiveCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5"></div>
+                <!-- Accordion Teams & Member Farms Container -->
+                <div id="topAllTeamsRowContainer" class="space-y-3"></div>
+                <div id="topInteractiveCardsContainer" class="hidden"></div>
             </div>
         </div>
     </section>
@@ -279,13 +281,29 @@
                         <label class="font-bold text-slate-600 block mb-1">📅 計畫執行期間：</label>
                         <input type="text" id="teamExecPeriodInput" value="2025/01/01 ~ 2026/10/31" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-full border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold">
                     </div>
+                    <div>
+                        <label class="font-bold text-emerald-800 block mb-1">🦎 團隊預設「生物觀察」基期 ➔ 當期：</label>
+                        <div class="flex items-center gap-1">
+                            <input type="text" id="teamBioBasePeriodInput" value="2025基期" title="生物觀察基期" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-1/2 border border-emerald-300 rounded-lg px-2 py-1 font-bold text-center">
+                            <span class="text-slate-400">➔</span>
+                            <input type="text" id="teamBioCurrPeriodInput" value="2026當期" title="生物觀察當期" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-1/2 border border-emerald-400 rounded-lg px-2 py-1 font-bold text-center">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-bold text-amber-900 block mb-1">🚜 團隊預設「農務管理與產量」基期 ➔ 當期：</label>
+                        <div class="flex items-center gap-1">
+                            <input type="text" id="teamMgmtBasePeriodInput" value="2025前期" title="農務管理基期" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-1/2 border border-amber-300 rounded-lg px-2 py-1 font-bold text-center">
+                            <span class="text-slate-400">➔</span>
+                            <input type="text" id="teamMgmtCurrPeriodInput" value="2026當期" title="農務管理當期" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-1/2 border border-amber-400 rounded-lg px-2 py-1 font-bold text-center">
+                        </div>
+                    </div>
                     <div class="sm:col-span-2">
                         <label class="font-bold text-slate-600 block mb-1">🎯 團隊受指導之核心產出項目 (Outputs，公開列於報告與 GRI 指南)：</label>
                         <input type="text" id="teamOutputsDescInput" value="微棲地盤點營造、SROI 自主記帳培力、里山生態導覽員認證與走讀路線串聯" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-full border border-slate-300 rounded-xl px-2.5 py-1.5 font-bold">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200 text-xs">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200 text-xs">
                     <div>
                         <label class="text-[10px] font-bold text-slate-600 block">共同專業培訓投入 (元)</label>
                         <input type="number" id="teamTrainingInput" value="70000" step="1000" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-full border rounded-lg px-2 py-1 font-black mt-0.5">
@@ -297,6 +315,14 @@
                     <div>
                         <label class="text-[10px] font-bold text-slate-600 block">單場當期維護輔導費</label>
                         <input type="number" id="teamMaintFeeInput" value="2000" step="500" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-full border rounded-lg px-2 py-1 font-black mt-0.5">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-emerald-900 block">💎 其他社會價值投入 (元)</label>
+                        <input type="number" id="teamOtherSocialCostInput" value="0" step="1000" oninput="updateActiveTeamFromInputs()" class="clean-num-input w-full border border-emerald-400 rounded-lg px-2 py-1 font-black mt-0.5">
+                    </div>
+                    <div class="col-span-2 sm:col-span-4 mt-1">
+                        <label class="text-[10.5px] font-black text-satoyama-dark block mb-1">📝 其他社會價值投入附言說明（公開列於看板與報告書投入明細）：</label>
+                        <input type="text" id="teamOtherSocialNoteInput" value="無額外其他社會價值投入（如有企業志工服務、設備捐贈、食農教材開發或通路推廣資源，請填寫金額與說明）" placeholder="請說明其他社會價值投入之具體項目與用途..." oninput="updateActiveTeamFromInputs()" class="clean-num-input w-full border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs font-medium">
                     </div>
                 </div>
 
@@ -591,6 +617,14 @@
                     <input type="number" id="modalTeamMaintFee" value="2000" class="clean-num-input w-full border rounded-xl px-3 py-1.5 font-bold">
                 </div>
                 <div>
+                    <label class="font-bold text-emerald-900 block mb-1">💎 其他社會價值投入 (元)</label>
+                    <input type="number" id="modalTeamOtherSocialCost" value="0" step="1000" class="clean-num-input w-full border border-emerald-400 rounded-xl px-3 py-1.5 font-bold">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="font-bold text-emerald-900 block mb-1">📝 其他社會價值投入附言說明</label>
+                    <textarea id="modalTeamOtherSocialNote" rows="2" maxlength="500" placeholder="請說明其他社會價值投入項目（如：企業志工協作、教材印製、設備支持等）..." class="clean-num-input w-full border border-emerald-300 rounded-xl px-3 py-1.5 text-xs font-medium"></textarea>
+                </div>
+                <div class="sm:col-span-2">
                     <label class="font-bold text-emerald-800 block mb-1">🔐 設定此團隊專屬管理密碼 *</label>
                     <input type="text" id="modalTeamPassword" value="545366" class="clean-num-input w-full border border-emerald-400 rounded-xl px-3 py-1.5 font-bold">
                 </div>
@@ -615,6 +649,10 @@
                 <button onclick="closeFarmModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                <div class="sm:col-span-2">
+                    <label class="font-bold text-emerald-900 block mb-1">🏘️ 所屬里山團隊 *</label>
+                    <select id="modalFarmTeamId" class="w-full border border-emerald-400 rounded-xl px-2.5 py-1.5 font-bold bg-emerald-50/50"></select>
+                </div>
                 <div>
                     <label class="font-bold text-slate-700 block mb-1">農場名稱 *</label>
                     <input type="text" id="modalFarmName" placeholder="例如：湧健酪梨園" class="clean-num-input w-full border rounded-xl px-2.5 py-1.5 font-bold">
@@ -636,9 +674,29 @@
                         <option value="dry">旱地/果園 (無蓄水棲地維護金)</option>
                     </select>
                 </div>
+                <div>
+                    <label class="font-bold text-emerald-800 block mb-1">🦎 生物觀察基期 ➔ 當期設定</label>
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="modalFarmBioBase" value="2025基期" class="clean-num-input w-1/2 border rounded-lg px-2 py-1 font-bold text-center">
+                        <span>➔</span>
+                        <input type="text" id="modalFarmBioCurr" value="2026當期" class="clean-num-input w-1/2 border rounded-lg px-2 py-1 font-bold text-center">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-amber-900 block mb-1">🚜 農務與產量基期 ➔ 當期設定</label>
+                    <div class="flex items-center gap-1">
+                        <input type="text" id="modalFarmMgmtBase" value="2025前期" class="clean-num-input w-1/2 border rounded-lg px-2 py-1 font-bold text-center">
+                        <span>➔</span>
+                        <input type="text" id="modalFarmMgmtCurr" value="2026當期" class="clean-num-input w-1/2 border rounded-lg px-2 py-1 font-bold text-center">
+                    </div>
+                </div>
                 <div class="sm:col-span-2">
                     <label class="font-bold text-slate-700 block mb-1">📝 物種及族群量體感觀察附言 (500字以內)</label>
                     <textarea id="modalFarmEcoNote" rows="2" maxlength="500" placeholder="請填寫長期農作時的新物種、原生生物族群量增減或棲地延伸觀察..." class="clean-num-input w-full border rounded-xl px-2.5 py-1.5 text-xs"></textarea>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="font-bold text-amber-900 block mb-1">📦 年度友善農產產量前後期比較與農務管理附言及揭露事項 (500字以內)</label>
+                    <textarea id="modalFarmYieldNote" rows="2" maxlength="500" placeholder="請填寫農務管理成本增減原因、友善農產產量前後期變化及誠實揭露事項..." class="clean-num-input w-full border rounded-xl px-2.5 py-1.5 text-xs"></textarea>
                 </div>
                 <div class="sm:col-span-2">
                     <label class="font-bold text-emerald-800 block mb-1">🔐 設定此農場專屬管理密碼 *</label>
@@ -761,13 +819,32 @@
         let teamModalMode = 'add';
         let farmModalMode = 'add';
         let editingFarmId = null;
+        let expandedTeamMap = { 'team_shuili_1': true };
 
         let mainDoughnutChartInstance = null;
         let grossNetBarChartInstance = null;
         let chartDoughnutDataUrl = '';
         let chartBarDataUrl = '';
 
-        // Custom Chart.js plugin to paint solid white background and value labels for crystal-clear Word (.doc) & PDF exports
+        // Convert any canvas to an opaque white-background JPEG data URL with fixed Word-friendly dimensions
+        function getWordSafeCanvasDataUrl(sourceCanvas, targetWidth = 560, targetHeight = 400) {
+            if (!sourceCanvas) return '';
+            try {
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = targetWidth;
+                offCanvas.height = targetHeight;
+                const ctx = offCanvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, targetWidth, targetHeight);
+                ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+                return offCanvas.toDataURL('image/jpeg', 0.95);
+            } catch (err) {
+                console.warn('Offscreen canvas conversion error:', err);
+                return sourceCanvas.toDataURL('image/png', 1.0);
+            }
+        }
+
+        // Custom Chart.js plugin to paint solid white background for crystal-clear Word (.doc) & PDF exports
         const chartWhiteBgAndLabelsPlugin = {
             id: 'chartWhiteBgAndLabelsPlugin',
             beforeDraw: (chart) => {
@@ -793,10 +870,16 @@
                 name: '水里里山生態廊道第一示範團隊',
                 advisor: '臺大。山林。學院 2.0',
                 execPeriod: '2025/01/01 ~ 2026/10/31',
+                bioBasePeriod: '2025基期',
+                bioCurrPeriod: '2026當期',
+                mgmtBasePeriod: '2025前期',
+                mgmtCurrPeriod: '2026當期',
                 outputsDesc: '微棲地盤點營造、SROI 自主記帳培力、里山生態導覽員認證與走讀路線串聯',
                 trainingCost: 70000,
                 habitatGrantPerFarm: 10000,
                 maintFeePerFarm: 2000,
+                otherSocialCost: 0,
+                otherSocialNote: '無額外其他社會價值投入（如有企業志工服務、設備捐贈、食農教材開發或通路推廣資源，請填寫金額與說明）',
                 password: '545366'
             }
         ];
@@ -809,6 +892,10 @@
                 crops: '酪梨',
                 areaHa: 1.1,
                 landType: 'terrace', // 'terrace' (3萬), 'paddy' (2萬), 'pond' (1萬), 'dry' (0)
+                bioBasePeriod: '2025基期',
+                bioCurrPeriod: '2026當期',
+                mgmtBasePeriod: '2025前期',
+                mgmtCurrPeriod: '2026當期',
                 conservationGrant: true,
                 utilizationGrant: true,
                 waterHabitats2025: 2,
@@ -836,6 +923,7 @@
                 yieldBaseKg: 1200,
                 yieldCurrKg: 1380,
                 cropPricePerKg: 160,
+                yieldDisclosureNote: '轉型初期因增加人工草生管理與微棲地維護使【B】略高於【A】（誠實揭露-$4,000元成本差額），但授粉昆蟲增加與土壤保水力提升帶動酪梨當期產量較基期增加 180 kg (+15%)，創造 +$28,800 元綠色產值增益。',
                 password: '545366'
             },
             {
@@ -845,6 +933,10 @@
                 crops: '臍橙、帝王柑',
                 areaHa: 0.8,
                 landType: 'paddy',
+                bioBasePeriod: '2025基期',
+                bioCurrPeriod: '2026當期',
+                mgmtBasePeriod: '2025前期',
+                mgmtCurrPeriod: '2026當期',
                 conservationGrant: true,
                 utilizationGrant: true,
                 waterHabitats2025: 1,
@@ -869,6 +961,7 @@
                 yieldBaseKg: 1500,
                 yieldCurrKg: 1650,
                 cropPricePerKg: 120,
+                yieldDisclosureNote: '透過天敵昆蟲棲地營造，友善防治資材費由 $15,000 降至 $12,000；同時臍橙與帝王柑著果穩定，當期產量較基期提升 150 kg (+10%)，實質增加 $18,000 元友善農產收益。',
                 password: '545366'
             },
             {
@@ -878,6 +971,10 @@
                 crops: '梅子、竹筍、芭樂',
                 areaHa: 0.9,
                 landType: 'terrace',
+                bioBasePeriod: '2025基期',
+                bioCurrPeriod: '2026當期',
+                mgmtBasePeriod: '2025前期',
+                mgmtCurrPeriod: '2026當期',
                 conservationGrant: true,
                 utilizationGrant: false,
                 waterHabitats2025: 1,
@@ -902,9 +999,31 @@
                 yieldBaseKg: 1100,
                 yieldCurrKg: 1220,
                 cropPricePerKg: 110,
+                yieldDisclosureNote: '草生植被穩定後防治資材支出減少，【A】與【B】總管理費用持平；梅子與竹筍當期產量較基期成長 120 kg (+10.9%)，增加 $13,200 元農產產值，並已納入社區食農採購契作。',
                 password: '545366'
             }
         ];
+
+        function normalizeTeamObject(t, idx = 0) {
+            const def = DEFAULT_TEAMS[0];
+            return {
+                id: t.id || `team_${idx + 1}`,
+                name: t.name || def.name,
+                advisor: t.advisor || def.advisor,
+                execPeriod: t.execPeriod || def.execPeriod,
+                bioBasePeriod: t.bioBasePeriod || def.bioBasePeriod,
+                bioCurrPeriod: t.bioCurrPeriod || def.bioCurrPeriod,
+                mgmtBasePeriod: t.mgmtBasePeriod || def.mgmtBasePeriod,
+                mgmtCurrPeriod: t.mgmtCurrPeriod || def.mgmtCurrPeriod,
+                outputsDesc: t.outputsDesc || def.outputsDesc,
+                trainingCost: !isNaN(parseFloat(t.trainingCost)) ? parseFloat(t.trainingCost) : def.trainingCost,
+                habitatGrantPerFarm: !isNaN(parseFloat(t.habitatGrantPerFarm)) ? parseFloat(t.habitatGrantPerFarm) : def.habitatGrantPerFarm,
+                maintFeePerFarm: !isNaN(parseFloat(t.maintFeePerFarm)) ? parseFloat(t.maintFeePerFarm) : def.maintFeePerFarm,
+                otherSocialCost: !isNaN(parseFloat(t.otherSocialCost)) ? parseFloat(t.otherSocialCost) : 0,
+                otherSocialNote: typeof t.otherSocialNote === 'string' && t.otherSocialNote.trim() !== '' ? t.otherSocialNote : def.otherSocialNote,
+                password: t.password || '545366'
+            };
+        }
 
         // Normalize farm data to ensure legacy localStorage objects never have missing properties or corrupted species numbers
         function normalizeFarmObject(f, idx = 0) {
@@ -916,6 +1035,10 @@
                 crops: f.crops || def.crops,
                 areaHa: !isNaN(parseFloat(f.areaHa)) ? parseFloat(f.areaHa) : def.areaHa,
                 landType: f.landType || def.landType,
+                bioBasePeriod: f.bioBasePeriod || def.bioBasePeriod || '2025基期',
+                bioCurrPeriod: f.bioCurrPeriod || def.bioCurrPeriod || '2026當期',
+                mgmtBasePeriod: f.mgmtBasePeriod || def.mgmtBasePeriod || '2025前期',
+                mgmtCurrPeriod: f.mgmtCurrPeriod || def.mgmtCurrPeriod || '2026當期',
                 conservationGrant: typeof f.conservationGrant === 'boolean' ? f.conservationGrant : def.conservationGrant,
                 utilizationGrant: typeof f.utilizationGrant === 'boolean' ? f.utilizationGrant : def.utilizationGrant,
                 waterHabitats2025: !isNaN(parseInt(f.waterHabitats2025)) ? parseInt(f.waterHabitats2025) : def.waterHabitats2025,
@@ -940,6 +1063,7 @@
                 yieldBaseKg: !isNaN(parseFloat(f.yieldBaseKg)) ? parseFloat(f.yieldBaseKg) : def.yieldBaseKg,
                 yieldCurrKg: !isNaN(parseFloat(f.yieldCurrKg)) ? parseFloat(f.yieldCurrKg) : def.yieldCurrKg,
                 cropPricePerKg: !isNaN(parseFloat(f.cropPricePerKg)) ? parseFloat(f.cropPricePerKg) : def.cropPricePerKg,
+                yieldDisclosureNote: typeof f.yieldDisclosureNote === 'string' && f.yieldDisclosureNote.trim() !== '' ? f.yieldDisclosureNote : def.yieldDisclosureNote,
                 password: f.password || '545366'
             };
         }
@@ -1091,6 +1215,10 @@
             return {
                 areaHa,
                 landTypeLabel,
+                bioBaseLabel: farm.bioBasePeriod || '2025基期',
+                bioCurrLabel: farm.bioCurrPeriod || '2026當期',
+                mgmtBaseLabel: farm.mgmtBasePeriod || '2025前期',
+                mgmtCurrLabel: farm.mgmtCurrPeriod || '2026當期',
                 rawFriendlyLand,
                 cappedFriendlyLand,
                 isFriendlyLandCapped,
@@ -1136,11 +1264,15 @@
             };
         }
 
-        function calculateSroiMetrics() {
-            const activeTeam = teamsData.find(t => t.id === activeTeamId) || teamsData[0];
+        function calculateSroiMetrics(overrideTeamId = null, overrideScope = null, overrideFarmId = null) {
+            const targetTeamId = overrideTeamId || activeTeamId;
+            const targetScope = overrideScope || reportScope;
+            const targetFarmId = overrideFarmId || selectedSingleFarmId;
+
+            const activeTeam = teamsData.find(t => t.id === targetTeamId) || teamsData[0];
             const teamFarms = farmsData.filter(f => f.teamId === activeTeam.id);
-            const activeFarms = reportScope === 'single'
-                ? [teamFarms.find(f => f.id === selectedSingleFarmId) || teamFarms[0]].filter(Boolean)
+            const activeFarms = targetScope === 'single'
+                ? [teamFarms.find(f => f.id === targetFarmId) || teamFarms[0]].filter(Boolean)
                 : teamFarms;
 
             const nFarms = activeFarms.length || 1;
@@ -1165,10 +1297,14 @@
             const step3PricingNote = document.getElementById('step3PricingNoteInput')?.value || DEFAULT_SECTION_NOTES.step3PricingNote;
             const step4RetentionNote = document.getElementById('step4RetentionNoteInput')?.value || DEFAULT_SECTION_NOTES.step4RetentionNote;
 
-            // Inputs
-            const trainingInput = reportScope === 'single'
+            // Inputs (Calculated strictly per team independently)
+            const trainingInput = targetScope === 'single'
                 ? Math.round((parseFloat(activeTeam.trainingCost) || 70000) / Math.max(1, teamFarms.length))
                 : (parseFloat(activeTeam.trainingCost) || 70000);
+            const otherSocialInput = targetScope === 'single'
+                ? Math.round((parseFloat(activeTeam.otherSocialCost) || 0) / Math.max(1, teamFarms.length))
+                : (parseFloat(activeTeam.otherSocialCost) || 0);
+            const otherSocialNote = activeTeam.otherSocialNote || '無額外其他社會價值投入';
             const habitatGrantInput = nFarms * (parseFloat(activeTeam.habitatGrantPerFarm) || 10000);
             const maintFeeInput = currentMode === '2025' ? 0 : (nFarms * (parseFloat(activeTeam.maintFeePerFarm) || 2000));
 
@@ -1210,14 +1346,13 @@
             });
 
             // (S) Social & Human Capital Gross according to SVI Mode
-            const baseTrainingVal = parseFloat(activeTeam.trainingCost) || 70000;
-            const allocatedTrainingVal = reportScope === 'single' ? Math.round(baseTrainingVal / Math.max(1, teamFarms.length)) : baseTrainingVal;
-
+            const baseTrainingVal = (parseFloat(activeTeam.trainingCost) || 70000) + (parseFloat(activeTeam.otherSocialCost) || 0);
+            const allocatedTrainingVal = targetScope === 'single' ? Math.round(baseTrainingVal / Math.max(1, teamFarms.length)) : baseTrainingVal;
             let grossHuman = 0;
             if (sviMode === 'strict') {
                 grossHuman = allocatedTrainingVal;
             } else if (sviMode === 'output_proxy') {
-                grossHuman = sumEduTourProxy;
+                grossHuman = sumEduTourProxy + otherSocialInput;
             } else {
                 grossHuman = allocatedTrainingVal + sumEduTourProxy;
             }
@@ -1231,7 +1366,7 @@
                 grossMgmt += selfFundedEcoBonusGross;
             }
 
-            const totalInput = trainingInput + habitatGrantInput + maintFeeInput + (includeCostBInInput ? sumCostB : 0);
+            const totalInput = trainingInput + otherSocialInput + habitatGrantInput + maintFeeInput + (includeCostBInInput ? sumCostB : 0);
 
             const netHuman = Math.round(grossHuman * retainHuman);
             const netEco = Math.round(grossEco * retainEco);
@@ -1251,6 +1386,8 @@
                 sviMode,
                 includeCostBInInput,
                 trainingInput,
+                otherSocialInput,
+                otherSocialNote,
                 habitatGrantInput,
                 maintFeeInput,
                 sumCostA,
@@ -1289,83 +1426,191 @@
         // =========================================================================
         // 4. UI RENDERING: PUBLIC INTERACTIVE DASHBOARD, FARMS LIST, CHARTS & REPORT
         // =========================================================================
+        function toggleTeamAccordion(teamId, event) {
+            if (event) event.stopPropagation();
+            expandedTeamMap[teamId] = !expandedTeamMap[teamId];
+            renderTopInteractiveDashboard();
+        }
+
+        function selectTeamFromDashboard(teamId, event) {
+            if (event) event.stopPropagation();
+            activeTeamId = teamId;
+            reportScope = 'team';
+            expandedTeamMap[teamId] = true;
+            const teamFarms = farmsData.filter(f => f.teamId === activeTeamId);
+            if (teamFarms.length > 0) {
+                selectedSingleFarmId = teamFarms[0].id;
+            }
+            populateSelectors();
+            setReportScope('team');
+        }
+
+        function selectSingleFarmFromDashboard(farmId, teamId = null, event = null) {
+            if (event) event.stopPropagation();
+            if (teamId) {
+                activeTeamId = teamId;
+                expandedTeamMap[teamId] = true;
+            } else {
+                const foundFarm = farmsData.find(f => f.id === farmId);
+                if (foundFarm) {
+                    activeTeamId = foundFarm.teamId;
+                    expandedTeamMap[foundFarm.teamId] = true;
+                }
+            }
+            selectedSingleFarmId = farmId;
+            populateSelectors();
+            setReportScope('single');
+        }
+
         function renderTopInteractiveDashboard() {
-            const container = document.getElementById('topInteractiveCardsContainer');
-            if (!container) return;
+            const allTeamsContainer = document.getElementById('topAllTeamsRowContainer');
+            if (!allTeamsContainer) return;
 
-            const activeTeam = teamsData.find(t => t.id === activeTeamId) || teamsData[0];
-            const teamFarms = farmsData.filter(f => f.teamId === activeTeam.id);
-            const sviMode = document.getElementById('sviAssuranceModeSelect')?.value || 'strict';
-            const speciesProxy = parseFloat(document.getElementById('paramSpeciesEcoProxy')?.value) || 3500;
-            const guideProxy = parseFloat(document.getElementById('paramGuideEduProxy')?.value) || 12000;
-            const routeProxy = parseFloat(document.getElementById('paramRouteTourProxy')?.value) || 25000;
+            let html = '';
 
-            const retainHuman = (parseFloat(document.getElementById('paramRetainHuman')?.value) || 80) / 100;
-            const retainEco = (parseFloat(document.getElementById('paramRetainEco')?.value) || 10) / 100;
-            const retainMgmt = (parseFloat(document.getElementById('paramRetainMgmt')?.value) || 70) / 100;
+            teamsData.forEach((team, tIdx) => {
+                if (typeof expandedTeamMap[team.id] === 'undefined') {
+                    expandedTeamMap[team.id] = (team.id === activeTeamId);
+                }
+                const isExpanded = Boolean(expandedTeamMap[team.id]);
+                const isCurrentTeamSelected = (team.id === activeTeamId && reportScope === 'team');
+                const isCurrentTeamActive = (team.id === activeTeamId);
 
-            // Compute Team Summary for Card 0
-            const mTeam = calculateSroiMetrics();
-            const isTeamActive = reportScope === 'team';
+                const mTeam = calculateSroiMetrics(team.id, 'team');
+                const thisTeamFarms = farmsData.filter(f => f.teamId === team.id);
 
-            let html = `
-                <!-- Team Summary Interactive Card -->
-                <div onclick="setReportScope('team')" class="cursor-pointer rounded-xl p-3 border-2 transition shadow-sm ${isTeamActive ? 'bg-satoyama-dark text-white border-emerald-400 ring-2 ring-emerald-500/30' : 'bg-slate-50 hover:bg-emerald-50/60 text-slate-800 border-slate-200'}">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${isTeamActive ? 'bg-emerald-500/30 text-emerald-200' : 'bg-emerald-100 text-satoyama-dark'}">
-                            🏘️ 團隊跨農場彙整 (${teamFarms.length}處)
-                        </span>
-                        <span class="text-xs font-black ${isTeamActive ? 'text-amber-300' : 'text-satoyama-dark'}">SROI 1 : ${mTeam.sroiRatio}</span>
-                    </div>
-                    <div class="font-black text-xs truncate mb-1.5">${activeTeam.name}</div>
-                    <div class="grid grid-cols-3 gap-1 text-[10px] ${isTeamActive ? 'text-emerald-100' : 'text-slate-600'} border-t ${isTeamActive ? 'border-emerald-700' : 'border-slate-200'} pt-1.5">
-                        <div>面積：<strong>${mTeam.sumAreaHa} ha</strong></div>
-                        <div>棲地：<strong>${mTeam.sumTotalHab}處</strong></div>
-                        <div>物種：<strong>${mTeam.sumSpeciesCurr}種</strong></div>
-                        <div>【A】<strong>$${(mTeam.sumCostA/1000).toFixed(1)}k</strong></div>
-                        <div>【B】<strong>$${(mTeam.sumCostB/1000).toFixed(1)}k</strong></div>
-                        <div>淨值：<strong>$${(mTeam.totalNet/1000).toFixed(0)}k</strong></div>
-                    </div>
-                </div>
-            `;
+                // Build member farms cards inside the collapsible panel
+                let memberFarmsHtml = '';
+                thisTeamFarms.forEach((farm, fIdx) => {
+                    // Calculate independent SROI and metrics for this single farm
+                    const mFarm = calculateSroiMetrics(team.id, 'single', farm.id);
+                    const st = mFarm.farmStatsList[0]?.st;
+                    if (!st) return;
+                    const isSelectedFarm = (reportScope === 'single' && selectedSingleFarmId === farm.id && activeTeamId === team.id);
 
-            // Individual Farm Interactive Cards
-            teamFarms.forEach((farm, idx) => {
-                const st = computeFarmStats(farm, currentMode, sviMode, speciesProxy, guideProxy, routeProxy);
-                const isSelectedFarm = reportScope === 'single' && selectedSingleFarmId === farm.id;
-                const singleEcoRetain = reportScope === 'single' ? retainEco : 0.60;
-                const estFarmNet = Math.round((70000 / Math.max(1, teamFarms.length)) * retainHuman) + Math.round(st.farmGrossEco * singleEcoRetain) + Math.round(st.farmGrossMgmt * retainMgmt);
+                    memberFarmsHtml += `
+                        <div onclick="selectSingleFarmFromDashboard('${farm.id}', '${team.id}', event)" class="cursor-pointer rounded-xl p-3 border-2 transition shadow-sm flex flex-col justify-between ${isSelectedFarm ? 'bg-emerald-950 text-white border-amber-400 ring-2 ring-amber-400/40' : 'bg-white hover:bg-emerald-50/70 text-slate-800 border-slate-200'}">
+                            <div>
+                                <!-- Top Badge & SROI -->
+                                <div class="flex items-center justify-between gap-1 mb-1.5">
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded ${isSelectedFarm ? 'bg-amber-400 text-slate-950' : 'bg-emerald-100 text-satoyama-dark'}">
+                                        🏡 成員農場 #${fIdx + 1}｜${st.areaHa} ha (${st.landTypeLabel})
+                                    </span>
+                                    <span class="text-xs font-black px-2 py-0.5 rounded-lg ${isSelectedFarm ? 'bg-amber-400/20 text-amber-300 border border-amber-400/50' : 'bg-satoyama-dark text-amber-300'}">
+                                        農場 SROI 1 : ${mFarm.sroiRatio}
+                                    </span>
+                                </div>
+
+                                <!-- Farm Title & Crops -->
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <div class="font-black text-sm truncate">${farm.name}</div>
+                                    <span class="text-[10.5px] font-bold shrink-0 ${isSelectedFarm ? 'text-emerald-300' : 'text-emerald-700'}">🌱 ${farm.crops}</span>
+                                </div>
+
+                                <!-- Period & Financial SROI Summary -->
+                                <div class="grid grid-cols-3 gap-1 text-[10.5px] p-1.5 rounded-lg mb-1.5 ${isSelectedFarm ? 'bg-emerald-900/80 text-emerald-100 border border-emerald-700' : 'bg-slate-50 text-slate-700 border border-slate-200'}">
+                                    <div>分攤投入：<strong class="${isSelectedFarm ? 'text-white' : 'text-slate-900'}">$${mFarm.totalInput.toLocaleString()}</strong></div>
+                                    <div>折減前毛值：<strong class="${isSelectedFarm ? 'text-sky-300' : 'text-sky-700'}">$${mFarm.totalGross.toLocaleString()}</strong></div>
+                                    <div>防漂綠淨值：<strong class="${isSelectedFarm ? 'text-amber-300' : 'text-emerald-700'}">$${mFarm.totalNet.toLocaleString()}</strong></div>
+                                </div>
+
+                                <!-- Ecological & Management Metrics -->
+                                <div class="grid grid-cols-3 gap-1 text-[10px] ${isSelectedFarm ? 'text-emerald-100' : 'text-slate-600'} pt-1">
+                                    <div>棲地：<strong>${st.totalHab2025}→${st.totalHab2026}處</strong></div>
+                                    <div>物種：<strong>${st.sBase}→${st.sCurr}種</strong></div>
+                                    <div>觀測：<strong>${st.bioPct >= 0 ? '+' : ''}${st.bioPct}%</strong></div>
+                                    <div>【A】<strong>$${st.totalCostA.toLocaleString()}</strong></div>
+                                    <div>【B】<strong>$${st.totalCostB.toLocaleString()}</strong></div>
+                                    <div>產量：<strong>${st.yieldGrowthPct >= 0 ? '+' : ''}${st.yieldGrowthPct}%</strong></div>
+                                </div>
+                            </div>
+
+                            <div class="mt-2 pt-1.5 border-t ${isSelectedFarm ? 'border-emerald-800' : 'border-slate-100'} flex items-center justify-between text-[10px]">
+                                <span class="${isSelectedFarm ? 'text-emerald-300' : 'text-slate-400'}">基期：${st.bioBaseLabel}➔${st.bioCurrLabel}</span>
+                                <span class="font-black ${isSelectedFarm ? 'text-amber-300' : 'text-satoyama-dark'}">
+                                    ${isSelectedFarm ? '✓ 目前檢視此農場報告' : '點擊檢視單場報告 ➔'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
 
                 html += `
-                    <div onclick="selectSingleFarmFromDashboard('${farm.id}')" class="cursor-pointer rounded-xl p-3 border-2 transition shadow-sm ${isSelectedFarm ? 'bg-emerald-900 text-white border-amber-400 ring-2 ring-amber-400/40' : 'bg-white hover:bg-emerald-50/50 text-slate-800 border-slate-200'}">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[10px] font-black px-2 py-0.5 rounded ${isSelectedFarm ? 'bg-amber-400 text-slate-950' : 'bg-slate-100 text-slate-700'}">
-                                🏡 農場 #${idx + 1}｜${st.areaHa} ha (${st.landTypeLabel})
-                            </span>
-                            <span class="text-[10px] font-bold ${isSelectedFarm ? 'text-emerald-200' : 'text-emerald-700'}">🌱 ${farm.crops}</span>
+                    <div class="rounded-2xl border-2 transition overflow-hidden shadow-sm ${isCurrentTeamActive ? 'border-emerald-600 bg-emerald-50/30' : 'border-slate-300 bg-white'}">
+                        <!-- Team Accordion Header Bar -->
+                        <div class="p-3 sm:p-3.5 transition ${isCurrentTeamSelected ? 'bg-satoyama-dark text-white' : (isCurrentTeamActive ? 'bg-emerald-900 text-white' : 'bg-slate-100 hover:bg-slate-200/70 text-slate-900')}">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <!-- Left: Team Title, Advisor, Period -->
+                                <div class="flex items-start sm:items-center gap-2.5 cursor-pointer" onclick="selectTeamFromDashboard('${team.id}', event)">
+                                    <button type="button" onclick="toggleTeamAccordion('${team.id}', event)" class="w-7 h-7 rounded-lg flex items-center justify-center transition shrink-0 ${isCurrentTeamActive ? 'bg-white/15 hover:bg-white/25 text-amber-300' : 'bg-white hover:bg-emerald-50 text-satoyama-dark border border-slate-300'}" title="展開或收合所屬農場">
+                                        <i class="fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-xs"></i>
+                                    </button>
+                                    <div>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="text-[10px] font-black px-2 py-0.5 rounded ${isCurrentTeamActive ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/40' : 'bg-satoyama-dark text-white'}">
+                                                🏘️ 團隊看板 #${tIdx + 1} (${thisTeamFarms.length} 處成員農場)
+                                            </span>
+                                            <h3 class="text-sm sm:text-base font-black tracking-tight">${team.name}</h3>
+                                            ${isCurrentTeamSelected ? '<span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full">目前檢視團隊彙整報告</span>' : ''}
+                                        </div>
+                                        <div class="text-[11px] mt-0.5 ${isCurrentTeamActive ? 'text-emerald-200' : 'text-slate-600'}">
+                                            指導單位：<strong>${team.advisor || '臺大。山林。學院 2.0'}</strong> ｜ 執行期間：<strong>${team.execPeriod}</strong> ｜ 面積合計：<strong>${mTeam.sumAreaHa} ha</strong> ｜ 棲地：<strong>${mTeam.sumTotalHab}處</strong> ｜ 物種：<strong>${mTeam.sumSpeciesCurr}種</strong>
+                                        </div>
+                                        ${mTeam.otherSocialInput > 0 ? `
+                                        <div class="text-[10.5px] mt-0.5 ${isCurrentTeamActive ? 'text-amber-200' : 'text-amber-800'} font-bold">
+                                            💎 含其他社會價值投入：$${mTeam.otherSocialInput.toLocaleString()} 元（${mTeam.otherSocialNote}）
+                                        </div>` : ''}
+                                    </div>
+                                </div>
+
+                                <!-- Right: Team SROI Metrics & Action Buttons -->
+                                <div class="flex flex-wrap items-center gap-2 ml-auto">
+                                    <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                                        <div class="px-2.5 py-1 rounded-lg border ${isCurrentTeamActive ? 'bg-emerald-950/70 border-emerald-700 text-emerald-100' : 'bg-white border-slate-200 text-slate-700'}">
+                                            團隊總投入：<strong>$${mTeam.totalInput.toLocaleString()}</strong>
+                                        </div>
+                                        <div class="px-2.5 py-1 rounded-lg border ${isCurrentTeamActive ? 'bg-emerald-950/70 border-emerald-700 text-sky-300' : 'bg-white border-slate-200 text-sky-700'}">
+                                            團隊毛值：<strong>$${mTeam.totalGross.toLocaleString()}</strong>
+                                        </div>
+                                        <div class="px-2.5 py-1 rounded-lg border ${isCurrentTeamActive ? 'bg-emerald-950/70 border-emerald-700 text-emerald-300' : 'bg-white border-slate-200 text-emerald-700'}">
+                                            防漂綠淨值：<strong>$${mTeam.totalNet.toLocaleString()}</strong>
+                                        </div>
+                                        <div class="px-3 py-1 rounded-lg font-black text-xs shadow-sm ${isCurrentTeamActive ? 'bg-amber-400 text-slate-950' : 'bg-satoyama-dark text-amber-300'}">
+                                            團隊 SROI 1 : ${mTeam.sroiRatio}
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" onclick="selectTeamFromDashboard('${team.id}', event)" class="px-2.5 py-1.5 rounded-lg text-[11px] font-black transition shadow-sm ${isCurrentTeamSelected ? 'bg-amber-400 text-slate-950' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}">
+                                            📊 團隊彙整報告
+                                        </button>
+                                        <button type="button" onclick="toggleTeamAccordion('${team.id}', event)" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition border ${isCurrentTeamActive ? 'bg-white/10 hover:bg-white/20 border-white/30 text-white' : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-700'}">
+                                            <i class="fa-solid ${isExpanded ? 'fa-angles-up' : 'fa-angles-down'}"></i>
+                                            ${isExpanded ? '收合成員農場' : `展開成員農場 (${thisTeamFarms.length})`}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <span class="font-black text-xs truncate">${farm.name}</span>
-                            <span class="text-[11px] font-black ${isSelectedFarm ? 'text-amber-300' : 'text-satoyama-dark'}">淨值 $${estFarmNet.toLocaleString()}</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-1 text-[10px] ${isSelectedFarm ? 'text-emerald-100' : 'text-slate-600'} border-t ${isSelectedFarm ? 'border-emerald-700' : 'border-slate-100'} pt-1.5">
-                            <div>棲地：<strong>${st.totalHab2025}→${st.totalHab2026}處</strong></div>
-                            <div>物種：<strong>${st.sBase}→${st.sCurr}種</strong></div>
-                            <div>觀測：<strong>${st.bioPct >= 0 ? '+' : ''}${st.bioPct}%</strong></div>
-                            <div>【A】<strong>$${st.totalCostA.toLocaleString()}</strong></div>
-                            <div>【B】<strong>$${st.totalCostB.toLocaleString()}</strong></div>
-                            <div>產量：<strong>${st.yieldGrowthPct >= 0 ? '+' : ''}${st.yieldGrowthPct}%</strong></div>
+
+                        <!-- Collapsible Member Farms Drawer -->
+                        <div class="${isExpanded ? 'block' : 'hidden'} p-3 bg-slate-50/90 border-t border-slate-200">
+                            <div class="flex items-center justify-between text-[11px] text-slate-600 mb-2 px-1">
+                                <span class="font-black text-satoyama-dark">
+                                    <i class="fa-solid fa-turn-up fa-rotate-90 mr-1 text-emerald-600"></i>
+                                    【${team.name}】所屬成員農場獨立儀表板（共 ${thisTeamFarms.length} 處｜點擊任一農場卡片可切換至該農場獨立填報與專屬報告）：
+                                </span>
+                                <span class="text-slate-500">單場模式預設棲地生態淨保留率以當前設定 (${document.getElementById('paramRetainEco')?.value || 10}%) 試算</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                ${memberFarmsHtml}
+                            </div>
                         </div>
                     </div>
                 `;
             });
 
-            container.innerHTML = html;
-        }
-
-        function selectSingleFarmFromDashboard(farmId) {
-            selectedSingleFarmId = farmId;
-            setReportScope('single');
+            allTeamsContainer.innerHTML = html;
         }
 
         function updateRetentionHintBox() {
@@ -1397,15 +1642,23 @@
                 if (className) el.className = className;
             };
 
-            setElHtml(`f_${farmId}_headerSub`, `農地面積：<strong>${st.areaHa} 公頃</strong> ｜ 蓄水田區：<strong>${st.landTypeLabel}</strong> ｜ 林業署三大給付封頂核定：<strong class="text-emerald-800">$${st.officialSubsidyBase.toLocaleString()} 元/年</strong>`);
+            setElHtml(`f_${farmId}_headerSub`, `所屬團隊：<strong>${(teamsData.find(t => t.id === farm.teamId) || teamsData[0]).name}</strong> ｜ 面積：<strong>${st.areaHa} 公頃 (${st.landTypeLabel})</strong> ｜ 林業署三大給付封頂核定：<strong class="text-emerald-800">$${st.officialSubsidyBase.toLocaleString()} 元/年</strong>`);
             setElHtml(`f_${farmId}_subsidyBreakdown`, `🌲 <strong>林業署三大生態給付自動套用面積與上限：</strong>友善農地 <strong>$${st.cappedFriendlyLand.toLocaleString()}</strong> ${st.isFriendlyLandCapped ? '<span class="text-amber-700 font-bold">(已封頂)</span>' : ''} ＋ 棲地維護 <strong>$${st.cappedHabMaint.toLocaleString()}</strong> ${st.isHabMaintCapped ? '<span class="text-amber-700 font-bold">(已封頂)</span>' : ''} ＋ 營造成效 <strong>$${st.effectGrant.toLocaleString()}</strong>`);
             setElHtml(`f_${farmId}_subsidySum`, `合計：$${st.officialSubsidyBase.toLocaleString()} 元`);
 
+            setElHtml(`f_${farmId}_bioPeriodTitle`, `🦎 農場前後期生態統計對照（${st.bioBaseLabel} vs. ${st.bioCurrLabel} 微棲地、物種、生物觀測 %、培力導覽）`);
+            setElHtml(`f_${farmId}_habBaseLabel`, `【${st.bioBaseLabel}】水 / 陸微棲地`);
+            setElHtml(`f_${farmId}_habCurrLabel`, `【${st.bioCurrLabel}】水 / 陸微棲地`);
+            setElHtml(`f_${farmId}_costATitle`, `【A】${st.mgmtBaseLabel}友善生產管理費用`);
+            setElHtml(`f_${farmId}_costBTitle`, `【B】${st.mgmtCurrLabel}友善生產管理費用`);
+            setElHtml(`f_${farmId}_yieldBaseLabel`, `${st.mgmtBaseLabel}產量 (kg)`);
+            setElHtml(`f_${farmId}_yieldCurrLabel`, `${st.mgmtCurrLabel}產量 (kg)`);
+
             setElHtml(`f_${farmId}_alphaBadge`, `生態成長修正乘數 α_eco = ×${st.ecoMultiplier}`);
-            setElHtml(`f_${farmId}_hab2025Sum`, `基期共 ${st.totalHab2025} 處`);
+            setElHtml(`f_${farmId}_hab2025Sum`, `${st.bioBaseLabel}共 ${st.totalHab2025} 處`);
             setElHtml(
                 `f_${farmId}_hab2026Sum`,
-                `當期共 ${st.totalHab2026} 處 (${st.habDelta >= 0 ? `▲ +${st.habDelta}` : `▼ -${Math.abs(st.habDelta)}`})`,
+                `${st.bioCurrLabel}共 ${st.totalHab2026} 處 (${st.habDelta >= 0 ? `▲ +${st.habDelta}` : `▼ -${Math.abs(st.habDelta)}`})`,
                 `text-[10px] font-bold ${st.habDelta >= 0 ? 'text-emerald-700' : 'text-red-600'} block mt-1`
             );
             setElHtml(
@@ -1419,7 +1672,7 @@
                 `text-[10px] font-bold ${st.bioPct >= 0 ? 'text-sky-800' : 'text-red-600'} block mt-1`
             );
 
-            setElHtml(`f_${farmId}_ecoFormulaText`, `📊 <strong>前後期生態增減即時影響（當期對比對照基期計算）：</strong>基期棲地價值 <strong>$${st.baseEcoVal.toLocaleString()}</strong> × 動態乘數 <strong>${st.ecoMultiplier}</strong> = <strong>$${st.adjustedHabitatEco.toLocaleString()}</strong>`);
+            setElHtml(`f_${farmId}_ecoFormulaText`, `📊 <strong>前後期生態增減即時影響（${st.bioCurrLabel}對比對照${st.bioBaseLabel}計算）：</strong>基期棲地價值 <strong>$${st.baseEcoVal.toLocaleString()}</strong> × 動態乘數 <strong>${st.ecoMultiplier}</strong> = <strong>$${st.adjustedHabitatEco.toLocaleString()}</strong>`);
             setElHtml(
                 `f_${farmId}_ecoDeltaDiff`,
                 `觀測動態修正：${ecoDeltaDiff >= 0 ? `▲ +$${ecoDeltaDiff.toLocaleString()}` : `▼ -$${Math.abs(ecoDeltaDiff).toLocaleString()}`} 元`,
@@ -1427,10 +1680,11 @@
             );
 
             setElHtml(`f_${farmId}_noteCount`, `${(farm.ecoObsNote || '').length} / 500 字`);
+            setElHtml(`f_${farmId}_yieldNoteCount`, `${(farm.yieldDisclosureNote || '').length} / 500 字`);
 
             setElHtml(`f_${farmId}_costASum`, `$${st.totalCostA.toLocaleString()}`);
             setElHtml(`f_${farmId}_costBSum`, `$${st.totalCostB.toLocaleString()}`);
-            setElHtml(`f_${farmId}_costABFormula`, `💰 <strong>前後期管理費用比較 (【A】-【B】)：</strong>前期 $${st.totalCostA.toLocaleString()} － 當期 $${st.totalCostB.toLocaleString()}`);
+            setElHtml(`f_${farmId}_costABFormula`, `💰 <strong>前後期管理費用比較 (【A】${st.mgmtBaseLabel} - 【B】${st.mgmtCurrLabel})：</strong>前期 $${st.totalCostA.toLocaleString()} － 當期 $${st.totalCostB.toLocaleString()}`);
             setElHtml(
                 `f_${farmId}_costABDiff`,
                 `${st.costSavingAB >= 0 ? `友善管理投入減少（生態穩定成本節省）：+$${st.costSavingAB.toLocaleString()} 元` : `轉型期額外自籌護土投入：-$${Math.abs(st.costSavingAB).toLocaleString()} 元 (誠實揭露)`}`,
@@ -1439,7 +1693,7 @@
 
             setElHtml(
                 `f_${farmId}_yieldSummary`,
-                `產量變化：${st.yieldDeltaKg >= 0 ? `+${st.yieldDeltaKg}` : st.yieldDeltaKg} kg (${st.yieldGrowthPct >= 0 ? '+' : ''}${st.yieldGrowthPct}%) ｜ 產值增減：${st.yieldValueGain >= 0 ? `+$${st.yieldValueGain.toLocaleString()}` : `-$${Math.abs(st.yieldValueGain).toLocaleString()}`} 元`,
+                `產量變化 (${st.mgmtBaseLabel}➔${st.mgmtCurrLabel})：${st.yieldDeltaKg >= 0 ? `+${st.yieldDeltaKg}` : st.yieldDeltaKg} kg (${st.yieldGrowthPct >= 0 ? '+' : ''}${st.yieldGrowthPct}%) ｜ 產值增減：${st.yieldValueGain >= 0 ? `+$${st.yieldValueGain.toLocaleString()}` : `-$${Math.abs(st.yieldValueGain).toLocaleString()}`} 元`,
                 `text-[11px] font-black ${st.yieldValueGain >= 0 ? 'text-emerald-800' : 'text-red-600'}`
             );
 
@@ -1489,7 +1743,7 @@
                                     <span class="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">🌱 ${farm.crops}</span>
                                 </div>
                                 <div id="f_${farm.id}_headerSub" class="text-[11px] text-slate-600 mt-0.5">
-                                    農地面積：<strong>${st.areaHa} 公頃</strong> ｜ 蓄水田區：<strong>${st.landTypeLabel}</strong> ｜ 林業署三大給付封頂核定：<strong class="text-emerald-800">$${st.officialSubsidyBase.toLocaleString()} 元/年</strong>
+                                    所屬團隊：<strong>${activeTeam.name}</strong> ｜ 面積：<strong>${st.areaHa} 公頃 (${st.landTypeLabel})</strong> ｜ 林業署三大給付封頂核定：<strong class="text-emerald-800">$${st.officialSubsidyBase.toLocaleString()} 元/年</strong>
                                 </div>
                             </div>
                             <div class="flex items-center gap-1.5">
@@ -1503,6 +1757,26 @@
                                 <button type="button" onclick="deleteFarm('${farm.id}')" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 px-2 py-1 rounded-lg text-[11px] font-bold">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Manual Base Period & Current Period Customizer Row -->
+                        <div class="bg-white p-2.5 rounded-xl border border-emerald-200 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                            <div class="bg-emerald-50/60 p-2 rounded-lg border border-emerald-200">
+                                <label class="text-[10.5px] font-black text-satoyama-dark block mb-1">📅 手動設定此農場「生物觀察」基期 ➔ 當期標示：</label>
+                                <div class="flex items-center gap-1.5">
+                                    <input type="text" value="${st.bioBaseLabel}" placeholder="例如：2025基期" oninput="updateFarmField('${farm.id}', 'bioBasePeriod', this.value)" class="clean-num-input w-1/2 border border-emerald-300 rounded px-2 py-1 font-bold text-center">
+                                    <span class="font-bold text-emerald-700">➔</span>
+                                    <input type="text" value="${st.bioCurrLabel}" placeholder="例如：2026當期" oninput="updateFarmField('${farm.id}', 'bioCurrPeriod', this.value)" class="clean-num-input w-1/2 border border-emerald-400 rounded px-2 py-1 font-bold text-center">
+                                </div>
+                            </div>
+                            <div class="bg-amber-50/60 p-2 rounded-lg border border-amber-200">
+                                <label class="text-[10.5px] font-black text-amber-950 block mb-1">📅 手動設定此農場「農務管理與產量」基期 ➔ 當期標示：</label>
+                                <div class="flex items-center gap-1.5">
+                                    <input type="text" value="${st.mgmtBaseLabel}" placeholder="例如：2025前期" oninput="updateFarmField('${farm.id}', 'mgmtBasePeriod', this.value)" class="clean-num-input w-1/2 border border-amber-300 rounded px-2 py-1 font-bold text-center">
+                                    <span class="font-bold text-amber-700">➔</span>
+                                    <input type="text" value="${st.mgmtCurrLabel}" placeholder="例如：2026當期" oninput="updateFarmField('${farm.id}', 'mgmtCurrPeriod', this.value)" class="clean-num-input w-1/2 border border-amber-400 rounded px-2 py-1 font-bold text-center">
+                                </div>
                             </div>
                         </div>
 
@@ -1539,34 +1813,34 @@
                             </div>
                         </div>
 
-                        <!-- Before & After (2025 Base vs 2026+ Current) Ecological & Social Empowerment Grid -->
+                        <!-- Before & After (Base vs Current) Ecological & Social Empowerment Grid -->
                         <div class="bg-white p-2.5 rounded-xl border border-slate-200 space-y-2.5">
                             <div class="text-xs font-black text-satoyama-dark flex flex-wrap items-center justify-between gap-1 border-b border-slate-100 pb-1.5">
-                                <span>🦎 農場前後期生態統計對照（基期 2025 vs. 當期 2026+ 微棲地、物種、生物觀測 %、培力導覽）</span>
+                                <span id="f_${farm.id}_bioPeriodTitle">🦎 農場前後期生態統計對照（${st.bioBaseLabel} vs. ${st.bioCurrLabel} 微棲地、物種、生物觀測 %、培力導覽）</span>
                                 <span id="f_${farm.id}_alphaBadge" class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-black">生態成長修正乘數 α_eco = ×${st.ecoMultiplier}</span>
                             </div>
 
-                            <!-- Row 1: 2025 Baseline vs 2026+ Current Habitats & Species -->
+                            <!-- Row 1: Baseline vs Current Habitats & Species -->
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                                 <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                    <label class="text-[10px] text-slate-500 font-bold block mb-1">【基期 2025】水 / 陸微棲地</label>
+                                    <label id="f_${farm.id}_habBaseLabel" class="text-[10px] text-slate-500 font-bold block mb-1">【${st.bioBaseLabel}】水 / 陸微棲地</label>
                                     <div class="flex items-center gap-1">
                                         <input type="number" value="${farm.waterHabitats2025}" min="0" title="基期水域棲地" oninput="updateFarmField('${farm.id}', 'waterHabitats2025', this.value)" class="clean-num-input w-1/2 border rounded px-1.5 py-1 font-black text-center">
                                         <span class="text-slate-400">/</span>
                                         <input type="number" value="${farm.landHabitats2025}" min="0" title="基期陸域棲地" oninput="updateFarmField('${farm.id}', 'landHabitats2025', this.value)" class="clean-num-input w-1/2 border rounded px-1.5 py-1 font-black text-center">
                                     </div>
-                                    <span id="f_${farm.id}_hab2025Sum" class="text-[10px] text-slate-500 block mt-1">基期共 ${st.totalHab2025} 處</span>
+                                    <span id="f_${farm.id}_hab2025Sum" class="text-[10px] text-slate-500 block mt-1">${st.bioBaseLabel}共 ${st.totalHab2025} 處</span>
                                 </div>
 
                                 <div class="bg-emerald-50/60 p-2 rounded-lg border border-emerald-300">
-                                    <label class="text-[10px] text-emerald-900 font-bold block mb-1">【當期 2026+】水 / 陸微棲地</label>
+                                    <label id="f_${farm.id}_habCurrLabel" class="text-[10px] text-emerald-900 font-bold block mb-1">【${st.bioCurrLabel}】水 / 陸微棲地</label>
                                     <div class="flex items-center gap-1">
                                         <input type="number" value="${farm.waterHabitats2026}" min="0" title="當期水域棲地" oninput="updateFarmField('${farm.id}', 'waterHabitats2026', this.value)" class="clean-num-input w-1/2 border border-emerald-400 rounded px-1.5 py-1 font-black text-center">
                                         <span class="text-emerald-600">/</span>
                                         <input type="number" value="${farm.landHabitats2026}" min="0" title="當期陸域棲地" oninput="updateFarmField('${farm.id}', 'landHabitats2026', this.value)" class="clean-num-input w-1/2 border border-emerald-400 rounded px-1.5 py-1 font-black text-center">
                                     </div>
                                     <span id="f_${farm.id}_hab2026Sum" class="text-[10px] font-bold ${st.habDelta >= 0 ? 'text-emerald-700' : 'text-red-600'} block mt-1">
-                                        當期共 ${st.totalHab2026} 處 (${st.habDelta >= 0 ? `▲ +${st.habDelta}` : `▼ -${Math.abs(st.habDelta)}`})
+                                        ${st.bioCurrLabel}共 ${st.totalHab2026} 處 (${st.habDelta >= 0 ? `▲ +${st.habDelta}` : `▼ -${Math.abs(st.habDelta)}`})
                                     </span>
                                 </div>
 
@@ -1609,7 +1883,7 @@
 
                             <!-- Real-time Impact Hint for Eco Increase/Decrease -->
                             <div class="bg-sky-50/90 border border-sky-200 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-700 flex flex-wrap items-center justify-between gap-1">
-                                <span id="f_${farm.id}_ecoFormulaText">📊 <strong>前後期生態增減即時影響（當期對比對照基期計算）：</strong>基期棲地價值 <strong>$${st.baseEcoVal.toLocaleString()}</strong> × 動態乘數 <strong>${st.ecoMultiplier}</strong> = <strong>$${st.adjustedHabitatEco.toLocaleString()}</strong></span>
+                                <span id="f_${farm.id}_ecoFormulaText">📊 <strong>前後期生態增減即時影響（${st.bioCurrLabel}對比對照${st.bioBaseLabel}計算）：</strong>基期棲地價值 <strong>$${st.baseEcoVal.toLocaleString()}</strong> × 動態乘數 <strong>${st.ecoMultiplier}</strong> = <strong>$${st.adjustedHabitatEco.toLocaleString()}</strong></span>
                                 <span id="f_${farm.id}_ecoDeltaDiff" class="font-black ${ecoDeltaDiff >= 0 ? 'text-emerald-700' : 'text-red-600'}">
                                     觀測動態修正：${ecoDeltaDiff >= 0 ? `▲ +$${ecoDeltaDiff.toLocaleString()}` : `▼ -$${Math.abs(ecoDeltaDiff).toLocaleString()}`} 元
                                 </span>
@@ -1635,7 +1909,7 @@
                                 <!-- Box [A] -->
                                 <div class="bg-white p-2.5 rounded-xl border border-slate-200 space-y-2">
                                     <div class="flex items-center justify-between border-b pb-1">
-                                        <span class="font-black text-slate-800">【A】前期友善生產管理費用</span>
+                                        <span id="f_${farm.id}_costATitle" class="font-black text-slate-800">【A】${st.mgmtBaseLabel}友善生產管理費用</span>
                                         <span id="f_${farm.id}_costASum" class="font-black text-slate-900">$${st.totalCostA.toLocaleString()}</span>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
@@ -1661,7 +1935,7 @@
                                 <!-- Box [B] -->
                                 <div class="bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-300 space-y-2">
                                     <div class="flex items-center justify-between border-b border-emerald-200 pb-1">
-                                        <span class="font-black text-satoyama-dark">【B】當期友善生產管理費用</span>
+                                        <span id="f_${farm.id}_costBTitle" class="font-black text-satoyama-dark">【B】${st.mgmtCurrLabel}友善生產管理費用</span>
                                         <span id="f_${farm.id}_costBSum" class="font-black text-emerald-700">$${st.totalCostB.toLocaleString()}</span>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
@@ -1688,7 +1962,7 @@
                             <!-- [A] vs [B] Before/After Cost Diff Summary Strip & Ecological Benefit Explanation -->
                             <div class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-[11px] space-y-1">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span id="f_${farm.id}_costABFormula">💰 <strong>前後期管理費用比較 (【A】-【B】)：</strong>前期 $${st.totalCostA.toLocaleString()} － 當期 $${st.totalCostB.toLocaleString()}</span>
+                                    <span id="f_${farm.id}_costABFormula">💰 <strong>前後期管理費用比較 (【A】${st.mgmtBaseLabel} - 【B】${st.mgmtCurrLabel})：</strong>前期 $${st.totalCostA.toLocaleString()} － 當期 $${st.totalCostB.toLocaleString()}</span>
                                     <span id="f_${farm.id}_costABDiff" class="font-black ${st.costSavingAB >= 0 ? 'text-emerald-700' : 'text-red-600'}">
                                         ${st.costSavingAB >= 0 ? `友善管理投入減少（生態穩定成本節省）：+$${st.costSavingAB.toLocaleString()} 元` : `轉型期額外自籌護土投入：-$${Math.abs(st.costSavingAB).toLocaleString()} 元 (誠實揭露)`}
                                     </span>
@@ -1699,27 +1973,39 @@
                             </div>
                         </div>
 
-                        <!-- Annual Crop Production Before/After Comparison -->
-                        <div class="bg-amber-50/70 p-2.5 rounded-xl border border-amber-200 space-y-1.5 text-xs">
+                        <!-- Annual Crop Production Before/After Comparison + Disclosure Note -->
+                        <div class="bg-amber-50/70 p-2.5 rounded-xl border-2 border-amber-300 space-y-2 text-xs">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <span class="font-black text-amber-950">📦 年度友善農產產量前後期比較（當期對比基期計算）：</span>
                                 <span id="f_${farm.id}_yieldSummary" class="text-[11px] font-black ${st.yieldValueGain >= 0 ? 'text-emerald-800' : 'text-red-600'}">
-                                    產量變化：${st.yieldDeltaKg >= 0 ? `+${st.yieldDeltaKg}` : st.yieldDeltaKg} kg (${st.yieldGrowthPct >= 0 ? '+' : ''}${st.yieldGrowthPct}%) ｜ 產值增減：${st.yieldValueGain >= 0 ? `+$${st.yieldValueGain.toLocaleString()}` : `-$${Math.abs(st.yieldValueGain).toLocaleString()}`} 元
+                                    產量變化 (${st.mgmtBaseLabel}➔${st.mgmtCurrLabel})：${st.yieldDeltaKg >= 0 ? `+${st.yieldDeltaKg}` : st.yieldDeltaKg} kg (${st.yieldGrowthPct >= 0 ? '+' : ''}${st.yieldGrowthPct}%) ｜ 產值增減：${st.yieldValueGain >= 0 ? `+$${st.yieldValueGain.toLocaleString()}` : `-$${Math.abs(st.yieldValueGain).toLocaleString()}`} 元
                                 </span>
                             </div>
-                            <div class="grid grid-cols-3 gap-2 pt-1">
+                            <div class="grid grid-cols-3 gap-2 pt-0.5">
                                 <div>
-                                    <label class="text-[10px] font-bold text-slate-600 block">前期基期產量 (kg)</label>
+                                    <label id="f_${farm.id}_yieldBaseLabel" class="text-[10px] font-bold text-slate-600 block">${st.mgmtBaseLabel}產量 (kg)</label>
                                     <input type="number" value="${farm.yieldBaseKg}" step="50" oninput="updateFarmField('${farm.id}', 'yieldBaseKg', this.value)" class="clean-num-input w-full border rounded-lg px-2 py-1 font-black">
                                 </div>
                                 <div>
-                                    <label class="text-[10px] font-bold text-amber-900 block">當期實證產量 (kg)</label>
+                                    <label id="f_${farm.id}_yieldCurrLabel" class="text-[10px] font-bold text-amber-900 block">${st.mgmtCurrLabel}產量 (kg)</label>
                                     <input type="number" value="${farm.yieldCurrKg}" step="50" oninput="updateFarmField('${farm.id}', 'yieldCurrKg', this.value)" class="clean-num-input w-full border border-amber-400 rounded-lg px-2 py-1 font-black">
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-bold text-slate-600 block">產地均價 (元/kg)</label>
                                     <input type="number" value="${farm.cropPricePerKg}" step="10" oninput="updateFarmField('${farm.id}', 'cropPricePerKg', this.value)" class="clean-num-input w-full border rounded-lg px-2 py-1 font-black">
                                 </div>
+                            </div>
+
+                            <!-- 500-char Crop Yield & Management Comparison Disclosure Note -->
+                            <div class="bg-white/90 p-2.5 rounded-lg border border-amber-300 space-y-1">
+                                <div class="flex items-center justify-between text-[11px]">
+                                    <label class="font-black text-amber-950 flex items-center gap-1">
+                                        <i class="fa-solid fa-clipboard-check text-amber-600"></i>
+                                        📝 年度友善農產產量前後期比較（當期對比基期計算）與農務管理附言及揭露事項（同步列入報告，500字以內）：
+                                    </label>
+                                    <span id="f_${farm.id}_yieldNoteCount" class="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${(farm.yieldDisclosureNote || '').length} / 500 字</span>
+                                </div>
+                                <textarea maxlength="500" rows="2" placeholder="請填寫此農場之【A】vs.【B】農務管理費用變動原因、年度友善農產產量前後期比較及誠實揭露事項..." oninput="updateFarmField('${farm.id}', 'yieldDisclosureNote', this.value)" class="clean-num-input w-full border border-amber-400 rounded-lg px-2.5 py-1.5 text-xs font-medium leading-relaxed shadow-inner">${farm.yieldDisclosureNote || ''}</textarea>
                             </div>
                         </div>
 
@@ -1763,8 +2049,8 @@
 
             const syncEmbeddedReportCharts = () => {
                 try {
-                    chartDoughnutDataUrl = dCanvas.toDataURL('image/png', 1.0);
-                    chartBarDataUrl = bCanvas.toDataURL('image/png', 1.0);
+                    chartDoughnutDataUrl = getWordSafeCanvasDataUrl(dCanvas, 560, 390);
+                    chartBarDataUrl = getWordSafeCanvasDataUrl(bCanvas, 560, 390);
                     const repImgD = document.getElementById('reportEmbeddedDoughnutImg');
                     const repImgB = document.getElementById('reportEmbeddedBarImg');
                     if (repImgD && chartDoughnutDataUrl) repImgD.src = chartDoughnutDataUrl;
@@ -1795,10 +2081,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     devicePixelRatio: 2,
-                    animation: {
-                        duration: 200,
-                        onComplete: syncEmbeddedReportCharts
-                    },
+                    animation: false,
                     plugins: {
                         legend: {
                             position: 'bottom',
@@ -1841,10 +2124,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     devicePixelRatio: 2,
-                    animation: {
-                        duration: 200,
-                        onComplete: syncEmbeddedReportCharts
-                    },
+                    animation: false,
                     scales: {
                         x: {
                             ticks: { color: '#0f172a', font: { size: 11, weight: 'bold' } },
@@ -1868,7 +2148,7 @@
                 }
             });
 
-            setTimeout(syncEmbeddedReportCharts, 250);
+            syncEmbeddedReportCharts();
         }
 
         function renderReportAndCards(m) {
@@ -1905,7 +2185,11 @@
 
                 ecoStatsRowsHtml += `
                     <tr>
-                        <td><strong>${farm.name}</strong><br><span style="font-size:10.5px;color:#047857;">面積 ${st.areaHa} ha (${st.landTypeLabel})</span></td>
+                        <td>
+                            <strong>${farm.name}</strong><br>
+                            <span style="font-size:10.5px;color:#047857;">面積 ${st.areaHa} ha (${st.landTypeLabel})</span><br>
+                            <span style="font-size:10px;color:#0f4c3a;background:#ecfdf5;padding:1px 5px;border-radius:4px;">觀察期別：${st.bioBaseLabel} ➔ ${st.bioCurrLabel}</span>
+                        </td>
                         <td class="center-col"><strong>${st.totalHab2025}→${st.totalHab2026}處</strong><br><span style="font-size:10px;color:#64748b;">(當期 ${st.wHab}水/${st.lHab}陸)</span></td>
                         <td class="center-col">${st.sBase} → <strong>${st.sCurr}種</strong><br><span style="font-size:10px;color:#0284c7;">(觀測 ${st.bioPct >= 0 ? '+' : ''}${st.bioPct}%)</span></td>
                         <td>
@@ -1920,14 +2204,26 @@
 
                 costCompareRowsHtml += `
                     <tr>
-                        <td><strong>${farm.name}</strong></td>
-                        <td style="font-size:11px;">除草 $${farm.costA_weed.toLocaleString()} / 資材 $${farm.costA_mat.toLocaleString()}<br>其他 $${farm.costA_other.toLocaleString()} / 棲地 $${farm.costA_hab.toLocaleString()}</td>
-                        <td class="num-col"><strong>$${st.totalCostA.toLocaleString()}</strong></td>
-                        <td style="font-size:11px;">草生 $${farm.costB_weed.toLocaleString()} / 資材 $${farm.costB_mat.toLocaleString()}<br>其他 $${farm.costB_other.toLocaleString()} / 棲地 $${farm.costB_hab.toLocaleString()}</td>
-                        <td class="num-col" style="color:#0f4c3a;"><strong>$${st.totalCostB.toLocaleString()}</strong></td>
+                        <td>
+                            <strong>${farm.name}</strong><br>
+                            <span style="font-size:10.5px;color:#047857;">農產：${farm.crops}</span><br>
+                            <span style="font-size:10px;color:#92400e;background:#fef3c7;padding:1px 5px;border-radius:4px;">管理期別：${st.mgmtBaseLabel} ➔ ${st.mgmtCurrLabel}</span>
+                        </td>
+                        <td style="font-size:11px;">
+                            <strong>【A】${st.mgmtBaseLabel}：$${st.totalCostA.toLocaleString()}</strong><br>
+                            <span style="font-size:10px;color:#475569;">除草 $${farm.costA_weed.toLocaleString()} / 資材 $${farm.costA_mat.toLocaleString()} / 其他 $${farm.costA_other.toLocaleString()} / 棲地 $${farm.costA_hab.toLocaleString()}</span><br>
+                            <strong>【B】${st.mgmtCurrLabel}：$${st.totalCostB.toLocaleString()}</strong><br>
+                            <span style="font-size:10px;color:#0f4c3a;">草生 $${farm.costB_weed.toLocaleString()} / 資材 $${farm.costB_mat.toLocaleString()} / 其他 $${farm.costB_other.toLocaleString()} / 棲地 $${farm.costB_hab.toLocaleString()}</span>
+                        </td>
+                        <td class="center-col" style="font-size:11px;">
+                            ${st.yieldBaseKg.toLocaleString()} kg ➔ <strong>${st.yieldCurrKg.toLocaleString()} kg</strong><br>
+                            <span style="font-size:10.5px;font-weight:bold;color:${st.yieldDeltaKg >= 0 ? '#047857' : '#dc2626'};">(${st.yieldDeltaKg >= 0 ? '+' : ''}${st.yieldDeltaKg} kg / ${st.yieldGrowthPct >= 0 ? '+' : ''}${st.yieldGrowthPct}%)</span><br>
+                            <span style="font-size:10px;color:#64748b;">均價 $${st.cropPrice}/kg｜產值 ${st.yieldValueGain >= 0 ? '+' : ''}$${st.yieldValueGain.toLocaleString()}</span>
+                        </td>
+                        <td style="font-size:11px; color:#334155;">${farm.yieldDisclosureNote || '無附言'}</td>
                         <td class="num-col" style="color:${st.farmGrossMgmt >= 0 ? '#047857' : '#dc2626'};">
                             <strong>$${st.farmGrossMgmt.toLocaleString()}</strong><br>
-                            <span style="font-size:10px;color:#64748b;">([A]-[B]: $${st.costSavingAB.toLocaleString()} / 產值: $${st.yieldValueGain.toLocaleString()})</span>
+                            <span style="font-size:10px;color:#64748b;">([A]-[B]: $${st.costSavingAB.toLocaleString()}<br>產值: $${st.yieldValueGain.toLocaleString()})</span>
                         </td>
                     </tr>
                 `;
@@ -1985,11 +2281,11 @@
                     </p>
 
                     <!-- 4-Card KPI Summary -->
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0;">
+                    <div class="grid grid-cols-4 gap-2.5 my-3.5" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0;">
                         <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #475569; border-radius: 10px; padding: 10px 12px;">
                             <div style="font-size: 11px; color: #64748b; font-weight: 700;">總投入成本 (Input)</div>
                             <div style="font-size: 18px; color: #1e293b; font-weight: 900; margin-top: 2px;">$${m.totalInput.toLocaleString()}</div>
-                            <div style="font-size: 10px; color: #64748b;">培訓 $${m.trainingInput.toLocaleString()} + 棲地 $${(m.habitatGrantInput + m.maintFeeInput).toLocaleString()}</div>
+                            <div style="font-size: 10px; color: #64748b;">培訓 $${m.trainingInput.toLocaleString()} + 棲地 $${(m.habitatGrantInput + m.maintFeeInput).toLocaleString()}${m.otherSocialInput > 0 ? ` + 其他 $${m.otherSocialInput.toLocaleString()}` : ''}</div>
                         </div>
                         <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7; border-radius: 10px; padding: 10px 12px;">
                             <div style="font-size: 11px; color: #0369a1; font-weight: 700;">折減前毛價值 (Gross)</div>
@@ -2038,7 +2334,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>總投入：$${m.totalInput.toLocaleString()}</strong><br>• 專業培訓：$${m.trainingInput.toLocaleString()}<br>• 棲地建置：$${m.habitatGrantInput.toLocaleString()}<br>• 維護輔導：$${m.maintFeeInput.toLocaleString()}</td>
+                                <td><strong>總投入：$${m.totalInput.toLocaleString()}</strong><br>• 專業培訓：$${m.trainingInput.toLocaleString()}<br>• 棲地建置：$${m.habitatGrantInput.toLocaleString()}<br>• 維護輔導：$${m.maintFeeInput.toLocaleString()}${m.otherSocialInput > 0 ? `<br>• 其他社會價值投入：$${m.otherSocialInput.toLocaleString()}` : ''}</td>
                                 <td>• 停用除草劑與草生栽培管理<br>• 水陸域微棲地營造與體感監測<br>• SROI 記帳與生態導覽員培訓<br>• 【A】前期 vs.【B】當期四細項自主記帳</td>
                                 <td>• <strong>${m.sumWaterHab} 處</strong>水域微棲地<br>• <strong>${m.sumLandHab} 處</strong>陸域微棲地<br>• <strong>${m.sumSpeciesCurr} 種</strong>指標保護物種<br>• <strong>${m.sumGuides} 位</strong>合格生態導覽員<br>• <strong>${m.sumRoutes} 條</strong>生態旅遊路線</td>
                                 <td>1. <strong>(S) 社會人力資本：</strong>農友與夥伴獲得生態監測、解說導覽與 SROI 管理職能。<br>2. <strong>(E) 棲地生態資本：</strong>依林業署三大給付上限封頂與生物觀測動態修正之棲地價值。<br>3. <strong>(G) 農務管理資本：</strong>【A】-【B】成本差額與友善農產產量提升淨效益。</td>
@@ -2048,7 +2344,8 @@
 
                     <!-- Step 2 Scope & Team Guidance Note Display in Report -->
                     <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #0f4c3a; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 11.5px; color: #1e293b;">
-                        <strong>📝 【2. 評估範疇、執行期間與團隊指導投入認列附言】：</strong>${m.step2ScopeNote}
+                        <p style="margin-bottom: 4px;"><strong>📝 【2. 評估範疇、執行期間與團隊指導投入認列附言】：</strong>${m.step2ScopeNote}</p>
+                        <p style="margin-bottom: 0; color: #065f46;"><strong>💎 【其他社會價值投入金額與附言說明】：</strong>投入金額 <strong>$${m.otherSocialInput.toLocaleString()} 元</strong>｜說明：${m.otherSocialNote}</p>
                     </div>
 
                     <h2>三、 SROI 財務代理指標、防漂綠折減與完整逐步計算式</h2>
@@ -2109,7 +2406,7 @@
                     <!-- Step-by-Step Formula Verification Box -->
                     <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #0f4c3a; border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-size: 11.5px;">
                         <div style="font-weight: 900; color: #0f4c3a; margin-bottom: 4px;">📐 本次填報數據之 SROI 完整逐步驗算公式：</div>
-                        <p style="margin-bottom: 3px;">• <strong>步驟 1（總投入分母 Input）：</strong>培訓投入 $${m.trainingInput.toLocaleString()} + 微棲地建置補助 $${m.habitatGrantInput.toLocaleString()} + 當期維護輔導 $${m.maintFeeInput.toLocaleString()} ${m.includeCostBInInput ? `+ 農友自籌【B】$${m.sumCostB.toLocaleString()}` : ''} = <strong>$${m.totalInput.toLocaleString()} 元</strong></p>
+                        <p style="margin-bottom: 3px;">• <strong>步驟 1（總投入分母 Input）：</strong>培訓投入 $${m.trainingInput.toLocaleString()} + 微棲地建置補助 $${m.habitatGrantInput.toLocaleString()} + 當期維護輔導 $${m.maintFeeInput.toLocaleString()} ${m.otherSocialInput > 0 ? `+ 其他社會價值投入 $${m.otherSocialInput.toLocaleString()} ` : ''}${m.includeCostBInInput ? `+ 農友自籌【B】$${m.sumCostB.toLocaleString()}` : ''} = <strong>$${m.totalInput.toLocaleString()} 元</strong></p>
                         <p style="margin-bottom: 3px;">• <strong>步驟 2（三大資本折減後淨值 Net）：</strong>(S) 社會淨值 ($${m.grossHuman.toLocaleString()} × ${m.retainHumanPct}% = <strong>$${m.netHuman.toLocaleString()}</strong>) + (E) 環境淨值 ($${m.grossEco.toLocaleString()} × ${m.retainEcoPct}% = <strong>$${m.netEco.toLocaleString()}</strong>) + (G) 農務淨值 (<strong>$${m.netMgmt.toLocaleString()}</strong>) = <strong>$${m.totalNet.toLocaleString()} 元</strong></p>
                         <p style="margin-bottom: 0;">• <strong>步驟 3（核定 SROI 比率）：</strong>總淨影響力價值 $${m.totalNet.toLocaleString()} ÷ 總投入成本 $${m.totalInput.toLocaleString()} = <strong>1 : ${m.sroiRatio}</strong></p>
                     </div>
@@ -2138,26 +2435,24 @@
                         <tbody>${ecoStatsRowsHtml}</tbody>
                     </table>
 
-                    <h3>🚜 各農場【A】前期 vs.【B】當期友善生產管理費用四細項對照表：</h3>
+                    <h3>🚜 各農場【A】前期 vs.【B】當期友善生產管理費用、年度友善農產產量前後期比較與揭露事項明細表：</h3>
                     <p style="font-size: 11.5px; color: #064e3b; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 7px 10px; border-radius: 6px; margin-bottom: 8px;">
-                        💡 <strong>前後期管理費用比較 (【A】-【B】) 與生態效益連動說明：</strong>當期友善管理投入【B】較前期【A】減少（【A】&gt;【B】），代表果園草生植被與天敵生態系趨於穩定，人工除草與防治資材需求下降、<strong>生態效益逐漸提升</strong>；若轉型初期【B】&gt;【A】則屬微棲地營造與土壤改良之必要前期自籌投資。本系統之<strong>生態效益與管理效益皆以「當期對比對照基期」進行計算</strong>。
+                        💡 <strong>前後期管理費用比較 (【A】-【B】) 與生態效益連動說明：</strong>當期友善管理投入【B】較前期【A】減少（【A】&gt;【B】），代表果園草生植被與天敵生態系趨於穩定，人工除草與防治資材需求下降、<strong>生態效益逐漸提升</strong>；若轉型初期【B】&gt;【A】則屬微棲地營造與土壤改良之必要前期自籌投資。本系統之<strong>生態效益、管理效益與年度友善農產產量皆以「當期對比對照基期」進行計算</strong>，並同步揭露各農場之管理與產量附言。
                     </p>
                     <table>
                         <colgroup>
-                            <col style="width: 14%;">
-                            <col style="width: 24%;">
-                            <col style="width: 12%;">
-                            <col style="width: 24%;">
-                            <col style="width: 12%;">
-                            <col style="width: 14%;">
+                            <col style="width: 15%;">
+                            <col style="width: 25%;">
+                            <col style="width: 16%;">
+                            <col style="width: 29%;">
+                            <col style="width: 15%;">
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>農場名稱</th>
-                                <th>【A】前期管理細項 (除草/資材/其他/棲地)</th>
-                                <th class="num-col">【A】前期總費用</th>
-                                <th>【B】當期友善細項 (草生/資材/其他/棲地)</th>
-                                <th class="num-col">【B】當期總費用</th>
+                                <th>農場與管理基期設定</th>
+                                <th>【A】基期 vs.【B】當期友善管理四細項對照</th>
+                                <th class="center-col">年度友善農產產量前後期比較</th>
+                                <th>年度友善農產產量前後期比較與農務管理附言及揭露事項</th>
                                 <th class="num-col">農務管理毛效益</th>
                             </tr>
                         </thead>
@@ -2224,21 +2519,64 @@
                                 <td style="text-align: center; vertical-align: top; border: 1px solid #cbd5e1; padding: 12px; background-color: #ffffff;">
                                     <div style="font-weight: 900; color: #0f4c3a; margin-bottom: 3px; font-size: 13px;">圖 1：淨影響力價值結構佔比 (Net Impact)</div>
                                     <div style="font-size: 10.5px; color: #475569; margin-bottom: 6px;">三大資本經無謂影響與歸因折減後之實質貢獻</div>
-                                    <img id="reportEmbeddedDoughnutImg" src="${chartDoughnutDataUrl || ''}" alt="圖 1：淨影響力價值結構佔比" width="300" style="width: 100%; max-width: 300px; height: auto; margin: 0 auto; display: block; background-color: #ffffff;">
-                                    <div style="margin-top: 8px; font-size: 11px; text-align: left; background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                                        <span style="color: #059669; font-weight: 800;">■ (S) 社會人力：</span>$${m.netHuman.toLocaleString()} 元 ｜
-                                        <span style="color: #0284c7; font-weight: 800;">■ (E) 棲地生態：</span>$${m.netEco.toLocaleString()} 元 ｜
-                                        <span style="color: #d97706; font-weight: 800;">■ (G) 農務治理：</span>$${m.netMgmt.toLocaleString()} 元
-                                    </div>
+                                    <img id="reportEmbeddedDoughnutImg" src="${chartDoughnutDataUrl || ''}" alt="圖 1：淨影響力價值結構佔比" width="275" height="192" style="width: 275px; height: 192px; margin: 0 auto; display: block; background-color: #ffffff; border: 0;">
+                                    <!-- Word-Native High-Contrast Visual Progress Bars (100% Guaranteed in MS Word) -->
+                                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10.5px; border: 1px solid #e2e8f0;">
+                                        <tr style="background-color: #f8fafc;">
+                                            <td style="padding: 4px 6px; width: 36%; font-weight: bold; color: #059669; border: 1px solid #e2e8f0;">■ (S) 社會人力</td>
+                                            <td style="padding: 4px 6px; width: 38%; border: 1px solid #e2e8f0;">
+                                                <table style="width: ${Math.max(4, Math.min(100, m.totalNet > 0 ? Math.round((Math.max(0, m.netHuman) / m.totalNet) * 100) : 0))}%; border-collapse: collapse;"><tr><td style="background-color: #059669; height: 10px; line-height: 10px; font-size: 2px;">&nbsp;</td></tr></table>
+                                            </td>
+                                            <td style="padding: 4px 6px; width: 26%; text-align: right; font-weight: bold; border: 1px solid #e2e8f0;">$${m.netHuman.toLocaleString()} (${m.totalNet > 0 ? Math.round((Math.max(0, m.netHuman) / m.totalNet) * 100) : 0}%)</td>
+                                        </tr>
+                                        <tr style="background-color: #ffffff;">
+                                            <td style="padding: 4px 6px; font-weight: bold; color: #0284c7; border: 1px solid #e2e8f0;">■ (E) 棲地生態</td>
+                                            <td style="padding: 4px 6px; border: 1px solid #e2e8f0;">
+                                                <table style="width: ${Math.max(4, Math.min(100, m.totalNet > 0 ? Math.round((Math.max(0, m.netEco) / m.totalNet) * 100) : 0))}%; border-collapse: collapse;"><tr><td style="background-color: #0284c7; height: 10px; line-height: 10px; font-size: 2px;">&nbsp;</td></tr></table>
+                                            </td>
+                                            <td style="padding: 4px 6px; text-align: right; font-weight: bold; border: 1px solid #e2e8f0;">$${m.netEco.toLocaleString()} (${m.totalNet > 0 ? Math.round((Math.max(0, m.netEco) / m.totalNet) * 100) : 0}%)</td>
+                                        </tr>
+                                        <tr style="background-color: #f8fafc;">
+                                            <td style="padding: 4px 6px; font-weight: bold; color: #d97706; border: 1px solid #e2e8f0;">■ (G) 農務治理</td>
+                                            <td style="padding: 4px 6px; border: 1px solid #e2e8f0;">
+                                                <table style="width: ${Math.max(4, Math.min(100, m.totalNet > 0 ? Math.round((Math.max(0, m.netMgmt) / m.totalNet) * 100) : 0))}%; border-collapse: collapse;"><tr><td style="background-color: #d97706; height: 10px; line-height: 10px; font-size: 2px;">&nbsp;</td></tr></table>
+                                            </td>
+                                            <td style="padding: 4px 6px; text-align: right; font-weight: bold; border: 1px solid #e2e8f0;">$${m.netMgmt.toLocaleString()} (${m.totalNet > 0 ? Math.round((Math.max(0, m.netMgmt) / m.totalNet) * 100) : 0}%)</td>
+                                        </tr>
+                                    </table>
                                 </td>
                                 <td style="text-align: center; vertical-align: top; border: 1px solid #cbd5e1; padding: 12px; background-color: #ffffff;">
                                     <div style="font-weight: 900; color: #0f4c3a; margin-bottom: 3px; font-size: 13px;">圖 2：防漂綠折減前後對比 (Gross vs. Net)</div>
                                     <div style="font-size: 10.5px; color: #475569; margin-bottom: 6px;">天藍色為折減前毛價值 (Gross) vs. 深山綠為折減後淨值 (Net)</div>
-                                    <img id="reportEmbeddedBarImg" src="${chartBarDataUrl || ''}" alt="圖 2：防漂綠折減前後對比" width="300" style="width: 100%; max-width: 300px; height: auto; margin: 0 auto; display: block; background-color: #ffffff;">
-                                    <div style="margin-top: 8px; font-size: 11px; text-align: left; background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                                        <span style="color: #0284c7; font-weight: 800;">■ 折減前總毛值 (Gross)：</span>$${m.totalGross.toLocaleString()} 元<br>
-                                        <span style="color: #0f4c3a; font-weight: 800;">■ 防漂綠折減後總淨值 (Net)：</span>$${m.totalNet.toLocaleString()} 元
-                                    </div>
+                                    <img id="reportEmbeddedBarImg" src="${chartBarDataUrl || ''}" alt="圖 2：防漂綠折減前後對比" width="275" height="192" style="width: 275px; height: 192px; margin: 0 auto; display: block; background-color: #ffffff; border: 0;">
+                                    <!-- Word-Native High-Contrast Gross vs. Net Comparison Table -->
+                                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10.5px; border: 1px solid #e2e8f0;">
+                                        <tr style="background-color: #f0f9ff;">
+                                            <td style="padding: 4px 6px; font-weight: bold; color: #0369a1; border: 1px solid #bae6fd;">構面</td>
+                                            <td style="padding: 4px 6px; text-align: right; font-weight: bold; color: #0284c7; border: 1px solid #bae6fd;">■ 折減前毛值 (Gross)</td>
+                                            <td style="padding: 4px 6px; text-align: right; font-weight: bold; color: #0f4c3a; border: 1px solid #bae6fd;">■ 折減後淨值 (Net)</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 3px 6px; font-weight: bold; border: 1px solid #e2e8f0;">(S) 社會人力 (${m.retainHumanPct}%)</td>
+                                            <td style="padding: 3px 6px; text-align: right; color: #0284c7; font-weight: bold; border: 1px solid #e2e8f0;">$${m.grossHuman.toLocaleString()}</td>
+                                            <td style="padding: 3px 6px; text-align: right; color: #0f4c3a; font-weight: bold; border: 1px solid #e2e8f0;">$${m.netHuman.toLocaleString()}</td>
+                                        </tr>
+                                        <tr style="background-color: #f8fafc;">
+                                            <td style="padding: 3px 6px; font-weight: bold; border: 1px solid #e2e8f0;">(E) 棲地生態 (${m.retainEcoPct}%)</td>
+                                            <td style="padding: 3px 6px; text-align: right; color: #0284c7; font-weight: bold; border: 1px solid #e2e8f0;">$${m.grossEco.toLocaleString()}</td>
+                                            <td style="padding: 3px 6px; text-align: right; color: #0f4c3a; font-weight: bold; border: 1px solid #e2e8f0;">$${m.netEco.toLocaleString()}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 3px 6px; font-weight: bold; border: 1px solid #e2e8f0;">(G) 農務治理 (${m.retainMgmtPct}%)</td>
+                                            <td style="padding: 3px 6px; text-align: right; color: #0284c7; font-weight: bold; border: 1px solid #e2e8f0;">$${m.grossMgmt.toLocaleString()}</td>
+                                            <td style="padding: 3px 6px; text-align: right; color: #0f4c3a; font-weight: bold; border: 1px solid #e2e8f0;">$${m.netMgmt.toLocaleString()}</td>
+                                        </tr>
+                                        <tr style="background-color: #ecfdf5; font-weight: bold;">
+                                            <td style="padding: 4px 6px; color: #0f4c3a; border: 1px solid #a7f3d0;">合計總值</td>
+                                            <td style="padding: 4px 6px; text-align: right; color: #0284c7; border: 1px solid #a7f3d0;">$${m.totalGross.toLocaleString()}</td>
+                                            <td style="padding: 4px 6px; text-align: right; color: #0f4c3a; border: 1px solid #a7f3d0;">$${m.totalNet.toLocaleString()}</td>
+                                        </tr>
+                                    </table>
                                 </td>
                             </tr>
                         </tbody>
@@ -2417,8 +2755,8 @@
             renderTopInteractiveDashboard();
             renderFarmsList();
             const m = calculateSroiMetrics();
-            renderReportAndCards(m);
             updateCharts(m);
+            renderReportAndCards(m);
         }
 
         // =========================================================================
@@ -2467,22 +2805,37 @@
         function populateSelectors() {
             const teamSel = document.getElementById('activeTeamSelect');
             if (teamSel) {
-                teamSel.innerHTML = teamsData.map(t => `<option value="${t.id}" ${t.id === activeTeamId ? 'selected' : ''}>${t.name}</option>`).join('');
+                teamSel.innerHTML = teamsData.map(t => {
+                    const count = farmsData.filter(f => f.teamId === t.id).length;
+                    return `<option value="${t.id}" ${t.id === activeTeamId ? 'selected' : ''}>${t.name} (${count}處農場｜指導：${t.advisor || '臺大。山林。學院 2.0'})</option>`;
+                }).join('');
             }
             const activeTeam = teamsData.find(t => t.id === activeTeamId) || teamsData[0];
             if (activeTeam) {
                 const advInput = document.getElementById('teamAdvisorInput');
                 const pInput = document.getElementById('teamExecPeriodInput');
+                const bioBaseInput = document.getElementById('teamBioBasePeriodInput');
+                const bioCurrInput = document.getElementById('teamBioCurrPeriodInput');
+                const mgmtBaseInput = document.getElementById('teamMgmtBasePeriodInput');
+                const mgmtCurrInput = document.getElementById('teamMgmtCurrPeriodInput');
                 const outInput = document.getElementById('teamOutputsDescInput');
                 const tInput = document.getElementById('teamTrainingInput');
                 const hInput = document.getElementById('teamHabitatGrantInput');
                 const mInput = document.getElementById('teamMaintFeeInput');
+                const oCostInput = document.getElementById('teamOtherSocialCostInput');
+                const oNoteInput = document.getElementById('teamOtherSocialNoteInput');
                 if (advInput) advInput.value = activeTeam.advisor || '臺大。山林。學院 2.0';
                 if (pInput) pInput.value = activeTeam.execPeriod || '2025/01/01 ~ 2026/10/31';
+                if (bioBaseInput) bioBaseInput.value = activeTeam.bioBasePeriod || '2025基期';
+                if (bioCurrInput) bioCurrInput.value = activeTeam.bioCurrPeriod || '2026當期';
+                if (mgmtBaseInput) mgmtBaseInput.value = activeTeam.mgmtBasePeriod || '2025前期';
+                if (mgmtCurrInput) mgmtCurrInput.value = activeTeam.mgmtCurrPeriod || '2026當期';
                 if (outInput) outInput.value = activeTeam.outputsDesc || '微棲地盤點營造、SROI 自主記帳培力、里山生態導覽員認證與走讀路線串聯';
                 if (tInput) tInput.value = activeTeam.trainingCost;
                 if (hInput) hInput.value = activeTeam.habitatGrantPerFarm;
                 if (mInput) mInput.value = activeTeam.maintFeePerFarm;
+                if (oCostInput) oCostInput.value = activeTeam.otherSocialCost || 0;
+                if (oNoteInput) oNoteInput.value = activeTeam.otherSocialNote || '無額外其他社會價值投入（如有企業志工服務、設備捐贈、食農教材開發或通路推廣資源，請填寫金額與說明）';
             }
 
             const teamFarms = farmsData.filter(f => f.teamId === activeTeamId);
@@ -2511,12 +2864,32 @@
         function updateActiveTeamFromInputs() {
             const activeTeam = teamsData.find(t => t.id === activeTeamId);
             if (!activeTeam) return;
+            const prevBioBase = activeTeam.bioBasePeriod;
+            const prevBioCurr = activeTeam.bioCurrPeriod;
+            const prevMgmtBase = activeTeam.mgmtBasePeriod;
+            const prevMgmtCurr = activeTeam.mgmtCurrPeriod;
+
             activeTeam.advisor = document.getElementById('teamAdvisorInput')?.value || '臺大。山林。學院 2.0';
             activeTeam.execPeriod = document.getElementById('teamExecPeriodInput')?.value || '2025/01/01 ~ 2026/10/31';
+            activeTeam.bioBasePeriod = document.getElementById('teamBioBasePeriodInput')?.value || '2025基期';
+            activeTeam.bioCurrPeriod = document.getElementById('teamBioCurrPeriodInput')?.value || '2026當期';
+            activeTeam.mgmtBasePeriod = document.getElementById('teamMgmtBasePeriodInput')?.value || '2025前期';
+            activeTeam.mgmtCurrPeriod = document.getElementById('teamMgmtCurrPeriodInput')?.value || '2026當期';
             activeTeam.outputsDesc = document.getElementById('teamOutputsDescInput')?.value || '';
             activeTeam.trainingCost = parseFloat(document.getElementById('teamTrainingInput')?.value) || 0;
             activeTeam.habitatGrantPerFarm = parseFloat(document.getElementById('teamHabitatGrantInput')?.value) || 0;
             activeTeam.maintFeePerFarm = parseFloat(document.getElementById('teamMaintFeeInput')?.value) || 0;
+            activeTeam.otherSocialCost = parseFloat(document.getElementById('teamOtherSocialCostInput')?.value) || 0;
+            activeTeam.otherSocialNote = document.getElementById('teamOtherSocialNoteInput')?.value || '';
+
+            // Sync team period labels to member farms that were using the team's previous default labels
+            farmsData.filter(f => f.teamId === activeTeam.id).forEach(f => {
+                if (!f.bioBasePeriod || f.bioBasePeriod === prevBioBase) f.bioBasePeriod = activeTeam.bioBasePeriod;
+                if (!f.bioCurrPeriod || f.bioCurrPeriod === prevBioCurr) f.bioCurrPeriod = activeTeam.bioCurrPeriod;
+                if (!f.mgmtBasePeriod || f.mgmtBasePeriod === prevMgmtBase) f.mgmtBasePeriod = activeTeam.mgmtBasePeriod;
+                if (!f.mgmtCurrPeriod || f.mgmtCurrPeriod === prevMgmtCurr) f.mgmtCurrPeriod = activeTeam.mgmtCurrPeriod;
+            });
+
             markUncommittedChanges();
             recalculateAll();
         }
@@ -2524,7 +2897,8 @@
         function updateFarmField(farmId, field, val) {
             const farm = farmsData.find(f => f.id === farmId);
             if (!farm) return;
-            if (field === 'ecoObsNote' || field === 'landType' || field === 'name' || field === 'crops') {
+            const stringFields = ['ecoObsNote', 'yieldDisclosureNote', 'landType', 'name', 'crops', 'bioBasePeriod', 'bioCurrPeriod', 'mgmtBasePeriod', 'mgmtCurrPeriod'];
+            if (stringFields.includes(field)) {
                 farm[field] = val;
             } else {
                 farm[field] = parseFloat(val) || 0;
@@ -2534,8 +2908,8 @@
             syncFarmCardLiveLabels(farmId);
             renderTopInteractiveDashboard();
             const m = calculateSroiMetrics();
-            renderReportAndCards(m);
             updateCharts(m);
+            renderReportAndCards(m);
         }
 
         function updateFarmCheckbox(farmId, field, checked) {
@@ -2546,8 +2920,8 @@
             syncFarmCardLiveLabels(farmId);
             renderTopInteractiveDashboard();
             const m = calculateSroiMetrics();
-            renderReportAndCards(m);
             updateCharts(m);
+            renderReportAndCards(m);
         }
 
         function deleteFarm(farmId) {
@@ -2598,14 +2972,16 @@
             if (!payload) return;
             currentMode = payload.currentMode || '2026';
             reportScope = payload.reportScope || 'team';
-            activeTeamId = payload.activeTeamId || 'team_shuili_1';
-            selectedSingleFarmId = payload.selectedSingleFarmId || 'farm_1';
             if (Array.isArray(payload.teamsData) && payload.teamsData.length > 0) {
-                teamsData = JSON.parse(JSON.stringify(payload.teamsData));
+                teamsData = payload.teamsData.map((t, idx) => normalizeTeamObject(t, idx));
             }
             if (Array.isArray(payload.farmsData) && payload.farmsData.length > 0) {
                 farmsData = payload.farmsData.map((f, idx) => normalizeFarmObject(f, idx));
             }
+            activeTeamId = (payload.activeTeamId && teamsData.some(t => t.id === payload.activeTeamId))
+                ? payload.activeTeamId
+                : teamsData[0].id;
+            selectedSingleFarmId = payload.selectedSingleFarmId || 'farm_1';
 
             const sviEl = document.getElementById('sviAssuranceModeSelect');
             if (sviEl && payload.sviAssuranceMode) sviEl.value = payload.sviAssuranceMode;
@@ -2715,6 +3091,8 @@
             document.getElementById('modalTeamTraining').value = mode === 'add' ? 70000 : activeTeam.trainingCost;
             document.getElementById('modalTeamHabitatGrant').value = mode === 'add' ? 10000 : activeTeam.habitatGrantPerFarm;
             document.getElementById('modalTeamMaintFee').value = mode === 'add' ? 2000 : activeTeam.maintFeePerFarm;
+            document.getElementById('modalTeamOtherSocialCost').value = mode === 'add' ? 0 : (activeTeam.otherSocialCost || 0);
+            document.getElementById('modalTeamOtherSocialNote').value = mode === 'add' ? '無額外其他社會價值投入' : (activeTeam.otherSocialNote || '');
             document.getElementById('modalTeamPassword').value = mode === 'add' ? '545366' : (activeTeam.password || '545366');
             document.getElementById('modalTeamVerifyPwd').value = '';
             document.getElementById('modalTeamPwdError').classList.add('hidden');
@@ -2747,32 +3125,49 @@
                 activeTeam.trainingCost = parseFloat(document.getElementById('modalTeamTraining').value) || 0;
                 activeTeam.habitatGrantPerFarm = parseFloat(document.getElementById('modalTeamHabitatGrant').value) || 0;
                 activeTeam.maintFeePerFarm = parseFloat(document.getElementById('modalTeamMaintFee').value) || 0;
+                activeTeam.otherSocialCost = parseFloat(document.getElementById('modalTeamOtherSocialCost').value) || 0;
+                activeTeam.otherSocialNote = document.getElementById('modalTeamOtherSocialNote').value.trim() || '無額外其他社會價值投入';
                 activeTeam.password = document.getElementById('modalTeamPassword').value.trim() || '545366';
             } else {
                 const newTeamId = 'team_' + Date.now();
-                teamsData.push({
+                const newTeamObj = normalizeTeamObject({
                     id: newTeamId,
                     name,
-                    advisor: document.getElementById('modalTeamAdvisor').value.trim(),
-                    execPeriod: document.getElementById('modalTeamPeriod').value.trim(),
+                    advisor: document.getElementById('modalTeamAdvisor').value.trim() || '臺大。山林。學院 2.0',
+                    execPeriod: document.getElementById('modalTeamPeriod').value.trim() || '2025/01/01 ~ 2026/10/31',
+                    bioBasePeriod: '2025基期',
+                    bioCurrPeriod: '2026當期',
+                    mgmtBasePeriod: '2025前期',
+                    mgmtCurrPeriod: '2026當期',
                     trainingCost: parseFloat(document.getElementById('modalTeamTraining').value) || 70000,
                     habitatGrantPerFarm: parseFloat(document.getElementById('modalTeamHabitatGrant').value) || 10000,
                     maintFeePerFarm: parseFloat(document.getElementById('modalTeamMaintFee').value) || 2000,
+                    otherSocialCost: parseFloat(document.getElementById('modalTeamOtherSocialCost').value) || 0,
+                    otherSocialNote: document.getElementById('modalTeamOtherSocialNote').value.trim() || '無額外其他社會價值投入',
                     password: document.getElementById('modalTeamPassword').value.trim() || '545366'
-                });
-                farmsData.push({
+                }, teamsData.length);
+                teamsData.push(newTeamObj);
+                expandedTeamMap[newTeamId] = true;
+
+                const newFarmId = 'farm_' + Date.now();
+                farmsData.push(normalizeFarmObject({
                     ...JSON.parse(JSON.stringify(DEFAULT_FARMS[0])),
-                    id: 'farm_' + Date.now(),
+                    id: newFarmId,
                     teamId: newTeamId,
-                    name: name + '示範農場'
-                });
+                    name: name + '示範農場',
+                    bioBasePeriod: newTeamObj.bioBasePeriod,
+                    bioCurrPeriod: newTeamObj.bioCurrPeriod,
+                    mgmtBasePeriod: newTeamObj.mgmtBasePeriod,
+                    mgmtCurrPeriod: newTeamObj.mgmtCurrPeriod
+                }, farmsData.length));
                 activeTeamId = newTeamId;
+                selectedSingleFarmId = newFarmId;
             }
             populateSelectors();
             saveCommittedWorkspaceState();
             recalculateAll();
             closeTeamModal();
-            showToast('團隊設定已儲存並寫入存檔！');
+            showToast('團隊設定已儲存並寫入存檔！舊團隊與新團隊皆已並列於頂部看板。');
         }
 
         // Farm Modal
@@ -2780,12 +3175,24 @@
             farmModalMode = mode;
             editingFarmId = farmId;
             const farm = farmId ? farmsData.find(f => f.id === farmId) : null;
+            const activeTeam = teamsData.find(t => t.id === (farm ? farm.teamId : activeTeamId)) || teamsData[0];
+
+            const teamSel = document.getElementById('modalFarmTeamId');
+            if (teamSel) {
+                teamSel.innerHTML = teamsData.map(t => `<option value="${t.id}" ${t.id === activeTeam.id ? 'selected' : ''}>${t.name} (指導：${t.advisor})</option>`).join('');
+            }
+
             document.getElementById('farmModalTitle').innerText = mode === 'add' ? '新增合作農場' : `編輯農場：${farm?.name || ''}`;
             document.getElementById('modalFarmName').value = farm ? farm.name : '';
             document.getElementById('modalFarmCrops').value = farm ? farm.crops : '';
             document.getElementById('modalFarmAreaHa').value = farm ? farm.areaHa : 1.0;
             document.getElementById('modalFarmLandType').value = farm ? farm.landType : 'terrace';
+            document.getElementById('modalFarmBioBase').value = farm ? (farm.bioBasePeriod || '2025基期') : (activeTeam.bioBasePeriod || '2025基期');
+            document.getElementById('modalFarmBioCurr').value = farm ? (farm.bioCurrPeriod || '2026當期') : (activeTeam.bioCurrPeriod || '2026當期');
+            document.getElementById('modalFarmMgmtBase').value = farm ? (farm.mgmtBasePeriod || '2025前期') : (activeTeam.mgmtBasePeriod || '2025前期');
+            document.getElementById('modalFarmMgmtCurr').value = farm ? (farm.mgmtCurrPeriod || '2026當期') : (activeTeam.mgmtCurrPeriod || '2026當期');
             document.getElementById('modalFarmEcoNote').value = farm ? (farm.ecoObsNote || '') : '';
+            document.getElementById('modalFarmYieldNote').value = farm ? (farm.yieldDisclosureNote || '') : '';
             document.getElementById('modalFarmPassword').value = farm ? (farm.password || '545366') : '545366';
             document.getElementById('modalFarmVerifyPwd').value = '';
             document.getElementById('modalFarmPwdError').classList.add('hidden');
@@ -2805,6 +3212,7 @@
         function saveFarmModal() {
             const name = document.getElementById('modalFarmName').value.trim();
             const crops = document.getElementById('modalFarmCrops').value.trim();
+            const targetTeamId = document.getElementById('modalFarmTeamId')?.value || activeTeamId;
             if (!name || !crops) return;
 
             if (farmModalMode === 'edit' && editingFarmId) {
@@ -2814,25 +3222,37 @@
                     document.getElementById('modalFarmPwdError').classList.remove('hidden');
                     return;
                 }
+                farm.teamId = targetTeamId;
                 farm.name = name;
                 farm.crops = crops;
                 farm.areaHa = parseFloat(document.getElementById('modalFarmAreaHa').value) || 1.0;
                 farm.landType = document.getElementById('modalFarmLandType').value;
+                farm.bioBasePeriod = document.getElementById('modalFarmBioBase').value.trim() || '2025基期';
+                farm.bioCurrPeriod = document.getElementById('modalFarmBioCurr').value.trim() || '2026當期';
+                farm.mgmtBasePeriod = document.getElementById('modalFarmMgmtBase').value.trim() || '2025前期';
+                farm.mgmtCurrPeriod = document.getElementById('modalFarmMgmtCurr').value.trim() || '2026當期';
                 farm.ecoObsNote = document.getElementById('modalFarmEcoNote').value.trim() || farm.ecoObsNote;
+                farm.yieldDisclosureNote = document.getElementById('modalFarmYieldNote').value.trim() || farm.yieldDisclosureNote;
                 farm.password = document.getElementById('modalFarmPassword').value.trim() || '545366';
             } else {
-                const newFarm = {
+                const newFarm = normalizeFarmObject({
                     ...JSON.parse(JSON.stringify(DEFAULT_FARMS[0])),
                     id: 'farm_' + Date.now(),
-                    teamId: activeTeamId,
+                    teamId: targetTeamId,
                     name,
                     crops,
                     areaHa: parseFloat(document.getElementById('modalFarmAreaHa').value) || 1.0,
                     landType: document.getElementById('modalFarmLandType').value,
+                    bioBasePeriod: document.getElementById('modalFarmBioBase').value.trim() || '2025基期',
+                    bioCurrPeriod: document.getElementById('modalFarmBioCurr').value.trim() || '2026當期',
+                    mgmtBasePeriod: document.getElementById('modalFarmMgmtBase').value.trim() || '2025前期',
+                    mgmtCurrPeriod: document.getElementById('modalFarmMgmtCurr').value.trim() || '2026當期',
                     ecoObsNote: document.getElementById('modalFarmEcoNote').value.trim() || DEFAULT_FARMS[0].ecoObsNote,
+                    yieldDisclosureNote: document.getElementById('modalFarmYieldNote').value.trim() || DEFAULT_FARMS[0].yieldDisclosureNote,
                     password: document.getElementById('modalFarmPassword').value.trim() || '545366'
-                };
+                }, farmsData.length);
                 farmsData.push(newFarm);
+                activeTeamId = targetTeamId;
                 selectedSingleFarmId = newFarm.id;
             }
             populateSelectors();
@@ -2992,41 +3412,126 @@
         function exportWord() {
             const dCanvas = document.getElementById('mainDoughnutChart');
             const bCanvas = document.getElementById('grossNetBarChart');
-            if (dCanvas) chartDoughnutDataUrl = dCanvas.toDataURL('image/png', 1.0);
-            if (bCanvas) chartBarDataUrl = bCanvas.toDataURL('image/png', 1.0);
+            if (dCanvas) chartDoughnutDataUrl = getWordSafeCanvasDataUrl(dCanvas, 560, 390);
+            if (bCanvas) chartBarDataUrl = getWordSafeCanvasDataUrl(bCanvas, 560, 390);
+
             const repImgD = document.getElementById('reportEmbeddedDoughnutImg');
             const repImgB = document.getElementById('reportEmbeddedBarImg');
             if (repImgD && chartDoughnutDataUrl) repImgD.src = chartDoughnutDataUrl;
             if (repImgB && chartBarDataUrl) repImgB.src = chartBarDataUrl;
 
-            const repHtml = document.getElementById('reportPreviewContainer')?.innerHTML || '';
-            const fullDoc = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head>
-                    <meta charset="utf-8">
-                    <title>水里里山生態廊道 SROI 報告書</title>
-                    <style>
-                        body { font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; color: #1e293b; line-height: 1.6; background-color: #ffffff; }
-                        h1 { font-size: 20pt; color: #0f4c3a; margin-bottom: 6pt; }
-                        h2 { font-size: 14pt; color: #0f4c3a; border-bottom: 2px solid #10b981; padding-bottom: 4pt; margin-top: 16pt; }
-                        h3 { font-size: 11.5pt; color: #0f4c3a; margin-top: 12pt; }
-                        p, li { font-size: 10pt; }
-                        table { width: 100%; border-collapse: collapse; margin: 10pt 0; font-size: 9.5pt; }
-                        th, td { border: 1px solid #94a3b8; padding: 6pt 8pt; text-align: left; }
-                        th { background-color: #ecfdf5; color: #0f4c3a; font-weight: bold; }
-                        .num-col { text-align: right; }
-                        .center-col { text-align: center; }
-                    </style>
-                </head>
-                <body>${repHtml}</body>
-                </html>
-            `;
-            const blob = new Blob(['\ufeff', fullDoc], { type: 'application/msword' });
+            // Build MHTML (Multipart HTML Archive) so desktop Microsoft Word renders embedded images natively without blocking data: URIs
+            const cloneContainer = document.createElement('div');
+            cloneContainer.innerHTML = document.getElementById('reportPreviewContainer')?.innerHTML || '';
+
+            const imgParts = [];
+            const imgs = cloneContainer.querySelectorAll('img');
+            imgs.forEach((imgEl, index) => {
+                const src = imgEl.getAttribute('src') || '';
+                if (src.startsWith('data:image/')) {
+                    const match = src.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+                    if (match) {
+                        const mimeType = match[1];
+                        const base64Data = match[2];
+                        const ext = mimeType.includes('jpeg') ? 'jpg' : 'png';
+                        const fileName = `chart_image_${index + 1}.${ext}`;
+                        const contentLocation = `http://sroi.satoyama.local/${fileName}`;
+                        imgEl.setAttribute('src', contentLocation);
+                        imgEl.setAttribute('width', '275');
+                        imgEl.setAttribute('height', '192');
+                        imgParts.push({
+                            mimeType,
+                            contentLocation,
+                            base64Data: base64Data.replace(/(.{76})/g, '$1\r\n')
+                        });
+                    }
+                }
+            });
+
+            const boundary = '----=_NextPart_ShuiliSatoyamaSROI_2026';
+            let mhtml = `MIME-Version: 1.0\r\n`;
+            mhtml += `Content-Type: multipart/related; boundary="${boundary}"\r\n\r\n`;
+            mhtml += `--${boundary}\r\n`;
+            mhtml += `Content-Type: text/html; charset="utf-8"\r\n`;
+            mhtml += `Content-Transfer-Encoding: quoted-printable\r\n`;
+            mhtml += `Content-Location: http://sroi.satoyama.local/document.html\r\n\r\n`;
+
+            const htmlDoc = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+    <meta charset="utf-8">
+    <title>水里里山生態廊道 SROI 報告書</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+        @page { size: A4 portrait; margin: 1.5cm; }
+        body { font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; color: #1e293b; line-height: 1.6; background-color: #ffffff; font-size: 10pt; }
+        h1 { font-size: 18pt; color: #0f4c3a; margin-bottom: 6pt; font-weight: bold; }
+        h2 { font-size: 13.5pt; color: #0f4c3a; border-bottom: 2pt solid #10b981; padding-bottom: 4pt; margin-top: 14pt; margin-bottom: 8pt; font-weight: bold; }
+        h3 { font-size: 11pt; color: #0f4c3a; margin-top: 10pt; margin-bottom: 4pt; font-weight: bold; }
+        p, li { font-size: 9.5pt; margin-bottom: 6pt; }
+        table { width: 100%; border-collapse: collapse; margin: 8pt 0; font-size: 9pt; }
+        th, td { border: 1pt solid #94a3b8; padding: 5pt 7pt; text-align: left; vertical-align: middle; }
+        th { background-color: #ecfdf5; color: #0f4c3a; font-weight: bold; }
+        .num-col { text-align: right; }
+        .center-col { text-align: center; }
+        img { display: block; margin: 0 auto; }
+    </style>
+</head>
+<body>
+${cloneContainer.innerHTML}
+</body>
+</html>`;
+
+            // Encode HTML as UTF-8 Quoted-Printable for MHTML compliance in MS Word
+            const utf8Bytes = new TextEncoder().encode(htmlDoc);
+            let qpHtml = '';
+            let lineLen = 0;
+            for (let i = 0; i < utf8Bytes.length; i++) {
+                const b = utf8Bytes[i];
+                let chunk = '';
+                if (b === 13 || b === 10) {
+                    qpHtml += String.fromCharCode(b);
+                    lineLen = 0;
+                    continue;
+                } else if ((b >= 33 && b <= 126 && b !== 61) || b === 9 || b === 32) {
+                    chunk = String.fromCharCode(b);
+                } else {
+                    chunk = '=' + b.toString(16).toUpperCase().padStart(2, '0');
+                }
+                if (lineLen + chunk.length > 73) {
+                    qpHtml += '=\r\n';
+                    lineLen = 0;
+                }
+                qpHtml += chunk;
+                lineLen += chunk.length;
+            }
+
+            mhtml += qpHtml + `\r\n\r\n`;
+
+            imgParts.forEach(part => {
+                mhtml += `--${boundary}\r\n`;
+                mhtml += `Content-Type: ${part.mimeType}\r\n`;
+                mhtml += `Content-Transfer-Encoding: base64\r\n`;
+                mhtml += `Content-Location: ${part.contentLocation}\r\n\r\n`;
+                mhtml += `${part.base64Data}\r\n\r\n`;
+            });
+
+            mhtml += `--${boundary}--\r\n`;
+
+            const blob = new Blob([mhtml], { type: 'application/msword;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `水里里山_SROI社會價值報告書_${currentMode}.doc`;
             a.click();
-            showToast('已轉出含高對比彩色圖表與各章節附言之 Word (.doc) 報告書！');
+            showToast('已轉出 Word 原生 MHTML 封裝圖表報告書 (.doc)！');
         }
 
         async function exportPDF() {
@@ -3034,8 +3539,8 @@
             if (!target) return;
             const dCanvas = document.getElementById('mainDoughnutChart');
             const bCanvas = document.getElementById('grossNetBarChart');
-            if (dCanvas) chartDoughnutDataUrl = dCanvas.toDataURL('image/png', 1.0);
-            if (bCanvas) chartBarDataUrl = bCanvas.toDataURL('image/png', 1.0);
+            if (dCanvas) chartDoughnutDataUrl = getWordSafeCanvasDataUrl(dCanvas, 560, 390);
+            if (bCanvas) chartBarDataUrl = getWordSafeCanvasDataUrl(bCanvas, 560, 390);
             const repImgD = document.getElementById('reportEmbeddedDoughnutImg');
             const repImgB = document.getElementById('reportEmbeddedBarImg');
             if (repImgD && chartDoughnutDataUrl) repImgD.src = chartDoughnutDataUrl;
