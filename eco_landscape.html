@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>探探里山｜HEART 里山生態島與農村文化導覽</title>
+    <title>探探里山｜里山生態島與農村文化導覽</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -150,21 +150,79 @@
         }
         #bottom-panel { bottom: max(10px, env(safe-area-inset-bottom, 10px)); }
 
-        /* 右側生物卡牌背包 (卡片條) */
-        .side-inventory {
+        /* ★ 右側雙模式面板外框 (可切換：生物卡牌庫 / 棲地導覽列) */
+        .side-inventory-wrapper {
             position: fixed;
-            top: calc(env(safe-area-inset-top, 0px) + 92px);
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
-            right: max(8px, env(safe-area-inset-right)); width: 72px;
-            display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden;
+            top: calc(env(safe-area-inset-top, 0px) + 88px);
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
+            right: max(8px, env(safe-area-inset-right));
+            width: 82px;
+            display: none; flex-direction: column; gap: 6px;
             z-index: 9100; pointer-events: auto;
+        }
+        .side-mode-switch {
+            display: flex; flex-direction: column; gap: 4px;
+            background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);
+            padding: 5px; border-radius: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.28);
+        }
+        .side-tab-btn {
+            border: none; background: transparent; color: #cbd5e1;
+            font-size: 11px; font-weight: 800; padding: 6px 2px;
+            border-radius: 11px; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 2px;
+        }
+        .side-tab-btn.active {
+            background: linear-gradient(135deg, #facc15, #ea580c);
+            color: #0f172a; box-shadow: 0 2px 8px rgba(250, 204, 21, 0.5);
+        }
+
+        /* 右側生物卡牌背包與棲地清單本體 */
+        .side-inventory {
+            flex: 1; width: 100%; box-sizing: border-box;
+            display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden;
             align-items: center; padding: 8px 4px; transition: opacity 0.3s;
-            background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(6px);
-            border-radius: 20px; border: 1.5px solid rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.62); backdrop-filter: blur(8px);
+            border-radius: 20px; border: 1.5px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
             -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
         }
         .side-inventory.locked { opacity: 0.38; pointer-events: none; filter: grayscale(60%); }
         .side-inventory::-webkit-scrollbar { display: none; }
+
+        /* 右側棲地快速選擇卡 */
+        .habitat-nav-card {
+            width: 68px; min-height: 54px; flex-shrink: 0;
+            background: #0f172a; color: #ffffff;
+            border: 2px solid #475569; border-radius: 14px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 5px 4px; box-sizing: border-box; cursor: pointer;
+            box-shadow: 0 5px 0 #020617, 0 6px 12px rgba(0,0,0,0.25);
+            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+            text-align: center; position: relative;
+        }
+        .habitat-nav-card:active { transform: translateY(2px); }
+        .habitat-nav-card.active-target {
+            border-color: #facc15;
+            background: #1e293b;
+            box-shadow: 0 0 16px rgba(250, 204, 21, 0.95), 0 4px 0 #ca8a04;
+            animation: cardMagicPulse 0.85s infinite ease-in-out;
+        }
+        .h-card-code {
+            font-size: 9px; font-weight: 900; color: #facc15;
+            background: rgba(250, 204, 21, 0.16); padding: 1px 6px;
+            border-radius: 999px; margin-bottom: 2px;
+        }
+        .h-card-name {
+            font-size: 10px; font-weight: 800; color: #ffffff;
+            line-height: 1.2; word-break: break-all;
+        }
+        .h-card-count {
+            position: absolute; top: -5px; right: -5px;
+            background: #22c55e; color: #fff; font-size: 9px; font-weight: 900;
+            padding: 1px 5px; border-radius: 999px; border: 1.5px solid #fff;
+        }
 
         .creature-card {
             width: var(--card-size); height: var(--card-size); flex-shrink: 0;
@@ -525,18 +583,18 @@
     </button>
 
     <!-- 左上角畫筆工具 -->
-    <div id="draw-tools">
-        <button id="draw-btn" class="tool-btn" onclick="toggleDrawMode()" title="啟用/關閉協作畫筆">🖌️</button>
-        <div id="color-palette" style="display: none; flex-direction: column; gap: 6px; margin-top: 4px;">
-            <button class="color-btn" onclick="setDrawColor('#2D80C6')" style="background: #2D80C6;"></button>
-            <button class="color-btn" onclick="setDrawColor('#F5B942')" style="background: #F5B942;"></button>
-            <button class="color-btn" onclick="setDrawColor('#ffffff')" style="background: #ffffff; border-color:#cbd5e1;"></button>
-            <button class="tool-btn" onclick="clearDrawings()" style="width: 32px; height: 32px; font-size:12px; color:#ef4444; font-weight:bold;">✖</button>
+        <button class=" tool-btn" onclick="clearDrawings()" style="width: 32px; height: 32px; font-size:12px; color:#ef4444; font-weight:bold;">✖</button>
         </div>
     </div>
 
-    <!-- 右側背包 -->
-    <div id="right-inventory" class="side-inventory"></div>
+    <!-- ★ 右側雙模式切換列 (可切換「🐾 卡片」與「🏞️ 棲地」) -->
+    <div id="right-panel-wrapper" class="side-inventory-wrapper">
+        <div class="side-mode-switch">
+            <button id="tab-btn-cards" class="side-tab-btn active" onclick="switchRightSidebarMode('cards')">🐾 卡片</button>
+            <button id="tab-btn-habitats" class="side-tab-btn" onclick="switchRightSidebarMode('habitats')">🏞️ 棲地</button>
+        </div>
+        <div id="right-inventory" class="side-inventory"></div>
+    </div>
 
     <!-- 底部規則與問卷結算面板 -->
     <div id="bottom-panel" class="floating-panel">
@@ -1201,10 +1259,11 @@
         let draggingInstance = null; let isPanningMap = false; let lastPanX = 0, lastPanY = 0;
         let pendingPlacement = null;
 
-        // ★ 魔法棒專屬狀態機：點魔法棒 ➜ 選棲地(黃框閃爍) ➜ 右側全部卡片閃爍 ➜ 點卡片得分
+        // ★ 魔法棒與右側欄切換模式 ('cards' | 'habitats')
         let isMagicWandMode = false;
         let magicTargetHabitat = null;
         let magicTargetCrisis = null;
+        let rightSidebarMode = 'cards';
         let highestScoreMilestone = 0; // 追蹤「每滿10分抽卡」里程碑
         let drawChances = 0; // ★ 累積可抽卡次數
 
@@ -1378,7 +1437,7 @@
 
             // ★ 重新繪製「生物通道橋」覆蓋於車輛上方，形成真實立體穿隧視覺！
             drawIsometricBlock(1150, 296, 400, 24, '#22c55e', '#15803d', 10, 8);
-            drawPillSign('生物通道(友善設施)', 1350, 265);
+            drawPillSign('生物通道(友善設施)', 1350, 265, '15');
         }
 
         function drawAmbientEntities() {
@@ -1905,14 +1964,80 @@
             document.getElementById('start-overlay').style.display = 'none';
             document.getElementById('top-island-nav').style.display = 'flex';
             document.getElementById('magic-wand-fab').style.display = 'flex';
+            document.getElementById('right-panel-wrapper').style.display = 'flex';
             isGameRunning = true; requestAnimationFrame(gameLoop);
             computeCurrentScore();
         }
-        // ================= 4. 背包渲染與魔法棒點選卡片邏輯 =================
+        // ================= 4. 背包與棲地雙模式渲染、魔法棒點選邏輯 =================
+        function switchRightSidebarMode(mode) {
+            rightSidebarMode = mode;
+            const btnCards = document.getElementById('tab-btn-cards');
+            const btnHabitats = document.getElementById('tab-btn-habitats');
+            if (btnCards && btnHabitats) {
+                btnCards.classList.toggle('active', mode === 'cards');
+                btnHabitats.classList.toggle('active', mode === 'habitats');
+            }
+            renderInventory();
+        }
+
+        function selectHabitatFromList(h) {
+            // 自動開啟魔法棒並鎖定該棲地，讓棲地亮起黃色閃爍並對焦
+            if (!isMagicWandMode) {
+                isMagicWandMode = true;
+                if (isDrawingMode) toggleDrawMode();
+            }
+            magicTargetHabitat = h;
+            magicTargetCrisis = null;
+
+            let viewW = SCREEN_W / viewZoom;
+            let viewH = SCREEN_H / viewZoom;
+            camera.detached = true;
+            camera.x = Math.max(0, Math.min(Math.max(0, MAP_W - viewW), (h.x + h.w / 2) - viewW / 2));
+            camera.y = Math.max(0, Math.min(Math.max(0, MAP_H - viewH), (h.y + h.h / 2) - viewH / 2));
+
+            if (navigator.vibrate) navigator.vibrate(35);
+            updateMagicWandUI();
+
+            // 選中棲地亮起後，自動切換回「🐾 卡片」分頁讓玩家直接點選閃爍卡片放置
+            switchRightSidebarMode('cards');
+            showAlert(`🪄 已點亮【${h.code || ''} ${h.name.split('(')[0]}】！請直接點選右側閃爍的卡片放入`);
+        }
+
         function renderInventory() {
             const container = document.getElementById('right-inventory');
+            if (!container) return;
             container.classList.remove('locked');
 
+            const btnCards = document.getElementById('tab-btn-cards');
+            const btnHabitats = document.getElementById('tab-btn-habitats');
+            if (btnCards && btnHabitats) {
+                btnCards.innerHTML = `🐾 卡片(${inventory.length})`;
+                btnHabitats.innerHTML = `🏞️ 棲地(${habitats.length})`;
+            }
+
+            // ★ 模式 A：右側顯示「🏞️ 棲地類型清單」
+            if (rightSidebarMode === 'habitats') {
+                container.classList.remove('magic-ready');
+                container.innerHTML = '';
+                habitats.forEach(h => {
+                    const div = document.createElement('div');
+                    let isTarget = isMagicWandMode && magicTargetHabitat && magicTargetHabitat.id === h.id;
+                    div.className = 'habitat-nav-card' + (isTarget ? ' active-target' : '');
+                    let shortName = h.name.split('(')[0];
+                    div.innerHTML = `
+                        <div class="h-card-code">${h.code || 'NEW'}</div>
+                        <div class="h-card-name">${shortName}</div>
+                        ${h.occupants.length > 0 ? `<div class="h-card-count">${h.occupants.length}</div>` : ''}
+                    `;
+                    div.addEventListener('click', () => {
+                        selectHabitatFromList(h);
+                    });
+                    container.appendChild(div);
+                });
+                return;
+            }
+
+            // ★ 模式 B：右側顯示「🐾 生物與文化卡片庫」
             // 同步更新右側卡片是否處於「魔法棒鎖定棲地後的全體閃爍狀態」
             if (isMagicWandMode && (magicTargetHabitat || magicTargetCrisis)) {
                 container.classList.add('magic-ready');
@@ -1920,7 +2045,10 @@
                 container.classList.remove('magic-ready');
             }
 
-            if (inventory.length === 0) { container.innerHTML = ''; return; }
+            if (inventory.length === 0) {
+                container.innerHTML = `<div style="font-size:10px; color:#475569; text-align:center; padding:12px 4px; font-weight:800;">尚無卡片<br>請走動或點上方抽卡</div>`;
+                return;
+            }
             container.innerHTML = '';
 
             let grouped = {};
@@ -2071,8 +2199,13 @@
                         camera.x = Math.max(0, Math.min(Math.max(0, MAP_W - viewW), (h.x + h.w / 2) - viewW / 2));
                         camera.y = Math.max(0, Math.min(Math.max(0, MAP_H - viewH), (h.y + h.h / 2) - viewH / 2));
                         updateMagicWandUI();
-                        renderInventory();
-                        showAlert(`🪄 已選擇【${h.name}】（黃框閃爍）！請從右側點選要放入的閃爍卡片`);
+                        // 若玩家原本在「🏞️ 棲地」分頁，點選地圖棲地後也自動切回「🐾 卡片」分頁方便立刻選卡
+                        if (rightSidebarMode === 'habitats') {
+                            switchRightSidebarMode('cards');
+                        } else {
+                            renderInventory();
+                        }
+                        showAlert(`🪄 已點亮【${h.name}】（黃框閃爍）！請從右側點選要放入的閃爍卡片`);
                         return;
                     }
                 }
@@ -2388,13 +2521,13 @@
             }
         }
 
-        // ★ Heart-Island 現代膠囊座標標示牌 (取代傳統木牌，更具立體資訊感)
+        // ★ 立體黑底白字膠囊座標標示牌 (具 3D 底座厚度與立體支柱感)
         function drawPillSign(text, x, y, code = '') {
             ctx.save();
             ctx.font = 'bold 14px -apple-system, "Segoe UI", sans-serif';
             let label = code ? `${code} ${text}` : text;
             let textW = ctx.measureText(label).width;
-            let boardW = Math.max(textW + 24, 72);
+            let boardW = Math.max(textW + 26, 78);
             let boardH = 28;
 
             let finalX = x - boardW / 2;
@@ -2402,18 +2535,33 @@
             if (finalX + boardW > MAP_W - 10) finalX = MAP_W - boardW - 10;
             let finalY = Math.max(8, y);
 
-            // 膠囊立體陰影
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
-            ctx.beginPath(); ctx.roundRect(finalX, finalY + 3, boardW, boardH, 14); ctx.fill();
+            // 1. 地面環境投影與小立柱
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.beginPath(); ctx.ellipse(finalX + boardW / 2, finalY + boardH + 8, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(finalX + boardW / 2 - 2.5, finalY + boardH, 5, 7);
 
-            // 膠囊本體
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
-            ctx.strokeStyle = '#14532d';
+            // 2. 3D 標示牌下緣厚度層
+            ctx.fillStyle = '#020617';
+            ctx.beginPath(); ctx.roundRect(finalX, finalY + 4, boardW, boardH, 14); ctx.fill();
+
+            // 3. 黑底本體與高對比邊框
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.96)';
+            ctx.strokeStyle = code ? '#facc15' : '#94a3b8';
             ctx.lineWidth = 2;
             ctx.beginPath(); ctx.roundRect(finalX, finalY, boardW, boardH, 14);
             ctx.fill(); ctx.stroke();
 
-            ctx.fillStyle = '#14532d';
+            // 4. 頂部立體微反光條
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(finalX + 12, finalY + 3);
+            ctx.lineTo(finalX + boardW - 12, finalY + 3);
+            ctx.stroke();
+
+            // 5. 白字清晰文字
+            ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(label, finalX + boardW / 2, finalY + boardH / 2 + 1);
@@ -2437,24 +2585,43 @@
             }
         }
 
-        // ★ 2.5D 立體地形塊繪製輔助函數 (帶側面厚度感)
-        function drawIsometricBlock(x, y, w, h, topColor, sideColor, radius = 18, depth = 12) {
-            ctx.fillStyle = 'rgba(0,0,0,0.14)';
-            ctx.beginPath(); ctx.roundRect(x + 4, y + depth + 6, w, h, radius); ctx.fill();
+        // ★ 強化版 2.5D 立體地形塊繪製函數 (加深立體側面厚度、環境陰影與頂面高光邊緣)
+        function drawIsometricBlock(x, y, w, h, topColor, sideColor, radius = 18, depth = 16) {
+            ctx.save();
+            // 1. 底層環境柔光深陰影
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+            ctx.beginPath(); ctx.roundRect(x + 6, y + depth + 8, w, h, radius); ctx.fill();
 
+            // 2. 3D 側面厚度層 (立體土壤/岩壁切面)
             ctx.fillStyle = sideColor;
             ctx.beginPath(); ctx.roundRect(x, y + depth, w, h, radius); ctx.fill();
 
+            // 3. 頂部主台地表面
             ctx.fillStyle = topColor;
             ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); ctx.fill();
+
+            // 4. 頂部立體斜角高光邊框 (Bevel Highlight)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.roundRect(x + 1, y + 1, w - 2, h - 2, radius); ctx.stroke();
+            ctx.restore();
         }
 
         function drawMap() {
-            // 1. 島嶼底色與柔和等距網格 (致敬 Heart-Island 政策格底板)
-            ctx.fillStyle = '#a3e635';
+            // 1. 島嶼底色、立體外緣海溝陰影與等距透視網格
+            let bgGrad = ctx.createLinearGradient(0, 0, 0, MAP_H);
+            bgGrad.addColorStop(0, '#bef264');
+            bgGrad.addColorStop(0.5, '#a3e635');
+            bgGrad.addColorStop(1, '#65a30d');
+            ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, MAP_W, MAP_H);
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
+            // 島嶼立體邊框斷面感
+            ctx.strokeStyle = '#365314';
+            ctx.lineWidth = 14;
+            ctx.strokeRect(7, 7, MAP_W - 14, MAP_H - 14);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.26)';
             ctx.lineWidth = 1.5;
             for (let gx = 0; gx < MAP_W; gx += 80) {
                 ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, MAP_H); ctx.stroke();
@@ -2463,31 +2630,35 @@
                 ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(MAP_W, gy); ctx.stroke();
             }
 
-            // 2. 左上原始森林立體台地
-            drawIsometricBlock(10, 10, 290, 300, '#4ade80', '#16a34a', 24, 14);
+            // 2. 左上原始森林立體高台 (加深厚度至 20px)
+            drawIsometricBlock(10, 10, 290, 300, '#4ade80', '#14532d', 24, 20);
             drawTrees(25, 25, 8); drawTrees(150, 100, 5);
 
             // 3. 山邊道路与生物通道橋
-            drawIsometricBlock(0, 320, MAP_W, 80, '#64748b', '#334155', 0, 10);
+            drawIsometricBlock(0, 320, MAP_W, 80, '#64748b', '#1e293b', 0, 14);
             ctx.strokeStyle = '#f8fafc'; ctx.setLineDash([22, 18]); ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(0, 360); ctx.lineTo(MAP_W, 360); ctx.stroke(); ctx.setLineDash([]);
             drawPillSign('山邊道路', 150, 345);
 
-            drawIsometricBlock(1150, 296, 400, 24, '#22c55e', '#15803d', 10, 8);
-            drawPillSign('生物通道(友善設施)', 1350, 265);
+            drawIsometricBlock(1150, 296, 400, 24, '#22c55e', '#14532d', 10, 12);
+            drawPillSign('生物通道(友善設施)', 1350, 265, '15');
 
-            // 4. 農村蜿蜒步道
-            ctx.strokeStyle = '#d97706'; ctx.lineWidth = 30; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            // 4. 農村蜿蜒立體步道
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.22)'; ctx.lineWidth = 36; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath(); ctx.moveTo(504, 408); ctx.lineTo(604, 608); ctx.lineTo(804, 908); ctx.lineTo(1204, 1158); ctx.stroke();
+            ctx.strokeStyle = '#b45309'; ctx.lineWidth = 32;
             ctx.beginPath(); ctx.moveTo(500, 400); ctx.lineTo(600, 600); ctx.lineTo(800, 900); ctx.lineTo(1200, 1150); ctx.stroke();
             ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 22;
             ctx.beginPath(); ctx.moveTo(500, 400); ctx.lineTo(600, 600); ctx.lineTo(800, 900); ctx.lineTo(1200, 1150); ctx.stroke();
 
             // 5. 立體有機農田台地
-            drawIsometricBlock(200, 850, 500, 300, '#a16207', '#713f12', 20, 14);
+            drawIsometricBlock(200, 850, 500, 300, '#a16207', '#451a03', 20, 18);
             ctx.strokeStyle = '#78350f'; ctx.lineWidth = 6; ctx.lineCap = 'round';
             for (let i = 1; i < 10; i++) {
                 ctx.beginPath(); ctx.moveTo(220, 850 + i * 28); ctx.lineTo(680, 850 + i * 28); ctx.stroke();
                 for (let j = 0; j < 8; j++) {
+                    ctx.fillStyle = '#15803d';
+                    ctx.beginPath(); ctx.arc(245 + j * 60, 851 + i * 28, 6, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#4ade80';
                     ctx.beginPath(); ctx.arc(245 + j * 60, 848 + i * 28, 5, 0, Math.PI * 2); ctx.fill();
                 }
@@ -2495,29 +2666,36 @@
             drawPillSign('有機農田', 450, 816);
 
             // 6. 2.5D 透明感溫室建築
-            drawIsometricBlock(150, 450, 350, 250, 'rgba(224, 242, 254, 0.85)', '#94a3b8', 18, 14);
+            drawIsometricBlock(150, 450, 350, 250, 'rgba(224, 242, 254, 0.88)', '#64748b', 18, 18);
             ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
             for (let i = 1; i < 5; i++) { ctx.beginPath(); ctx.moveTo(150, 450 + i * 50); ctx.lineTo(500, 450 + i * 50); ctx.stroke(); }
             for (let j = 1; j < 7; j++) { ctx.beginPath(); ctx.moveTo(150 + j * 50, 450); ctx.lineTo(150 + j * 50, 700); ctx.stroke(); }
             drawPillSign('設施農業(溫室)', 325, 415);
 
-            // 7. 2.5D 可愛小農舍
-            drawIsometricBlock(675, 515, 70, 55, '#fef3c7', '#d97706', 8, 8);
+            // 7. 2.5D 可愛小農舍 (加深立體陰影與屋簷厚度)
+            drawIsometricBlock(675, 515, 70, 55, '#fef3c7', '#b45309', 8, 12);
+            ctx.fillStyle = '#991b1b'; ctx.beginPath(); ctx.moveTo(663, 519); ctx.lineTo(710, 479); ctx.lineTo(757, 519); ctx.fill();
             ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(665, 515); ctx.lineTo(710, 475); ctx.lineTo(755, 515); ctx.fill();
-            drawIsometricBlock(775, 540, 80, 60, '#fef3c7', '#d97706', 8, 8);
+
+            drawIsometricBlock(775, 540, 80, 60, '#fef3c7', '#b45309', 8, 12);
+            ctx.fillStyle = '#9a3412'; ctx.beginPath(); ctx.moveTo(763, 544); ctx.lineTo(815, 499); ctx.lineTo(867, 544); ctx.fill();
             ctx.fillStyle = '#ea580c'; ctx.beginPath(); ctx.moveTo(765, 540); ctx.lineTo(815, 495); ctx.lineTo(865, 540); ctx.fill();
             drawPillSign('里山農舍', 760, 445);
 
-            // 8. 溪流與灌溉溝渠
-            ctx.fillStyle = '#0284c7';
+            // 8. 立體河谷溪流與灌溉溝渠 (帶河岸深度落差)
+            ctx.fillStyle = '#475569';
+            ctx.beginPath(); ctx.moveTo(994, 400); ctx.lineTo(1116, 400); ctx.lineTo(1366, 1200); ctx.lineTo(1144, 1200); ctx.fill();
+            ctx.fillStyle = '#0369a1';
             ctx.beginPath(); ctx.moveTo(1000, 400); ctx.lineTo(1110, 400); ctx.lineTo(1360, 1200); ctx.lineTo(1150, 1200); ctx.fill();
             ctx.fillStyle = '#38bdf8';
-            ctx.beginPath(); ctx.moveTo(1008, 400); ctx.lineTo(1102, 400); ctx.lineTo(1348, 1200); ctx.lineTo(1162, 1200); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(1008, 408); ctx.lineTo(1102, 408); ctx.lineTo(1348, 1200); ctx.lineTo(1162, 1200); ctx.fill();
             drawPillSign('生態溪流', 1110, 600);
 
-            drawIsometricBlock(20, 650, 130, 400, '#38bdf8', '#0284c7', 14, 10);
+            drawIsometricBlock(20, 650, 130, 400, '#38bdf8', '#0369a1', 14, 14);
             drawPillSign('灌溉溝渠', 85, 615);
 
+            // 次生森林立體台地
+            drawIsometricBlock(520, 55, 390, 155, '#86efac', '#15803d', 22, 14);
             drawTrees(550, 100, 3); drawTrees(700, 80, 4); drawTrees(850, 120, 2);
             drawPillSign('次生森林', 700, 180);
 
@@ -2543,9 +2721,15 @@
                 let isMagicTarget = isMagicWandMode && magicTargetHabitat && magicTargetHabitat.id === h.id;
                 let pulse = (Math.sin(Date.now() / 130) + 1) / 2; // 0 ~ 1 動態閃爍週期
 
-                // 2.5D 微棲地底座與框線（若被魔法棒選中，轉為高亮黃色閃爍！）
+                // ★ 先繪製每個微棲地的 2.5D 立體底台厚度與地面陰影，讓棲地框更具立體沙盤感！
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.24)';
+                ctx.beginPath(); ctx.roundRect(h.x + 4, h.y + 10, h.w, h.h, 16); ctx.fill();
+                ctx.fillStyle = isMagicTarget ? 'rgba(202, 138, 4, 0.55)' : (h.isBonus ? 'rgba(29, 78, 216, 0.45)' : 'rgba(20, 83, 45, 0.38)');
+                ctx.beginPath(); ctx.roundRect(h.x, h.y + 6, h.w, h.h, 16); ctx.fill();
+
+                // 2.5D 微棲地底座與框線（若被魔法棒選中，轉為高亮黃色閃爍與聚光燈光暈！）
                 if (isMagicTarget) {
-                    ctx.fillStyle = `rgba(250, 204, 21, ${0.22 + pulse * 0.25})`;
+                    ctx.fillStyle = `rgba(250, 204, 21, ${0.28 + pulse * 0.28})`;
                     ctx.beginPath(); ctx.roundRect(h.x, h.y, h.w, h.h, 16); ctx.fill();
 
                     ctx.strokeStyle = pulse > 0.5 ? '#facc15' : '#fef08a';
@@ -2553,12 +2737,12 @@
                     ctx.setLineDash([12, 8]);
                     ctx.lineDashOffset = -(Date.now() / 25) % 20;
                     ctx.shadowColor = '#facc15';
-                    ctx.shadowBlur = 16 + pulse * 14;
+                    ctx.shadowBlur = 18 + pulse * 16;
                     ctx.beginPath(); ctx.roundRect(h.x, h.y, h.w, h.h, 16); ctx.stroke();
                     ctx.setLineDash([]); ctx.lineDashOffset = 0; ctx.shadowBlur = 0;
                 } else {
                     // ★ 發生虛線黑框時，僅由獨立的圓形危機區呈現黑框，原始棲地依然保持螢光綠虛線框！
-                    ctx.fillStyle = h.isBonus ? 'rgba(59, 130, 246, 0.22)' : 'rgba(255, 255, 255, 0.18)';
+                    ctx.fillStyle = h.isBonus ? 'rgba(59, 130, 246, 0.24)' : 'rgba(255, 255, 255, 0.22)';
                     ctx.beginPath(); ctx.roundRect(h.x, h.y, h.w, h.h, 16); ctx.fill();
 
                     ctx.strokeStyle = h.isBonus ? '#2563eb' : '#39FF14';
@@ -2587,6 +2771,10 @@
                         ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.roundRect(cx + 6, cy - 5, 48, 48, 12); ctx.fill(); ctx.stroke();
                     }
+
+                    // 卡片 3D 底部立體厚度
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+                    ctx.beginPath(); ctx.roundRect(cx + 2, cy + 5, 48, 48, 12); ctx.fill();
 
                     ctx.fillStyle = occ.dead ? '#6b7280' : 'white';
                     ctx.strokeStyle = occ.dead ? '#1f2937' : (isChainMember ? '#f59e0b' : (occ.duplicated ? '#2563eb' : '#cbd5e1'));
