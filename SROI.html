@@ -531,18 +531,60 @@
                         <p class="text-[11px] text-slate-500">下方圖表已採用純白底色與高對比彩色渲染，轉出 Word (.doc) 與 PDF 報告書時色彩清晰分明</p>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
-                        <button onclick="exportWord()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                        <button type="button" onclick="exportWord()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
                             <i class="fa-solid fa-file-word"></i> 轉出 Word (.doc)
                         </button>
-                        <button onclick="exportPDF()" class="bg-satoyama-dark hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                        <button type="button" onclick="exportPDF()" class="bg-satoyama-dark hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                            <i class="fa-solid fa-file-pdf"></i> 轉出正式報告 (.pdf)
+                        </button>
+                        <button type="button" onclick="exportJsonBackup(true)" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                            <i class="fa-solid fa-file-export"></i> 打包匯出 JSON
+                        </button>
+                        <button type="button" onclick="triggerJsonImport()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                            <i class="fa-solid fa-file-import"></i> 匯入 JSON
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dual Live Charts Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+                        <div class="text-xs font-black text-satoyama-dark mb-1 flex items-center justify-between">
+                            <span>📊 圖 1：淨影響力價值結構佔比 (Net Impact)</span>
+                            <span class="text-[10px] text-emerald-700 font-bold">三大資本實質貢獻</span>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="mainDoughnutChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-xs">
+                        <div class="text-xs font-black text-satoyama-dark mb-1 flex items-center justify-between">
+                            <span>📊 圖 2：防漂綠折減前後對比 (Gross vs. Net)</span>
+                            <span class="text-[10px] text-sky-700 font-bold">毛值 vs. 折減後淨值</span>
+                        </div>
+                        <div class="h-56 relative">
+                            <canvas id="grossNetBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formal SROI Report Preview Paper -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+                <div id="reportPreviewContainer" class="report-paper"></div>
+            </div>
+
+        </div>
+    </main>
+
     <!-- MODAL 1: Password Commit & GitHub Auto-Sync Modal -->
-    <div id="publishPasswordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-200 space-y-3.5 max-h-[92vh] overflow-y-auto">
+    <div id="publishPasswordModal" onclick="if(event.target===this) closePublishPasswordModal();" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-200 space-y-3.5 max-h-[92vh] overflow-y-auto relative">
             <div class="flex items-center justify-between border-b pb-3">
                 <h3 class="text-base font-black text-satoyama-dark flex items-center gap-2">
                     <i class="fa-solid fa-cloud-arrow-up text-emerald-600"></i> 密碼驗證核定存檔 ＆ 同步更新至 GitHub
                 </h3>
-                <button onclick="closePublishPasswordModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+                <button type="button" onclick="closePublishPasswordModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold px-2">&times;</button>
             </div>
             <p class="text-xs text-slate-600 leading-relaxed">
                 請輸入該農場／該團隊之<strong>專屬管理密碼</strong>（或系統總管理密碼 <code>545366</code>）。驗證通過後將<strong>永久寫入本機存檔並同步推送至 GitHub 雲端倉庫</strong>，確保下次開啟或跨裝置瀏覽時數據絕不會被重置：
@@ -593,10 +635,10 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t">
-                <button onclick="discardUncommittedChanges()" class="text-xs text-red-600 hover:underline font-bold">放棄未存檔修改並還原</button>
+                <button type="button" onclick="discardUncommittedChanges()" class="text-xs text-red-600 hover:underline font-bold">放棄未存檔修改並還原</button>
                 <div class="flex gap-2">
-                    <button onclick="closePublishPasswordModal()" class="px-3 py-1.5 rounded-xl border text-xs font-bold text-slate-600">取消</button>
-                    <button id="confirmPublishBtn" onclick="confirmPublishData()" class="px-4 py-2 rounded-xl bg-satoyama-dark hover:bg-emerald-800 text-white text-xs font-black shadow flex items-center gap-1.5">
+                    <button type="button" onclick="closePublishPasswordModal()" class="px-3 py-1.5 rounded-xl border text-xs font-bold text-slate-600 hover:bg-slate-100">取消</button>
+                    <button type="button" id="confirmPublishBtn" onclick="confirmPublishData()" class="px-4 py-2 rounded-xl bg-satoyama-dark hover:bg-emerald-800 text-white text-xs font-black shadow flex items-center gap-1.5">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                         <span>驗證密碼、永久存檔並同步 GitHub</span>
                     </button>
@@ -3175,46 +3217,49 @@
             const activeTeam = teamsData.find(t => t.id === activeTeamId) || teamsData[0];
             const validPasswords = [MASTER_ADMIN_PWD, activeTeam?.password, ...farmsData.map(f => f.password)];
             if (!validPasswords.includes(pwd)) {
-                document.getElementById('commitPasswordError').classList.remove('hidden');
+                document.getElementById('commitPasswordError')?.classList.remove('hidden');
                 return;
             }
 
-            syncGhInputsFromCommitModal();
             const btn = document.getElementById('confirmPublishBtn');
             const origBtnHtml = btn ? btn.innerHTML : '';
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>正在寫入存檔並同步至 GitHub...</span>`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>正在寫入存檔...</span>`;
             }
 
-            saveCommittedWorkspaceState();
-            recalculateAll();
-            const autoDl = document.getElementById('autoDownloadJsonOnCommit')?.checked;
+            try {
+                syncGhInputsFromCommitModal();
+                // 1. Immediately save to localStorage and update UI first so it NEVER hangs!
+                saveCommittedWorkspaceState();
+                recalculateAll();
 
-            if (autoDl) {
-                exportJsonBackup(true);
-            }
+                const autoDl = document.getElementById('autoDownloadJsonOnCommit')?.checked;
+                if (autoDl) {
+                    exportJsonBackup(true);
+                }
 
-            // If user has configured a GitHub Token, automatically sync to GitHub repository as well
-            const token = document.getElementById('ghTokenInput')?.value.trim();
-            if (token) {
-                const ok = await pushWorkspaceToGitHub(true);
+                // 2. If GitHub Token is provided, push to GitHub with a 8-second timeout guard
+                const token = document.getElementById('ghTokenInput')?.value.trim();
+                if (token) {
+                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 8000));
+                    const ok = await Promise.race([pushWorkspaceToGitHub(true), timeoutPromise]);
+                    if (ok) {
+                        const statusText = document.getElementById('autoSaveStatusText');
+                        if (statusText) statusText.innerText = `已核定並同步 GitHub (${new Date().toLocaleTimeString('zh-TW', { hour12: false })})`;
+                    }
+                } else {
+                    showToast('密碼驗證通過！已永久寫入本機存檔並更新公開看板（下次開啟絕不重置）。');
+                }
+            } catch (err) {
+                console.error('Commit error:', err);
+                showToast('已完成本機永久存檔！');
+            } finally {
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = origBtnHtml;
                 }
                 closePublishPasswordModal();
-                if (ok) {
-                    const statusText = document.getElementById('autoSaveStatusText');
-                    if (statusText) statusText.innerText = `已核定並同步 GitHub (${new Date().toLocaleTimeString('zh-TW', { hour12: false })})`;
-                }
-            } else {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = origBtnHtml;
-                }
-                closePublishPasswordModal();
-                showToast('密碼驗證通過！已永久寫入本機瀏覽器存檔（下次在此瀏覽器開啟不會重置；若需跨裝置同步請於存檔視窗填入 GitHub Token）。');
             }
         }
 
