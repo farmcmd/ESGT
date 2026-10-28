@@ -134,10 +134,10 @@
                     <span id="autoSaveStatusText">已載入核定存檔</span>
                 </button>
 
-                <!-- Password Commit Button -->
+                <!-- Password Commit & GitHub Sync Button -->
                 <button onclick="openPublishPasswordModal()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition shadow">
-                    <i class="fa-solid fa-key"></i>
-                    <span>密碼核定存檔並更新看板</span>
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>密碼核定存檔 (同步更新 GitHub)</span>
                     <span id="uncommittedBadge" class="hidden bg-red-600 text-white text-[10px] px-1.5 py-0.2 rounded-full">未存檔</span>
                 </button>
 
@@ -535,71 +535,71 @@
                             <i class="fa-solid fa-file-word"></i> 轉出 Word (.doc)
                         </button>
                         <button onclick="exportPDF()" class="bg-satoyama-dark hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
-                            <i class="fa-solid fa-file-pdf"></i> 轉出正式報告 (.pdf)
-                        </button>
-                        <button onclick="exportJsonBackup()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-sm">
-                            <i class="fa-solid fa-file-export"></i> 打包匯出 JSON
-                        </button>
-                        <button onclick="triggerJsonImport()" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-sm">
-                            <i class="fa-solid fa-file-import"></i> 匯入 JSON
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Live Dual Chart.js Canvas -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center">
-                        <div class="text-xs font-black text-satoyama-dark mb-1">圖 1：淨影響力價值結構佔比 (Net Impact)</div>
-                        <div class="w-full h-52 relative">
-                            <canvas id="mainDoughnutChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center">
-                        <div class="text-xs font-black text-satoyama-dark mb-1">圖 2：防漂綠折減前後對比 (Gross vs. Net)</div>
-                        <div class="w-full h-52 relative">
-                            <canvas id="grossNetBarChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Formal SROI Report Preview Container -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
-                <div id="reportPreviewContainer" class="report-paper"></div>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- MODAL 1: Password Commit & Publish Modal -->
+    <!-- MODAL 1: Password Commit & GitHub Auto-Sync Modal -->
     <div id="publishPasswordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-200 space-y-3.5 max-h-[92vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b pb-3">
                 <h3 class="text-base font-black text-satoyama-dark flex items-center gap-2">
-                    <i class="fa-solid fa-key text-amber-500"></i> 密碼驗證核定存檔並更新看板
+                    <i class="fa-solid fa-cloud-arrow-up text-emerald-600"></i> 密碼驗證核定存檔 ＆ 同步更新至 GitHub
                 </h3>
                 <button onclick="closePublishPasswordModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
             </div>
             <p class="text-xs text-slate-600 leading-relaxed">
-                請輸入該農場／該團隊之<strong>專屬管理密碼</strong>（或系統總管理密碼 <code>545366</code>）以確認將本次填報與修改永久寫入存檔，並同步更新頂部核定公告看板：
+                請輸入該農場／該團隊之<strong>專屬管理密碼</strong>（或系統總管理密碼 <code>545366</code>）。驗證通過後將<strong>永久寫入本機存檔並同步推送至 GitHub 雲端倉庫</strong>，確保下次開啟或跨裝置瀏覽時數據絕不會被重置：
             </p>
             <div>
-                <label class="text-xs font-bold text-slate-700 block mb-1">管理密碼 *</label>
-                <input type="password" id="commitPasswordInput" placeholder="請輸入密碼 (預設 545366)..." class="clean-num-input w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold">
+                <label class="text-xs font-bold text-slate-700 block mb-1">🔑 1. 管理密碼 *</label>
+                <input type="password" id="commitPasswordInput" placeholder="請輸入密碼 (預設 545366)..." onkeydown="if(event.key==='Enter') confirmPublishData();" class="clean-num-input w-full border-2 border-emerald-500 rounded-xl px-3 py-2 text-sm font-bold">
                 <p id="commitPasswordError" class="hidden text-xs text-red-600 font-bold mt-1.5">❌ 密碼錯誤！請輸入正確的團隊/農場專屬密碼或總管理密碼。</p>
             </div>
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-[11px] text-slate-700 space-y-1.5">
+
+            <!-- Integrated GitHub Auto-Sync Configuration in Commit Modal -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="font-black text-satoyama-dark flex items-center gap-1.5">
+                        <i class="fa-brands fa-github text-slate-800 text-sm"></i>
+                        ☁️ 2. 同步更新至 GitHub 雲端設定（設定一次即自動記憶）
+                    </span>
+                    <span id="commitModalGhBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800">尚未填入 Token</span>
+                </div>
+                <p class="text-[11px] text-slate-600 leading-relaxed">
+                    填入具備 <code>repo</code> 權限之 GitHub Token 後，每次按「驗證並永久存檔」就會<strong>自動將最新數據直接寫回您的 GitHub (`sroi_data.json`)</strong>，下次開啟網頁自動載入最新數據、永不重置！
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 block">GitHub 倉庫 (Owner/Repo)</label>
+                        <input type="text" id="commitGhRepoInput" value="farmcmd/ESGT" oninput="syncGhInputsFromCommitModal()" class="clean-num-input w-full border rounded-lg px-2 py-1 font-bold text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 block">分支 (Branch)</label>
+                        <input type="text" id="commitGhBranchInput" value="main" oninput="syncGhInputsFromCommitModal()" class="clean-num-input w-full border rounded-lg px-2 py-1 font-bold text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 block">雲端資料檔名</label>
+                        <input type="text" id="commitGhPathInput" value="sroi_data.json" oninput="syncGhInputsFromCommitModal()" class="clean-num-input w-full border rounded-lg px-2 py-1 font-bold text-xs">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="text-[10px] font-bold text-emerald-800 block">GitHub Personal Access Token (ghp_... 或 github_pat_...，自動儲存於本機瀏覽器)</label>
+                        <input type="password" id="commitGhTokenInput" placeholder="在此貼上您的 GitHub Token，核定存檔時即自動同步推上 GitHub..." oninput="syncGhInputsFromCommitModal()" class="clean-num-input w-full border border-emerald-400 rounded-lg px-2.5 py-1.5 font-bold text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-[11px] text-slate-700">
                 <label class="flex items-center gap-2 cursor-pointer font-bold text-satoyama-dark">
                     <input type="checkbox" id="autoDownloadJsonOnCommit" class="rounded text-satoyama-dark">
-                    <span>核定存檔時，同時自動下載 <code>sroi_data.json</code> 檔案（可上傳至 GitHub 更新全網數據）</span>
+                    <span>同時自動下載一份 <code>sroi_data.json</code> 備份檔至電腦</span>
                 </label>
-                <p class="text-[10px] text-slate-500 pl-5">💡 提示：GitHub Pages 為靜態網頁伺服器，除了自動儲存於您的瀏覽器外，若已設定 GitHub Token 系統將自動同步雲端；您亦可勾選此項下載 <code>sroi_data.json</code> 放入 GitHub 倉庫。</p>
             </div>
-            <div class="flex items-center justify-between pt-2 border-t">
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t">
                 <button onclick="discardUncommittedChanges()" class="text-xs text-red-600 hover:underline font-bold">放棄未存檔修改並還原</button>
                 <div class="flex gap-2">
                     <button onclick="closePublishPasswordModal()" class="px-3 py-1.5 rounded-xl border text-xs font-bold text-slate-600">取消</button>
-                    <button onclick="confirmPublishData()" class="px-4 py-1.5 rounded-xl bg-satoyama-dark hover:bg-emerald-800 text-white text-xs font-black shadow">驗證並永久存檔</button>
+                    <button id="confirmPublishBtn" onclick="confirmPublishData()" class="px-4 py-2 rounded-xl bg-satoyama-dark hover:bg-emerald-800 text-white text-xs font-black shadow flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>驗證密碼、永久存檔並同步 GitHub</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -854,6 +854,7 @@
         // =========================================================================
         const MASTER_ADMIN_PWD = '545366';
         const COMMITTED_STORAGE_KEY = 'SHUILI_SATOYAMA_SROI_WORKSPACE_V7_COMMITTED';
+        const DRAFT_STORAGE_KEY = 'SHUILI_SATOYAMA_SROI_WORKSPACE_V7_AUTODRAFT';
         const SNAPSHOTS_STORAGE_KEY = 'SHUILI_SATOYAMA_SROI_SNAPSHOTS_V7';
         const GH_SETTINGS_STORAGE_KEY = 'SHUILI_SATOYAMA_GH_SYNC_SETTINGS_V1';
 
@@ -1150,7 +1151,11 @@
             const badge = document.getElementById('uncommittedBadge');
             if (badge) badge.classList.remove('hidden');
             const statusText = document.getElementById('autoSaveStatusText');
-            if (statusText) statusText.innerText = '編輯試算中 (請按密碼存檔)';
+            if (statusText) statusText.innerText = '已自動暫存草稿 (請按密碼核定同步 GitHub)';
+            try {
+                const draftPayload = buildCurrentWorkspacePayload();
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftPayload));
+            } catch (e) {}
         }
 
         function updateSectionNoteCounters() {
@@ -3109,6 +3114,7 @@
             const payload = buildCurrentWorkspacePayload();
             try {
                 localStorage.setItem(COMMITTED_STORAGE_KEY, JSON.stringify(payload));
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
             } catch (e) {
                 console.warn('localStorage save warning:', e);
             }
@@ -3119,12 +3125,43 @@
             return payload;
         }
 
+        function updateCommitModalGhBadge() {
+            const token = document.getElementById('ghTokenInput')?.value.trim() || '';
+            const badge = document.getElementById('commitModalGhBadge');
+            if (!badge) return;
+            if (token) {
+                badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800';
+                badge.innerText = '✓ 已連結 Token (核定時自動推送 GitHub)';
+            } else {
+                badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800';
+                badge.innerText = '僅存於本機 (填入 Token 即可同步 GitHub)';
+            }
+        }
+
+        function syncGhInputsFromCommitModal() {
+            const repo = document.getElementById('commitGhRepoInput')?.value || 'farmcmd/ESGT';
+            const branch = document.getElementById('commitGhBranchInput')?.value || 'main';
+            const path = document.getElementById('commitGhPathInput')?.value || 'sroi_data.json';
+            const token = document.getElementById('commitGhTokenInput')?.value || '';
+
+            if (document.getElementById('ghRepoInput')) document.getElementById('ghRepoInput').value = repo;
+            if (document.getElementById('ghBranchInput')) document.getElementById('ghBranchInput').value = branch;
+            if (document.getElementById('ghPathInput')) document.getElementById('ghPathInput').value = path;
+            if (document.getElementById('ghTokenInput')) document.getElementById('ghTokenInput').value = token;
+
+            saveGhSettingsToLocal();
+            updateCommitModalGhBadge();
+        }
+
         function openPublishPasswordModal() {
             document.getElementById('commitPasswordInput').value = '';
             document.getElementById('commitPasswordError').classList.add('hidden');
+            loadGhSettingsFromLocal();
+            updateCommitModalGhBadge();
             const modal = document.getElementById('publishPasswordModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            setTimeout(() => document.getElementById('commitPasswordInput')?.focus(), 80);
         }
 
         function closePublishPasswordModal() {
@@ -3141,10 +3178,18 @@
                 document.getElementById('commitPasswordError').classList.remove('hidden');
                 return;
             }
+
+            syncGhInputsFromCommitModal();
+            const btn = document.getElementById('confirmPublishBtn');
+            const origBtnHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>正在寫入存檔並同步至 GitHub...</span>`;
+            }
+
             saveCommittedWorkspaceState();
             recalculateAll();
             const autoDl = document.getElementById('autoDownloadJsonOnCommit')?.checked;
-            closePublishPasswordModal();
 
             if (autoDl) {
                 exportJsonBackup(true);
@@ -3153,13 +3198,28 @@
             // If user has configured a GitHub Token, automatically sync to GitHub repository as well
             const token = document.getElementById('ghTokenInput')?.value.trim();
             if (token) {
-                await pushWorkspaceToGitHub(true);
+                const ok = await pushWorkspaceToGitHub(true);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origBtnHtml;
+                }
+                closePublishPasswordModal();
+                if (ok) {
+                    const statusText = document.getElementById('autoSaveStatusText');
+                    if (statusText) statusText.innerText = `已核定並同步 GitHub (${new Date().toLocaleTimeString('zh-TW', { hour12: false })})`;
+                }
             } else {
-                showToast('密碼驗證通過！已永久寫入本機存檔並更新看板（如需更新 GitHub 雲端可按「打包匯出 JSON」）。');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origBtnHtml;
+                }
+                closePublishPasswordModal();
+                showToast('密碼驗證通過！已永久寫入本機瀏覽器存檔（下次在此瀏覽器開啟不會重置；若需跨裝置同步請於存檔視窗填入 GitHub Token）。');
             }
         }
 
         function discardUncommittedChanges() {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
             const raw = localStorage.getItem(COMMITTED_STORAGE_KEY);
             if (raw) {
                 applyWorkspacePayload(JSON.parse(raw));
@@ -3260,7 +3320,12 @@
             saveCommittedWorkspaceState();
             recalculateAll();
             closeTeamModal();
-            showToast('團隊設定已儲存並寫入存檔！舊團隊與新團隊皆已並列於頂部看板。');
+            const token = document.getElementById('ghTokenInput')?.value.trim();
+            if (token) {
+                pushWorkspaceToGitHub(true);
+            } else {
+                showToast('團隊設定已儲存並寫入存檔！舊團隊與新團隊皆已並列於頂部看板。');
+            }
         }
 
         // Farm Modal
@@ -3352,7 +3417,12 @@
             saveCommittedWorkspaceState();
             recalculateAll();
             closeFarmModal();
-            showToast('合作農場資料已儲存並永久存檔！');
+            const token = document.getElementById('ghTokenInput')?.value.trim();
+            if (token) {
+                pushWorkspaceToGitHub(true);
+            } else {
+                showToast('合作農場資料已儲存並永久存檔！');
+            }
         }
 
         // Record Manager & Snapshots
@@ -3431,6 +3501,7 @@
                 return;
             }
             localStorage.removeItem(COMMITTED_STORAGE_KEY);
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
             teamsData = JSON.parse(JSON.stringify(DEFAULT_TEAMS));
             farmsData = JSON.parse(JSON.stringify(DEFAULT_FARMS));
             if (document.getElementById('step1MethodNoteInput')) document.getElementById('step1MethodNoteInput').value = DEFAULT_SECTION_NOTES.step1MethodNote;
@@ -3454,6 +3525,11 @@
                     token: document.getElementById('ghTokenInput')?.value.trim() || ''
                 };
                 localStorage.setItem(GH_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+                if (document.getElementById('commitGhRepoInput')) document.getElementById('commitGhRepoInput').value = settings.repo;
+                if (document.getElementById('commitGhBranchInput')) document.getElementById('commitGhBranchInput').value = settings.branch;
+                if (document.getElementById('commitGhPathInput')) document.getElementById('commitGhPathInput').value = settings.path;
+                if (document.getElementById('commitGhTokenInput')) document.getElementById('commitGhTokenInput').value = settings.token;
+                updateCommitModalGhBadge();
             } catch (e) {}
         }
 
@@ -3462,21 +3538,90 @@
                 const raw = localStorage.getItem(GH_SETTINGS_STORAGE_KEY);
                 if (!raw) return;
                 const s = JSON.parse(raw);
-                if (s.repo && document.getElementById('ghRepoInput')) document.getElementById('ghRepoInput').value = s.repo;
-                if (s.branch && document.getElementById('ghBranchInput')) document.getElementById('ghBranchInput').value = s.branch;
-                if (s.path && document.getElementById('ghPathInput')) document.getElementById('ghPathInput').value = s.path;
-                if (s.token && document.getElementById('ghTokenInput')) document.getElementById('ghTokenInput').value = s.token;
+                if (s.repo) {
+                    if (document.getElementById('ghRepoInput')) document.getElementById('ghRepoInput').value = s.repo;
+                    if (document.getElementById('commitGhRepoInput')) document.getElementById('commitGhRepoInput').value = s.repo;
+                }
+                if (s.branch) {
+                    if (document.getElementById('ghBranchInput')) document.getElementById('ghBranchInput').value = s.branch;
+                    if (document.getElementById('commitGhBranchInput')) document.getElementById('commitGhBranchInput').value = s.branch;
+                }
+                if (s.path) {
+                    if (document.getElementById('ghPathInput')) document.getElementById('ghPathInput').value = s.path;
+                    if (document.getElementById('commitGhPathInput')) document.getElementById('commitGhPathInput').value = s.path;
+                }
+                if (s.token) {
+                    if (document.getElementById('ghTokenInput')) document.getElementById('ghTokenInput').value = s.token;
+                    if (document.getElementById('commitGhTokenInput')) document.getElementById('commitGhTokenInput').value = s.token;
+                }
+                updateCommitModalGhBadge();
             } catch (e) {}
         }
 
-        // Auto-fetch relative ./sroi_data.json on GitHub Pages or pull via GitHub Raw/API
+        // Auto-fetch via GitHub API (zero cache delay) or relative ./sroi_data.json on GitHub Pages
         async function pullWorkspaceFromGitHub(isManualClick = false) {
             const repo = document.getElementById('ghRepoInput')?.value.trim() || 'farmcmd/ESGT';
             const branch = document.getElementById('ghBranchInput')?.value.trim() || 'main';
             const path = document.getElementById('ghPathInput')?.value.trim() || 'sroi_data.json';
+            const token = document.getElementById('ghTokenInput')?.value.trim() || '';
             const cacheBuster = `?v=${Date.now()}`;
 
-            // Try relative path first (works automatically on any GitHub Pages deployment where sroi_data.json is in the same folder)
+            const parseRemoteJsonHelper = async (remoteData) => {
+                if (!remoteData || (!Array.isArray(remoteData.teamsData) && !Array.isArray(remoteData.farmsData))) {
+                    return false;
+                }
+                if (!isManualClick) {
+                    // Never overwrite uncommitted draft or newer local committed data on initial boot
+                    if (hasUncommittedChanges) return false;
+                    const localRaw = localStorage.getItem(COMMITTED_STORAGE_KEY);
+                    if (localRaw) {
+                        const localData = JSON.parse(localRaw);
+                        const localTs = localData.updatedTimestamp || 0;
+                        const remoteTs = remoteData.updatedTimestamp || 0;
+                        if (localTs >= remoteTs && localTs > 0) {
+                            return false;
+                        }
+                    }
+                }
+                applyWorkspacePayload(remoteData);
+                saveCommittedWorkspaceState();
+                recalculateAll();
+                if (isManualClick) {
+                    showToast('已成功從 GitHub 雲端載入最新填報資料！');
+                } else {
+                    showToast('已從 GitHub 雲端同步載入最新核定數據！');
+                }
+                return true;
+            };
+
+            // 1. Try GitHub API first (bypasses GitHub Pages / Raw 5-minute CDN cache completely!)
+            const branchesToTry = branch === 'main' ? ['main', 'master'] : [branch, 'main'];
+            for (const b of branchesToTry) {
+                try {
+                    const apiHeaders = { Accept: 'application/vnd.github+json' };
+                    if (token) apiHeaders.Authorization = `Bearer ${token}`;
+                    const apiRes = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${encodeURIComponent(b)}&_t=${Date.now()}`, {
+                        headers: apiHeaders,
+                        cache: 'no-store'
+                    });
+                    if (apiRes.ok) {
+                        const fileMeta = await apiRes.json();
+                        if (fileMeta && fileMeta.content) {
+                            const binaryStr = atob(fileMeta.content.replace(/\s/g, ''));
+                            const bytes = new Uint8Array(binaryStr.length);
+                            for (let i = 0; i < binaryStr.length; i++) {
+                                bytes[i] = binaryStr.charCodeAt(i);
+                            }
+                            const jsonStr = new TextDecoder('utf-8').decode(bytes);
+                            const remoteData = JSON.parse(jsonStr);
+                            const applied = await parseRemoteJsonHelper(remoteData);
+                            if (applied || !isManualClick) return applied;
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            // 2. Fallback to relative path & raw.githubusercontent.com
             const urlsToTry = [
                 `./${path}${cacheBuster}`,
                 `https://raw.githubusercontent.com/${repo}/${branch}/${path}${cacheBuster}`,
@@ -3488,62 +3633,54 @@
                     const res = await fetch(url, { cache: 'no-store' });
                     if (res.ok) {
                         const remoteData = await res.json();
-                        if (remoteData && (Array.isArray(remoteData.teamsData) || Array.isArray(remoteData.farmsData))) {
-                            if (!isManualClick) {
-                                // On initial page load: compare updatedTimestamp so we don't overwrite newer local edits saved in localStorage
-                                const localRaw = localStorage.getItem(COMMITTED_STORAGE_KEY);
-                                if (localRaw) {
-                                    const localData = JSON.parse(localRaw);
-                                    const localTs = localData.updatedTimestamp || 0;
-                                    const remoteTs = remoteData.updatedTimestamp || 0;
-                                    if (localTs >= remoteTs && localTs > 0) {
-                                        return false; // Local committed state is newer or equal
-                                    }
-                                }
-                            }
-                            applyWorkspacePayload(remoteData);
-                            saveCommittedWorkspaceState();
-                            recalculateAll();
-                            if (isManualClick) {
-                                showToast('已成功從 GitHub 雲端載入最新填報資料！');
-                            } else {
-                                showToast('已自動同步載入 GitHub 最新 sroi_data.json 數據！');
-                            }
-                            return true;
-                        }
+                        const applied = await parseRemoteJsonHelper(remoteData);
+                        if (applied) return true;
                     }
-                } catch (err) {
-                    // Continue to next candidate URL
-                }
+                } catch (err) {}
             }
 
             if (isManualClick) {
-                showToast('雲端尚無 sroi_data.json，請先點擊「打包匯出 JSON」並上傳至 GitHub 倉庫！', 'fa-triangle-exclamation text-amber-400');
+                showToast('雲端尚無 sroi_data.json，請先點擊「密碼核定存檔 (同步更新 GitHub)」推送第一筆資料！', 'fa-triangle-exclamation text-amber-400');
             }
             return false;
         }
 
         async function pushWorkspaceToGitHub(isSilentAutoSync = false) {
             const repo = document.getElementById('ghRepoInput')?.value.trim() || 'farmcmd/ESGT';
-            const branch = document.getElementById('ghBranchInput')?.value.trim() || 'main';
+            let branch = document.getElementById('ghBranchInput')?.value.trim() || 'main';
             const path = document.getElementById('ghPathInput')?.value.trim() || 'sroi_data.json';
             const token = document.getElementById('ghTokenInput')?.value.trim();
             saveGhSettingsToLocal();
 
             if (!token) {
                 if (!isSilentAutoSync) {
-                    showToast('請輸入具備 repo 權限之 GitHub Token，或改用上方「打包匯出 JSON」按鈕！', 'fa-triangle-exclamation text-amber-400');
+                    showToast('請輸入具備 repo 權限之 GitHub Token，即可自動同步更新至 GitHub！', 'fa-triangle-exclamation text-amber-400');
                 }
                 return false;
             }
             try {
-                const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
-                let sha = undefined;
-                const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+                // Auto-detect default branch if needed
+                const repoMetaRes = await fetch(`https://api.github.com/repos/${repo}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         Accept: 'application/vnd.github+json'
                     }
+                });
+                if (repoMetaRes.ok) {
+                    const repoMeta = await repoMetaRes.json();
+                    if (repoMeta.default_branch && !branch) {
+                        branch = repoMeta.default_branch;
+                    }
+                }
+
+                const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+                let sha = undefined;
+                const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}&_t=${Date.now()}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: 'application/vnd.github+json'
+                    },
+                    cache: 'no-store'
                 });
                 if (getRes.ok) {
                     const existing = await getRes.json();
@@ -3580,11 +3717,11 @@
                     const errJson = await putRes.json().catch(() => ({}));
                     throw new Error(errJson.message || 'Push failed');
                 }
-                showToast('已成功將最新核定數據寫入本機並同步推送至 GitHub 雲端 (sroi_data.json)！');
+                showToast('密碼核定成功！已永久儲存並同步更新至 GitHub 雲端倉庫 (sroi_data.json)，下次開啟絕不重置！');
                 return true;
             } catch (e) {
                 console.error('GitHub Push Error:', e);
-                showToast(`推送 GitHub 失敗 (${e.message || '請檢查 Token 權限與分支名稱'})，已為您保存在本機瀏覽器。`, 'fa-circle-xmark text-red-400');
+                showToast(`已永久保存在本機瀏覽器（不會重置），但推送 GitHub 失敗：${e.message || '請檢查 Token 權限與倉庫名稱'}`, 'fa-triangle-exclamation text-amber-400');
                 return false;
             }
         }
@@ -3852,8 +3989,26 @@ ${cloneContainer.innerHTML}
         // =========================================================================
         window.onload = async function () {
             loadGhSettingsFromLocal();
+            const draftRaw = localStorage.getItem(DRAFT_STORAGE_KEY);
             const savedRaw = localStorage.getItem(COMMITTED_STORAGE_KEY);
-            if (savedRaw) {
+
+            if (draftRaw) {
+                try {
+                    const draftObj = JSON.parse(draftRaw);
+                    const savedObj = savedRaw ? JSON.parse(savedRaw) : null;
+                    if (!savedObj || (draftObj.updatedTimestamp || 0) >= (savedObj.updatedTimestamp || 0)) {
+                        applyWorkspacePayload(draftObj);
+                        hasUncommittedChanges = true;
+                        document.getElementById('uncommittedBadge')?.classList.remove('hidden');
+                        const statusText = document.getElementById('autoSaveStatusText');
+                        if (statusText) statusText.innerText = '已還原未核定草稿 (請按密碼核定同步 GitHub)';
+                    } else {
+                        applyWorkspacePayload(savedObj);
+                    }
+                } catch (e) {
+                    console.warn('Draft restore warning:', e);
+                }
+            } else if (savedRaw) {
                 try {
                     applyWorkspacePayload(JSON.parse(savedRaw));
                 } catch (e) {
@@ -3861,17 +4016,16 @@ ${cloneContainer.innerHTML}
                     populateSelectors();
                     setMethodMode('2026');
                     setReportScope('team');
-                    saveCommittedWorkspaceState();
                 }
             } else {
+                // Do not overwrite with factory timestamp=now yet, so remote GitHub data can win on fresh devices!
                 populateSelectors();
-                setMethodMode('2026');
-                setReportScope('team');
-                saveCommittedWorkspaceState();
+                currentMode = '2026';
+                reportScope = 'team';
             }
             recalculateAll();
 
-            // Automatically check if a newer sroi_data.json exists on GitHub Pages
+            // Automatically check if a newer sroi_data.json exists on GitHub via API / Pages
             await pullWorkspaceFromGitHub(false);
         };
     </script>
