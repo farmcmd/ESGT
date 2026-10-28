@@ -141,6 +141,17 @@
                     <span id="uncommittedBadge" class="hidden bg-red-600 text-white text-[10px] px-1.5 py-0.2 rounded-full">未存檔</span>
                 </button>
 
+                <!-- Export & Import JSON Quick Buttons -->
+                <button onclick="exportJsonBackup()" class="bg-emerald-700 hover:bg-emerald-600 border border-emerald-400/40 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="打包匯出全部團隊與農場數據為 sroi_data.json">
+                    <i class="fa-solid fa-file-export text-emerald-200"></i>
+                    <span>打包匯出 JSON</span>
+                </button>
+                <button onclick="triggerJsonImport()" class="bg-sky-700 hover:bg-sky-600 border border-sky-400/40 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="從電腦選擇 JSON 檔案匯入並更新數據">
+                    <i class="fa-solid fa-file-import text-sky-200"></i>
+                    <span>匯入 JSON</span>
+                </button>
+                <input type="file" id="jsonFileInput" accept=".json,application/json" class="hidden" onchange="handleJsonFileImport(event)">
+
                 <!-- Live SROI Badge -->
                 <div class="bg-slate-900/90 border border-emerald-400/40 px-3 py-1 rounded-xl flex items-center gap-2">
                     <span class="text-[10px] text-emerald-300 font-bold">即時試算 SROI</span>
@@ -526,8 +537,11 @@
                         <button onclick="exportPDF()" class="bg-satoyama-dark hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
                             <i class="fa-solid fa-file-pdf"></i> 轉出正式報告 (.pdf)
                         </button>
-                        <button onclick="exportJsonBackup()" class="bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition">
-                            <i class="fa-solid fa-download"></i> 備份 JSON
+                        <button onclick="exportJsonBackup()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-sm">
+                            <i class="fa-solid fa-file-export"></i> 打包匯出 JSON
+                        </button>
+                        <button onclick="triggerJsonImport()" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-sm">
+                            <i class="fa-solid fa-file-import"></i> 匯入 JSON
                         </button>
                     </div>
                 </div>
@@ -573,6 +587,13 @@
                 <label class="text-xs font-bold text-slate-700 block mb-1">管理密碼 *</label>
                 <input type="password" id="commitPasswordInput" placeholder="請輸入密碼 (預設 545366)..." class="clean-num-input w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold">
                 <p id="commitPasswordError" class="hidden text-xs text-red-600 font-bold mt-1.5">❌ 密碼錯誤！請輸入正確的團隊/農場專屬密碼或總管理密碼。</p>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-[11px] text-slate-700 space-y-1.5">
+                <label class="flex items-center gap-2 cursor-pointer font-bold text-satoyama-dark">
+                    <input type="checkbox" id="autoDownloadJsonOnCommit" class="rounded text-satoyama-dark">
+                    <span>核定存檔時，同時自動下載 <code>sroi_data.json</code> 檔案（可上傳至 GitHub 更新全網數據）</span>
+                </label>
+                <p class="text-[10px] text-slate-500 pl-5">💡 提示：GitHub Pages 為靜態網頁伺服器，除了自動儲存於您的瀏覽器外，若已設定 GitHub Token 系統將自動同步雲端；您亦可勾選此項下載 <code>sroi_data.json</code> 放入 GitHub 倉庫。</p>
             </div>
             <div class="flex items-center justify-between pt-2 border-t">
                 <button onclick="discardUncommittedChanges()" class="text-xs text-red-600 hover:underline font-bold">放棄未存檔修改並還原</button>
@@ -721,31 +742,55 @@
             <div class="flex items-center justify-between border-b pb-3">
                 <div>
                     <h3 class="text-base font-black text-satoyama-dark flex items-center gap-2">
-                        <i class="fa-solid fa-database text-emerald-600"></i> 填報數據持久化存檔、歷史快照與 GitHub 遠端同步中心
+                        <i class="fa-solid fa-database text-emerald-600"></i> 填報數據持久化存檔、JSON 打包匯出入與 GitHub 遠端同步中心
                     </h3>
-                    <p class="text-[11px] text-slate-500">所有經密碼驗證的團隊與農場修改皆已永久保存在本機瀏覽器中，重新整理不會遺失；亦可推送至 GitHub 雲端。</p>
+                    <p class="text-[11px] text-slate-500">解決 GitHub 靜態網頁更新問題：支援一鍵打包匯出/匯入 JSON 檔案，或設定 GitHub Token 於核定存檔時自動寫回 GitHub 倉庫。</p>
                 </div>
                 <button onclick="closeRecordManagerModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+            </div>
+
+            <!-- JSON Package Export & Import Section -->
+            <div class="bg-emerald-50/90 p-3.5 rounded-xl border-2 border-emerald-300 space-y-2 text-xs">
+                <div class="font-black text-satoyama-dark flex items-center justify-between">
+                    <span>📦 方式一：打包匯出 / 匯入 JSON 完整數據檔（最穩定、免設定 Token）</span>
+                    <span class="bg-emerald-700 text-white px-2 py-0.5 rounded text-[10px] font-bold">推薦跨電腦更新與備份</span>
+                </div>
+                <p class="text-[11px] text-slate-700 leading-relaxed">
+                    • <strong>打包匯出 (`sroi_data.json`)</strong>：將目前所有團隊、成員農場、前後期數據与附言打包下載。將下載的 <code>sroi_data.json</code> 上傳覆蓋至您的 GitHub 倉庫同目錄下，所有開啟 GitHub 網頁的使用者就會自動載入這份最新數據！<br>
+                    • <strong>匯入 JSON 檔案</strong>：點擊「選擇 JSON 檔案匯入」，可立即載入他人傳送或先前備份的 <code>.json</code> 檔並自動更新全站數據。
+                </p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="exportJsonBackup(true)" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3.5 py-1.5 rounded-lg font-black flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-export"></i> 打包匯出 sroi_data.json (GitHub 專用檔名)
+                    </button>
+                    <button onclick="exportJsonBackup(false)" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> 匯出帶日期備份 JSON
+                    </button>
+                    <button onclick="triggerJsonImport()" class="bg-sky-700 hover:bg-sky-600 text-white px-3.5 py-1.5 rounded-lg font-black flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-import"></i> 選擇 JSON 檔案匯入並更新數據
+                    </button>
+                </div>
             </div>
 
             <!-- GitHub Cloud Sync Section -->
             <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div class="font-black text-slate-800 flex items-center justify-between">
-                    <span>☁️ GitHub Pages 跨裝置雲端資料同步 (farmcmd/ESGT)</span>
-                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">支援 sroi_data.json</span>
+                    <span>☁️ 方式二：GitHub API 跨裝置雲端直推同步 (自動更新 GitHub 倉庫上的 sroi_data.json)</span>
+                    <span id="ghSyncStatusBadge" class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">支援自動記憶設定</span>
                 </div>
-                <p class="text-[11px] text-slate-600">若希望將目前核定數據寫回 GitHub 倉庫讓所有人的手機與電腦開啟網址時同步看到最新數據，請輸入具備 <code>repo</code> 權限的 GitHub Token：</p>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input type="text" id="ghRepoInput" value="farmcmd/ESGT" placeholder="Owner/Repo" class="clean-num-input border rounded-lg px-2.5 py-1.5 font-bold">
-                    <input type="text" id="ghPathInput" value="sroi_data.json" placeholder="資料檔路徑" class="clean-num-input border rounded-lg px-2.5 py-1.5 font-bold">
-                    <input type="password" id="ghTokenInput" placeholder="GitHub Token (ghp_...)" class="clean-num-input border rounded-lg px-2.5 py-1.5 font-bold">
+                <p class="text-[11px] text-slate-600">若希望在網頁上修改後直接寫回 GitHub 倉庫，請填入您的 GitHub 倉庫名稱、分支與具備 <code>repo</code> (或 <code>contents:write</code>) 權限的 Token（設定會自動儲存在您的瀏覽器中）：</p>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <input type="text" id="ghRepoInput" value="farmcmd/ESGT" placeholder="Owner/Repo (例: farmcmd/ESGT)" oninput="saveGhSettingsToLocal()" class="clean-num-input border rounded-lg px-2.5 py-1.5 font-bold">
+                    <input type="text" id="ghBranchInput" value="main" placeholder="分支 (main 或 master)" oninput="saveGhSettingsToLocal()" class="clean-num-input border rounded-lg px-2.5 py-1.5 font-bold">
+                    <input type="text" id="ghPathInput" value="sroi_data.json" placeholder="資料檔路徑 (sroi_data.json)" oninput="saveGhSettingsToLocal()" class="clean-num-input border rounded-lg px-2.5 py-1.5 font-bold">
+                    <input type="password" id="ghTokenInput" placeholder="GitHub Token (ghp_...)" oninput="saveGhSettingsToLocal()" class="clean-num-input border rounded-lg px-2.5 py-1.5 font-bold">
                 </div>
                 <div class="flex flex-wrap gap-2 pt-1">
-                    <button onclick="pullWorkspaceFromGitHub()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg font-bold">
-                        <i class="fa-solid fa-cloud-arrow-down"></i> 從 GitHub 讀取最新雲端資料
+                    <button onclick="pullWorkspaceFromGitHub(true)" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg font-bold">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> 從 GitHub 強制讀取最新雲端資料
                     </button>
                     <button onclick="pushWorkspaceToGitHub()" class="bg-satoyama-dark hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg font-bold">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> 同步存檔至 GitHub 網頁雲端
+                        <i class="fa-solid fa-cloud-arrow-up"></i> 立即推送存檔至 GitHub 雲端
                     </button>
                 </div>
             </div>
@@ -810,6 +855,7 @@
         const MASTER_ADMIN_PWD = '545366';
         const COMMITTED_STORAGE_KEY = 'SHUILI_SATOYAMA_SROI_WORKSPACE_V7_COMMITTED';
         const SNAPSHOTS_STORAGE_KEY = 'SHUILI_SATOYAMA_SROI_SNAPSHOTS_V7';
+        const GH_SETTINGS_STORAGE_KEY = 'SHUILI_SATOYAMA_GH_SYNC_SETTINGS_V1';
 
         let currentMode = '2026'; // '2025', '2026', '2027'
         let reportScope = 'team'; // 'team' or 'single'
@@ -2945,8 +2991,9 @@
         // =========================================================================
         function buildCurrentWorkspacePayload() {
             return {
-                version: 'V7.2',
-                savedAt: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
+                version: 'V7.5',
+                updatedTimestamp: Date.now(),
+                savedAt: new Date().toLocaleString('zh-TW', { hour12: false }),
                 currentMode,
                 reportScope,
                 activeTeamId,
@@ -2969,7 +3016,7 @@
         }
 
         function applyWorkspacePayload(payload) {
-            if (!payload) return;
+            if (!payload || typeof payload !== 'object') return false;
             currentMode = payload.currentMode || '2026';
             reportScope = payload.reportScope || 'team';
             if (Array.isArray(payload.teamsData) && payload.teamsData.length > 0) {
@@ -2981,7 +3028,8 @@
             activeTeamId = (payload.activeTeamId && teamsData.some(t => t.id === payload.activeTeamId))
                 ? payload.activeTeamId
                 : teamsData[0].id;
-            selectedSingleFarmId = payload.selectedSingleFarmId || 'farm_1';
+            expandedTeamMap[activeTeamId] = true;
+            selectedSingleFarmId = payload.selectedSingleFarmId || (farmsData[0]?.id || 'farm_1');
 
             const sviEl = document.getElementById('sviAssuranceModeSelect');
             if (sviEl && payload.sviAssuranceMode) sviEl.value = payload.sviAssuranceMode;
@@ -3009,11 +3057,39 @@
             }
 
             populateSelectors();
-            setMethodMode(currentMode);
-            setReportScope(reportScope);
+            // Update mode UI buttons without triggering uncommitted flag
+            ['2025', '2026', '2027'].forEach(yr => {
+                const btn = document.getElementById(`modeBtn${yr}`);
+                if (!btn) return;
+                if (yr === currentMode) {
+                    btn.className = 'mode-btn border-2 border-satoyama-dark bg-satoyama-dark text-white rounded-xl p-2.5 text-left transition shadow';
+                } else {
+                    btn.className = 'mode-btn border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl p-2.5 text-left transition';
+                }
+            });
+            const badge = document.getElementById('headerMethodBadge');
+            if (badge) badge.innerText = currentMode === '2025' ? '2025 (V3.0)' : (currentMode === '2026' ? '2026 (V4.2)' : '2027+ (V5.0)');
+
+            // Update scope UI buttons without overwriting saved retainEco value
+            const btnTeam = document.getElementById('scopeBtnTeam');
+            const btnSingle = document.getElementById('scopeBtnSingle');
+            const singleWrap = document.getElementById('singleFarmSelectWrap');
+            if (reportScope === 'single') {
+                if (btnSingle) btnSingle.className = 'py-1.5 px-3 rounded-lg text-xs font-black transition bg-satoyama-dark text-white shadow';
+                if (btnTeam) btnTeam.className = 'py-1.5 px-3 rounded-lg text-xs font-black transition text-slate-700 hover:bg-white/60';
+                if (singleWrap) singleWrap.classList.remove('hidden');
+            } else {
+                if (btnTeam) btnTeam.className = 'py-1.5 px-3 rounded-lg text-xs font-black transition bg-satoyama-dark text-white shadow';
+                if (btnSingle) btnSingle.className = 'py-1.5 px-3 rounded-lg text-xs font-black transition text-slate-700 hover:bg-white/60';
+                if (singleWrap) singleWrap.classList.add('hidden');
+            }
+
             hasUncommittedChanges = false;
             document.getElementById('uncommittedBadge')?.classList.add('hidden');
+            const statusText = document.getElementById('autoSaveStatusText');
+            if (statusText) statusText.innerText = `已載入核定存檔 (${payload.savedAt || '最新'})`;
             updateCommittedBanner();
+            return true;
         }
 
         function updateCommittedBanner() {
@@ -3031,11 +3107,16 @@
 
         function saveCommittedWorkspaceState() {
             const payload = buildCurrentWorkspacePayload();
-            localStorage.setItem(COMMITTED_STORAGE_KEY, JSON.stringify(payload));
+            try {
+                localStorage.setItem(COMMITTED_STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.warn('localStorage save warning:', e);
+            }
             hasUncommittedChanges = false;
             document.getElementById('uncommittedBadge')?.classList.add('hidden');
             document.getElementById('autoSaveStatusText').innerText = `已核定存檔 (${payload.savedAt})`;
             updateCommittedBanner();
+            return payload;
         }
 
         function openPublishPasswordModal() {
@@ -3052,7 +3133,7 @@
             modal.classList.remove('flex');
         }
 
-        function confirmPublishData() {
+        async function confirmPublishData() {
             const pwd = document.getElementById('commitPasswordInput')?.value.trim();
             const activeTeam = teamsData.find(t => t.id === activeTeamId) || teamsData[0];
             const validPasswords = [MASTER_ADMIN_PWD, activeTeam?.password, ...farmsData.map(f => f.password)];
@@ -3062,8 +3143,20 @@
             }
             saveCommittedWorkspaceState();
             recalculateAll();
+            const autoDl = document.getElementById('autoDownloadJsonOnCommit')?.checked;
             closePublishPasswordModal();
-            showToast('密碼驗證通過！已永久寫入核定存檔並更新頂部看板。');
+
+            if (autoDl) {
+                exportJsonBackup(true);
+            }
+
+            // If user has configured a GitHub Token, automatically sync to GitHub repository as well
+            const token = document.getElementById('ghTokenInput')?.value.trim();
+            if (token) {
+                await pushWorkspaceToGitHub(true);
+            } else {
+                showToast('密碼驗證通過！已永久寫入本機存檔並更新看板（如需更新 GitHub 雲端可按「打包匯出 JSON」）。');
+            }
         }
 
         function discardUncommittedChanges() {
@@ -3351,63 +3444,153 @@
             showToast('已重設回系統預設範本！');
         }
 
-        // GitHub Cloud Push / Pull
-        async function pullWorkspaceFromGitHub() {
-            const repo = document.getElementById('ghRepoInput')?.value.trim() || 'farmcmd/ESGT';
-            const path = document.getElementById('ghPathInput')?.value.trim() || 'sroi_data.json';
+        // GitHub Cloud Settings & Push / Pull
+        function saveGhSettingsToLocal() {
             try {
-                const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/${path}?t=${Date.now()}`);
-                if (!res.ok) throw new Error('雲端尚無資料檔');
-                const data = await res.json();
-                applyWorkspacePayload(data);
-                saveCommittedWorkspaceState();
-                recalculateAll();
-                showToast('已成功從 GitHub 雲端載入最新填報資料！');
-            } catch (e) {
-                showToast('讀取失敗：請確認 GitHub 倉庫中已存在 sroi_data.json', 'fa-triangle-exclamation text-amber-400');
-            }
+                const settings = {
+                    repo: document.getElementById('ghRepoInput')?.value.trim() || 'farmcmd/ESGT',
+                    branch: document.getElementById('ghBranchInput')?.value.trim() || 'main',
+                    path: document.getElementById('ghPathInput')?.value.trim() || 'sroi_data.json',
+                    token: document.getElementById('ghTokenInput')?.value.trim() || ''
+                };
+                localStorage.setItem(GH_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+            } catch (e) {}
         }
 
-        async function pushWorkspaceToGitHub() {
+        function loadGhSettingsFromLocal() {
+            try {
+                const raw = localStorage.getItem(GH_SETTINGS_STORAGE_KEY);
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                if (s.repo && document.getElementById('ghRepoInput')) document.getElementById('ghRepoInput').value = s.repo;
+                if (s.branch && document.getElementById('ghBranchInput')) document.getElementById('ghBranchInput').value = s.branch;
+                if (s.path && document.getElementById('ghPathInput')) document.getElementById('ghPathInput').value = s.path;
+                if (s.token && document.getElementById('ghTokenInput')) document.getElementById('ghTokenInput').value = s.token;
+            } catch (e) {}
+        }
+
+        // Auto-fetch relative ./sroi_data.json on GitHub Pages or pull via GitHub Raw/API
+        async function pullWorkspaceFromGitHub(isManualClick = false) {
             const repo = document.getElementById('ghRepoInput')?.value.trim() || 'farmcmd/ESGT';
+            const branch = document.getElementById('ghBranchInput')?.value.trim() || 'main';
+            const path = document.getElementById('ghPathInput')?.value.trim() || 'sroi_data.json';
+            const cacheBuster = `?v=${Date.now()}`;
+
+            // Try relative path first (works automatically on any GitHub Pages deployment where sroi_data.json is in the same folder)
+            const urlsToTry = [
+                `./${path}${cacheBuster}`,
+                `https://raw.githubusercontent.com/${repo}/${branch}/${path}${cacheBuster}`,
+                `https://raw.githubusercontent.com/${repo}/master/${path}${cacheBuster}`
+            ];
+
+            for (const url of urlsToTry) {
+                try {
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (res.ok) {
+                        const remoteData = await res.json();
+                        if (remoteData && (Array.isArray(remoteData.teamsData) || Array.isArray(remoteData.farmsData))) {
+                            if (!isManualClick) {
+                                // On initial page load: compare updatedTimestamp so we don't overwrite newer local edits saved in localStorage
+                                const localRaw = localStorage.getItem(COMMITTED_STORAGE_KEY);
+                                if (localRaw) {
+                                    const localData = JSON.parse(localRaw);
+                                    const localTs = localData.updatedTimestamp || 0;
+                                    const remoteTs = remoteData.updatedTimestamp || 0;
+                                    if (localTs >= remoteTs && localTs > 0) {
+                                        return false; // Local committed state is newer or equal
+                                    }
+                                }
+                            }
+                            applyWorkspacePayload(remoteData);
+                            saveCommittedWorkspaceState();
+                            recalculateAll();
+                            if (isManualClick) {
+                                showToast('已成功從 GitHub 雲端載入最新填報資料！');
+                            } else {
+                                showToast('已自動同步載入 GitHub 最新 sroi_data.json 數據！');
+                            }
+                            return true;
+                        }
+                    }
+                } catch (err) {
+                    // Continue to next candidate URL
+                }
+            }
+
+            if (isManualClick) {
+                showToast('雲端尚無 sroi_data.json，請先點擊「打包匯出 JSON」並上傳至 GitHub 倉庫！', 'fa-triangle-exclamation text-amber-400');
+            }
+            return false;
+        }
+
+        async function pushWorkspaceToGitHub(isSilentAutoSync = false) {
+            const repo = document.getElementById('ghRepoInput')?.value.trim() || 'farmcmd/ESGT';
+            const branch = document.getElementById('ghBranchInput')?.value.trim() || 'main';
             const path = document.getElementById('ghPathInput')?.value.trim() || 'sroi_data.json';
             const token = document.getElementById('ghTokenInput')?.value.trim();
+            saveGhSettingsToLocal();
+
             if (!token) {
-                showToast('請輸入具備 repo 權限之 GitHub Personal Access Token！', 'fa-triangle-exclamation text-amber-400');
-                return;
+                if (!isSilentAutoSync) {
+                    showToast('請輸入具備 repo 權限之 GitHub Token，或改用上方「打包匯出 JSON」按鈕！', 'fa-triangle-exclamation text-amber-400');
+                }
+                return false;
             }
             try {
                 const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
                 let sha = undefined;
-                const getRes = await fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
+                const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: 'application/vnd.github+json'
+                    }
+                });
                 if (getRes.ok) {
                     const existing = await getRes.json();
                     sha = existing.sha;
                 }
-                const payloadStr = JSON.stringify(buildCurrentWorkspacePayload(), null, 2);
-                const contentBase64 = btoa(unescape(encodeURIComponent(payloadStr)));
+                const payloadObj = saveCommittedWorkspaceState();
+                const payloadStr = JSON.stringify(payloadObj, null, 2);
+
+                // Safe UTF-8 to Base64 encoding
+                const utf8Bytes = new TextEncoder().encode(payloadStr);
+                let binaryStr = '';
+                for (let i = 0; i < utf8Bytes.length; i++) {
+                    binaryStr += String.fromCharCode(utf8Bytes[i]);
+                }
+                const contentBase64 = btoa(binaryStr);
+
+                const bodyPayload = {
+                    message: `Update SROI data via Shuili Satoyama Workbench (${getFormattedToday()})`,
+                    content: contentBase64,
+                    branch
+                };
+                if (sha) bodyPayload.sha = sha;
+
                 const putRes = await fetch(apiUrl, {
                     method: 'PUT',
                     headers: {
                         Authorization: `Bearer ${token}`,
+                        Accept: 'application/vnd.github+json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        message: `Update SROI data via Shuili Satoyama Workbench (${getFormattedToday()})`,
-                        content: contentBase64,
-                        sha
-                    })
+                    body: JSON.stringify(bodyPayload)
                 });
-                if (!putRes.ok) throw new Error('Push failed');
-                saveCommittedWorkspaceState();
-                showToast('已成功將最新核定數據同步寫入 GitHub 雲端！');
+                if (!putRes.ok) {
+                    const errJson = await putRes.json().catch(() => ({}));
+                    throw new Error(errJson.message || 'Push failed');
+                }
+                showToast('已成功將最新核定數據寫入本機並同步推送至 GitHub 雲端 (sroi_data.json)！');
+                return true;
             } catch (e) {
-                showToast('推送 GitHub 失敗，請檢查 Token 權限與倉庫名稱。', 'fa-circle-xmark text-red-400');
+                console.error('GitHub Push Error:', e);
+                showToast(`推送 GitHub 失敗 (${e.message || '請檢查 Token 權限與分支名稱'})，已為您保存在本機瀏覽器。`, 'fa-circle-xmark text-red-400');
+                return false;
             }
         }
 
         // =========================================================================
-        // 7. EXPORT TO WORD (.DOC), PDF (.PDF), JSON & QR SHARE
+        // 7. EXPORT TO WORD (.DOC), PDF (.PDF), JSON PACKAGE EXPORT / IMPORT & QR SHARE
         // =========================================================================
         function exportWord() {
             const dCanvas = document.getElementById('mainDoughnutChart');
@@ -3580,14 +3763,51 @@ ${cloneContainer.innerHTML}
             }
         }
 
-        function exportJsonBackup() {
+        function exportJsonBackup(useStandardGitHubName = true) {
             const payload = buildCurrentWorkspacePayload();
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `sroi_data_${currentMode}.json`;
+            const dateStr = getFormattedToday().replace(/\//g, '');
+            a.download = useStandardGitHubName ? 'sroi_data.json' : `水里里山_SROI完整數據備份_${currentMode}_${dateStr}.json`;
+            document.body.appendChild(a);
             a.click();
-            showToast('已匯出 sroi_data.json 備份檔！');
+            document.body.removeChild(a);
+            showToast(`已打包匯出 JSON 檔案 (${a.download})！可隨時匯入或上傳至 GitHub 倉庫。`);
+        }
+
+        function triggerJsonImport() {
+            const fileInput = document.getElementById('jsonFileInput');
+            if (!fileInput) return;
+            fileInput.value = '';
+            fileInput.click();
+        }
+
+        function handleJsonFileImport(event) {
+            const file = event.target?.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const text = e.target?.result;
+                    const parsed = JSON.parse(text);
+                    if (!parsed || typeof parsed !== 'object' || (!Array.isArray(parsed.teamsData) && !Array.isArray(parsed.farmsData))) {
+                        showToast('匯入失敗：該 JSON 檔案格式不符，請選擇由本工作台打包匯出的 JSON 檔！', 'fa-circle-xmark text-red-400');
+                        return;
+                    }
+                    parsed.updatedTimestamp = Date.now();
+                    parsed.savedAt = new Date().toLocaleString('zh-TW', { hour12: false });
+                    applyWorkspacePayload(parsed);
+                    saveCommittedWorkspaceState();
+                    recalculateAll();
+                    closeRecordManagerModal();
+                    showToast(`已成功匯入「${file.name}」，所有團隊、農場與報告書數據已完整更新並存檔！`);
+                } catch (err) {
+                    console.error('JSON Import Error:', err);
+                    showToast('匯入失敗：JSON 檔案解析錯誤，請確認檔案未損毀。', 'fa-circle-xmark text-red-400');
+                }
+            };
+            reader.readAsText(file, 'utf-8');
         }
 
         function openQrShareModal() {
@@ -3630,13 +3850,18 @@ ${cloneContainer.innerHTML}
         // =========================================================================
         // 8. INITIALIZATION ON WINDOW LOAD
         // =========================================================================
-        window.onload = function () {
+        window.onload = async function () {
+            loadGhSettingsFromLocal();
             const savedRaw = localStorage.getItem(COMMITTED_STORAGE_KEY);
             if (savedRaw) {
                 try {
                     applyWorkspacePayload(JSON.parse(savedRaw));
                 } catch (e) {
                     console.warn('Failed to parse saved workspace, using defaults.');
+                    populateSelectors();
+                    setMethodMode('2026');
+                    setReportScope('team');
+                    saveCommittedWorkspaceState();
                 }
             } else {
                 populateSelectors();
@@ -3645,6 +3870,9 @@ ${cloneContainer.innerHTML}
                 saveCommittedWorkspaceState();
             }
             recalculateAll();
+
+            // Automatically check if a newer sroi_data.json exists on GitHub Pages
+            await pullWorkspaceFromGitHub(false);
         };
     </script>
 </body>
