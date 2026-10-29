@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>探探里山｜里山生態島與農村文化導覽</title>
+    <title>探探里山｜里山生態島微棲地探索與農村文化導覽</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -48,6 +48,13 @@
             padding: 6px 10px; border-radius: 20px;
             box-shadow: 0 8px 25px rgba(20, 83, 45, 0.22), 0 0 0 1.5px rgba(255,255,255,0.85);
             z-index: 9500; width: 96vw; max-width: 720px; box-sizing: border-box;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+        }
+        /* ★ 當用魔法棒選擇好棲地時，上方控制條自動向上平滑收合，避免遮擋上方棲地島 */
+        body.magic-target-locked #top-island-nav {
+            transform: translate(-50%, -135%);
+            opacity: 0;
+            pointer-events: none;
         }
         .nav-pill-btn {
             background: #f8fafc; border: 1px solid #e2e8f0; padding: 5px 9px;
@@ -238,6 +245,15 @@
         .c-badge {
             position: absolute; top: -5px; right: -5px; background: #14532d; color: white;
             font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 999px; border: 2px solid white; z-index: 10;
+        }
+        /* ★ 台灣保育類動物月亮標章 (一級🌙、二級🌙🌙、三級🌙🌙🌙) */
+        .c-cons-badge {
+            position: absolute; top: -6px; left: -5px;
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            color: #fef08a; font-size: 9px; line-height: 1;
+            padding: 2px 4px; border-radius: 999px; border: 1.5px solid #facc15;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10; pointer-events: none;
+            letter-spacing: -2px;
         }
         .creature-card.selected-in-bag {
             border: 3px solid #f97316;
@@ -732,9 +748,10 @@
                 <div style="background:#f0fdf4; border:1.5px solid #86efac; padding:10px 12px; border-radius:12px; margin-bottom:12px;">
                     <b style="color:#166534;">🌱 棲地演化與食物鏈 (+10分)：</b><br>
                     • 同一棲地放入 <b>3張正確生物</b> ➜ 擴增「新生自然棲地」(+5分)。<br>
-                    • 同一棲地湊齊 <b>田野捕食鏈 (🦠蚜蟲+🐞瓢蟲+🐦鳥類)</b> 或 <b>水岸生態鏈 (🐜螞蟻+🐸蛙類+🐍蛇類)</b> ➜ 觸發黃金協作線 (+10分)！
+                    • 同一棲地湊齊 <b>田野捕食鏈 (🦠蚜蟲+🐞瓢蟲+🐦鳥類)</b> 或 <b>水岸生態鏈 (🐜螞蟻+🐸蛙類+🐍蛇類)</b> ➜ 觸發黃金協作線 (+10分)！<br>
+                    • <b>🌙 台灣保育類標章：</b><span style="background:#1e1b4b;color:#fef08a;padding:1px 6px;border-radius:99px;font-size:11px;">🌙 一級瀕臨絕種</span> <span style="background:#1e1b4b;color:#fef08a;padding:1px 6px;border-radius:99px;font-size:11px;">🌙🌙 二級珍貴稀有</span> <span style="background:#1e1b4b;color:#fef08a;padding:1px 6px;border-radius:99px;font-size:11px;">🌙🌙🌙 三級其他應予保育</span>
                 </div>
-                <div style="font-weight:800; color:#14532d; margin-bottom:6px;">🐾 46種里山生態物種</div>
+                <div style="font-weight:800; color:#14532d; margin-bottom:6px;">🐾 80種台灣本土里山生態物種</div>
                 <div class="guide-grid" id="guide-bio-grid"></div>
                 <div style="font-weight:800; color:#b45309; margin-bottom:6px;">🛖 11種農村文化地景 (全島皆可放)</div>
                 <div class="guide-grid" id="guide-culture-grid"></div>
@@ -775,53 +792,88 @@
             { q: "個人對生態多樣性及農村永續有哪些方法?", opts: ["支持綠色消費支持循環經濟生產之產品及低碳里程", "參與公民科學", "支持農村創生", "以上皆是"], ans: 3 }
         ];
 
+        // ★ 擴充至 80 種台灣本土里山代表性物種，並標註台灣法定保育等級 (consLevel: 1=一級🌙, 2=二級🌙🌙, 3=三級🌙🌙🌙)
         const ECO_DATA = [
-            { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', validHabitats: ['h6', 'h12', 'h11', 'h14'] },
-            { id: 'b2', type: 'bio', name: '齧齒類', icon: '🐭', validHabitats: ['h1', 'h6', 'h5', 'h14'] },
-            { id: 'b3', type: 'bio', name: '鼬獾', icon: '🦡', validHabitats: ['h6', 'h12', 'h11', 'h14'] },
+            { id: 'b1', type: 'bio', name: '石虎', icon: '🐆', consLevel: 1, validHabitats: ['h6', 'h12', 'h11', 'h14', 'h15'] },
+            { id: 'b2', type: 'bio', name: '台灣野鼠', icon: '🐭', validHabitats: ['h1', 'h6', 'h5', 'h14'] },
+            { id: 'b3', type: 'bio', name: '鼬獾', icon: '🦡', validHabitats: ['h6', 'h12', 'h11', 'h14', 'h15'] },
             { id: 'b4', type: 'bio', name: '蛇類', icon: '🐍', validHabitats: ['h2', 'h7', 'h1', 'h5', 'h11', 'h14'] },
-            { id: 'b5', type: 'bio', name: '龜類', icon: '🐢', validHabitats: ['h4', 'h8', 'h11'] },
-            { id: 'b6', type: 'bio', name: '雉雞', icon: '🐓', validHabitats: ['h5', 'h6', 'h14'] },
-            { id: 'b7', type: 'bio', name: '鳥類', icon: '🐦', validHabitats: ['h6', 'h14'] },
+            { id: 'b5', type: 'bio', name: '斑龜', icon: '🐢', validHabitats: ['h4', 'h8', 'h11'] },
+            { id: 'b6', type: 'bio', name: '台灣竹雞', icon: '🐓', validHabitats: ['h5', 'h6', 'h14'] },
+            { id: 'b7', type: 'bio', name: '鳥類', icon: '🐦', validHabitats: ['h6', 'h14', 'h5'] },
             { id: 'b8', type: 'bio', name: '昆蟲', icon: '🪲', validHabitats: ['h10', 'h1', 'h5', 'h14'] },
-            { id: 'b9', type: 'bio', name: '瓢蟲', icon: '🐞', validHabitats: ['h10', 'h6', 'h5', 'h1'] },
+            { id: 'b9', type: 'bio', name: '七星瓢蟲', icon: '🐞', validHabitats: ['h10', 'h6', 'h5', 'h1'] },
             { id: 'b10', type: 'bio', name: '蚜蟲', icon: '🦠', validHabitats: ['h5'] },
-            { id: 'b11', type: 'bio', name: '螞蟻', icon: '🐜', validHabitats: ['h2', 'h5'] },
+            { id: 'b11', type: 'bio', name: '台灣巨蟻', icon: '🐜', validHabitats: ['h2', 'h5', 'h1'] },
             { id: 'b12', type: 'bio', name: '蛙類', icon: '🐸', validHabitats: ['h7', 'h4', 'h3', 'h5'] },
-            { id: 'b13', type: 'bio', name: '金線蛙', icon: '🐸✨', validHabitats: ['h7', 'h4'] },
-            { id: 'b14', type: 'bio', name: '蝴蝶', icon: '🦋', validHabitats: ['h6', 'h5', 'h14'] },
-            { id: 'b15', type: 'bio', name: '蜜蜂', icon: '🐝', validHabitats: ['h10', 'h6', 'h5', 'h14'] },
-            { id: 'b16', type: 'bio', name: '螳螂', icon: '🦗', validHabitats: ['h5', 'h6'] },
-            { id: 'b17', type: 'bio', name: '本土魚', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] },
-            { id: 'b18', type: 'bio', name: '大肚魚', icon: '🐟', validHabitats: ['h4', 'h13'] },
-            { id: 'b19', type: 'bio', name: '七星鯉', icon: '🐟✨', validHabitats: ['h4', 'h9'] },
+            { id: 'b13', type: 'bio', name: '金線蛙', icon: '🐸✨', consLevel: 3, validHabitats: ['h7', 'h4'] },
+            { id: 'b14', type: 'bio', name: '台灣鳳蝶', icon: '🦋', validHabitats: ['h6', 'h5', 'h14'] },
+            { id: 'b15', type: 'bio', name: '台灣野蜂', icon: '🐝', validHabitats: ['h10', 'h6', 'h5', 'h14'] },
+            { id: 'b16', type: 'bio', name: '台灣大螳螂', icon: '🦗', validHabitats: ['h5', 'h6'] },
+            { id: 'b17', type: 'bio', name: '台灣石賓', icon: '🐟', validHabitats: ['h4', 'h9', 'h13'] },
+            { id: 'b18', type: 'bio', name: '蓋斑鬥魚', icon: '🐟', validHabitats: ['h4', 'h13', 'h9'] },
+            { id: 'b19', type: 'bio', name: '七星鱧', icon: '🐟✨', validHabitats: ['h4', 'h9', 'h13'] },
             { id: 'b20', type: 'bio', name: '福壽螺', icon: '🐌', validHabitats: ['h4', 'h7', 'h3', 'h13'] },
             { id: 'b21', type: 'bio', name: '虎皮蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
             { id: 'b22', type: 'bio', name: '澤蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h5'] },
-            { id: 'b23', type: 'bio', name: '泥鰍', icon: '🐟', validHabitats: ['h4', 'h3', 'h13', 'h7'] },
-            { id: 'b24', type: 'bio', name: '田螺', icon: '🐚', validHabitats: ['h4', 'h7', 'h3'] },
-            { id: 'b25', type: 'bio', name: '蜻蜓', icon: '🦟', validHabitats: ['h4', 'h7', 'h9'] },
+            { id: 'b23', type: 'bio', name: '台灣泥鰍', icon: '🐟', validHabitats: ['h4', 'h3', 'h13', 'h7'] },
+            { id: 'b24', type: 'bio', name: '石田螺', icon: '🐚', validHabitats: ['h4', 'h7', 'h3'] },
+            { id: 'b25', type: 'bio', name: '杜松蜻蜓', icon: '🦟', validHabitats: ['h4', 'h7', 'h9'] },
             { id: 'b26', type: 'bio', name: '食蟲虻', icon: '🪰', validHabitats: ['h5', 'h6'] },
-            { id: 'b27', type: 'bio', name: '蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h5', 'h14'] },
-            { id: 'b28', type: 'bio', name: '胡蜂', icon: '🐝', validHabitats: ['h6', 'h1', 'h5', 'h14'] },
-            { id: 'b29', type: 'bio', name: '鷺鷥', icon: '🦢', validHabitats: ['h4', 'h7', 'h5'] },
+            { id: 'b27', type: 'bio', name: '人面蜘蛛', icon: '🕷️', validHabitats: ['h6', 'h1', 'h5', 'h14', 'h11'] },
+            { id: 'b28', type: 'bio', name: '台灣長腳蜂', icon: '🐝', validHabitats: ['h6', 'h1', 'h5', 'h14', 'h10'] },
+            { id: 'b29', type: 'bio', name: '小白鷺', icon: '🦢', validHabitats: ['h4', 'h7', 'h5'] },
             { id: 'b30', type: 'bio', name: '紅冠水雞', icon: '🦆', validHabitats: ['h4', 'h7', 'h9'] },
-            { id: 'b31', type: 'bio', name: '秧雞', icon: '🦆', validHabitats: ['h7', 'h5'] },
+            { id: 'b31', type: 'bio', name: '白腹秧雞', icon: '🦆', validHabitats: ['h7', 'h5', 'h8'] },
             { id: 'b32', type: 'bio', name: '麻雀', icon: '🐦', validHabitats: ['h5', 'h6', 'h1'] },
-            { id: 'b33', type: 'bio', name: '蝸牛', icon: '🐌', validHabitats: ['h5', 'h6', 'h1', 'h14'] },
-            { id: 'b34', type: 'bio', name: '螢火蟲', icon: '✨', validHabitats: ['h4', 'h7'] },
+            { id: 'b33', type: 'bio', name: '斯文豪氏蝸牛', icon: '🐌', validHabitats: ['h5', 'h6', 'h1', 'h14'] },
+            { id: 'b34', type: 'bio', name: '黑翅螢', icon: '✨', validHabitats: ['h4', 'h7', 'h3'] },
             { id: 'b35', type: 'bio', name: '黑冠麻鷺', icon: '🐦‍⬛', validHabitats: ['h6', 'h5', 'h14'] },
-            { id: 'b36', type: 'bio', name: '大冠鷲', icon: '🦅', validHabitats: ['h6', 'h12', 'h14'] },
-            { id: 'b37', type: 'bio', name: '穿山甲', icon: '🦔', validHabitats: ['h6', 'h12', 'h1', 'h11', 'h14'] },
-            { id: 'b38', type: 'bio', name: '白鼻心', icon: '🦡', validHabitats: ['h6', 'h12', 'h11', 'h14'] },
-            { id: 'b39', type: 'bio', name: '黑翅鳶', icon: '🦅', validHabitats: ['h5', 'h6', 'h14'] },
-            { id: 'b40', type: 'bio', name: '環頸雉', icon: '🦃', validHabitats: ['h5', 'h6'] },
-            { id: 'b41', type: 'bio', name: '燕子', icon: '🐦', validHabitats: ['h5', 'h4', 'h14'] },
-            { id: 'b42', type: 'bio', name: '藍鵲', icon: '🐦', validHabitats: ['h6', 'h14'] },
-            { id: 'b43', type: 'bio', name: '竹雞', icon: '🐔', validHabitats: ['h6', 'h5', 'h14'] },
-            { id: 'b44', type: 'bio', name: '山豬', icon: '🐗', validHabitats: ['h6', 'h12', 'h14'] },
-            { id: 'b45', type: 'bio', name: '台灣獼猴', icon: '🐒', validHabitats: ['h6', 'h14'] },
-            { id: 'b46', type: 'bio', name: '食蛇龜', icon: '🐢', validHabitats: ['h2', 'h4', 'h7', 'h6', 'h11', 'h14'] }
+            { id: 'b36', type: 'bio', name: '大冠鷲', icon: '🦅', consLevel: 2, validHabitats: ['h6', 'h12', 'h14'] },
+            { id: 'b37', type: 'bio', name: '台灣穿山甲', icon: '🦔', consLevel: 2, validHabitats: ['h6', 'h12', 'h1', 'h11', 'h14', 'h15'] },
+            { id: 'b38', type: 'bio', name: '白鼻心', icon: '🦡', validHabitats: ['h6', 'h12', 'h11', 'h14', 'h15'] },
+            { id: 'b39', type: 'bio', name: '黑翅鳶', icon: '🦅', consLevel: 2, validHabitats: ['h5', 'h6', 'h14'] },
+            { id: 'b40', type: 'bio', name: '環頸雉', icon: '🦃', consLevel: 2, validHabitats: ['h5', 'h6'] },
+            { id: 'b41', type: 'bio', name: '家燕', icon: '🐦', validHabitats: ['h5', 'h4', 'h14'] },
+            { id: 'b42', type: 'bio', name: '台灣藍鵲', icon: '🐦', consLevel: 3, validHabitats: ['h6', 'h14'] },
+            { id: 'b43', type: 'bio', name: '台灣山鷓鴣', icon: '🐔', consLevel: 3, validHabitats: ['h6', 'h5', 'h14'] },
+            { id: 'b44', type: 'bio', name: '台灣野豬', icon: '🐗', validHabitats: ['h6', 'h12', 'h14', 'h15'] },
+            { id: 'b45', type: 'bio', name: '台灣獼猴', icon: '🐒', validHabitats: ['h6', 'h14', 'h15'] },
+            { id: 'b46', type: 'bio', name: '食蛇龜', icon: '🐢', consLevel: 1, validHabitats: ['h2', 'h4', 'h7', 'h6', 'h11', 'h14', 'h15'] },
+            { id: 'b47', type: 'bio', name: '台灣黑熊', icon: '🐻', consLevel: 1, validHabitats: ['h14', 'h12', 'h15'] },
+            { id: 'b48', type: 'bio', name: '歐亞水獺', icon: '🦦', consLevel: 1, validHabitats: ['h4', 'h7', 'h8', 'h13'] },
+            { id: 'b49', type: 'bio', name: '台灣狐蝠', icon: '🦇', consLevel: 1, validHabitats: ['h14', 'h6'] },
+            { id: 'b50', type: 'bio', name: '柴棺龜', icon: '🐢', consLevel: 1, validHabitats: ['h4', 'h7', 'h8', 'h13'] },
+            { id: 'b51', type: 'bio', name: '黃喉貂', icon: '🦦', consLevel: 2, validHabitats: ['h14', 'h6', 'h12', 'h15'] },
+            { id: 'b52', type: 'bio', name: '食蟹獴', icon: '🦡', consLevel: 2, validHabitats: ['h4', 'h7', 'h8', 'h3', 'h12'] },
+            { id: 'b53', type: 'bio', name: '台灣野山羊', icon: '🐐', consLevel: 2, validHabitats: ['h14', 'h2'] },
+            { id: 'b54', type: 'bio', name: '台灣水鹿', icon: '🦌', consLevel: 3, validHabitats: ['h14', 'h6', 'h4'] },
+            { id: 'b55', type: 'bio', name: '山羌', icon: '🦌', validHabitats: ['h14', 'h6', 'h12', 'h15'] },
+            { id: 'b56', type: 'bio', name: '赤腹松鼠', icon: '🐿️', validHabitats: ['h14', 'h6', 'h11'] },
+            { id: 'b57', type: 'bio', name: '台灣野兔', icon: '🐇', validHabitats: ['h5', 'h6', 'h1'] },
+            { id: 'b58', type: 'bio', name: '大赤鼯鼠', icon: '🐿️', validHabitats: ['h14', 'h6'] },
+            { id: 'b59', type: 'bio', name: '藍腹鷴', icon: '🦚', consLevel: 2, validHabitats: ['h14', 'h6'] },
+            { id: 'b60', type: 'bio', name: '帝雉', icon: '🦚', consLevel: 2, validHabitats: ['h14'] },
+            { id: 'b61', type: 'bio', name: '領角鴞', icon: '🦉', consLevel: 2, validHabitats: ['h14', 'h6'] },
+            { id: 'b62', type: 'bio', name: '黃嘴角鴞', icon: '🦉', consLevel: 2, validHabitats: ['h14', 'h6'] },
+            { id: 'b63', type: 'bio', name: '八色鳥', icon: '🐦', consLevel: 2, validHabitats: ['h14', 'h6', 'h1'] },
+            { id: 'b64', type: 'bio', name: '彩鷸', icon: '🐦', consLevel: 2, validHabitats: ['h7', 'h4', 'h5'] },
+            { id: 'b65', type: 'bio', name: '水雉', icon: '🐦', consLevel: 2, validHabitats: ['h9', 'h7', 'h4'] },
+            { id: 'b66', type: 'bio', name: '五色鳥', icon: '🐦', validHabitats: ['h14', 'h6', 'h1'] },
+            { id: 'b67', type: 'bio', name: '紅嘴黑鵯', icon: '🐦‍⬛', validHabitats: ['h14', 'h6'] },
+            { id: 'b68', type: 'bio', name: '白頭翁', icon: '🐦', validHabitats: ['h6', 'h5', 'h14'] },
+            { id: 'b69', type: 'bio', name: '翠鳥', icon: '🐦', validHabitats: ['h4', 'h8', 'h3', 'h13'] },
+            { id: 'b70', type: 'bio', name: '台北樹蛙', icon: '🐸', consLevel: 3, validHabitats: ['h7', 'h4', 'h6', 'h3'] },
+            { id: 'b71', type: 'bio', name: '諸羅樹蛙', icon: '🐸', consLevel: 2, validHabitats: ['h7', 'h6', 'h5'] },
+            { id: 'b72', type: 'bio', name: '莫氏樹蛙', icon: '🐸', consLevel: 3, validHabitats: ['h14', 'h6', 'h7'] },
+            { id: 'b73', type: 'bio', name: '斯文豪氏赤蛙', icon: '🐸', validHabitats: ['h3', 'h8', 'h4', 'h14'] },
+            { id: 'b74', type: 'bio', name: '拉都希氏赤蛙', icon: '🐸', validHabitats: ['h4', 'h7', 'h3', 'h5'] },
+            { id: 'b75', type: 'bio', name: '盤古蟾蜍', icon: '🐸', validHabitats: ['h1', 'h2', 'h5', 'h3'] },
+            { id: 'b76', type: 'bio', name: '百步蛇', icon: '🐍', consLevel: 2, validHabitats: ['h14', 'h2', 'h1'] },
+            { id: 'b77', type: 'bio', name: '台灣眼鏡蛇', icon: '🐍', consLevel: 3, validHabitats: ['h2', 'h1', 'h5', 'h6'] },
+            { id: 'b78', type: 'bio', name: '雨傘節', icon: '🐍', consLevel: 3, validHabitats: ['h7', 'h4', 'h3', 'h2'] },
+            { id: 'b79', type: 'bio', name: '攀木蜥蜴', icon: '🦎', validHabitats: ['h6', 'h14', 'h1', 'h2', 'h11'] },
+            { id: 'b80', type: 'bio', name: '台灣鍬形蟲', icon: '🪲', consLevel: 3, validHabitats: ['h14', 'h1', 'h10'] }
         ];
 
         const CULTURE_DATA = [
@@ -1165,33 +1217,388 @@
             ctx.closePath();
         }
 
-        // ★ 3D 六角形多層立體小島 (支援平穩升起與緩緩上下呼吸浮動)
+        // ================= ★ 幾何結構建構系統 (Procedural 3D Geometric Builders) =================
+        // 1. 樹木建構器：圓柱(Cylinder)➜樹幹 + 十二面體(Dodecahedron/Polyhedron)➜多角立體樹冠 + 縮放/旋轉差異
+        function drawProceduralTree(cx, cy, scale = 1, variant = 0) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(scale, scale);
+
+            // 地面環境柔和投影
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.24)';
+            ctx.beginPath();
+            ctx.ellipse(2, 12, 15, 6.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cylinder ➜ 3D 立體圓柱樹幹 + 樹根分岔
+            let trunkGrad = ctx.createLinearGradient(-4, 0, 4, 0);
+            trunkGrad.addColorStop(0, '#92400e');
+            trunkGrad.addColorStop(0.5, '#78350f');
+            trunkGrad.addColorStop(1, '#451a03');
+            ctx.fillStyle = trunkGrad;
+            ctx.beginPath();
+            ctx.moveTo(-3.5, -6);
+            ctx.lineTo(3.5, -6);
+            ctx.lineTo(5.5, 11);
+            ctx.quadraticCurveTo(0, 13.5, -5.5, 11);
+            ctx.closePath();
+            ctx.fill();
+
+            if (variant % 3 === 1) {
+                // 針葉林稜柱結構 (Stacked Cones / Prisms)
+                const layers = [
+                    { y: -4, w: 19, h: 18, left: '#22c55e', right: '#15803d' },
+                    { y: -15, w: 15, h: 16, left: '#4ade80', right: '#16a34a' },
+                    { y: -25, w: 10, h: 14, left: '#86efac', right: '#22c55e' }
+                ];
+                layers.forEach(L => {
+                    // 左受光面
+                    ctx.fillStyle = L.left;
+                    ctx.beginPath();
+                    ctx.moveTo(0, L.y - L.h);
+                    ctx.lineTo(-L.w, L.y);
+                    ctx.lineTo(0, L.y + 3);
+                    ctx.closePath();
+                    ctx.fill();
+                    // 右背光面
+                    ctx.fillStyle = L.right;
+                    ctx.beginPath();
+                    ctx.moveTo(0, L.y - L.h);
+                    ctx.lineTo(0, L.y + 3);
+                    ctx.lineTo(L.w, L.y);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+            } else {
+                // 十二面體多角球體樹冠 (Dodecahedron Faceted Crown)
+                const drawPolyCrown = (ox, oy, r, colTop, colMid, colDark) => {
+                    // 底層背光暗面
+                    ctx.fillStyle = colDark;
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        let a = (Math.PI * 2 / 8) * i + 0.2;
+                        let px = ox + Math.cos(a) * r;
+                        let py = oy + 2 + Math.sin(a) * (r * 0.88);
+                        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // 中層主多面體
+                    ctx.fillStyle = colMid;
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        let a = (Math.PI * 2 / 8) * i;
+                        let px = ox + Math.cos(a) * (r * 0.92);
+                        let py = oy - 1 + Math.sin(a) * (r * 0.82);
+                        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // 頂部五角受光亮面 (Dodecahedron Top Facet)
+                    ctx.fillStyle = colTop;
+                    ctx.beginPath();
+                    for (let i = 0; i < 5; i++) {
+                        let a = (Math.PI * 2 / 5) * i - Math.PI / 2;
+                        let px = ox - 2 + Math.cos(a) * (r * 0.55);
+                        let py = oy - 4 + Math.sin(a) * (r * 0.48);
+                        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                };
+
+                drawPolyCrown(-9, -11, 11, '#86efac', '#22c55e', '#14532d');
+                drawPolyCrown(9, -10, 10.5, '#4ade80', '#16a34a', '#14532d');
+                drawPolyCrown(0, -19, 13.5, '#bbf7d0', '#22c55e', '#15803d');
+            }
+            ctx.restore();
+        }
+
+        // 2. 山丘與高低差建構器：多面體山稜 (3D Faceted Mountain Peak + Waterfall Option)
+        function draw3DMountainPeak(cx, cy, w, h, hasSnow = true, hasWaterfall = false) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // 山體底座環境投影
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+            ctx.beginPath();
+            ctx.ellipse(0, 6, w * 0.55, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 左側向陽翠綠岩坡面
+            let leftGrad = ctx.createLinearGradient(-w / 2, 0, 0, -h);
+            leftGrad.addColorStop(0, '#16a34a');
+            leftGrad.addColorStop(0.6, '#4ade80');
+            leftGrad.addColorStop(1, '#86efac');
+            ctx.fillStyle = leftGrad;
+            ctx.beginPath();
+            ctx.moveTo(0, -h);
+            ctx.lineTo(-w / 2, 4);
+            ctx.lineTo(-w * 0.12, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            // 中央立體稜線折面
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.moveTo(0, -h);
+            ctx.lineTo(-w * 0.12, 10);
+            ctx.lineTo(w * 0.16, 8);
+            ctx.closePath();
+            ctx.fill();
+
+            // 右側背光深綠岩壁面
+            ctx.fillStyle = '#15803d';
+            ctx.beginPath();
+            ctx.moveTo(0, -h);
+            ctx.lineTo(w * 0.16, 8);
+            ctx.lineTo(w / 2, 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // 山巔白雪冠 (Prism Snow Cap)
+            if (hasSnow) {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(0, -h);
+                ctx.lineTo(-w * 0.19, -h * 0.62);
+                ctx.lineTo(-w * 0.05, -h * 0.56);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.moveTo(0, -h);
+                ctx.lineTo(-w * 0.05, -h * 0.56);
+                ctx.lineTo(w * 0.08, -h * 0.60);
+                ctx.lineTo(w * 0.19, -h * 0.62);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 山壁飛瀑流泉 (Waterfall特效)
+            if (hasWaterfall) {
+                let wfGrad = ctx.createLinearGradient(0, -h * 0.55, 0, 12);
+                wfGrad.addColorStop(0, '#e0f2fe');
+                wfGrad.addColorStop(0.5, '#38bdf8');
+                wfGrad.addColorStop(1, '#0284c7');
+                ctx.fillStyle = wfGrad;
+                ctx.beginPath();
+                ctx.moveTo(-4, -h * 0.52);
+                ctx.lineTo(5, -h * 0.52);
+                ctx.lineTo(11, 9);
+                ctx.lineTo(-8, 9);
+                ctx.closePath();
+                ctx.fill();
+
+                // 動態水花泡沫
+                let foamR = 3.5 + Math.sin(Date.now() / 160) * 1.2;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.beginPath();
+                ctx.arc(-4, 9, foamR, 0, Math.PI * 2);
+                ctx.arc(3, 10, foamR + 1, 0, Math.PI * 2);
+                ctx.arc(9, 9, foamR, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // 3. 建築物建構器：Box(主體) + Plane(牆面) + Prism(屋頂) + Cylinder(煙囪/柱子) + Glass Material(窗戶) + Sign(招牌)
+        function drawProceduralBuilding(cx, cy, w, h, roofH, wallFront, wallSide, roofFront, roofSide, hasChimney = true) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // 建築地基石階與陰影
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.26)';
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.55, -h * 0.15, w * 1.18, h * 0.78, 10);
+            ctx.fill();
+
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.54, h * 0.36, w * 1.08, 10, 5);
+            ctx.fill();
+
+            // Box 主體：正面牆面 (Front Plane) 與側面立體牆面 (Side Plane)
+            let frontW = w * 0.68;
+            let sideW = w * 0.32;
+            ctx.fillStyle = wallFront || '#fef3c7';
+            ctx.strokeStyle = '#92400e';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.5, -h * 0.5, frontW, h * 0.9, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = wallSide || '#fde68a';
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.5 + frontW - 2, -h * 0.5, sideW + 2, h * 0.9, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // 屋簷木質結構橫樑 (Timber Framing)
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(-w * 0.5, -h * 0.08, frontW, 3.5);
+            ctx.fillRect(-w * 0.5, -h * 0.5, 4, h * 0.9);
+            ctx.fillRect(-w * 0.5 + frontW - 3, -h * 0.5, 4, h * 0.9);
+
+            // Cylinder ➜ 屋頂磚造煙囪與炊煙
+            if (hasChimney) {
+                ctx.fillStyle = '#991b1b';
+                ctx.fillRect(w * 0.14, -h * 0.5 - roofH * 0.85, 11, roofH * 0.65);
+                ctx.fillStyle = '#451a03';
+                ctx.beginPath();
+                ctx.ellipse(w * 0.14 + 5.5, -h * 0.5 - roofH * 0.85, 6.5, 2.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // 緩緩上升的圓圈炊煙
+                let smokeOffset = (Date.now() / 60) % 18;
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.65 - smokeOffset / 28})`;
+                ctx.beginPath();
+                ctx.arc(w * 0.14 + 6 + Math.sin(smokeOffset * 0.3) * 3, -h * 0.5 - roofH * 0.9 - smokeOffset, 4 + smokeOffset * 0.18, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Prism ➜ 3D 三角稜柱斜屋頂 (Gable + Side Roof Slope)
+            let apexX = -w * 0.5 + frontW * 0.5;
+            let apexY = -h * 0.5 - roofH;
+            // 側面斜坡屋瓦
+            ctx.fillStyle = roofSide || '#9a3412';
+            ctx.beginPath();
+            ctx.moveTo(apexX, apexY);
+            ctx.lineTo(w * 0.5 + 8, apexY + roofH * 0.22);
+            ctx.lineTo(w * 0.5 + 10, -h * 0.45);
+            ctx.lineTo(-w * 0.5 + frontW, -h * 0.45);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 正面山牆與屋簷飛翼
+            ctx.fillStyle = roofFront || '#ea580c';
+            ctx.beginPath();
+            ctx.moveTo(apexX, apexY);
+            ctx.lineTo(-w * 0.5 - 8, -h * 0.45);
+            ctx.lineTo(-w * 0.5 + frontW + 6, -h * 0.45);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 山牆內嵌三角形木質牆面与閣樓圓窗
+            ctx.fillStyle = wallFront || '#fef3c7';
+            ctx.beginPath();
+            ctx.moveTo(apexX, apexY + 7);
+            ctx.lineTo(-w * 0.5 + 5, -h * 0.47);
+            ctx.lineTo(-w * 0.5 + frontW - 5, -h * 0.47);
+            ctx.closePath();
+            ctx.fill();
+
+            // Glass Material ➜ 閣樓玻璃圓窗與一樓發光格子窗
+            let isNightGlow = (timeOfDay === 'night' || timeOfDay === 'dusk');
+            ctx.fillStyle = isNightGlow ? '#fef08a' : '#38bdf8';
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(apexX, apexY + roofH * 0.58, 6.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 一樓正面雙格玻璃窗
+            let winX = -w * 0.42;
+            let winY = -h * 0.34;
+            ctx.fillStyle = isNightGlow ? '#fef08a' : '#bae6fd';
+            ctx.beginPath();
+            ctx.roundRect(winX, winY, 15, 16, 2);
+            ctx.fill();
+            ctx.stroke();
+            // 玻璃反光斜線
+            ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(winX + 3, winY + 12);
+            ctx.lineTo(winX + 11, winY + 4);
+            ctx.stroke();
+
+            // 側面玻璃窗
+            let sWinX = -w * 0.5 + frontW + sideW * 0.25;
+            ctx.fillStyle = isNightGlow ? '#fde047' : '#7dd3fc';
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.roundRect(sWinX, winY + 2, 12, 14, 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 拱形實木大門与石板迎賓階
+            let doorX = apexX + 2;
+            let doorY = h * 0.02;
+            ctx.fillStyle = '#78350f';
+            ctx.beginPath();
+            ctx.roundRect(doorX - 8, doorY, 16, h * 0.38, [7, 7, 0, 0]);
+            ctx.fill();
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(doorX + 4, doorY + h * 0.2, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // ★ 3D 六角形多層立體小島 (升級：含海岸白浪花邊、黃金沙灘層、岩石立體斷面與柔軟草坡)
         function drawIslandPlatform(cx, cy, rx, ry, topColor, midColor, deepColor, liftY = 0, isGlowing = false) {
             ctx.save();
             let shadowScale = Math.max(0.82, 1 - liftY * 0.004);
-            ctx.fillStyle = isGlowing ? 'rgba(234, 179, 8, 0.42)' : 'rgba(15, 23, 42, 0.25)';
-            traceRoundedHexagon(ctx, cx, cy + 22, rx * 1.04 * shadowScale, ry * 1.04 * shadowScale, 20);
+
+            // 1. 海洋與岸線：外圈動態白色海浪泡沫環 (Ocean & Shoreline Foam Ring)
+            let wavePulse = Math.sin(Date.now() / 420 + cx * 0.01) * 3;
+            ctx.strokeStyle = isGlowing ? 'rgba(250, 204, 21, 0.65)' : 'rgba(255, 255, 255, 0.52)';
+            ctx.lineWidth = 3.5;
+            ctx.setLineDash([14, 8]);
+            traceRoundedHexagon(ctx, cx, cy + 20, (rx + 9 + wavePulse) * shadowScale, (ry + 7 + wavePulse) * shadowScale, 22);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 2. 水下深邃投影
+            ctx.fillStyle = isGlowing ? 'rgba(234, 179, 8, 0.42)' : 'rgba(14, 116, 144, 0.30)';
+            traceRoundedHexagon(ctx, cx, cy + 23, rx * 1.05 * shadowScale, ry * 1.05 * shadowScale, 20);
             ctx.fill();
 
             ctx.translate(cx, cy - liftY);
 
-            // 底層深色岩盤層
-            ctx.fillStyle = deepColor || '#4d7c0f';
-            traceRoundedHexagon(ctx, 0, 16, rx * 0.99, ry * 0.99, 18);
+            // 3. 底層海岸黃金沙灘裙邊 (Sandy Beach Rim)
+            ctx.fillStyle = '#fde68a';
+            traceRoundedHexagon(ctx, 0, 19, rx * 1.02, ry * 1.02, 19);
             ctx.fill();
 
-            // 中層斜坡草皮層
+            // 4. 岩盤斷崖厚度層 (3D Terraced Cliff Wall)
+            ctx.fillStyle = deepColor || '#3f6212';
+            traceRoundedHexagon(ctx, 0, 15, rx * 0.99, ry * 0.99, 18);
+            ctx.fill();
+
+            // 斷崖面立體垂直岩紋刻線
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.22)';
+            ctx.lineWidth = 2;
+            for (let k = -3; k <= 3; k++) {
+                let vx = k * (rx * 0.24);
+                let vy = Math.sqrt(Math.max(0, 1 - (vx / rx) ** 2)) * (ry * 0.86);
+                ctx.beginPath();
+                ctx.moveTo(vx, vy - 2);
+                ctx.lineTo(vx, vy + 13);
+                ctx.stroke();
+            }
+
+            // 5. 中層豐饒斜坡草皮層
             ctx.fillStyle = midColor || '#84cc16';
-            traceRoundedHexagon(ctx, 0, 8, rx * 1.01, ry * 1.01, 18);
+            traceRoundedHexagon(ctx, 0, 7, rx * 1.01, ry * 1.01, 18);
             ctx.fill();
 
-            // 頂層六角形平台
+            // 6. 頂層六角形主題地表平台
             ctx.fillStyle = topColor || '#d9f99d';
             traceRoundedHexagon(ctx, 0, 0, rx, ry, 18);
             ctx.fill();
 
-            // 內圈立體高光邊框
-            ctx.strokeStyle = isGlowing ? '#facc15' : 'rgba(255, 255, 255, 0.72)';
+            // 7. 內圈立體高光邊框
+            ctx.strokeStyle = isGlowing ? '#facc15' : 'rgba(255, 255, 255, 0.78)';
             ctx.lineWidth = isGlowing ? 4.5 : 2.5;
             traceRoundedHexagon(ctx, 0, -1, rx * 0.94, ry * 0.94, 15);
             ctx.stroke();
@@ -1199,221 +1606,392 @@
             ctx.restore();
         }
 
-        // ★ 根據棲地名稱繪製對應的 3D 立體地景與豐富小裝飾
+        // ★ 根據棲地名稱繪製對應的 3D 幾何立體地景與情境裝飾
         function drawHabitatDecorations(h, cx, cy, rx, ry, liftY) {
             ctx.save();
             ctx.translate(cx, cy - liftY);
 
-            // 每座六角島通用小裝飾：周邊小石頭、小草叢與五彩小花點綴
-            const decoAngles = [0.4, 1.3, 2.5, 3.6, 4.8, 5.7];
+            // 每座六角島通用地景細節：立體石塊、草簇與花朵
+            const decoAngles = [0.35, 1.25, 2.45, 3.55, 4.75, 5.65];
             decoAngles.forEach((ang, idx) => {
-                let dx = Math.cos(ang) * (rx * 0.76);
-                let dy = Math.sin(ang) * (ry * 0.74);
-                // 翠綠小草叢
-                ctx.fillStyle = idx % 2 === 0 ? '#4ade80' : '#22c55e';
-                ctx.beginPath(); ctx.arc(dx, dy, 4.5, 0, Math.PI * 2); ctx.fill();
-                // 繽紛小花點或小鵝卵石
-                ctx.fillStyle = idx % 3 === 0 ? '#fef08a' : (idx % 3 === 1 ? '#f472b6' : '#e2e8f0');
-                ctx.beginPath(); ctx.arc(dx + 3, dy - 2, 2.2, 0, Math.PI * 2); ctx.fill();
+                let dx = Math.cos(ang) * (rx * 0.78);
+                let dy = Math.sin(ang) * (ry * 0.75);
+                // 立體三葉草簇
+                ctx.fillStyle = idx % 2 === 0 ? '#16a34a' : '#22c55e';
+                ctx.beginPath();
+                ctx.arc(dx - 3, dy, 3.8, 0, Math.PI * 2);
+                ctx.arc(dx + 3, dy, 3.8, 0, Math.PI * 2);
+                ctx.arc(dx, dy - 3, 4.2, 0, Math.PI * 2);
+                ctx.fill();
+                // 花蕊或白色小石子
+                ctx.fillStyle = idx % 3 === 0 ? '#fef08a' : (idx % 3 === 1 ? '#fb7185' : '#f8fafc');
+                ctx.beginPath(); ctx.arc(dx, dy - 2, 2.2, 0, Math.PI * 2); ctx.fill();
             });
 
             switch (h.id) {
-                case 'h14': { // 原始森林
-                    const treePos = [[-rx * 0.55, -ry * 0.25], [rx * 0.52, -ry * 0.22], [-rx * 0.25, ry * 0.32], [rx * 0.35, ry * 0.28]];
-                    ctx.fillStyle = '#4ade80';
-                    ctx.beginPath(); ctx.moveTo(0, -ry * 0.75); ctx.lineTo(-28, -5); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill();
-                    ctx.fillStyle = '#16a34a';
-                    ctx.beginPath(); ctx.moveTo(0, -ry * 0.75); ctx.lineTo(0, 0); ctx.lineTo(28, -5); ctx.closePath(); ctx.fill();
+                case 'h14': { // 01 原始森林：高低差雙山峰 + 山谷飛瀑 + 群落演算法立體樹林 + 森林瞭望地標塔
+                    draw3DMountainPeak(-22, -4, 72, 58, true, true);
+                    draw3DMountainPeak(28, 2, 56, 44, true, false);
+                    // 紅白森林生態觀測燈塔地標 (Landmark Tower)
                     ctx.fillStyle = '#f8fafc';
-                    ctx.beginPath(); ctx.moveTo(0, -ry * 0.75); ctx.lineTo(-10, -ry * 0.42); ctx.lineTo(0, -ry * 0.38); ctx.lineTo(10, -ry * 0.42); ctx.closePath(); ctx.fill();
+                    ctx.strokeStyle = '#dc2626';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(-rx * 0.68, -28, 14, 28, 3); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#dc2626';
+                    ctx.fillRect(-rx * 0.68, -20, 14, 7);
+                    ctx.beginPath(); ctx.moveTo(-rx * 0.68 - 3, -28); ctx.lineTo(-rx * 0.68 + 7, -38); ctx.lineTo(-rx * 0.68 + 17, -28); ctx.closePath(); ctx.fill();
 
-                    treePos.forEach(([tx, ty], i) => {
-                        ctx.fillStyle = '#78350f';
-                        ctx.fillRect(tx - 3, ty, 6, 12);
-                        ctx.fillStyle = i % 2 === 0 ? '#15803d' : '#166534';
-                        ctx.beginPath(); ctx.moveTo(tx, ty - 26); ctx.lineTo(tx - 16, ty + 2); ctx.lineTo(tx + 16, ty + 2); ctx.closePath(); ctx.fill();
-                        ctx.fillStyle = '#22c55e';
-                        ctx.beginPath(); ctx.moveTo(tx, ty - 36); ctx.lineTo(tx - 12, ty - 10); ctx.lineTo(tx + 12, ty - 10); ctx.closePath(); ctx.fill();
-                    });
-                    // 森林小木樁與紅傘小蘑菇
-                    ctx.fillStyle = '#92400e'; ctx.beginPath(); ctx.roundRect(-12, 16, 10, 8, 2); ctx.fill();
-                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(16, 18, 5, Math.PI, 0); ctx.fill();
+                    // 群聚演算法森林 (左、右、前景不同比例與種類的 3D 樹)
+                    drawProceduralTree(-rx * 0.42, 16, 0.85, 1);
+                    drawProceduralTree(-rx * 0.15, 22, 0.78, 0);
+                    drawProceduralTree(rx * 0.48, -8, 0.82, 1);
+                    drawProceduralTree(rx * 0.36, 20, 0.9, 2);
                     break;
                 }
-                case 'h1': { // 枯木草堆
-                    ctx.fillStyle = '#eab308';
-                    ctx.beginPath(); ctx.ellipse(-18, 12, 28, 12, -0.2, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#facc15';
-                    ctx.beginPath(); ctx.ellipse(16, 15, 24, 10, 0.25, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#78350f';
-                    ctx.beginPath(); ctx.roundRect(-42, -16, 68, 18, 8); ctx.fill();
+                case 'h1': { // 02 枯木草堆：3D 圓柱橫臥中空樹幹(Cylinder) + 雙層金黃圓錐乾草垛(Cone) + 紅傘菌菇群
+                    // 乾草垛 1 & 2
+                    [[-24, 12, 28, 18, '#eab308', '#facc15'], [20, 15, 24, 15, '#ca8a04', '#eab308']].forEach(([hx, hy, hw, hh, c1, c2]) => {
+                        ctx.fillStyle = c1;
+                        ctx.beginPath(); ctx.ellipse(hx, hy, hw, hh * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = c2;
+                        ctx.beginPath(); ctx.moveTo(hx - hw * 0.85, hy); ctx.quadraticCurveTo(hx, hy - hh * 1.3, hx + hw * 0.85, hy); ctx.closePath(); ctx.fill();
+                    });
+                    // 3D 圓柱枯木樹幹與年輪切面
+                    let logGrad = ctx.createLinearGradient(0, -22, 0, -2);
+                    logGrad.addColorStop(0, '#92400e');
+                    logGrad.addColorStop(0.6, '#78350f');
+                    logGrad.addColorStop(1, '#451a03');
+                    ctx.fillStyle = logGrad;
+                    ctx.beginPath(); ctx.roundRect(-44, -20, 74, 20, 9); ctx.fill();
+                    // 枯木樹皮紋理與青苔
+                    ctx.fillStyle = '#4ade80';
+                    ctx.beginPath(); ctx.ellipse(-15, -18, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
+                    // 年輪切面與中空樹洞
                     ctx.fillStyle = '#fde68a';
-                    ctx.beginPath(); ctx.ellipse(24, -7, 6, 9, 0, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#ef4444';
-                    ctx.beginPath(); ctx.arc(-28, -18, 6, Math.PI, 0); ctx.fill();
-                    ctx.fillStyle = '#ffffff'; ctx.fillRect(-30, -18, 4, 5);
-                    // 落葉與松果裝飾
-                    ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.arc(32, 8, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = '#78350f'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.ellipse(28, -10, 7, 10, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#451a03';
+                    ctx.beginPath(); ctx.ellipse(28, -10, 3.5, 5, 0, 0, Math.PI * 2); ctx.fill();
+                    // 腐木紅白小蘑菇群
+                    [[-30, -22, 6], [-20, -20, 4.5], [8, -21, 5]].forEach(([mx, my, mr]) => {
+                        ctx.fillStyle = '#fef3c7'; ctx.fillRect(mx - 2, my, 4, 6);
+                        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(mx, my, mr, Math.PI, 0); ctx.fill();
+                        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(mx - 1.5, my - 2, 1.2, 0, Math.PI * 2); ctx.arc(mx + 2, my - 1.5, 1, 0, Math.PI * 2); ctx.fill();
+                    });
                     break;
                 }
-                case 'h12': { // 涵洞護道
-                    ctx.fillStyle = '#64748b';
-                    ctx.beginPath(); ctx.arc(0, 18, 42, Math.PI, 0); ctx.fill();
-                    ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
-                    ctx.beginPath(); ctx.arc(0, 18, 42, Math.PI, 0); ctx.stroke();
-                    ctx.fillStyle = '#1e293b';
-                    ctx.beginPath(); ctx.arc(0, 18, 28, Math.PI, 0); ctx.fill();
+                case 'h12': { // 03 涵洞護道(生物通道)：3D 楔石拱橋構築(Stone Arch Structure) + 護欄 + 動物腳印引道
+                    // 上方石砌護牆
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(-52, -24, 104, 42, 10); ctx.fill(); ctx.stroke();
+                    // 頂部石砌女牆垛口
+                    for (let bx = -48; bx <= 36; bx += 20) {
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.fillRect(bx, -29, 13, 6);
+                        ctx.strokeRect(bx, -29, 13, 6);
+                    }
+                    // 拱形隧道深邃內壁
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath(); ctx.arc(0, 18, 30, Math.PI, 0); ctx.fill();
+                    // 拱門楔形石磚圈 (Voussoirs)
+                    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 5;
+                    ctx.setLineDash([7, 3]);
+                    ctx.beginPath(); ctx.arc(0, 18, 33, Math.PI * 1.02, Math.PI * 1.98); ctx.stroke();
+                    ctx.setLineDash([]);
+                    // 生態砂石引道與動物腳印
                     ctx.fillStyle = '#fcd34d';
-                    ctx.beginPath(); ctx.moveTo(-18, 18); ctx.lineTo(18, 18); ctx.lineTo(32, 34); ctx.lineTo(-32, 34); ctx.closePath(); ctx.fill();
-                    ctx.fillStyle = '#22c55e';
-                    ctx.beginPath(); ctx.arc(-36, 12, 11, 0, Math.PI * 2); ctx.arc(36, 12, 11, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(-20, 18); ctx.lineTo(20, 18); ctx.lineTo(36, 36); ctx.lineTo(-36, 36); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = '#92400e';
+                    [[-8, 24], [6, 28], [-4, 32]].forEach(([px, py]) => {
+                        ctx.beginPath(); ctx.arc(px, py, 2.2, 0, Math.PI * 2); ctx.fill();
+                    });
+                    drawProceduralTree(-44, 10, 0.55, 0);
+                    drawProceduralTree(44, 10, 0.55, 0);
                     break;
                 }
-                case 'h6': { // 灌木欉
-                    const bushes = [[-36, 8, 24, '#15803d'], [34, 10, 22, '#16a34a'], [0, -10, 28, '#22c55e']];
-                    bushes.forEach(([bx, by, br, col]) => {
-                        ctx.fillStyle = col;
-                        ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+                case 'h6': { // 04 灌木欉：十二面體多層灌木群落 + 鳥巢與野果 + 矮木樁
+                    const shrubs = [[-36, 8, 0.82], [34, 10, 0.78], [0, -8, 0.95], [-18, 18, 0.65], [20, 18, 0.65]];
+                    shrubs.forEach(([sx, sy, sc], idx) => {
+                        ctx.save();
+                        ctx.translate(sx, sy);
+                        ctx.scale(sc, sc);
+                        ctx.fillStyle = '#14532d';
+                        ctx.beginPath(); ctx.arc(0, 4, 22, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = idx % 2 === 0 ? '#16a34a' : '#15803d';
+                        ctx.beginPath(); ctx.arc(-6, -2, 18, 0, Math.PI * 2); ctx.arc(7, 0, 17, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#4ade80';
+                        ctx.beginPath(); ctx.arc(-2, -7, 13, 0, Math.PI * 2); ctx.fill();
+                        // 紅果實點綴
+                        ctx.fillStyle = '#f43f5e';
+                        ctx.beginPath(); ctx.arc(-8, -4, 3.2, 0, Math.PI * 2); ctx.arc(6, -6, 3.2, 0, Math.PI * 2); ctx.arc(2, 4, 3, 0, Math.PI * 2); ctx.fill();
+                        ctx.restore();
                     });
-                    ctx.fillStyle = '#f43f5e';
-                    [[-28, 4], [-8, -14], [12, -8], [30, 8], [0, 6]].forEach(([fx, fy]) => {
-                        ctx.beginPath(); ctx.arc(fx, fy, 3.8, 0, Math.PI * 2); ctx.fill();
-                    });
+                    // 灌木頂端小鳥巢與鳥蛋
+                    ctx.fillStyle = '#92400e';
+                    ctx.beginPath(); ctx.ellipse(2, -16, 11, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#fef9c3';
+                    ctx.beginPath(); ctx.arc(-1, -17, 2.8, 0, Math.PI * 2); ctx.arc(4, -17, 2.8, 0, Math.PI * 2); ctx.fill();
                     break;
                 }
-                case 'h2': { // 石堆
-                    const rocks = [[-26, 8, 22, 16, '#64748b'], [22, 10, 24, 15, '#94a3b8'], [0, -6, 26, 20, '#cbd5e1'], [-8, 18, 14, 10, '#e2e8f0']];
-                    rocks.forEach(([rx0, ry0, rw, rh, col]) => {
-                        ctx.fillStyle = col;
-                        ctx.beginPath(); ctx.ellipse(rx0, ry0, rw, rh, 0, 0, Math.PI * 2); ctx.fill();
-                        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.stroke();
-                    });
-                    break;
-                }
-                case 'h10': { // 昆蟲旅館
-                    ctx.fillStyle = '#b45309';
-                    ctx.fillRect(-rx * 0.65, -ry * 0.45, rx * 1.3, 5);
-                    for (let fx = -rx * 0.6; fx <= rx * 0.6; fx += 16) {
-                        ctx.fillStyle = '#f59e0b';
+                case 'h2': { // 05 石堆：3D 多角切割晶體岩塊群 (Faceted Polyhedral Rocks) + 日光暖石區
+                    const drawFacetedRock = (ox, oy, rw, rh, cLight, cMid, cDark) => {
+                        ctx.save();
+                        ctx.translate(ox, oy);
+                        // 頂部受光面
+                        ctx.fillStyle = cLight;
                         ctx.beginPath();
-                        ctx.moveTo(fx - 4, -ry * 0.58); ctx.lineTo(fx, -ry * 0.66); ctx.lineTo(fx + 4, -ry * 0.58); ctx.lineTo(fx + 4, -ry * 0.12); ctx.lineTo(fx - 4, -ry * 0.12); ctx.closePath();
+                        ctx.moveTo(-rw * 0.4, -rh * 0.8);
+                        ctx.lineTo(rw * 0.35, -rh * 0.85);
+                        ctx.lineTo(rw * 0.85, -rh * 0.2);
+                        ctx.lineTo(0, -rh * 0.1);
+                        ctx.lineTo(-rw * 0.8, -rh * 0.25);
+                        ctx.closePath();
                         ctx.fill();
-                    }
-                    ctx.fillStyle = '#fef3c7';
-                    ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2.5;
-                    ctx.beginPath(); ctx.roundRect(-22, -22, 44, 32, 4); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#78350f';
-                    for (let bx = -14; bx <= 14; bx += 7) {
-                        ctx.beginPath(); ctx.arc(bx, -6, 2.2, 0, Math.PI * 2); ctx.fill();
-                    }
-                    ctx.fillStyle = '#9a3412';
-                    ctx.beginPath(); ctx.moveTo(-28, -20); ctx.lineTo(0, -38); ctx.lineTo(28, -20); ctx.closePath(); ctx.fill();
+                        // 左下中調面
+                        ctx.fillStyle = cMid;
+                        ctx.beginPath();
+                        ctx.moveTo(-rw * 0.8, -rh * 0.25);
+                        ctx.lineTo(0, -rh * 0.1);
+                        ctx.lineTo(-rw * 0.1, rh * 0.65);
+                        ctx.lineTo(-rw * 0.75, rh * 0.45);
+                        ctx.closePath();
+                        ctx.fill();
+                        // 右下背光面
+                        ctx.fillStyle = cDark;
+                        ctx.beginPath();
+                        ctx.moveTo(0, -rh * 0.1);
+                        ctx.lineTo(rw * 0.85, -rh * 0.2);
+                        ctx.lineTo(rw * 0.7, rh * 0.5);
+                        ctx.lineTo(-rw * 0.1, rh * 0.65);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.restore();
+                    };
+                    drawFacetedRock(-24, 6, 26, 22, '#e2e8f0', '#94a3b8', '#475569');
+                    drawFacetedRock(24, 8, 25, 20, '#f1f5f9', '#cbd5e1', '#64748b');
+                    drawFacetedRock(0, -6, 32, 26, '#f8fafc', '#cbd5e1', '#475569');
+                    drawFacetedRock(-4, 16, 18, 14, '#e2e8f0', '#94a3b8', '#334155');
+                    drawFacetedRock(16, 18, 15, 12, '#fef08a', '#eab308', '#a16207');
                     break;
                 }
-                case 'h11': { // 攀爬網
-                    ctx.strokeStyle = '#78350f'; ctx.lineWidth = 4;
+                case 'h10': { // 06 昆蟲旅館：白色尖頭木圍籬 + 3D 多層竹管蜂巢木屋(Box+Prism+Cylinder) + 蜜源花海
+                    // 後排精緻木圍籬
+                    ctx.fillStyle = '#d97706';
+                    ctx.fillRect(-rx * 0.64, -ry * 0.36, rx * 1.28, 4);
+                    ctx.fillRect(-rx * 0.64, -ry * 0.18, rx * 1.28, 4);
+                    for (let fx = -rx * 0.6; fx <= rx * 0.6; fx += 14) {
+                        ctx.fillStyle = '#fef3c7';
+                        ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.2;
+                        ctx.beginPath();
+                        ctx.moveTo(fx - 4, -ry * 0.48); ctx.lineTo(fx, -ry * 0.58); ctx.lineTo(fx + 4, -ry * 0.48);
+                        ctx.lineTo(fx + 4, -ry * 0.06); ctx.lineTo(fx - 4, -ry * 0.06); ctx.closePath();
+                        ctx.fill(); ctx.stroke();
+                    }
+                    // 3D 昆蟲旅館主體木屋 (Box + Prism Roof + Bamboo Cylinders)
+                    ctx.fillStyle = '#78350f';
+                    ctx.fillRect(-5, 12, 10, 16); // 立柱
+                    ctx.fillStyle = '#92400e';
+                    ctx.beginPath(); ctx.roundRect(-24, -22, 52, 36, 4); ctx.fill(); // 側面厚度
+                    ctx.fillStyle = '#fef3c7';
+                    ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(-26, -22, 48, 36, 4); ctx.fill(); ctx.stroke();
+                    // 斜屋頂
+                    ctx.fillStyle = '#b45309';
+                    ctx.beginPath(); ctx.moveTo(-34, -20); ctx.lineTo(-2, -40); ctx.lineTo(30, -20); ctx.closePath(); ctx.fill();
+                    // 竹管圓孔陣列
+                    ctx.fillStyle = '#451a03';
+                    for (let r = -14; r <= 6; r += 9) {
+                        for (let c = -18; c <= 14; c += 8) {
+                            ctx.beginPath(); ctx.arc(c, r, 2.5, 0, Math.PI * 2); ctx.fill();
+                        }
+                    }
+                    break;
+                }
+                case 'h11': { // 07 攀爬網(生物通道)：A字原木瓜棚與立體攀爬網格 + 翠綠藤葉
+                    ctx.strokeStyle = '#78350f'; ctx.lineWidth = 4.5;
                     ctx.beginPath();
-                    ctx.moveTo(-36, 22); ctx.lineTo(-28, -28);
-                    ctx.moveTo(36, 22);  ctx.lineTo(28, -28);
-                    ctx.moveTo(-32, -24); ctx.lineTo(32, -24);
+                    ctx.moveTo(-36, 22); ctx.lineTo(-26, -24);
+                    ctx.moveTo(36, 22);  ctx.lineTo(26, -24);
+                    ctx.moveTo(-30, -20); ctx.lineTo(30, -20);
                     ctx.stroke();
                     ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 1.6;
-                    ctx.beginPath();
-                    for (let nx = -24; nx <= 24; nx += 12) { ctx.moveTo(nx, -24); ctx.lineTo(nx * 1.15, 20); }
-                    for (let ny = -14; ny <= 14; ny += 10) { ctx.moveTo(-28, ny); ctx.lineTo(28, ny); }
-                    ctx.stroke();
-                    break;
-                }
-                case 'h5': { // 田埂草帶
-                    for (let gx = -rx * 0.65; gx <= rx * 0.65; gx += 26) {
-                        ctx.fillStyle = '#16a34a';
-                        ctx.beginPath(); ctx.arc(gx, -8, 12, 0, Math.PI * 2); ctx.fill();
-                        ctx.fillStyle = '#4ade80';
-                        ctx.beginPath(); ctx.arc(gx + 8, 10, 10, 0, Math.PI * 2); ctx.fill();
-                        ctx.fillStyle = '#fef08a';
-                        ctx.beginPath(); ctx.arc(gx, -10, 3, 0, Math.PI * 2); ctx.fill();
+                    for (let gx = -22; gx <= 22; gx += 11) {
+                        ctx.beginPath(); ctx.moveTo(gx, -20); ctx.lineTo(gx * 1.2, 20); ctx.stroke();
                     }
-                    break;
-                }
-                case 'h3': { // 砌石溝
-                    ctx.fillStyle = '#38bdf8';
-                    ctx.beginPath(); ctx.roundRect(-rx * 0.65, -14, rx * 1.3, 28, 12); ctx.fill();
-                    for (let sx = -rx * 0.6; sx <= rx * 0.6; sx += 18) {
-                        ctx.fillStyle = '#94a3b8';
-                        ctx.beginPath(); ctx.arc(sx, -15, 7, 0, Math.PI * 2); ctx.arc(sx + 6, 15, 7, 0, Math.PI * 2); ctx.fill();
+                    for (let gy = -12; gy <= 16; gy += 9) {
+                        ctx.beginPath(); ctx.moveTo(-28, gy); ctx.lineTo(28, gy); ctx.stroke();
                     }
-                    break;
-                }
-                case 'h8': { // 護岸
-                    ctx.fillStyle = '#a3e635';
-                    ctx.beginPath(); ctx.roundRect(-rx * 0.5, -ry * 0.65, rx, ry * 1.3, 16); ctx.fill();
-                    for (let py = -ry * 0.5; py <= ry * 0.5; py += 24) {
-                        ctx.fillStyle = '#78350f';
-                        ctx.beginPath(); ctx.arc(-22, py, 5, 0, Math.PI * 2); ctx.arc(22, py, 5, 0, Math.PI * 2); ctx.fill();
-                    }
-                    break;
-                }
-                case 'h9': { // 漂浮草帶
-                    ctx.fillStyle = '#0ea5e9';
-                    ctx.beginPath(); ctx.ellipse(0, 0, rx * 0.68, ry * 0.62, 0, 0, Math.PI * 2); ctx.fill();
-                    [[-24, -8, 14], [18, 10, 16], [0, -14, 12], [-10, 16, 11]].forEach(([lx, ly, lr]) => {
-                        ctx.fillStyle = '#22c55e';
-                        ctx.beginPath(); ctx.arc(lx, ly, lr, 0.2, Math.PI * 1.85); ctx.lineTo(lx, ly); ctx.closePath(); ctx.fill();
-                        ctx.fillStyle = '#f472b6';
-                        ctx.beginPath(); ctx.arc(lx + 3, ly - 2, 4, 0, Math.PI * 2); ctx.fill();
-                    });
-                    break;
-                }
-                case 'h4': { // 水塘
-                    ctx.fillStyle = '#0284c7';
-                    ctx.beginPath(); ctx.ellipse(0, 2, rx * 0.74, ry * 0.68, 0, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#38bdf8';
-                    ctx.beginPath(); ctx.ellipse(0, 0, rx * 0.68, ry * 0.62, 0, 0, Math.PI * 2); ctx.fill();
-                    // 水塘中央小噴泉與荷葉裝飾
-                    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.ellipse(0, 0, 24, 14, 0, 0, Math.PI * 2); ctx.stroke();
-                    ctx.fillStyle = '#e0f2fe';
-                    ctx.beginPath(); ctx.arc(0, -4, 7, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#22c55e';
-                    ctx.beginPath(); ctx.arc(-45, 12, 13, 0.3, Math.PI * 1.9); ctx.fill();
-                    ctx.beginPath(); ctx.arc(42, -10, 11, 0.5, Math.PI * 1.8); ctx.fill();
-                    break;
-                }
-                case 'h7': { // 濕地
-                    ctx.fillStyle = '#0284c7';
-                    ctx.beginPath(); ctx.ellipse(0, 4, rx * 0.65, ry * 0.55, 0, 0, Math.PI * 2); ctx.fill();
-                    // 香蒲蘆葦叢
-                    [[-30, -8], [28, -6], [0, 12]].forEach(([cx0, cy0]) => {
-                        ctx.strokeStyle = '#15803d'; ctx.lineWidth = 3;
-                        ctx.beginPath(); ctx.moveTo(cx0, cy0 + 10); ctx.lineTo(cx0, cy0 - 18); ctx.stroke();
-                        ctx.fillStyle = '#78350f';
-                        ctx.beginPath(); ctx.roundRect(cx0 - 3, cy0 - 16, 6, 11, 3); ctx.fill();
+                    [[-16, -8], [8, -4], [-6, 8], [16, 10]].forEach(([lx, ly]) => {
+                        ctx.beginPath(); ctx.arc(lx, ly, 5.5, 0, Math.PI * 2); ctx.fill();
                     });
                     break;
                 }
-                case 'h13': { // 深溝護道
-                    ctx.fillStyle = '#0369a1';
-                    ctx.beginPath(); ctx.roundRect(-rx * 0.72, -18, rx * 1.44, 36, 16); ctx.fill();
-                    ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(-40, 0); ctx.lineTo(40, 0); ctx.stroke();
+                case 'h5': { // 08 田埂草帶：阡陌土埂步道 + 豐茂草叢 + 田頭土地公拐
+                    ctx.fillStyle = '#a16207';
+                    ctx.beginPath(); ctx.roundRect(-rx * 0.72, -8, rx * 1.44, 18, 8); ctx.fill();
+                    for (let gx = -rx * 0.62; gx <= rx * 0.62; gx += 28) {
+                        ctx.fillStyle = '#16a34a';
+                        ctx.beginPath(); ctx.arc(gx, -12, 10, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#4ade80';
+                        ctx.beginPath(); ctx.arc(gx + 5, -15, 7, 0, Math.PI * 2); ctx.fill();
+                    }
+                    // 田頭土地公拐 (竹杖夾金紙)
+                    ctx.strokeStyle = '#65a30d'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(rx * 0.52, 14); ctx.lineTo(rx * 0.52, -24); ctx.stroke();
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillRect(rx * 0.52 - 7, -22, 14, 9);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(rx * 0.52 - 3, -20, 6, 5);
                     break;
                 }
-                case 'h15': { // 生物通道(友善設施)
-                    ctx.fillStyle = '#4ade80';
-                    ctx.beginPath(); ctx.roundRect(-rx * 0.7, -18, rx * 1.4, 36, 12); ctx.fill();
-                    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3;
+                case 'h3': { // 09 砌石溝：雙側多孔隙砌石護坡與清澈水流
+                    ctx.fillStyle = '#0284c7';
+                    ctx.beginPath(); ctx.roundRect(-rx * 0.65, -14, rx * 1.3, 28, 10); ctx.fill();
+                    ctx.fillStyle = '#7dd3fc';
+                    ctx.beginPath(); ctx.roundRect(-rx * 0.6, -9, rx * 1.2, 18, 7); ctx.fill();
+                    for (let sx = -rx * 0.58; sx <= rx * 0.58; sx += 18) {
+                        ctx.fillStyle = '#94a3b8';
+                        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.4;
+                        ctx.beginPath(); ctx.arc(sx, -16, 7.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                        ctx.beginPath(); ctx.arc(sx + 5, 16, 7.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    }
+                    break;
+                }
+                case 'h8': { // 10 護岸：雙排圓木樁生態護岸與緩坡綠植
+                    for (let py = -ry * 0.58; py <= ry * 0.58; py += 24) {
+                        [-24, 24].forEach(px => {
+                            ctx.fillStyle = '#78350f';
+                            ctx.fillRect(px - 4, py - 4, 8, 12);
+                            ctx.fillStyle = '#fcd34d';
+                            ctx.beginPath(); ctx.ellipse(px, py - 4, 4.5, 2.5, 0, 0, Math.PI * 2); ctx.fill();
+                        });
+                    }
+                    break;
+                }
+                case 'h9': { // 11 漂浮草帶：水面浮島、睡蓮荷葉與粉紅蓮花
+                    [[-28, -10, 16], [22, 8, 18], [-6, 18, 14], [18, -18, 13]].forEach(([lx, ly, lr], idx) => {
+                        ctx.fillStyle = '#16a34a';
+                        ctx.beginPath(); ctx.arc(lx, ly, lr, 0.2, Math.PI * 1.9); ctx.lineTo(lx, ly); ctx.closePath(); ctx.fill();
+                        if (idx % 2 === 0) {
+                            ctx.fillStyle = '#f472b6';
+                            ctx.beginPath(); ctx.arc(lx, ly - 3, 5.5, 0, Math.PI * 2); ctx.fill();
+                            ctx.fillStyle = '#fef08a';
+                            ctx.beginPath(); ctx.arc(lx, ly - 3, 2.2, 0, Math.PI * 2); ctx.fill();
+                        }
+                    });
+                    break;
+                }
+                case 'h4': { // 12 水塘：親水木碼頭 + 動態水波紋與噴泉水柱
+                    let ripple = (Date.now() / 40) % 28;
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.ellipse(0, 0, 22 + ripple, 12 + ripple * 0.5, 0, 0, Math.PI * 2); ctx.stroke();
+                    // 親水木棧碼頭
+                    ctx.fillStyle = '#b45309';
+                    ctx.beginPath(); ctx.roundRect(-rx * 0.72, -10, 38, 20, 4); ctx.fill();
+                    break;
+                }
+                case 'h7': { // 13 濕地：泥灘淺水島與香蒲蘆葦叢
+                    [[-32, -8], [28, -6], [-12, 14], [18, 16]].forEach(([cx0, cy0]) => {
+                        ctx.strokeStyle = '#15803d'; ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(cx0 - 4, cy0 + 10); ctx.lineTo(cx0 - 7, cy0 - 16);
+                        ctx.moveTo(cx0, cy0 + 10);     ctx.lineTo(cx0, cy0 - 20);
+                        ctx.moveTo(cx0 + 4, cy0 + 10); ctx.lineTo(cx0 + 7, cy0 - 15);
+                        ctx.stroke();
+                        ctx.fillStyle = '#78350f';
+                        ctx.beginPath(); ctx.roundRect(cx0 - 2.5, cy0 - 19, 5, 9, 2.5); ctx.fill();
+                    });
+                    break;
+                }
+                case 'h13': { // 14 深溝護道：深水避難河槽與木造水閘門
+                    ctx.fillStyle = '#0369a1';
+                    ctx.beginPath(); ctx.roundRect(-rx * 0.68, -14, rx * 1.36, 28, 12); ctx.fill();
+                    ctx.fillStyle = '#78350f';
+                    ctx.fillRect(-6, -20, 12, 40);
+                    ctx.fillStyle = '#facc15';
+                    ctx.beginPath(); ctx.arc(0, -20, 5, 0, Math.PI * 2); ctx.fill();
+                    break;
+                }
+                case 'h15': { // 15 生物通道(友善設施)：跨路綠廊護欄與誘導植栽
+                    ctx.strokeStyle = '#b45309'; ctx.lineWidth = 3.5;
                     ctx.beginPath();
-                    ctx.moveTo(-rx * 0.68, -18); ctx.lineTo(rx * 0.68, -18);
-                    ctx.moveTo(-rx * 0.68, 18);  ctx.lineTo(rx * 0.68, 18);
+                    ctx.moveTo(-rx * 0.68, -16); ctx.lineTo(rx * 0.68, -16);
+                    ctx.moveTo(-rx * 0.68, 16);  ctx.lineTo(rx * 0.68, 16);
                     ctx.stroke();
+                    drawProceduralTree(-rx * 0.45, 0, 0.55, 0);
+                    drawProceduralTree(rx * 0.45, 0, 0.55, 1);
                     break;
                 }
                 default: {
-                    ctx.fillStyle = '#22c55e';
-                    ctx.beginPath(); ctx.arc(-16, 0, 14, 0, Math.PI * 2); ctx.arc(16, 4, 12, 0, Math.PI * 2); ctx.fill();
+                    drawProceduralTree(0, 4, 0.65, 0);
                     break;
                 }
             }
+
+            ctx.restore();
+        }
+
+        // ★ 3D 六角形多層立體台地小島 (山城梯田與岩盤風格，移除海浪與海灘)
+        function drawIslandPlatform(cx, cy, rx, ry, topColor, midColor, deepColor, liftY = 0, isGlowing = false) {
+            ctx.save();
+            let shadowScale = Math.max(0.82, 1 - liftY * 0.004);
+
+            // 1. 山城梯田石砌外環線 (Terrace Retaining Ring)
+            let pulse = Math.sin(Date.now() / 420 + cx * 0.01) * 2;
+            ctx.strokeStyle = isGlowing ? 'rgba(250, 204, 21, 0.8)' : 'rgba(120, 113, 108, 0.35)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([12, 6]);
+            traceRoundedHexagon(ctx, cx, cy + 18, (rx + 6 + pulse) * shadowScale, (ry + 5 + pulse) * shadowScale, 20);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 2. 山谷地面立體投影
+            ctx.fillStyle = isGlowing ? 'rgba(234, 179, 8, 0.42)' : 'rgba(20, 83, 45, 0.28)';
+            traceRoundedHexagon(ctx, cx, cy + 22, rx * 1.04 * shadowScale, ry * 1.04 * shadowScale, 20);
+            ctx.fill();
+
+            ctx.translate(cx, cy - liftY);
+
+            // 3. 底層山城砌石駁坎基座 (Stone Retaining Base)
+            ctx.fillStyle = '#a8a29e';
+            traceRoundedHexagon(ctx, 0, 18, rx * 1.02, ry * 1.02, 19);
+            ctx.fill();
+
+            // 4. 岩盤斷崖厚度層 (3D Terraced Cliff Wall)
+            ctx.fillStyle = deepColor || '#3f6212';
+            traceRoundedHexagon(ctx, 0, 14, rx * 0.99, ry * 0.99, 18);
+            ctx.fill();
+
+            // 斷崖面立體垂直岩紋刻線
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.22)';
+            ctx.lineWidth = 2;
+            for (let k = -3; k <= 3; k++) {
+                let vx = k * (rx * 0.24);
+                let vy = Math.sqrt(Math.max(0, 1 - (vx / rx) ** 2)) * (ry * 0.86);
+                ctx.beginPath();
+                ctx.moveTo(vx, vy - 2);
+                ctx.lineTo(vx, vy + 12);
+                ctx.stroke();
+            }
+
+            // 5. 中層豐饒斜坡草皮層
+            ctx.fillStyle = midColor || '#84cc16';
+            traceRoundedHexagon(ctx, 0, 7, rx * 1.01, ry * 1.01, 18);
+            ctx.fill();
+
+            // 6. 頂層六角形主題地表平台
+            ctx.fillStyle = topColor || '#d9f99d';
+            traceRoundedHexagon(ctx, 0, 0, rx, ry, 18);
+            ctx.fill();
+
+            // 7. 內圈立體高光邊框
+            ctx.strokeStyle = isGlowing ? '#facc15' : 'rgba(255, 255, 255, 0.78)';
+            ctx.lineWidth = isGlowing ? 4.5 : 2.5;
+            traceRoundedHexagon(ctx, 0, -1, rx * 0.94, ry * 0.94, 15);
+            ctx.stroke();
+
             ctx.restore();
         }
 
@@ -1500,54 +2078,66 @@
                 ctx.beginPath(); ctx.arc(px, 1, 2.8, 0, Math.PI * 2); ctx.fill();
             }
 
-            // 上下側扶手橫桿
+            // 雙層橫向木欄杆扶手
             ctx.strokeStyle = '#92400e';
-            ctx.lineWidth = 3.2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(0, -21); ctx.lineTo(dist, -21);
             ctx.moveTo(0, 4);   ctx.lineTo(dist, 4);
             ctx.stroke();
 
-            ctx.strokeStyle = '#fbbf24';
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.moveTo(0, -22); ctx.lineTo(dist, -22);
-            ctx.moveTo(0, 3);   ctx.lineTo(dist, 3);
-            ctx.stroke();
-
-            // 7. 橋頭兩端立體石木底座 (確保橋頭銜接完整不被切斷)
-            [0, dist].forEach(endX => {
-                ctx.fillStyle = '#78350f';
-                ctx.strokeStyle = '#fef08a';
-                ctx.lineWidth = 1.8;
-                ctx.beginPath();
-                ctx.roundRect(endX - 6, -24, 12, 36, 4);
-                ctx.fill();
-                ctx.stroke();
-            });
-
             ctx.restore();
         }
 
-        // ★ 集中繪製全島立體連接木棧橋（置於地景之上、銜接各六角島邊緣，不被農田或溪流覆蓋）
+        // ★ 集中繪製全島立體連接木棧橋：自動計算兩座六角島中心方向並延伸嵌入島緣內側，確保橋與島100%無縫連接不斷裂
         function drawAllBridges() {
-            // 北側森林群島連橋 (01原始森林 ↔ 02枯木草堆 ↔ 04灌木欉 ↔ 05石堆 ↔ 15生物通道)
-            drawWoodenBridge(275, 130, 338, 175);
-            drawWoodenBridge(508, 200, 732, 185);
-            drawWoodenBridge(918, 180, 1012, 175);
-            drawWoodenBridge(1178, 185, 1225, 205);
-            // 西側水路與農田連橋 (07攀爬網 ↔ 06昆蟲旅館 ↔ 08田埂草帶)
-            drawWoodenBridge(152, 725, 252, 795);
-            drawWoodenBridge(355, 888, 375, 980);
-            // 南側農田與濕地連橋 (08田埂草帶 ↔ 09砌石溝 ↔ 13濕地 ↔ 14深溝護道)
-            drawWoodenBridge(615, 995, 668, 915);
-            drawWoodenBridge(848, 900, 1002, 955);
-            drawWoodenBridge(1188, 995, 1245, 1045);
-            // 中央實驗室與東側溪流連橋 (03涵洞護道 ↔ 探探里山生態實驗室 ↔ 10護岸 ↔ 11漂浮草帶 ↔ 12水塘)
-            drawWoodenBridge(585, 505, 705, 615);
-            drawWoodenBridge(915, 635, 965, 595);
-            drawWoodenBridge(1122, 565, 1262, 555);
-            drawWoodenBridge(1355, 648, 1355, 745);
+            const getIslandCenter = (id) => {
+                if (id === 'lab') return { x: 810, y: 675, rx: 120, ry: 75 };
+                let h = habitats.find(item => item.id === id);
+                if (!h) return null;
+                return { x: h.x + h.w / 2, y: h.y + h.h / 2 - (h.animLift || 0), rx: h.w / 2, ry: h.h / 2 };
+            };
+
+            const connectIslands = (idA, idB, insetFactor = 0.65) => {
+                let a = getIslandCenter(idA);
+                let b = getIslandCenter(idB);
+                if (!a || !b) return;
+                let angle = Math.atan2(b.y - a.y, b.x - a.x);
+                let startX = a.x + Math.cos(angle) * (a.rx * insetFactor);
+                let startY = a.y + Math.sin(angle) * (a.ry * insetFactor);
+                let endX = b.x - Math.cos(angle) * (b.rx * insetFactor);
+                let endY = b.y - Math.sin(angle) * (b.ry * insetFactor);
+                drawWoodenBridge(startX, startY, endX, endY);
+            };
+
+            // 1. 北側山林群島連橋 (01原始森林 ↔ 02枯木草堆 ↔ 04灌木欉 ↔ 05石堆 ↔ 15生物通道)
+            connectIslands('h14', 'h1', 0.68);
+            connectIslands('h1', 'h6', 0.68);
+            connectIslands('h6', 'h2', 0.68);
+            connectIslands('h2', 'h15', 0.68);
+
+            // 2. 跨山邊道路南北縱貫連橋 (02枯木草堆 ↔ 03涵洞護道、15生物通道 ↔ 11漂浮草帶)
+            connectIslands('h1', 'h12', 0.68);
+            connectIslands('h15', 'h9', 0.68);
+
+            // 3. 西側農田與溝渠連橋 (03涵洞護道 ↔ 06昆蟲旅館、07攀爬網 ↔ 06昆蟲旅館 ↔ 08田埂草帶)
+            connectIslands('h12', 'h10', 0.72);
+            connectIslands('h11', 'h10', 0.68);
+            connectIslands('h10', 'h5', 0.68);
+
+            // 4. 南側農田與水岸連橋 (08田埂草帶 ↔ 09砌石溝 ↔ 13濕地 ↔ 14深溝護道)
+            connectIslands('h5', 'h3', 0.68);
+            connectIslands('h3', 'h7', 0.68);
+            connectIslands('h7', 'h13', 0.68);
+
+            // 5. 中央生態實驗室與東側溪流連橋 (03涵洞護道 ↔ 實驗室 ↔ 10護岸 ↔ 11漂浮草帶 ↔ 12水塘 ↔ 13濕地)
+            connectIslands('h12', 'lab', 0.68);
+            connectIslands('lab', 'h3', 0.68);
+            connectIslands('lab', 'h8', 0.68);
+            connectIslands('h8', 'h9', 0.68);
+            connectIslands('h9', 'h4', 0.68);
+            connectIslands('h4', 'h7', 0.68);
+            connectIslands('h4', 'h13', 0.68);
         }
 
         // ★ 地圖正中央建築：「探探里山生態實驗室」
@@ -1633,37 +2223,100 @@
 
         function drawTrees(startX, startY, count) {
             for (let i = 0; i < count; i++) {
-                let tx = startX + i * 36;
-                let ty = startY + (i % 2) * 18;
-                ctx.fillStyle = '#78350f';
-                ctx.fillRect(tx - 3, ty, 6, 14);
-                ctx.fillStyle = '#15803d';
-                ctx.beginPath(); ctx.moveTo(tx, ty - 24); ctx.lineTo(tx - 15, ty + 4); ctx.lineTo(tx + 15, ty + 4); ctx.closePath(); ctx.fill();
+                let tx = startX + i * 38;
+                let ty = startY + (i % 2) * 16;
+                let scale = 0.85 + (i % 3) * 0.14;
+                drawProceduralTree(tx, ty, scale, i);
             }
         }
 
         function drawMap() {
+            // 1. 建構 3D「水里里山山城」背景地景 (Mountain Town & Terraced Valley，取代原本的海洋背景)
             let bgGrad = ctx.createLinearGradient(0, 0, 0, MAP_H);
-            bgGrad.addColorStop(0, '#bae6fd');
-            bgGrad.addColorStop(0.45, '#a7f3d0');
-            bgGrad.addColorStop(1, '#86efac');
+            bgGrad.addColorStop(0, '#a7f3d0');   // 遠山翠谷薄霧綠
+            bgGrad.addColorStop(0.28, '#bbf7d0'); // 淺山林坡嫩綠
+            bgGrad.addColorStop(0.65, '#d9f99d'); // 里山山城梯田草綠
+            bgGrad.addColorStop(1, '#bef264');    // 平原谷地暖綠
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, MAP_W, MAP_H);
 
+            // 遠方層疊山脈剪影與雲霧帶 (Layered Mountain Ridges & Valley Mist)
+            ctx.fillStyle = '#6ee7b7';
+            ctx.beginPath();
+            ctx.moveTo(0, 190);
+            ctx.quadraticCurveTo(220, 40, 460, 165);
+            ctx.quadraticCurveTo(720, 20, 1020, 155);
+            ctx.quadraticCurveTo(1320, 35, 1600, 170);
+            ctx.lineTo(1600, 320);
+            ctx.lineTo(0, 320);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#86efac';
+            ctx.beginPath();
+            ctx.moveTo(0, 240);
+            ctx.quadraticCurveTo(310, 110, 620, 220);
+            ctx.quadraticCurveTo(940, 95, 1260, 215);
+            ctx.quadraticCurveTo(1450, 140, 1600, 230);
+            ctx.lineTo(1600, 340);
+            ctx.lineTo(0, 340);
+            ctx.closePath();
+            ctx.fill();
+
+            // 山城等高線梯田紋理與石板古道 (Terrace Contour Lines & Mountain Trails)
+            ctx.strokeStyle = 'rgba(22, 101, 52, 0.12)';
+            ctx.lineWidth = 3;
+            for (let ty = 130; ty < MAP_H; ty += 105) {
+                ctx.beginPath();
+                ctx.moveTo(0, ty);
+                ctx.bezierCurveTo(MAP_W * 0.3, ty - 28, MAP_W * 0.7, ty + 28, MAP_W, ty - 10);
+                ctx.stroke();
+            }
+
+            // 山城聚落點綴建築群 (遠景山腰紅瓦小山屋與茶園梯田)
+            drawProceduralBuilding(555, 255, 52, 42, 22, '#fef3c7', '#fde68a', '#dc2626', '#991b1b', false);
+            drawProceduralBuilding(935, 250, 56, 44, 24, '#fffbeb', '#fef3c7', '#ea580c', '#9a3412', true);
+            drawProceduralBuilding(95, 525, 54, 44, 24, '#fef3c7', '#fde68a', '#b91c1c', '#7f1d1d', false);
+
+            // 飄動山嵐雲霧 (Animated Mountain Mist)
+            let mistShift = Math.sin(Date.now() / 1800) * 35;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+            ctx.beginPath();
+            ctx.roundRect(380 + mistShift, 68, 220, 26, 13);
+            ctx.roundRect(1080 - mistShift, 82, 240, 28, 14);
+            ctx.fill();
+
+            // 2. 五大主山城台地基盤 (含砌石駁坎、斷崖岩層與草坡)
             drawIslandPlatform(240, 145, 225, 130, '#bbf7d0', '#4ade80', '#15803d');
             drawIslandPlatform(760, 155, 220, 115, '#d9f99d', '#84cc16', '#4d7c0f');
             drawIslandPlatform(540, 580, 420, 155, '#ecfccb', '#a3e635', '#65a30d');
             drawIslandPlatform(460, 995, 350, 185, '#d9f99d', '#84cc16', '#4d7c0f');
-            drawIslandPlatform(1310, 740, 265, 295, '#cffafe', '#67e8f9', '#0891b2');
+            drawIslandPlatform(1310, 740, 265, 295, '#dcfce7', '#4ade80', '#15803d');
 
+            // 3. 遠景山丘與高低差群 (Mountains, Hills & Waterfall Source)
+            draw3DMountainPeak(610, 88, 95, 70, true, false);
+            draw3DMountainPeak(685, 96, 80, 56, false, false);
+            draw3DMountainPeak(1055, 395, 110, 74, true, true); // 生態溪流源頭高山飛瀑
             drawTrees(25, 25, 6);
 
-            // 山邊道路
-            drawIsometricBlock(0, 320, MAP_W, 76, '#64748b', '#334155', 0, 12);
-            ctx.strokeStyle = '#f8fafc'; ctx.setLineDash([22, 18]); ctx.lineWidth = 4;
+            // 4. 山邊道路 (3D 路基石坡 + 柏油路面 + 金黃路燈與護欄構築)
+            drawIsometricBlock(0, 320, MAP_W, 76, '#475569', '#1e293b', 0, 14);
+            // 道路兩側白實線與中央雙黃/白虛線
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, 324, MAP_W, 3);
+            ctx.fillRect(0, 389, MAP_W, 3);
+            ctx.strokeStyle = '#facc15'; ctx.setLineDash([24, 18]); ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(0, 358); ctx.lineTo(MAP_W, 358); ctx.stroke(); ctx.setLineDash([]);
+            // 道路沿線太陽能路燈與里程碑
+            for (let lx = 90; lx < MAP_W; lx += 280) {
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(lx - 2, 296, 4, 26);
+                ctx.fillStyle = (timeOfDay === 'night' || timeOfDay === 'dusk') ? '#fef08a' : '#e2e8f0';
+                ctx.beginPath(); ctx.arc(lx + 4, 296, 5, 0, Math.PI * 2); ctx.fill();
+            }
             drawPillSign('山邊道路', 150, 345);
 
+            // 跨路生態陸橋基礎
             drawIsometricBlock(1150, 292, 400, 28, '#86efac', '#15803d', 14, 12);
             ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3.5;
             ctx.beginPath();
@@ -1674,51 +2327,150 @@
             }
             ctx.stroke();
 
-            // 農田與建築
-            drawIsometricBlock(200, 850, 500, 300, '#a16207', '#451a03', 32, 16);
-            ctx.strokeStyle = '#78350f'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+            // 5. 有機農田 (3D 枕木圍欄 + 立體土壟 + 多樣化有機蔬果與稻作)
+            drawIsometricBlock(200, 850, 500, 300, '#92400e', '#451a03', 32, 18);
+            ctx.fillStyle = '#78350f';
+            ctx.beginPath(); ctx.roundRect(212, 860, 476, 280, 24); ctx.fill();
+
             for (let i = 1; i < 10; i++) {
-                ctx.beginPath(); ctx.moveTo(225, 850 + i * 28); ctx.lineTo(675, 850 + i * 28); ctx.stroke();
+                let rowY = 852 + i * 28;
+                // 立體培土壟溝
+                ctx.strokeStyle = '#b45309'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(228, rowY); ctx.lineTo(672, rowY); ctx.stroke();
+                ctx.strokeStyle = '#a16207'; ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.moveTo(228, rowY - 2); ctx.lineTo(672, rowY - 2); ctx.stroke();
+
                 for (let j = 0; j < 8; j++) {
+                    let cx0 = 245 + j * 60;
                     ctx.fillStyle = '#15803d';
-                    ctx.beginPath(); ctx.arc(245 + j * 60, 851 + i * 28, 6, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#86efac';
-                    ctx.beginPath(); ctx.arc(245 + j * 60, 848 + i * 28, 5, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx0, rowY, 6.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#4ade80';
+                    ctx.beginPath(); ctx.arc(cx0 - 2, rowY - 3, 5, 0, Math.PI * 2); ctx.arc(cx0 + 3, rowY - 2, 4.5, 0, Math.PI * 2); ctx.fill();
+                    if ((i + j) % 3 === 0) {
+                        ctx.fillStyle = i % 2 === 0 ? '#ef4444' : '#f59e0b';
+                        ctx.beginPath(); ctx.arc(cx0 + 2, rowY - 4, 2.5, 0, Math.PI * 2); ctx.fill();
+                    }
                 }
             }
             drawPillSign('有機農田', 450, 814);
 
-            drawIsometricBlock(150, 450, 350, 250, 'rgba(224, 242, 254, 0.9)', '#64748b', 26, 16);
-            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
-            for (let i = 1; i < 5; i++) { ctx.beginPath(); ctx.moveTo(155, 450 + i * 50); ctx.lineTo(495, 450 + i * 50); ctx.stroke(); }
-            for (let j = 1; j < 7; j++) { ctx.beginPath(); ctx.moveTo(150 + j * 50, 455); ctx.lineTo(150 + j * 50, 695); ctx.stroke(); }
+            // 6. 設施農業(溫室)：3D 多連棟圓拱玻璃溫室結構
+            drawIsometricBlock(150, 450, 350, 250, '#cbd5e1', '#475569', 26, 18);
+            const bayCount = 3;
+            const bayW = 330 / bayCount;
+            for (let b = 0; b < bayCount; b++) {
+                let bx = 160 + b * bayW;
+                let by = 462;
+                let bh = 226;
+                ctx.fillStyle = 'rgba(187, 247, 208, 0.65)';
+                ctx.beginPath(); ctx.roundRect(bx + 4, by + 8, bayW - 8, bh - 12, 12); ctx.fill();
+                for (let r = by + 24; r < by + bh - 16; r += 26) {
+                    ctx.fillStyle = '#22c55e';
+                    ctx.beginPath();
+                    ctx.arc(bx + 24, r, 6, 0, Math.PI * 2);
+                    ctx.arc(bx + 54, r, 6, 0, Math.PI * 2);
+                    ctx.arc(bx + 84, r, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                let glassGrad = ctx.createLinearGradient(bx, by, bx + bayW, by);
+                glassGrad.addColorStop(0, 'rgba(224, 242, 254, 0.78)');
+                glassGrad.addColorStop(0.45, 'rgba(255, 255, 255, 0.88)');
+                glassGrad.addColorStop(1, 'rgba(186, 230, 253, 0.72)');
+                ctx.fillStyle = glassGrad;
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.roundRect(bx + 2, by, bayW - 4, bh, 16); ctx.fill(); ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.85)';
+                ctx.lineWidth = 1.6;
+                for (let gy = by + 28; gy < by + bh; gy += 36) {
+                    ctx.beginPath();
+                    ctx.moveTo(bx + 3, gy);
+                    ctx.quadraticCurveTo(bx + bayW / 2, gy - 10, bx + bayW - 3, gy);
+                    ctx.stroke();
+                }
+                ctx.fillStyle = '#475569';
+                ctx.beginPath(); ctx.arc(bx + bayW / 2, by + 14, 7, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#94a3b8';
+                ctx.beginPath(); ctx.arc(bx + bayW / 2, by + 14, 3, 0, Math.PI * 2); ctx.fill();
+            }
             drawPillSign('設施農業(溫室)', 325, 412);
 
-            drawIsometricBlock(675, 515, 70, 55, '#fef3c7', '#b45309', 12, 12);
-            ctx.fillStyle = '#991b1b'; ctx.beginPath(); ctx.moveTo(663, 519); ctx.lineTo(710, 479); ctx.lineTo(757, 519); ctx.fill();
-            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(665, 515); ctx.lineTo(710, 475); ctx.lineTo(755, 515); ctx.fill();
+            // 7. 里山農舍群 (調整座標至 y: 500~515，拉開與下方「探探里山生態實驗室」的間距，解決重疊破圖問題)
+            ctx.fillStyle = '#fca5a5';
+            ctx.strokeStyle = '#b91c1c'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.ellipse(755, 536, 108, 34, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#facc15'; // 曬穀金黃稻穀圓墊
+            ctx.beginPath(); ctx.ellipse(725, 540, 26, 11, 0.1, 0, Math.PI * 2); ctx.fill();
 
-            drawIsometricBlock(775, 540, 80, 60, '#fef3c7', '#b45309', 12, 12);
-            ctx.fillStyle = '#9a3412'; ctx.beginPath(); ctx.moveTo(763, 544); ctx.lineTo(815, 499); ctx.lineTo(867, 544); ctx.fill();
-            ctx.fillStyle = '#ea580c'; ctx.beginPath(); ctx.moveTo(765, 540); ctx.lineTo(815, 495); ctx.lineTo(865, 540); ctx.fill();
-            drawPillSign('里山農舍', 760, 442);
+            drawProceduralBuilding(695, 498, 72, 58, 30, '#fef3c7', '#fde68a', '#dc2626', '#991b1b', true);
+            drawProceduralBuilding(808, 506, 78, 60, 32, '#fffbeb', '#fef3c7', '#ea580c', '#9a3412', true);
+            drawProceduralTree(628, 488, 0.82, 0);
+            drawProceduralTree(878, 495, 0.85, 2);
+            drawPillSign('里山農舍', 755, 418);
 
-            // ★ 地圖正中間新增建築：「探探里山生態實驗室」
+            // ★ 地圖正中間建築：「探探里山生態實驗室」
             drawSatoyamaEcoLab(810, 675);
 
+            // 8. 生態溪流 (3D 岩石河岸 + 深淺水流層次 + 動態波光與溪石激流)
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath(); ctx.moveTo(990, 398); ctx.lineTo(1122, 398); ctx.lineTo(1375, 1200); ctx.lineTo(1135, 1200); ctx.fill();
             ctx.fillStyle = '#0284c7';
             ctx.beginPath(); ctx.moveTo(1000, 400); ctx.lineTo(1110, 400); ctx.lineTo(1360, 1200); ctx.lineTo(1150, 1200); ctx.fill();
-            ctx.fillStyle = '#38bdf8';
+            let riverGrad = ctx.createLinearGradient(1000, 400, 1300, 1200);
+            riverGrad.addColorStop(0, '#7dd3fc');
+            riverGrad.addColorStop(0.5, '#38bdf8');
+            riverGrad.addColorStop(1, '#0ea5e9');
+            ctx.fillStyle = riverGrad;
             ctx.beginPath(); ctx.moveTo(1008, 408); ctx.lineTo(1102, 408); ctx.lineTo(1348, 1200); ctx.lineTo(1162, 1200); ctx.fill();
+
+            let streamFlow = (Date.now() / 35) % 60;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.lineWidth = 2.5;
+            for (let sy = 430 + streamFlow; sy < 1180; sy += 60) {
+                let ratio = (sy - 400) / 800;
+                let sx = 1050 + ratio * 195;
+                ctx.beginPath();
+                ctx.moveTo(sx - 12, sy);
+                ctx.lineTo(sx - 4, sy + 22);
+                ctx.moveTo(sx + 14, sy - 10);
+                ctx.lineTo(sx + 22, sy + 12);
+                ctx.stroke();
+            }
+            [[1065, 485, 12], [1115, 650, 15], [1175, 830, 14], [1230, 1020, 16]].forEach(([rx0, ry0, rr]) => {
+                ctx.fillStyle = 'rgba(255,255,255,0.75)';
+                ctx.beginPath(); ctx.ellipse(rx0, ry0 + 3, rr + 4, rr * 0.65, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#94a3b8';
+                ctx.beginPath(); ctx.ellipse(rx0, ry0, rr, rr * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+            });
             drawPillSign('生態溪流', 1110, 600);
 
-            drawIsometricBlock(20, 650, 130, 400, '#38bdf8', '#0284c7', 22, 14);
+            // 9. 灌溉溝渠 (3D 砌石護岸 + 清澈水路 + 傳統木製汲水車 Waterwheel)
+            drawIsometricBlock(20, 650, 130, 400, '#cbd5e1', '#475569', 22, 16);
+            ctx.fillStyle = '#0284c7';
+            ctx.beginPath(); ctx.roundRect(32, 662, 106, 376, 16); ctx.fill();
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath(); ctx.roundRect(38, 668, 94, 364, 14); ctx.fill();
+            ctx.save();
+            ctx.translate(142, 850);
+            ctx.fillStyle = '#451a03';
+            ctx.fillRect(-6, 8, 16, 18);
+            let wheelAngle = Date.now() / 650;
+            ctx.rotate(wheelAngle);
+            ctx.strokeStyle = '#92400e'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.stroke();
+            for (let w = 0; w < 6; w++) {
+                ctx.rotate(Math.PI / 3);
+                ctx.beginPath(); ctx.moveTo(-22, 0); ctx.lineTo(22, 0); ctx.stroke();
+            }
+            ctx.restore();
             drawPillSign('灌溉溝渠', 85, 612);
 
+            // 10. 次生森林 (群聚演算法森林：不同大小、方向與種類的 3D 樹木與山丘)
             drawTrees(550, 100, 3); drawTrees(700, 80, 4); drawTrees(850, 120, 2);
             drawPillSign('次生森林', 700, 180);
 
-            // ★ 在地景區塊繪製完成後畫上立體木棧橋，確保橋面完整不被農田、溫室或溪流切斷覆蓋
+            // ★ 在地景區塊繪製完成後畫上立體木棧橋，並自動銜接至各六角島內部邊緣
             drawAllBridges();
 
             if (timeOfDay === 'dusk') {
@@ -1880,6 +2632,20 @@
                     ctx.font = '23px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cardX + 10, cardY + 31);
                     ctx.restore();
 
+                    // ★ 地圖棲地內卡片：若為台灣保育類動物，左上角繪製月亮等級標章 (一級🌙、二級🌙🌙、三級🌙🌙🌙)
+                    if (occ.consLevel) {
+                        let moons = '🌙'.repeat(occ.consLevel);
+                        ctx.save();
+                        ctx.fillStyle = '#1e1b4b';
+                        ctx.strokeStyle = '#facc15';
+                        ctx.lineWidth = 1.2;
+                        let mw = occ.consLevel * 9 + 6;
+                        ctx.beginPath(); ctx.roundRect(cardX - 3, cardY - 4, mw, 13, 6); ctx.fill(); ctx.stroke();
+                        ctx.font = '8px sans-serif';
+                        ctx.fillText(moons, cardX - 1, cardY + 5);
+                        ctx.restore();
+                    }
+
                     occ.renderBox = { x: cardX, y: cardY, w: 46, h: 46 };
 
                     if (occ.dead) {
@@ -1995,7 +2761,8 @@
 
         function handleMotion(e) {
             if (!isGameRunning) return;
-            if (isPanningMap || isMagicWandMode) return;
+            // ★ 修正：即使玩家開啟著魔法棒忘記關閉，只要沒有正在用手指拖曳地圖，走路與搖晃仍可持續感測並獲得卡片！
+            if (isPanningMap) return;
             let acc = e.accelerationIncludingGravity || e.acceleration;
             if (!acc) return;
 
@@ -2019,7 +2786,8 @@
                 player.y = Math.max(40, Math.min(MAP_H - 40, player.y));
                 checkMovement(1);
                 checkProximityInteractions();
-                camera.detached = false;
+                // 若正在用魔法棒瞄準棲地，鏡頭保持在該棲地上方不亂跳，但背後照常累積步數並獲得卡片
+                if (!isMagicWandMode) camera.detached = false;
             }
         }
 
@@ -2061,7 +2829,10 @@
             const bGrid = document.getElementById('guide-bio-grid');
             const cGrid = document.getElementById('guide-culture-grid');
             if (bGrid.innerHTML === '') {
-                bGrid.innerHTML = ECO_DATA.map(c => `<div class="guide-item"><div class="icon">${c.icon}</div><div class="name">${c.name}</div></div>`).join('');
+                bGrid.innerHTML = ECO_DATA.map(c => {
+                    const moons = c.consLevel ? `<div style="font-size:10px;line-height:1;margin-top:2px;" title="台灣${c.consLevel}級保育類">${'🌙'.repeat(c.consLevel)}</div>` : '';
+                    return `<div class="guide-item"><div class="icon">${c.icon}</div>${moons}<div class="name">${c.name}</div></div>`;
+                }).join('');
                 cGrid.innerHTML = CULTURE_DATA.map(c => `<div class="guide-item"><div class="icon">${c.icon}</div><div class="name">${c.name}</div></div>`).join('');
             }
             document.getElementById('guide-modal').style.display = 'flex';
@@ -2129,14 +2900,16 @@
             }
         ];
 
+        // ★ 修正上方行走中的野生小動物漫步範圍與靈活反彈邏輯，避免卡在邊界或被生物通道陸橋遮蔽
         let ambientCritters = [
-            { icon: '🐒', name: '獼猴', x: 295, y: 235, vx: 0.55, vy: 0.35, minX: 180, maxX: 325, minY: 200, maxY: 290, phase: 0, zone: 'land' },
-            { icon: '🐗', name: '小山豬', x: 555, y: 235, vx: -0.5, vy: 0.32, minX: 520, maxX: 715, minY: 190, maxY: 290, phase: 1.5, zone: 'land' },
-            { icon: '🐆', name: '石虎', x: 955, y: 220, vx: 0.6, vy: -0.3, minX: 925, maxX: 1180, minY: 245, maxY: 295, phase: 3.1, zone: 'land' },
-            { icon: '🐃', name: '水牛', x: 215, y: 950, vx: 0.32, vy: 0.22, minX: 170, maxX: 255, minY: 895, maxY: 1110, phase: 0.4, zone: 'land' },
-            { icon: '🦆', name: '小水鴨', x: 1165, y: 760, vx: 0.45, vy: 0.35, minX: 1125, maxX: 1205, minY: 680, maxY: 870, phase: 0.7, zone: 'water' },
-            { icon: '🦢', name: '白鷺鷥', x: 1185, y: 520, vx: -0.4, vy: 0.38, minX: 1135, maxX: 1245, minY: 440, maxY: 650, phase: 2.5, zone: 'water' },
-            { icon: '🐟', name: '溪魚', x: 1145, y: 660, vx: 0.35, vy: 0.65, minX: 1115, maxX: 1205, minY: 450, maxY: 860, phase: 1.2, zone: 'water' }
+            { icon: '🐒', name: '台灣獼猴', x: 255, y: 245, vx: 0.62, vy: 0.35, minX: 80, maxX: 315, minY: 205, maxY: 285, phase: 0, zone: 'land' },
+            { icon: '🐗', name: '小山豬', x: 590, y: 245, vx: -0.58, vy: 0.32, minX: 525, maxX: 720, minY: 200, maxY: 285, phase: 1.5, zone: 'land' },
+            { icon: '🐆', name: '石虎', x: 960, y: 265, vx: 0.65, vy: -0.32, minX: 920, maxX: 1140, minY: 245, maxY: 288, phase: 3.1, zone: 'land' },
+            { icon: '🦌', name: '山羌', x: 640, y: 145, vx: 0.52, vy: 0.28, minX: 535, maxX: 710, minY: 85, maxY: 185, phase: 2.0, zone: 'land' },
+            { icon: '🐃', name: '水牛', x: 215, y: 950, vx: 0.35, vy: 0.25, minX: 165, maxX: 255, minY: 885, maxY: 1110, phase: 0.4, zone: 'land' },
+            { icon: '🦆', name: '小水鴨', x: 1165, y: 760, vx: 0.48, vy: 0.35, minX: 1115, maxX: 1205, minY: 675, maxY: 875, phase: 0.7, zone: 'water' },
+            { icon: '🦢', name: '白鷺鷥', x: 1185, y: 520, vx: -0.45, vy: 0.38, minX: 1135, maxX: 1245, minY: 435, maxY: 650, phase: 2.5, zone: 'water' },
+            { icon: '🐟', name: '溪魚', x: 1145, y: 660, vx: 0.38, vy: 0.65, minX: 1110, maxX: 1205, minY: 445, maxY: 865, phase: 1.2, zone: 'water' }
         ];
 
         // ★ 地圖上空漂浮的繽紛熱氣球
@@ -2176,16 +2949,20 @@
 
             islandFarmers.forEach(f => {
                 f.x += f.vx; f.y += f.vy; f.walkPhase += 0.12;
-                if (f.x < f.minX || f.x > f.maxX) f.vx *= -1;
-                if (f.y < f.minY || f.y > f.maxY) f.vy *= -1;
-                repelEntityFromHabitats(f, 24);
+                repelEntityFromHabitats(f, 22);
+                if (f.x <= f.minX) { f.x = f.minX; f.vx = Math.abs(f.vx); }
+                if (f.x >= f.maxX) { f.x = f.maxX; f.vx = -Math.abs(f.vx); }
+                if (f.y <= f.minY) { f.y = f.minY; f.vy = Math.abs(f.vy); }
+                if (f.y >= f.maxY) { f.y = f.maxY; f.vy = -Math.abs(f.vy); }
             });
 
             ambientCritters.forEach(c => {
                 c.x += c.vx; c.y += c.vy; c.phase += 0.15;
-                if (c.x < c.minX || c.x > c.maxX) c.vx *= -1;
-                if (c.y < c.minY || c.y > c.maxY) c.vy *= -1;
-                repelEntityFromHabitats(c, 18);
+                repelEntityFromHabitats(c, 16);
+                if (c.x <= c.minX) { c.x = c.minX; c.vx = Math.abs(c.vx); }
+                if (c.x >= c.maxX) { c.x = c.maxX; c.vx = -Math.abs(c.vx); }
+                if (c.y <= c.minY) { c.y = c.minY; c.vy = Math.abs(c.vy); }
+                if (c.y >= c.maxY) { c.y = c.maxY; c.vy = -Math.abs(c.vy); }
             });
 
             skyHotAirBalloons.forEach(b => {
@@ -2241,58 +3018,84 @@
                     ctx.fillStyle = '#f8fafc';
                     ctx.beginPath(); ctx.roundRect(-20, -12, 22, 10, 3); ctx.fill();
                     ctx.fillStyle = v.color;
-                    ctx.beginPath(); ctx.roundRect(2, -13, 16, 11, 4); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = timeOfDay === 'night' ? '#fef9c3' : '#bae6fd';
-                    ctx.beginPath(); ctx.roundRect(8, -11, 8, 7, 2); ctx.fill();
-                    if (v.cargo) { ctx.font = '13px sans-serif'; ctx.fillText(v.cargo, -15, -3); }
+                    ctx.beginPath(); ctx.roundRect(2, -13, 16, 11, 4); ctx.fill();
+                    ctx.fillStyle = (timeOfDay === 'night' || timeOfDay === 'dusk') ? '#fef08a' : '#bae6fd';
+                    ctx.beginPath(); ctx.roundRect(6, -11, 10, 7, 2); ctx.fill();
+                    if (v.cargo) {
+                        ctx.font = '13px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(v.cargo, -9, -8);
+                    }
                 } else {
                     ctx.fillStyle = v.color;
-                    ctx.beginPath(); ctx.roundRect(-12, -13, 26, 11, 6); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = timeOfDay === 'night' ? '#fef9c3' : '#bae6fd';
-                    ctx.beginPath(); ctx.roundRect(-8, -11, 18, 7, 3); ctx.fill();
+                    ctx.beginPath(); ctx.roundRect(-12, -13, 24, 10, 5); ctx.fill();
+                    ctx.fillStyle = (timeOfDay === 'night' || timeOfDay === 'dusk') ? '#fef08a' : '#bae6fd';
+                    ctx.beginPath(); ctx.roundRect(-9, -11, 18, 7, 3); ctx.fill();
                 }
 
-                ctx.fillStyle = timeOfDay === 'night' ? '#fef08a' : '#fde047';
-                if (timeOfDay === 'night') {
-                    ctx.shadowColor = '#fef08a';
-                    ctx.shadowBlur = 12;
-                }
-                ctx.beginPath(); ctx.arc(21, 2, 3.8, 0, Math.PI * 2); ctx.fill();
-                ctx.shadowBlur = 0;
+                // 車頭大燈燈珠
+                ctx.fillStyle = '#fef08a';
+                ctx.beginPath(); ctx.arc(22, 2, 3, 0, Math.PI * 2); ctx.fill();
+
                 ctx.restore();
             });
-
-            drawIsometricBlock(1150, 296, 400, 24, '#22c55e', '#15803d', 10, 8);
-            drawPillSign('生物通道(友善設施)', 1350, 265, '15');
         }
 
-        // ★ 補回遺漏的 `drawAmbientEntities()`：繪製島上自由行走的農夫、巡守員與野生小動物
+        // ★ 補回遺漏的 `drawAmbientEntities()`：繪製島上自由行走的農夫、巡守員與野生小動物 (強化立體底盤與名稱標示，確保絕不隱蔽)
         function drawAmbientEntities() {
             let now = Date.now();
             // 1. 繪製野生小動物與溪魚水波
-            ambientCritters.forEach((c, idx) => {
+            ambientCritters.forEach((c) => {
                 ctx.save();
                 let bounce = Math.sin(c.phase) * 3.5;
                 ctx.translate(c.x, c.y + bounce);
 
                 if (c.zone === 'water') {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-                    ctx.lineWidth = 1.8;
+                    ctx.fillStyle = 'rgba(14, 165, 233, 0.35)';
                     ctx.beginPath();
-                    ctx.ellipse(0, 8 - bounce * 0.4, 14 + Math.sin(c.phase) * 3, 6, 0, 0, Math.PI * 2);
+                    ctx.ellipse(0, 8 - bounce * 0.4, 16, 7, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 8 - bounce * 0.4, 15 + Math.sin(c.phase) * 3, 6.5, 0, 0, Math.PI * 2);
                     ctx.stroke();
                 } else {
-                    ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+                    // 陸地小動物立體草地圓盤底座，確保在翠綠山城背景中醒目立體不被隱蔽
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.26)';
                     ctx.beginPath();
-                    ctx.ellipse(0, 12 - bounce * 0.5, 11, 5, 0, 0, Math.PI * 2);
+                    ctx.ellipse(0, 13 - bounce * 0.5, 15, 6.5, 0, 0, Math.PI * 2);
                     ctx.fill();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+                    ctx.strokeStyle = '#16a34a';
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 11 - bounce * 0.5, 13, 5.2, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
                 }
 
+                ctx.save();
                 if (c.vx < 0) ctx.scale(-1, 1);
-                ctx.font = '24px sans-serif';
+                ctx.font = '26px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(c.icon, 0, 0);
+                ctx.fillText(c.icon, 0, -1);
+                ctx.restore();
+
+                // 小動物迷你名牌
+                ctx.font = 'bold 9.5px -apple-system, "Segoe UI", sans-serif';
+                let cNameW = ctx.measureText(c.name).width + 10;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+                ctx.beginPath();
+                ctx.roundRect(-cNameW / 2, 16, cNameW, 14, 7);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(c.name, 0, 23);
+
                 ctx.restore();
             });
 
@@ -2532,18 +3335,21 @@
 
             if (isMagicWandMode) {
                 fab.classList.add('active');
+                // ★ 只要點擊啟用魔法棒，立即向上收合上方控制條，避免遮擋北側棲地島
+                document.body.classList.add('magic-target-locked');
                 if (magicTargetHabitat || magicTargetCrisis) {
                     let targetName = magicTargetCrisis ? magicTargetCrisis.name : magicTargetHabitat.name;
-                    textSpan.innerText = `已鎖定【${targetName}】➜ 請點右側卡片`;
+                    textSpan.innerText = `已鎖定【${targetName}】➜ 請點右側卡片 (點此關閉)`;
                     bag.classList.add('magic-ready');
                 } else {
-                    textSpan.innerText = '請點選要放置的棲地框 (點擊關閉)';
+                    textSpan.innerText = '請點選要放置的棲地框 (點此關閉魔法棒)';
                     bag.classList.remove('magic-ready');
                 }
             } else {
                 fab.classList.remove('active');
                 textSpan.innerText = '啟用魔法棒';
                 bag.classList.remove('magic-ready');
+                document.body.classList.remove('magic-target-locked');
             }
         }
 
@@ -2915,7 +3721,9 @@
                 const c = group[0]; const count = group.length;
                 const div = document.createElement('div');
                 div.className = c.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
+                const moonBadge = c.consLevel ? `<div class="c-cons-badge" title="台灣${c.consLevel}級保育類">${'🌙'.repeat(c.consLevel)}</div>` : '';
                 div.innerHTML = `
+                    ${moonBadge}
                     <div class="c-icon">${c.icon}</div><div class="c-name">${c.name}</div>
                     ${count > 1 ? `<div class="c-badge">x${count}</div>` : ''}
                 `;
@@ -3074,6 +3882,9 @@
                 }
 
                 pendingPlacement = null;
+                // ★ 卡片成功放置後自動解除棲地鎖定並展開上方控制條，方便玩家查看最新積分與抽卡燈號
+                magicTargetHabitat = null;
+                magicTargetCrisis = null;
                 let newScore = computeCurrentScore();
 
                 if (rewardReasons.length > 0) {
