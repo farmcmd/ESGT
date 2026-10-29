@@ -240,6 +240,29 @@
             transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer;
         }
         .culture-card { border-radius: 50%; border: 3px solid #f59e0b; background: #fffbeb; }
+        /* ★ 台灣農村信仰神明卡片：正三角形卡片樣式 */
+        .faith-card {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            filter: drop-shadow(0 5px 8px rgba(185, 28, 28, 0.35));
+        }
+        .faith-card::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: #dc2626;
+            clip-path: polygon(50% 2%, 98% 96%, 2% 96%);
+            z-index: 0;
+        }
+        .faith-card::after {
+            content: '';
+            position: absolute; inset: 3px;
+            background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%);
+            clip-path: polygon(50% 4%, 96% 95%, 4% 95%);
+            z-index: 1;
+        }
+        .faith-card .c-icon { position: relative; z-index: 2; font-size: 20px; margin-top: 8px; }
+        .faith-card .c-name { position: relative; z-index: 2; font-size: 9px; color: #991b1b; font-weight: 900; margin-top: 1px; }
         .c-icon { font-size: 25px; pointer-events: none; line-height: 1; }
         .c-name { font-size: 10px; font-weight: 800; color: #334155; pointer-events: none; margin-top: 2px; }
         .c-badge {
@@ -638,6 +661,7 @@
                   2️⃣ <b>獲得新生棲地：</b>成功復育擴增出「新生自然棲地」時，獲得 1 次抽卡機會！<br>
                   3️⃣ <b>每滿 10 分獎勵：</b>探索總積分每提升達 <b>10 分</b>（10、20、30分...），獲得 1 次抽卡機會！<br>
                 • <b>🌱 新生棲地（25% 機率雙倍繁殖）：</b>在同一棲地放入 <b>3張正確</b> 生物卡，將觸發藍白虛線「新生自然棲地」<b style="color:#16a34a;">(+5分)</b>；放入新生棲地的正確卡片有 <b>25% 機率</b> 觸發雙倍繁殖，<b>自動變成 2 張（顯示 x2 與 +2）且獲得雙倍分數！</b><br>
+                • <b>⛩️ 漂浮廟宇(信仰中心) 與 🔺三角形信仰卡：</b>「里山聚落」上方設有一座常駐漂浮的「廟宇(信仰中心)」，可用魔法棒點選並放入<b>三角形台灣農村信仰神明卡</b>，每張獲得 <b style="color:#dc2626;">+1分</b>！<br>
                 • <b>☠️ 黑色虛線框（25% 機率生態陷阱波及）：</b>放入 <b>3張錯誤</b> 卡片將出現<b>黑色虛線框</b> <b style="color:#ef4444;">(-5分)</b> 並提示屬於哪一種生態陷阱；當棲地周邊出現黑色虛線框時，放入的卡片有 <b>25% 機率</b> 遭受波及<b>變成黑白狀態且倒扣 1 分</b>！
             </div>
 
@@ -755,6 +779,8 @@
                 <div class="guide-grid" id="guide-bio-grid"></div>
                 <div style="font-weight:800; color:#b45309; margin-bottom:6px;">🛖 11種農村文化地景 (全島皆可放)</div>
                 <div class="guide-grid" id="guide-culture-grid"></div>
+                <div style="font-weight:800; color:#dc2626; margin-bottom:6px;">⛩️ 15種台灣農村信仰神明 (三角形卡片｜放入漂浮廟宇+1分)</div>
+                <div class="guide-grid" id="guide-faith-grid"></div>
             </div>
         </div>
     </div>
@@ -890,14 +916,33 @@
             { id: 'cu11', type: 'culture', name: '紅包', icon: '🧧' }
         ];
 
-        const CARD_POOL = [...ECO_DATA, ...CULTURE_DATA];
+        // ★ 新增 15 種台灣農村常見信仰神明 (三角形卡片，可放入漂浮廟宇信仰中心獲得 +1 分)
+        const FAITH_DATA = [
+            { id: 'fa1', type: 'faith', name: '土地公', icon: '👴', validHabitats: ['h16'] },
+            { id: 'fa2', type: 'faith', name: '土地婆', icon: '👵', validHabitats: ['h16'] },
+            { id: 'fa3', type: 'faith', name: '大樹公', icon: '🌳', validHabitats: ['h16'] },
+            { id: 'fa4', type: 'faith', name: '神農大帝', icon: '🌾', validHabitats: ['h16'] },
+            { id: 'fa5', type: 'faith', name: '虎爺', icon: '🐯', validHabitats: ['h16'] },
+            { id: 'fa6', type: 'faith', name: '天上聖母', icon: '👑', validHabitats: ['h16'] },
+            { id: 'fa7', type: 'faith', name: '三山國王', icon: '⛰️', validHabitats: ['h16'] },
+            { id: 'fa8', type: 'faith', name: '開漳聖王', icon: '⚔️', validHabitats: ['h16'] },
+            { id: 'fa9', type: 'faith', name: '石頭公', icon: '🪨', validHabitats: ['h16'] },
+            { id: 'fa10', type: 'faith', name: '水尾伯公', icon: '🌊', validHabitats: ['h16'] },
+            { id: 'fa11', type: 'faith', name: '田頭伯公', icon: '🎋', validHabitats: ['h16'] },
+            { id: 'fa12', type: 'faith', name: '保生大帝', icon: '🌿', validHabitats: ['h16'] },
+            { id: 'fa13', type: 'faith', name: '關聖帝君', icon: '🏮', validHabitats: ['h16'] },
+            { id: 'fa14', type: 'faith', name: '玄天上帝', icon: '🐢', validHabitats: ['h16'] },
+            { id: 'fa15', type: 'faith', name: '中壇元帥', icon: '🔥', validHabitats: ['h16'] }
+        ];
+
+        const CARD_POOL = [...ECO_DATA, ...CULTURE_DATA, ...FAITH_DATA];
 
         const FOOD_CHAINS = [
             { id: 'chain1', name: '田野捕食鏈 (蚜蟲➜瓢蟲➜鳥類)', members: ['b10', 'b9', 'b7'] },
             { id: 'chain2', name: '水岸生態鏈 (螞蟻➜蛙類➜蛇類)', members: ['b11', 'b12', 'b4'] }
         ];
 
-        // ★ 棲地座標精準設定：完全避開山邊道路 (y: 320 ~ 396)
+        // ★ 棲地座標精準設定：完全避開山邊道路 (y: 320 ~ 396)，並加入「16 廟宇(信仰中心)」常駐漂浮棲地
         let habitats = [
             { id: 'h14', code: '01', name: '原始森林', x: 30, y: 30, w: 250, h: 155, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h1', code: '02', name: '枯木草堆', x: 330, y: 150, w: 180, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
@@ -913,7 +958,8 @@
             { id: 'h4', code: '12', name: '水塘', x: 1220, y: 745, w: 255, h: 185, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h7', code: '13', name: '濕地', x: 1000, y: 900, w: 190, h: 155, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
             { id: 'h13', code: '14', name: '深溝護道', x: 1240, y: 1020, w: 245, h: 120, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
-            { id: 'h15', code: '15', name: '生物通道(友善設施)', x: 1220, y: 170, w: 270, h: 105, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false }
+            { id: 'h15', code: '15', name: '生物通道(友善設施)', x: 1220, y: 170, w: 270, h: 105, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false },
+            { id: 'h16', code: '16', name: '廟宇(信仰中心)', x: 675, y: 405, w: 165, h: 105, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false, isTemple: true }
         ];
 
         // ================= 2. 專屬公仔紙娃娃與晝夜系統設定 =================
@@ -1924,6 +1970,47 @@
                     drawProceduralTree(rx * 0.45, 0, 0.55, 1);
                     break;
                 }
+                case 'h16': { // 16 廟宇(信仰中心)：3D 台灣傳統燕尾飛簷廟宇 + 龍柱 + 天公爐 + 祥雲瑞氣
+                    // 底部祥雲瑞氣圈
+                    let cloudShift = Math.sin(Date.now() / 350) * 3;
+                    ctx.fillStyle = 'rgba(254, 240, 138, 0.85)';
+                    [[-36 + cloudShift, 18, 12], [-18, 22, 14], [0, 20, 15], [18, 22, 14], [36 - cloudShift, 18, 12]].forEach(([cx0, cy0, cr]) => {
+                        ctx.beginPath(); ctx.arc(cx0, cy0, cr, 0, Math.PI * 2); ctx.fill();
+                    });
+                    // 石階基座與紅磚廟殿
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.beginPath(); ctx.roundRect(-42, 6, 84, 10, 4); ctx.fill();
+                    ctx.fillStyle = '#b91c1c';
+                    ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.roundRect(-36, -20, 72, 28, 4); ctx.fill(); ctx.stroke();
+                    // 金色雕花龍柱與廟門
+                    ctx.fillStyle = '#451a03';
+                    ctx.beginPath(); ctx.roundRect(-12, -12, 24, 20, [6, 6, 0, 0]); ctx.fill();
+                    ctx.fillStyle = '#facc15';
+                    [-26, -15, 15, 26].forEach(px => { ctx.fillRect(px - 2, -19, 4, 26); });
+                    // 傳統燕尾翹脊飛簷屋頂 (Swallowtail Roof)
+                    ctx.fillStyle = '#ea580c';
+                    ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(-48, -18);
+                    ctx.quadraticCurveTo(-24, -22, 0, -38);
+                    ctx.quadraticCurveTo(24, -22, 48, -18);
+                    ctx.quadraticCurveTo(38, -29, 52, -35); // 右燕尾翹脊
+                    ctx.quadraticCurveTo(24, -26, 0, -32);
+                    ctx.quadraticCurveTo(-24, -26, -52, -35); // 左燕尾翹脊
+                    ctx.closePath();
+                    ctx.fill(); ctx.stroke();
+                    // 屋頂雙龍搶珠寶珠與廟前天公香爐
+                    ctx.fillStyle = '#fef08a';
+                    ctx.beginPath(); ctx.arc(0, -39, 4.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#d97706';
+                    ctx.strokeStyle = '#78350f'; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.arc(0, 14, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    // 兩側紅燈籠
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath(); ctx.arc(-32, -10, 4.5, 0, Math.PI * 2); ctx.arc(32, -10, 4.5, 0, Math.PI * 2); ctx.fill();
+                    break;
+                }
                 default: {
                     drawProceduralTree(0, 4, 0.65, 0);
                     break;
@@ -2128,9 +2215,9 @@
             // 4. 南側農田與水岸連橋 (08田埂草帶 ↔ 09砌石溝 ↔ 13濕地 ↔ 14深溝護道)
             connectIslands('h5', 'h3', 0.68);
             connectIslands('h3', 'h7', 0.68);
-            connectIslands('h7', 'h13', 0.68);
-
-            // 5. 中央生態實驗室與東側溪流連橋 (03涵洞護道 ↔ 實驗室 ↔ 10護岸 ↔ 11漂浮草帶 ↔ 12水塘 ↔ 13濕地)
+            // 5. 中央生態實驗室與東側溪流連橋 (03涵洞護道 ↔ 16漂浮廟宇 ↔ 實驗室 ↔ 10護岸 ↔ 11漂浮草帶 ↔ 12水塘 ↔ 13濕地)
+            connectIslands('h12', 'h16', 0.68);
+            connectIslands('h16', 'lab', 0.68);
             connectIslands('h12', 'lab', 0.68);
             connectIslands('lab', 'h3', 0.68);
             connectIslands('lab', 'h8', 0.68);
@@ -2396,18 +2483,24 @@
             }
             drawPillSign('設施農業(溫室)', 325, 412);
 
-            // 7. 里山農舍群 (調整座標至 y: 500~515，拉開與下方「探探里山生態實驗室」的間距，解決重疊破圖問題)
+            // 7. 里山聚落 (擴大聚落房舍群，結合傳統三合院、街屋、古井、曬穀埕與上方漂浮廟宇信仰中心)
             ctx.fillStyle = '#fca5a5';
             ctx.strokeStyle = '#b91c1c'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.ellipse(755, 536, 108, 34, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.ellipse(755, 552, 155, 42, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
             ctx.fillStyle = '#facc15'; // 曬穀金黃稻穀圓墊
-            ctx.beginPath(); ctx.ellipse(725, 540, 26, 11, 0.1, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(715, 558, 28, 11, 0.1, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(795, 560, 24, 10, -0.1, 0, Math.PI * 2); ctx.fill();
 
-            drawProceduralBuilding(695, 498, 72, 58, 30, '#fef3c7', '#fde68a', '#dc2626', '#991b1b', true);
-            drawProceduralBuilding(808, 506, 78, 60, 32, '#fffbeb', '#fef3c7', '#ea580c', '#9a3412', true);
-            drawProceduralTree(628, 488, 0.82, 0);
-            drawProceduralTree(878, 495, 0.85, 2);
-            drawPillSign('里山農舍', 755, 418);
+            // 擴大的聚落建築群 (5棟高低錯落的農村紅瓦房舍)
+            drawProceduralBuilding(615, 520, 62, 48, 24, '#fffbeb', '#fde68a', '#b91c1c', '#7f1d1d', false);
+            drawProceduralBuilding(682, 535, 68, 54, 28, '#fef3c7', '#fde68a', '#dc2626', '#991b1b', true);
+            drawProceduralBuilding(758, 542, 74, 56, 30, '#fffbeb', '#fef3c7', '#ea580c', '#9a3412', true);
+            drawProceduralBuilding(835, 532, 68, 52, 26, '#fef3c7', '#fde68a', '#dc2626', '#991b1b', false);
+            drawProceduralBuilding(896, 516, 60, 46, 22, '#fffbeb', '#fde68a', '#c2410c', '#7c2d12', true);
+
+            drawProceduralTree(568, 512, 0.85, 0);
+            drawProceduralTree(938, 508, 0.88, 2);
+            drawPillSign('🏘️ 里山聚落', 758, 578);
 
             // ★ 地圖正中間建築：「探探里山生態實驗室」
             drawSatoyamaEcoLab(810, 675);
@@ -2552,19 +2645,22 @@
                 let isMagicTarget = isMagicWandMode && magicTargetHabitat && magicTargetHabitat.id === h.id;
                 let pulse = (Math.sin(now / 150) + 1) / 2;
 
-                // ★ 魔法棒點選時：六角小島升起並緩緩上下呼吸浮動
-                let targetLift = isMagicTarget ? (18 + Math.sin(now / 260) * 7) : 0;
+                // ★ 廟宇(信仰中心)具備常駐仙氣漂浮動畫；魔法棒點選時浮動更高並點亮黃金光環
+                let baseFloat = h.isTemple ? (11 + Math.sin(now / 320) * 5.5) : 0;
+                let targetLift = isMagicTarget ? (22 + Math.sin(now / 240) * 7) : baseFloat;
                 h.animLift += (targetLift - h.animLift) * 0.14;
 
                 let cx = h.x + h.w / 2;
                 let cy = h.y + h.h / 2;
-                let rx = h.w / 2 + 12;
-                let ry = h.h / 2 + 10;
+                let padX = h.isBonus ? 6 : 12;
+                let padY = h.isBonus ? 5 : 10;
+                let rx = h.w / 2 + padX;
+                let ry = h.h / 2 + padY;
 
                 let isWaterHabitat = ['h4', 'h7', 'h9', 'h13', 'h3'].includes(h.id);
-                let topCol = h.isBonus ? '#dbeafe' : (isWaterHabitat ? '#cffafe' : '#d9f99d');
-                let midCol = h.isBonus ? '#60a5fa' : (isWaterHabitat ? '#38bdf8' : '#84cc16');
-                let deepCol = h.isBonus ? '#1d4ed8' : (isWaterHabitat ? '#0284c7' : '#4d7c0f');
+                let topCol = h.isTemple ? '#fef3c7' : (h.isBonus ? '#dbeafe' : (isWaterHabitat ? '#cffafe' : '#d9f99d'));
+                let midCol = h.isTemple ? '#f59e0b' : (h.isBonus ? '#60a5fa' : (isWaterHabitat ? '#38bdf8' : '#84cc16'));
+                let deepCol = h.isTemple ? '#991b1b' : (h.isBonus ? '#1d4ed8' : (isWaterHabitat ? '#0284c7' : '#4d7c0f'));
 
                 drawIslandPlatform(cx, cy, rx, ry, topCol, midCol, deepCol, h.animLift, isMagicTarget);
                 drawHabitatDecorations(h, cx, cy, rx, ry, h.animLift);
@@ -2587,7 +2683,7 @@
                     ctx.stroke();
                     ctx.setLineDash([]); ctx.lineDashOffset = 0; ctx.shadowBlur = 0;
                 } else {
-                    ctx.strokeStyle = h.isBonus ? '#2563eb' : '#22c55e';
+                    ctx.strokeStyle = h.isTemple ? '#dc2626' : (h.isBonus ? '#2563eb' : '#22c55e');
                     ctx.lineWidth = 3.5;
                     ctx.setLineDash([8, 8]);
                     traceRoundedHexagon(ctx, 0, 0, rx * 0.88, ry * 0.86, 14);
@@ -2602,10 +2698,15 @@
                     if (chain.members.every(mId => placedIds.includes(mId))) completedChains.push(chain);
                 });
 
+                let cSize = h.isBonus ? 34 : 46;
+                let stepX = h.isBonus ? 36 : 56;
+                let stepY = h.isBonus ? 36 : 54;
+
                 h.occupants.forEach((occ, idx) => {
-                    let baseX = h.x + 14 + (idx % 3) * 56;
-                    let baseY = h.y + 12 + Math.floor(idx / 3) * 54;
-                    if (baseX + 50 > h.x + h.w) { baseX = h.x + h.w - 54; }
+                    let cols = h.isBonus ? 2 : 3;
+                    let baseX = h.x + (h.isBonus ? 6 : 14) + (idx % cols) * stepX;
+                    let baseY = h.y + (h.isBonus ? 6 : 12) + Math.floor(idx / cols) * stepY;
+                    if (baseX + cSize > h.x + h.w) { baseX = Math.max(h.x + 2, h.x + h.w - cSize - 2); }
 
                     let cardX = baseX;
                     let cardY = baseY - h.animLift;
@@ -2616,23 +2717,44 @@
                         ctx.fillStyle = '#eff6ff';
                         ctx.strokeStyle = '#3b82f6';
                         ctx.lineWidth = 2;
-                        ctx.beginPath(); ctx.roundRect(cardX + 6, cardY - 5, 46, 46, 12); ctx.fill(); ctx.stroke();
+                        ctx.beginPath(); ctx.roundRect(cardX + 5, cardY - 4, cSize, cSize, 10); ctx.fill(); ctx.stroke();
                     }
 
                     ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
-                    ctx.beginPath(); ctx.roundRect(cardX + 2, cardY + 5, 46, 46, 12); ctx.fill();
+                    if (occ.type === 'faith') {
+                        ctx.beginPath();
+                        ctx.moveTo(cardX + cSize / 2 + 2, cardY + 4);
+                        ctx.lineTo(cardX + cSize + 2, cardY + cSize + 4);
+                        ctx.lineTo(cardX + 2, cardY + cSize + 4);
+                        ctx.closePath();
+                        ctx.fill();
 
-                    ctx.fillStyle = occ.dead ? '#6b7280' : 'white';
-                    ctx.strokeStyle = occ.dead ? '#1f2937' : (isChainMember ? '#f59e0b' : (occ.duplicated ? '#2563eb' : '#cbd5e1'));
-                    ctx.lineWidth = isChainMember ? 3.5 : 2.5;
-                    ctx.beginPath(); ctx.roundRect(cardX, cardY, 46, 46, 12); ctx.fill(); ctx.stroke();
+                        ctx.fillStyle = occ.dead ? '#6b7280' : '#fef08a';
+                        ctx.strokeStyle = occ.dead ? '#1f2937' : '#dc2626';
+                        ctx.lineWidth = 2.8;
+                        ctx.beginPath();
+                        ctx.moveTo(cardX + cSize / 2, cardY);
+                        ctx.lineTo(cardX + cSize, cardY + cSize);
+                        ctx.lineTo(cardX, cardY + cSize);
+                        ctx.closePath();
+                        ctx.fill(); ctx.stroke();
+                    } else {
+                        ctx.beginPath(); ctx.roundRect(cardX + 2, cardY + 5, cSize, cSize, 10); ctx.fill();
+
+                        ctx.fillStyle = occ.dead ? '#6b7280' : 'white';
+                        ctx.strokeStyle = occ.dead ? '#1f2937' : (isChainMember ? '#f59e0b' : (occ.duplicated ? '#2563eb' : '#cbd5e1'));
+                        ctx.lineWidth = isChainMember ? 3.5 : 2.5;
+                        ctx.beginPath(); ctx.roundRect(cardX, cardY, cSize, cSize, 10); ctx.fill(); ctx.stroke();
+                    }
 
                     ctx.save();
-                    if (occ.dead) { ctx.filter = 'grayscale(100%) contrast(120%)'; }
-                    ctx.font = '23px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cardX + 10, cardY + 31);
+                    if (occ.dead) { ctx.filter = 'grayscale(100%) contrast(125%)'; }
+                    ctx.font = `${h.isBonus ? 17 : 22}px sans-serif`;
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillStyle = 'black';
+                    ctx.fillText(occ.icon, cardX + cSize / 2, cardY + cSize * (occ.type === 'faith' ? 0.65 : 0.54));
                     ctx.restore();
 
-                    // ★ 地圖棲地內卡片：若為台灣保育類動物，左上角繪製月亮等級標章 (一級🌙、二級🌙🌙、三級🌙🌙🌙)
                     if (occ.consLevel) {
                         let moons = '🌙'.repeat(occ.consLevel);
                         ctx.save();
@@ -2646,24 +2768,27 @@
                         ctx.restore();
                     }
 
-                    occ.renderBox = { x: cardX, y: cardY, w: 46, h: 46 };
+                    occ.renderBox = { x: cardX, y: cardY, w: cSize, h: cSize };
 
                     if (occ.dead) {
                         ctx.fillStyle = '#111827';
-                        ctx.beginPath(); ctx.arc(cardX + 41, cardY + 5, 10.5, 0, Math.PI * 2); ctx.fill();
-                        ctx.fillStyle = '#f87171'; ctx.font = 'bold 11px sans-serif'; ctx.fillText('-1', cardX + 34, cardY + 9);
+                        ctx.beginPath(); ctx.arc(cardX + cSize - 4, cardY + 5, 9.5, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#f87171'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('-1', cardX + cSize - 10, cardY + 9);
                     } else {
-                        let isCorrect = (occ.type === 'culture') || (h.isBonus && occ.type === 'bio') || (occ.validHabitats && occ.validHabitats.includes(h.id));
+                        let isCorrect = (occ.type === 'culture') ||
+                                        (occ.type === 'faith' && h.isTemple) ||
+                                        (h.isBonus && occ.type === 'bio') ||
+                                        (occ.validHabitats && occ.validHabitats.includes(h.id));
                         ctx.fillStyle = isCorrect ? (occ.duplicated ? '#2563eb' : '#22c55e') : '#ef4444';
-                        ctx.beginPath(); ctx.arc(cardX + 41, cardY + 5, 10.5, 0, Math.PI * 2); ctx.fill();
-                        ctx.fillStyle = 'white'; ctx.font = 'bold 11px sans-serif';
-                        ctx.fillText(isCorrect ? (occ.duplicated ? '+2' : '+1') : '✘', cardX + 33, cardY + 9);
+                        ctx.beginPath(); ctx.arc(cardX + cSize - 4, cardY + 5, 9.5, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = 'white'; ctx.font = 'bold 10px sans-serif';
+                        ctx.fillText(isCorrect ? (occ.duplicated ? '+2' : '+1') : '✘', cardX + cSize - 11, cardY + 9);
 
                         if (occ.duplicated) {
                             ctx.fillStyle = '#1d4ed8';
-                            ctx.beginPath(); ctx.roundRect(cardX - 4, cardY + 30, 24, 16, 6); ctx.fill();
-                            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px sans-serif';
-                            ctx.fillText('x2', cardX + 2, cardY + 41);
+                            ctx.beginPath(); ctx.roundRect(cardX - 4, cardY + cSize - 14, 22, 14, 5); ctx.fill();
+                            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+                            ctx.fillText('x2', cardX + 1, cardY + cSize - 4);
                         }
                     }
                 });
@@ -2681,13 +2806,38 @@
                     ctx.stroke(); ctx.setLineDash([]);
                 }
             });
+        }
+
+        // ★ 集中於最上層繪製所有棲地與生態陷阱名稱立牌，並內建自動防重疊演算法，確保文字100%清晰完整不被任何物件遮掩
+        function drawAllOverlaySigns() {
+            let placedSigns = [];
+            const resolveSignY = (cx, desiredY) => {
+                let y = Math.max(10, desiredY);
+                for (let attempt = 0; attempt < 5; attempt++) {
+                    let conflict = placedSigns.find(s => Math.abs(s.x - cx) < 135 && Math.abs(s.y - y) < 30);
+                    if (conflict) {
+                        y = conflict.y - 32;
+                        if (y < 8) y = conflict.y + 32;
+                    } else break;
+                }
+                placedSigns.push({ x: cx, y });
+                return y;
+            };
 
             habitats.forEach(h => {
                 let isMagicTarget = isMagicWandMode && magicTargetHabitat && magicTargetHabitat.id === h.id;
                 let lift = h.animLift || 0;
-                let titleText = isMagicTarget ? `🪄 ${h.name} (請點選右側卡片)` :
-                                (h.isBonus ? `🌱 ${h.name} (x2雙倍分)` : h.name);
-                drawPillSign(titleText, h.x + h.w / 2, h.y - 22 - lift, h.code || '');
+                let titleText = isMagicTarget ? `🪄 ${h.name} (請點右側卡片)` :
+                                (h.isTemple ? `⛩️ ${h.name} (放三角形信仰卡)` :
+                                (h.isBonus ? `🌱 ${h.name} (x2)` : h.name));
+                let cx = h.x + h.w / 2;
+                let sy = resolveSignY(cx, h.y - 26 - lift);
+                drawPillSign(titleText, cx, sy, h.code || '');
+            });
+
+            crisisZones.forEach(cz => {
+                let sy = resolveSignY(cz.x, cz.y - cz.r - 26);
+                drawPillSign(`⚠️ ${cz.name}`, cz.x, sy);
             });
         }
 
@@ -2828,12 +2978,16 @@
         function openGuideModal() {
             const bGrid = document.getElementById('guide-bio-grid');
             const cGrid = document.getElementById('guide-culture-grid');
+            const fGrid = document.getElementById('guide-faith-grid');
             if (bGrid.innerHTML === '') {
                 bGrid.innerHTML = ECO_DATA.map(c => {
                     const moons = c.consLevel ? `<div style="font-size:10px;line-height:1;margin-top:2px;" title="台灣${c.consLevel}級保育類">${'🌙'.repeat(c.consLevel)}</div>` : '';
                     return `<div class="guide-item"><div class="icon">${c.icon}</div>${moons}<div class="name">${c.name}</div></div>`;
                 }).join('');
                 cGrid.innerHTML = CULTURE_DATA.map(c => `<div class="guide-item"><div class="icon">${c.icon}</div><div class="name">${c.name}</div></div>`).join('');
+                if (fGrid) {
+                    fGrid.innerHTML = FAITH_DATA.map(c => `<div class="guide-item" style="background:#fef2f2;border-color:#fca5a5;"><div class="icon">${c.icon}</div><div style="font-size:10px;color:#dc2626;font-weight:900;">🔺信仰卡</div><div class="name">${c.name}</div></div>`).join('');
+                }
             }
             document.getElementById('guide-modal').style.display = 'flex';
         }
@@ -3474,6 +3628,8 @@
                         tmpScore += 1 * mult; successfullyPlacedIds.add(occ.id);
                     } else if (occ.type === 'culture') {
                         tmpScore += 1 * mult;
+                    } else if (occ.type === 'faith' && (h.isTemple || (occ.validHabitats && occ.validHabitats.includes(h.id)))) {
+                        tmpScore += 1 * mult;
                     } else if (occ.validHabitats && occ.validHabitats.includes(h.id)) {
                         tmpScore += 1 * mult; successfullyPlacedIds.add(occ.id);
                     }
@@ -3541,11 +3697,11 @@
                     const data = JSON.parse(savedData);
                     playerName = data.playerName; eventName = data.eventName; eventLocation = data.eventLocation;
                     inventory = data.inventory || []; habitats = data.habitats || habitats; mapOccupants = data.mapOccupants || [];
-                    crisisZones = data.crisisZones || [];
-                    quizCompleted = data.quizCompleted || false; quizScore = data.quizScore || 0;
-                    highestScoreMilestone = data.highestScoreMilestone || 0;
-                    drawChances = data.drawChances || 0;
-                    if (data.playerAvatar) playerAvatar = data.playerAvatar;
+                    if ( data.playerAvatar ) playerAvatar = data.playerAvatar;
+                    // ★ 確保舊存檔自動補齊「16 廟宇(信仰中心)」漂浮棲地
+                    if (!habitats.some(h => h.id === 'h16')) {
+                        habitats.push({ id: 'h16', code: '16', name: '廟宇(信仰中心)', x: 675, y: 405, w: 165, h: 105, occupants: [], bonusSpawned: false, crisisSpawned: false, isBonus: false, isTemple: true });
+                    }
                     player.x = data.player.x; player.y = data.player.y; player.dirAngle = data.player.dirAngle;
                     renderInventory(); renderQuiz(); refreshAvatarPreviews(); updateDrawButtonUI();
 
@@ -3580,7 +3736,7 @@
                 eventLocation = selectedLocs.join(' + ');
 
                 if (inventory.length === 0) {
-                    ['b1', 'b4', 'b10', 'b9', 'b7', 'cu1'].forEach((sid, idx) => {
+                    ['b1', 'b4', 'b10', 'b9', 'b7', 'cu1', 'fa1', 'fa4'].forEach((sid, idx) => {
                         let tpl = CARD_POOL.find(c => c.id === sid) || CARD_POOL[idx];
                         inventory.push({ ...tpl, uniqueId: 'init_' + Date.now() + '_' + idx, dead: false });
                     });
@@ -3720,7 +3876,7 @@
             Object.values(grouped).forEach(group => {
                 const c = group[0]; const count = group.length;
                 const div = document.createElement('div');
-                div.className = c.type === 'culture' ? 'creature-card culture-card' : 'creature-card';
+                div.className = c.type === 'culture' ? 'creature-card culture-card' : (c.type === 'faith' ? 'creature-card faith-card' : 'creature-card');
                 const moonBadge = c.consLevel ? `<div class="c-cons-badge" title="台灣${c.consLevel}級保育類">${'🌙'.repeat(c.consLevel)}</div>` : '';
                 div.innerHTML = `
                     ${moonBadge}
@@ -3839,19 +3995,19 @@
                 let specialAlertShown = false;
 
                 if (pendingPlacement.crisis) {
-                    if (Math.random() < 0.25) {
-                        inst.dead = true;
-                        showAlert(`☠️ 觸發 25% 陷阱機率！【${inst.name}】在【${pendingPlacement.crisis.name}】變成黑白並扣 1 分！`);
-                    } else {
-                        showAlert(`⚠️ 【${inst.name}】進入【${pendingPlacement.crisis.name}】，幸運躲過危機！`);
-                    }
+                    // ★ 落入生態陷阱的卡片一律以黑白灰階顯示並倒扣 1 分
+                    inst.dead = true;
+                    showAlert(`☠️ 【${inst.name}】落入【${pendingPlacement.crisis.name}】變成黑白狀態並扣 1 分！`);
                     pendingPlacement.crisis.occupants.push(inst);
                     specialAlertShown = true;
                 } else if (pendingPlacement.habitat) {
                     let h = pendingPlacement.habitat;
-                    let isCorrect = (inst.type === 'culture') || (h.isBonus && inst.type === 'bio') || (inst.validHabitats && inst.validHabitats.includes(h.id));
+                    let isCorrect = (inst.type === 'culture') ||
+                                    (inst.type === 'faith' && h.isTemple) ||
+                                    (h.isBonus && inst.type === 'bio') ||
+                                    (inst.validHabitats && inst.validHabitats.includes(h.id));
 
-                    let hasNearbyBlackBox = h.crisisSpawned || crisisZones.some(cz => Math.hypot((h.x + h.w / 2) - cz.x, (h.y + h.h / 2) - cz.y) <= 320);
+                    let hasNearbyBlackBox = h.crisisSpawned || crisisZones.some(cz => Math.hypot((h.x + h.w / 2) - cz.x, (h.y + h.h / 2) - cz.y) <= 220);
 
                     if (hasNearbyBlackBox && Math.random() < 0.25) {
                         inst.dead = true; h.occupants.push(inst);
@@ -3867,6 +4023,10 @@
                             showAlert(`🌱 【${inst.name}】入住新生棲地 (+1分)！`);
                             specialAlertShown = true;
                         }
+                    } else if (h.isTemple && inst.type === 'faith') {
+                        h.occupants.push(inst);
+                        showAlert(`⛩️ 虔誠供奉【${inst.name}】入駐漂浮廟宇 (+1分)！`);
+                        specialAlertShown = true;
                     } else {
                         h.occupants.push(inst);
                     }
@@ -3909,6 +4069,52 @@
 
         const CRISIS_TYPES = ['☠️ 路殺(車禍)', '💡 過度照明(光害)', '🧪 水源汙染(農藥)', '🐕 流浪狗(犬殺)', '💨 農藥飄移', '🧱 農業設施(阻隔)'];
 
+        // ★ 智慧尋找不重疊座標：確保縮小一半後的新生棲地與生態陷阱絕不遮掩原始棲地
+        function findNonOverlappingSpot(sourceH, boxW, boxH) {
+            const margin = 16;
+            const candidates = [
+                { x: sourceH.x + sourceH.w + margin, y: sourceH.y + (sourceH.h - boxH) / 2 },
+                { x: sourceH.x - boxW - margin, y: sourceH.y + (sourceH.h - boxH) / 2 },
+                { x: sourceH.x + (sourceH.w - boxW) / 2, y: sourceH.y + sourceH.h + margin + 22 },
+                { x: sourceH.x + (sourceH.w - boxW) / 2, y: sourceH.y - boxH - margin - 26 },
+                { x: sourceH.x + sourceH.w + margin, y: sourceH.y - boxH - margin },
+                { x: sourceH.x - boxW - margin, y: sourceH.y + sourceH.h + margin }
+            ];
+
+            const isSpotSafe = (cx, cy) => {
+                if (cx < 20 || cx + boxW > MAP_W - 20 || cy < 42 || cy + boxH > MAP_H - 30) return false;
+                if (cy + boxH > 305 && cy < 405) return false; // 避開山邊道路
+                for (let h of habitats) {
+                    if (cx < h.x + h.w + 12 && cx + boxW > h.x - 12 && cy < h.y + h.h + 24 && cy + boxH > h.y - 28) {
+                        return false;
+                    }
+                }
+                for (let cz of crisisZones) {
+                    let czLeft = cz.x - cz.r - 10, czRight = cz.x + cz.r + 10;
+                    let czTop = cz.y - cz.r - 24, czBottom = cz.y + cz.r + 10;
+                    if (cx < czRight && cx + boxW > czLeft && cy < czBottom && cy + boxH > czTop) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+
+            for (let pt of candidates) {
+                if (isSpotSafe(pt.x, pt.y)) return { x: Math.round(pt.x), y: Math.round(pt.y) };
+            }
+            for (let radius = 110; radius <= 360; radius += 45) {
+                for (let ang = 0; ang < Math.PI * 2; ang += Math.PI / 4) {
+                    let tx = (sourceH.x + sourceH.w / 2) + Math.cos(ang) * radius - boxW / 2;
+                    let ty = (sourceH.y + sourceH.h / 2) + Math.sin(ang) * radius - boxH / 2;
+                    if (isSpotSafe(tx, ty)) return { x: Math.round(tx), y: Math.round(ty) };
+                }
+            }
+            return {
+                x: Math.max(25, Math.min(MAP_W - boxW - 25, sourceH.x + sourceH.w + 14)),
+                y: Math.max(45, Math.min(MAP_H - boxH - 25, sourceH.y))
+            };
+        }
+
         function checkHabitatEvolution(habitat) {
             if (!habitat) return { newBonus: false, newCrisis: false };
             let correctBioCount = 0; let wrongBioCount = 0;
@@ -3923,19 +4129,20 @@
 
             if (correctBioCount >= 3 && !habitat.bonusSpawned) {
                 habitat.bonusSpawned = true; result.newBonus = true;
-                let nx = Math.max(30, Math.min(MAP_W - 160, habitat.x + (Math.random() > 0.5 ? habitat.w + 20 : -130)));
-                let ny = Math.max(40, Math.min(MAP_H - 160, habitat.y + (Math.random() > 0.5 ? habitat.h + 20 : -120)));
-                if (ny > 190 && ny < 425) ny = habitat.y < 320 ? 155 : 440;
-                habitats.push({ id: 'hb_' + Date.now(), code: 'NEW', name: '新生自然棲地', x: nx, y: ny, w: 135, h: 120, occupants: [], bonusSpawned: true, crisisSpawned: true, isBonus: true });
-                showAlert(`✨ 復育成功！擴增「新生自然棲地」！`);
+                // ★ 新生棲地縮小為原本的一半大小 (68 x 60)，並自動排開不遮掩原始棲地
+                let bw = 68, bh = 60;
+                let spot = findNonOverlappingSpot(habitat, bw, bh);
+                habitats.push({ id: 'hb_' + Date.now(), code: 'NEW', name: '新生自然棲地', x: spot.x, y: spot.y, w: bw, h: bh, occupants: [], bonusSpawned: true, crisisSpawned: true, isBonus: true });
+                showAlert(`✨ 復育成功！擴增精緻「新生自然棲地」！`);
             }
             if (wrongBioCount >= 3 && !habitat.crisisSpawned) {
                 habitat.crisisSpawned = true; result.newCrisis = true;
                 let cType = CRISIS_TYPES[Math.floor(Math.random() * CRISIS_TYPES.length)];
                 habitat.crisisType = cType;
-                let nx = Math.max(90, Math.min(MAP_W - 90, habitat.x + habitat.w / 2 + (Math.random() * 80 - 40)));
-                let ny = Math.max(90, Math.min(MAP_H - 90, habitat.y + habitat.h / 2 + (Math.random() * 80 - 40)));
-                crisisZones.push({ name: `生態陷阱：${cType}`, x: nx, y: ny, r: 85, occupants: [] });
+                // ★ 生態陷阱縮小為原本的一半大小 (半徑 r = 42)，並自動排開不遮掩原始棲地
+                let cr = 42;
+                let spot = findNonOverlappingSpot(habitat, cr * 2, cr * 2);
+                crisisZones.push({ name: `生態陷阱：${cType}`, x: spot.x + cr, y: spot.y + cr, r: cr, occupants: [] });
                 showAlert(`⚠️ 出現黑色虛線框【${cType}】！`);
             }
             return result;
@@ -3961,13 +4168,14 @@
             ctx.translate(-camera.x, -camera.y);
 
             updateAmbientEntities();
-            // ★ 調整圖層繪製順序：先畫地圖與六角棲地島，再畫行走中的農夫公仔、小動物、主角與高空熱氣球，確保公仔永遠不被小島遮住！
+            // ★ 圖層繪製順序：地景 ➜ 車流 ➜ 危機框 ➜ 六角棲地島 ➜ 畫筆 ➜ 最上層防遮掩文字立牌 ➜ 公仔/小動物 ➜ 主角 ➜ 高空熱氣球
             drawMap();
             drawRoadVehicles();
             drawCrisisZones();
             drawHabitats();
             drawMapOccupants();
             drawUserAnnotations();
+            drawAllOverlaySigns();
             drawAmbientEntities();
             drawPlayer();
             drawSkyHotAirBalloons();
@@ -3977,37 +4185,69 @@
 
         function drawCrisisZones() {
             crisisZones.forEach(cz => {
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
                 ctx.beginPath(); ctx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = '#000000'; ctx.lineWidth = 4.5; ctx.setLineDash([10, 8]);
+                ctx.strokeStyle = '#000000'; ctx.lineWidth = 3.5; ctx.setLineDash([7, 5]);
                 ctx.beginPath(); ctx.arc(cz.x, cz.y, cz.r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
 
+                let cardS = 32;
                 cz.occupants.forEach((occ, idx) => {
-                    let angle = (idx * 45) * Math.PI / 180; let dist = 28;
-                    let cx = cz.x + Math.cos(angle)*dist - 24; let cy = cz.y + Math.sin(angle)*dist - 24;
-                    ctx.fillStyle = '#6b7280'; ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 2.5;
-                    ctx.beginPath(); ctx.roundRect(cx, cy, 48, 48, 12); ctx.fill(); ctx.stroke();
+                    occ.dead = true; // 確保落入陷阱的卡片皆為黑白狀態
+                    let angle = (idx * 60) * Math.PI / 180;
+                    let dist = cz.occupants.length === 1 ? 0 : 14;
+                    let cx = cz.x + Math.cos(angle) * dist - cardS / 2;
+                    let cy = cz.y + Math.sin(angle) * dist - cardS / 2;
 
                     ctx.save();
-                    ctx.filter = 'grayscale(100%) contrast(120%)';
-                    ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + 11, cy + 32);
+                    ctx.filter = 'grayscale(100%) contrast(130%)';
+                    ctx.fillStyle = '#6b7280'; ctx.strokeStyle = '#111827'; ctx.lineWidth = 2;
+                    if (occ.type === 'faith') {
+                        ctx.beginPath();
+                        ctx.moveTo(cx + cardS / 2, cy);
+                        ctx.lineTo(cx + cardS, cy + cardS);
+                        ctx.lineTo(cx, cy + cardS);
+                        ctx.closePath();
+                        ctx.fill(); ctx.stroke();
+                    } else {
+                        ctx.beginPath(); ctx.roundRect(cx, cy, cardS, cardS, 8); ctx.fill(); ctx.stroke();
+                    }
+                    ctx.font = '17px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillStyle = 'black'; ctx.fillText(occ.icon, cx + cardS / 2, cy + cardS * 0.56);
                     ctx.restore();
 
-                    ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(cx + 43, cy + 5, 11, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle = '#f87171'; ctx.font = 'bold 11px sans-serif'; ctx.fillText('-1', cx + 36, cy + 9);
+                    ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(cx + cardS - 3, cy + 4, 8.5, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#f87171'; ctx.font = 'bold 9px sans-serif'; ctx.fillText('-1', cx + cardS - 9, cy + 7);
                 });
             });
-
-            crisisZones.forEach(cz => { drawPillSign(`⚠️ ${cz.name}`, cz.x, cz.y - cz.r - 22); });
         }
 
         function drawMapOccupants() {
             mapOccupants.forEach(occ => {
-                ctx.fillStyle = occ.type === 'culture' ? '#fffbeb' : 'white';
-                ctx.strokeStyle = occ.type === 'culture' ? '#f59e0b' : '#cbd5e1'; ctx.lineWidth = 2.5;
-                ctx.beginPath(); occ.type === 'culture' ? ctx.arc(occ.x + 25, occ.y + 25, 25, 0, Math.PI * 2) : ctx.roundRect(occ.x, occ.y, 50, 50, 12);
-                ctx.fill(); ctx.stroke();
-                ctx.font = '24px sans-serif'; ctx.fillStyle = 'black'; ctx.fillText(occ.icon, occ.x + 12, occ.y + 32);
+                let cSize = 42;
+                let cx = (occ.x || 0) - cSize / 2;
+                let cy = (occ.y || 0) - cSize / 2;
+
+                ctx.save();
+                if (occ.dead) { ctx.filter = 'grayscale(100%) contrast(130%)'; }
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
+                ctx.beginPath(); ctx.arc(cx + cSize / 2 + 2, cy + cSize / 2 + 4, cSize / 2, 0, Math.PI * 2); ctx.fill();
+
+                ctx.fillStyle = occ.dead ? '#6b7280' : '#fffbeb';
+                ctx.strokeStyle = occ.dead ? '#111827' : '#f59e0b';
+                ctx.lineWidth = 2.8;
+                ctx.beginPath(); ctx.arc(cx + cSize / 2, cy + cSize / 2, cSize / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+                ctx.font = '20px sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'black';
+                ctx.fillText(occ.icon, cx + cSize / 2, cy + cSize / 2 + 1);
+                ctx.restore();
+
+                ctx.fillStyle = occ.dead ? '#111827' : '#22c55e';
+                ctx.beginPath(); ctx.arc(cx + cSize - 4, cy + 5, 9, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = occ.dead ? '#f87171' : '#ffffff';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillText(occ.dead ? '-1' : '+1', cx + cSize - 10, cy + 9);
             });
         }
 
@@ -4078,6 +4318,7 @@
                         successfullyPlacedIds.add(occ.id);
                     }
                     else if (occ.type === 'culture') { logHTML += `<li>📜 發現文化地景 ${occ.name} (+${1 * mult}分)</li>`; }
+                    else if (occ.type === 'faith' && h.isTemple) { logHTML += `<li style="color:#dc2626; font-weight:bold;">⛩️ 供奉農村信仰神明 ${occ.name} (+${1 * mult}分)</li>`; }
                     else if (occ.validHabitats && occ.validHabitats.includes(h.id)) { logHTML += `<li>✔️ ${occ.name} 放入 [${h.name}] (+1分)</li>`; successfullyPlacedIds.add(occ.id); }
                 });
             });
@@ -4117,7 +4358,7 @@
                 let oldCtx = ctx; let oldCamX = camera.x; let oldCamY = camera.y;
                 ctx = tCtx; camera.x = 0; camera.y = 0;
 
-                drawMap(); drawRoadVehicles(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawUserAnnotations(); drawAmbientEntities(); drawPlayer(); drawSkyHotAirBalloons();
+                drawMap(); drawRoadVehicles(); drawCrisisZones(); drawHabitats(); drawMapOccupants(); drawUserAnnotations(); drawAllOverlaySigns(); drawAmbientEntities(); drawPlayer(); drawSkyHotAirBalloons();
 
                 ctx = oldCtx; camera.x = oldCamX; camera.y = oldCamY;
 
