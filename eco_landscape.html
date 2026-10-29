@@ -2305,7 +2305,6 @@
             ctx.beginPath(); ctx.arc(-64, 16, 2.5, 0, Math.PI * 2); ctx.arc(-50, 16, 2.5, 0, Math.PI * 2); ctx.fill();
 
             ctx.restore();
-            drawPillSign('🔬 探探里山生態實驗室', cx, cy - 92);
         }
 
         function drawTrees(startX, startY, count) {
@@ -2401,7 +2400,6 @@
                 ctx.fillStyle = (timeOfDay === 'night' || timeOfDay === 'dusk') ? '#fef08a' : '#e2e8f0';
                 ctx.beginPath(); ctx.arc(lx + 4, 296, 5, 0, Math.PI * 2); ctx.fill();
             }
-            drawPillSign('山邊道路', 150, 345);
 
             // 跨路生態陸橋基礎
             drawIsometricBlock(1150, 292, 400, 28, '#86efac', '#15803d', 14, 12);
@@ -2439,7 +2437,6 @@
                     }
                 }
             }
-            drawPillSign('有機農田', 450, 814);
 
             // 6. 設施農業(溫室)：3D 多連棟圓拱玻璃溫室結構
             drawIsometricBlock(150, 450, 350, 250, '#cbd5e1', '#475569', 26, 18);
@@ -2481,7 +2478,6 @@
                 ctx.fillStyle = '#94a3b8';
                 ctx.beginPath(); ctx.arc(bx + bayW / 2, by + 14, 3, 0, Math.PI * 2); ctx.fill();
             }
-            drawPillSign('設施農業(溫室)', 325, 412);
 
             // 7. 里山聚落 (擴大聚落房舍群，結合傳統三合院、街屋、古井、曬穀埕與上方漂浮廟宇信仰中心)
             ctx.fillStyle = '#fca5a5';
@@ -2500,7 +2496,6 @@
 
             drawProceduralTree(568, 512, 0.85, 0);
             drawProceduralTree(938, 508, 0.88, 2);
-            drawPillSign('🏘️ 里山聚落', 758, 578);
 
             // ★ 地圖正中間建築：「探探里山生態實驗室」
             drawSatoyamaEcoLab(810, 675);
@@ -2536,7 +2531,6 @@
                 ctx.fillStyle = '#94a3b8';
                 ctx.beginPath(); ctx.ellipse(rx0, ry0, rr, rr * 0.6, 0, 0, Math.PI * 2); ctx.fill();
             });
-            drawPillSign('生態溪流', 1110, 600);
 
             // 9. 灌溉溝渠 (3D 砌石護岸 + 清澈水路 + 傳統木製汲水車 Waterwheel)
             drawIsometricBlock(20, 650, 130, 400, '#cbd5e1', '#475569', 22, 16);
@@ -2557,11 +2551,9 @@
                 ctx.beginPath(); ctx.moveTo(-22, 0); ctx.lineTo(22, 0); ctx.stroke();
             }
             ctx.restore();
-            drawPillSign('灌溉溝渠', 85, 612);
 
             // 10. 次生森林 (群聚演算法森林：不同大小、方向與種類的 3D 樹木與山丘)
             drawTrees(550, 100, 3); drawTrees(700, 80, 4); drawTrees(850, 120, 2);
-            drawPillSign('次生森林', 700, 180);
 
             // ★ 在地景區塊繪製完成後畫上立體木棧橋，並自動銜接至各六角島內部邊緣
             drawAllBridges();
@@ -2813,17 +2805,18 @@
             let placedSigns = [];
             const resolveSignY = (cx, desiredY) => {
                 let y = Math.max(10, desiredY);
-                for (let attempt = 0; attempt < 5; attempt++) {
-                    let conflict = placedSigns.find(s => Math.abs(s.x - cx) < 135 && Math.abs(s.y - y) < 30);
+                for (let attempt = 0; attempt < 6; attempt++) {
+                    let conflict = placedSigns.find(s => Math.abs(s.x - cx) < 150 && Math.abs(s.y - y) < 32);
                     if (conflict) {
-                        y = conflict.y - 32;
-                        if (y < 8) y = conflict.y + 32;
+                        y = conflict.y - 34;
+                        if (y < 8) y = conflict.y + 34;
                     } else break;
                 }
                 placedSigns.push({ x: cx, y });
                 return y;
             };
 
+            // 1. 先繪製微棲地六角島與漂浮廟宇的名稱立牌
             habitats.forEach(h => {
                 let isMagicTarget = isMagicWandMode && magicTargetHabitat && magicTargetHabitat.id === h.id;
                 let lift = h.animLift || 0;
@@ -2831,10 +2824,33 @@
                                 (h.isTemple ? `⛩️ ${h.name} (放三角形信仰卡)` :
                                 (h.isBonus ? `🌱 ${h.name} (x2)` : h.name));
                 let cx = h.x + h.w / 2;
-                let sy = resolveSignY(cx, h.y - 26 - lift);
-                drawPillSign(titleText, cx, sy, h.code || '');
+                let cy = h.y - 12 - lift;
+                let sy = resolveSignY(cx, cy);
+                drawPillSign(titleText, cx, sy, h.code);
             });
 
+            // 2. 繪製全島重要地景與建築名稱於指定位置，確保在最上層且絕不被建築、橋樑或棲地島遮擋
+            const landmarkSigns = [
+                { text: '🏘️ 里山聚落', x: 900, y: 422, exact: true },               // 精準固定於箭頭處：聚落右側房舍正上方、馬路下方空白處
+                { text: '🔬 探探里山生態實驗室', x: 805, y: 696, exact: true },     // 精準固定於箭頭處：實驗室大門正前方平台處
+                { text: '設施農業(溫室)', x: 285, y: 412 },
+                { text: '有機農田', x: 525, y: 815 },
+                { text: '生態溪流', x: 1155, y: 615 },
+                { text: '灌溉溝渠', x: 85, y: 612 },
+                { text: '次生森林', x: 605, y: 185 },
+                { text: '山邊道路', x: 150, y: 345 }
+            ];
+            landmarkSigns.forEach(lm => {
+                if (lm.exact) {
+                    placedSigns.push({ x: lm.x, y: lm.y });
+                    drawPillSign(lm.text, lm.x, lm.y);
+                } else {
+                    let sy = resolveSignY(lm.x, lm.y);
+                    drawPillSign(lm.text, lm.x, sy);
+                }
+            });
+
+            // 3. 繪製生態陷阱危機名稱立牌
             crisisZones.forEach(cz => {
                 let sy = resolveSignY(cz.x, cz.y - cz.r - 26);
                 drawPillSign(`⚠️ ${cz.name}`, cz.x, sy);
