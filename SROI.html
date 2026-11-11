@@ -129,12 +129,27 @@
             transform: translate(-50%, -100%);
             pointer-events: auto;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             z-index: 20;
         }
-        .cloud-island-label:hover {
+        .cloud-island-label.main-island-card {
+            z-index: 26;
+        }
+        .cloud-island-label:hover,
+        .cloud-island-label:active {
             transform: translate(-50%, -105%) scale(1.04);
-            z-index: 30;
+            z-index: 35 !important;
+        }
+        @media (max-width: 640px) {
+            .cloud-island-label {
+                transform: translate(-50%, -100%) scale(0.84);
+                transform-origin: center bottom;
+            }
+            .cloud-island-label:hover,
+            .cloud-island-label:active {
+                transform: translate(-50%, -103%) scale(0.92);
+                z-index: 35 !important;
+            }
         }
         .locked-gradient-shield {
             position: relative;
@@ -1472,7 +1487,7 @@
             }
         }
 
-        function setMethodMode(mode) {
+        function setMethodMode(mode, skipCloudSync = false) {
             currentMode = mode;
             const b25 = document.getElementById('modeBtn2025');
             const b26 = document.getElementById('modeBtn2026');
@@ -1491,6 +1506,10 @@
             }
             updateRetentionGuidanceUI();
             recalculateAll();
+            if (!skipCloudSync) {
+                saveWorkspaceToLocalStorage(true);
+                if (window.syncMetaToCloud) window.syncMetaToCloud();
+            }
         }
 
         function setReportScope(scope, skipRecalc = false) {
@@ -3946,7 +3965,7 @@
                 ? `<span class="text-[9px] text-emerald-300 bg-emerald-950/90 border border-emerald-500/40 px-1.5 py-0.5 rounded font-black">✅ 已完成｜存檔：${teamSaveDate}</span>`
                 : `<span class="text-[9px] text-amber-300 bg-amber-950/90 border border-amber-500/40 px-1.5 py-0.5 rounded font-black">⏳ 未完成｜日期：${teamSaveDate}</span>`;
             const mainEl = document.createElement('div');
-            mainEl.className = 'cloud-island-label bg-slate-900/95 text-white px-3 py-2 rounded-2xl border-2 border-amber-400 shadow-2xl min-w-[225px]';
+            mainEl.className = 'cloud-island-label main-island-card bg-slate-900/95 text-white px-3 py-2 rounded-2xl border-2 border-amber-400 shadow-2xl min-w-[205px] sm:min-w-[225px]';
             const mainSroiDisplay = (reportScope === 'multi') ? m.sroiRatio : computeTeamOfficialSroi(team).sroi;
             mainEl.innerHTML = `
                 <div class="flex justify-between items-center gap-2 border-b border-emerald-700 pb-0.5 mb-0.5">
@@ -3966,7 +3985,7 @@
             `;
             mainEl.onclick = () => selectCloudIsland('team', team.id);
             if (layer) layer.appendChild(mainEl);
-            cIslandItems.push({ mesh: mainMesh, baseY: 0.45, phase: 0, el: mainEl, offsetY: 3.7 });
+            cIslandItems.push({ mesh: mainMesh, baseY: 0.45, phase: 0, el: mainEl, offsetY: 3.7, isMain: true });
 
             // Farm Sub-Islands + Wooden Sky Bridges (Only checked/selected team member farms are shown on the 3D main board!)
             const list = farmsData.filter(f => f.selected);
@@ -3996,7 +4015,7 @@
                     ? `<span class="text-[8.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-black">✅ 已完成｜${fSaveDate}</span>`
                     : `<span class="text-[8.5px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-black">⏳ 未完成｜${fSaveDate}</span>`;
                 const subEl = document.createElement('div');
-                subEl.className = 'cloud-island-label bg-white/95 text-slate-800 px-2.5 py-1.5 rounded-xl border-2 border-emerald-500 shadow-lg min-w-[180px]';
+                subEl.className = 'cloud-island-label bg-white/95 text-slate-800 px-2.5 py-1.5 rounded-xl border-2 border-emerald-500 shadow-lg min-w-[155px] sm:min-w-[180px]';
                 subEl.innerHTML = `
                     <div class="flex justify-between items-center gap-1 border-b border-slate-100 pb-0.5">
                         <span class="bg-emerald-700 text-white text-[8.5px] font-black px-1.5 py-0.5 rounded">🌱 ${fInvestLabel} #${idx + 1}</span>
@@ -4014,7 +4033,7 @@
                 `;
                 subEl.onclick = () => selectCloudIsland('farm', f.id);
                 if (layer) layer.appendChild(subEl);
-                cIslandItems.push({ mesh: subMesh, baseY: by, phase: idx * 1.1, el: subEl, offsetY: 2.7 });
+                cIslandItems.push({ mesh: subMesh, baseY: by, phase: idx * 1.1, el: subEl, offsetY: 2.5, isMain: false });
             });
         }
         function selectCloudIsland(type, id) {
@@ -4133,8 +4152,9 @@
             if (pwdInput) pwdInput.value = '';
             document.getElementById('cDrawerStatusEditBox')?.classList.add('hidden');
             saveWorkspaceToLocalStorage(true);
+            if (window.syncMetaToCloud) window.syncMetaToCloud();
             recalculateAll();
-            showToast('✅ 已更新核定狀態與存檔日期並同步至 3D 群島儀表板！');
+            showToast('✅ 已更新核定狀態與存檔日期並同步至雲端與 3D 群島儀表板！');
         }
 
         function closeCloudIslandDrawer() {
@@ -4213,8 +4233,10 @@
                 if (container) {
                     const cw = container.clientWidth;
                     const ch = container.clientHeight;
+                    const isMobile = cw < 640;
                     const topPanelOpen = !document.getElementById('cloud3DTopControlsPanel')?.classList.contains('hidden');
-                    const minTopBound = topPanelOpen ? 145 : 58;
+                    const minTopBound = topPanelOpen ? 148 : 54;
+                    const xPad = isMobile ? 68 : 96;
                     cIslandItems.forEach(item => {
                         const wp = new THREE.Vector3();
                         item.mesh.getWorldPosition(wp);
@@ -4224,10 +4246,22 @@
                             item.el.style.display = 'none';
                         } else {
                             item.el.style.display = 'block';
-                            const rawX = (wp.x * 0.5 + 0.5) * cw;
-                            const rawY = (-wp.y * 0.5 + 0.5) * ch;
-                            item.el.style.left = `${Math.max(92, Math.min(cw - 92, rawX))}px`;
-                            item.el.style.top = `${Math.max(minTopBound, Math.min(ch - 48, rawY))}px`;
+                            let rawX = (wp.x * 0.5 + 0.5) * cw;
+                            let rawY = (-wp.y * 0.5 + 0.5) * ch;
+                            // Radial outward push for sub-islands so they don't cover the center Main Island card
+                            if (!item.isMain) {
+                                const dx = rawX - cw * 0.5;
+                                const dy = rawY - ch * 0.48;
+                                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                                const minClearance = isMobile ? 115 : 145;
+                                if (dist < minClearance) {
+                                    const push = (minClearance - dist) * 0.85;
+                                    rawX += (dx / dist) * push;
+                                    rawY += (dy / dist) * push;
+                                }
+                            }
+                            item.el.style.left = `${Math.max(xPad, Math.min(cw - xPad, rawX))}px`;
+                            item.el.style.top = `${Math.max(minTopBound, Math.min(ch - 46, rawY))}px`;
                         }
                     });
                 }
@@ -4694,6 +4728,40 @@
 
         function setupRealtimeListeners() {
             if (!currentUser || !db) return;
+
+            // 1. Listen to Teams Collection (satoyama_teams) so team name, inputs & completion sync across all devices
+            const teamsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'satoyama_teams');
+            onSnapshot(teamsColRef, (snapshot) => {
+                if (snapshot.empty) return;
+                isApplyingRemote = true;
+                snapshot.docChanges().forEach((change) => {
+                    const data = change.doc.data();
+                    if (!data || !data.id) return;
+                    const idx = teamsData.findIndex(t => t.id === data.id);
+                    if (change.type === 'removed') {
+                        if (idx >= 0 && teamsData.length > 1) teamsData.splice(idx, 1);
+                    } else {
+                        if (idx >= 0) {
+                            teamsData[idx] = { ...teamsData[idx], ...data };
+                        } else {
+                            teamsData.push(data);
+                        }
+                    }
+                });
+                const activeTeam = getActiveTeamObj();
+                if (activeTeam && Array.isArray(activeTeam.farmIds)) {
+                    farmsData.forEach(f => { f.selected = activeTeam.farmIds.includes(f.id); });
+                }
+                syncTeamInputsToUI();
+                renderPublishedBanner();
+                renderSelectionControls();
+                renderFarmsList();
+                recalculateAll();
+                saveWorkspaceToLocalStorage(true);
+                isApplyingRemote = false;
+            }, (err) => { console.warn('Teams listener error:', err); });
+
+            // 2. Listen to Farms Collection (satoyama_farms) and trust cloud data completely across devices
             const farmsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'satoyama_farms');
             onSnapshot(farmsColRef, (snapshot) => {
                 if (snapshot.empty) return;
@@ -4701,43 +4769,56 @@
                 snapshot.docChanges().forEach((change) => {
                     const data = change.doc.data();
                     if (!data || !data.id) return;
-                    const idx = farmsData.findIndex(f => f.id === data.id);
+                    const idx = farmsData.findIndex(f => Number(f.id) === Number(data.id));
                     if (change.type === 'removed') {
                         if (idx >= 0 && farmsData.length > 1) farmsData.splice(idx, 1);
                     } else {
                         if (idx >= 0) {
-                            const keepBase = (isCloudBaselineLocked || farmsData[idx].habBaseLocked) ? {
-                                waterBase: farmsData[idx].waterBase,
-                                landBase: farmsData[idx].landBase,
-                                speciesPrev: farmsData[idx].speciesPrev,
-                                routesBase: farmsData[idx].routesBase,
-                                guidesBase: farmsData[idx].guidesBase,
-                                convHerbicideCost: farmsData[idx].convHerbicideCost,
-                                convPesticideCost: farmsData[idx].convPesticideCost,
-                                oldCost2025: farmsData[idx].oldCost2025,
-                                yieldBase: farmsData[idx].yieldBase,
-                                eduBase: farmsData[idx].eduBase,
-                                habBaseLocked: true
-                            } : {};
-                            farmsData[idx] = { ...farmsData[idx], ...data, ...keepBase };
+                            farmsData[idx] = { ...farmsData[idx], ...data };
                         } else {
                             farmsData.push(data);
                         }
                     }
                 });
+                const activeTeam = getActiveTeamObj();
+                if (activeTeam && Array.isArray(activeTeam.farmIds) && activeTeam.farmIds.length > 0) {
+                    farmsData.forEach(f => {
+                        if (activeTeam.farmIds.includes(Number(f.id)) || activeTeam.farmIds.includes(f.id)) {
+                            f.selected = true;
+                        }
+                    });
+                }
+                syncTeamInputsToUI();
                 renderPublishedBanner();
                 renderSelectionControls();
                 renderFarmsList();
                 recalculateAll();
+                saveWorkspaceToLocalStorage(true);
                 isApplyingRemote = false;
-            }, () => {});
+            }, (err) => { console.warn('Farms listener error:', err); });
 
+            // 3. Listen to Global Workspace State (satoyama_meta/workspace_state) for Mode, ActiveTeam, Locks & Full Atomic Sync
             const metaDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_meta', 'workspace_state');
             onSnapshot(metaDocRef, (docSnap) => {
                 if (!docSnap.exists()) return;
                 const d = docSnap.data();
                 if (!d) return;
                 isApplyingRemote = true;
+                if (d.teamsDataJson) {
+                    try {
+                        const parsedTeams = JSON.parse(d.teamsDataJson);
+                        if (Array.isArray(parsedTeams) && parsedTeams.length > 0) teamsData = parsedTeams;
+                    } catch (e) {}
+                }
+                if (d.farmsDataJson) {
+                    try {
+                        const parsedFarms = JSON.parse(d.farmsDataJson);
+                        if (Array.isArray(parsedFarms) && parsedFarms.length > 0) farmsData = parsedFarms;
+                    } catch (e) {}
+                }
+                if (d.activeTeamId) activeTeamId = d.activeTeamId;
+                if (d.targetEvalYear) targetEvalYear = d.targetEvalYear;
+                if (d.systemLockPassword) systemLockPassword = String(d.systemLockPassword);
                 if (typeof d.isProxyLocked === 'boolean') isProxyLocked = d.isProxyLocked;
                 if (d.lockedTimestamp) lockedTimestamp = d.lockedTimestamp;
                 if (typeof d.isCloudBaselineLocked === 'boolean') isCloudBaselineLocked = d.isCloudBaselineLocked;
@@ -4747,11 +4828,21 @@
                         restoreSavedProxyParamsToDOM();
                     } catch (e) {}
                 }
+                if (d.currentMode && d.currentMode !== currentMode) {
+                    setMethodMode(d.currentMode, true);
+                } else {
+                    updateRetentionGuidanceUI();
+                }
+                syncTeamInputsToUI();
                 applyProxyLockUI();
                 applyCloudBaselineLockUI();
+                renderPublishedBanner();
+                renderSelectionControls();
+                renderFarmsList();
                 recalculateAll();
+                saveWorkspaceToLocalStorage(true);
                 isApplyingRemote = false;
-            }, () => {});
+            }, (err) => { console.warn('Meta listener error:', err); });
         }
 
         window.syncFarmToCloud = async function(farmObj) {
@@ -4773,6 +4864,7 @@
             try {
                 const farmDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_farms', `farm_${farmId}`);
                 await deleteDoc(farmDocRef);
+                await window.syncMetaToCloud();
             } catch (err) {
                 console.error('Failed to delete farm from cloud:', err);
             }
@@ -4805,6 +4897,9 @@
                     isProxyLocked,
                     lockedTimestamp,
                     isCloudBaselineLocked,
+                    systemLockPassword,
+                    teamsDataJson: JSON.stringify(teamsData || []),
+                    farmsDataJson: JSON.stringify(farmsData || []),
                     savedProxyParamsJson: JSON.stringify(savedProxyParams || {}),
                     publishedBoardJson: JSON.stringify(publishedBoard),
                     updatedAt: new Date().toISOString(),
