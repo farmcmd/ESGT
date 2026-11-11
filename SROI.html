@@ -164,6 +164,28 @@
             border-radius: inherit;
             box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.6);
         }
+        @keyframes flashGlowPulse {
+            0%, 100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7), 0 0 14px rgba(16, 185, 129, 0.8);
+            }
+            50% {
+                opacity: 0.78;
+                transform: translateY(2px) scale(1.05);
+                box-shadow: 0 0 0 6px rgba(251, 191, 36, 0), 0 0 22px rgba(251, 191, 36, 0.95);
+            }
+        }
+        .blinking-arrow-badge {
+            animation: flashGlowPulse 1.35s infinite ease-in-out;
+        }
+        @keyframes arrowBlinkFast {
+            0%, 100% { opacity: 1; transform: translateY(0); color: #fbbf24; }
+            50% { opacity: 0.25; transform: translateY(3px); color: #34d399; }
+        }
+        .blinking-arrow-icon {
+            animation: arrowBlinkFast 0.95s infinite ease-in-out;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -174,43 +196,54 @@
         <span id="toastMessage">操作成功</span>
     </div>
 
-    <!-- Top Navigation Header -->
+    <!-- Top Navigation Header (Collapsible for Mobile & Clean Viewing) -->
     <header class="bg-satoyama-dark text-white shadow-lg border-b border-emerald-700 sticky top-0 z-40">
-        <div class="max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-satoyama-main flex items-center justify-center shadow-inner text-white font-black text-lg">
-                    <i class="fas fa-leaf"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-base sm:text-lg font-black tracking-tight text-white">水里里山生態廊道 SROI 數位工作台</h1>
-                        <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md">V6.2 雲端同步核定版</span>
+        <div class="max-w-[1600px] mx-auto px-3 sm:px-4 py-2 flex flex-col gap-2">
+            <div class="flex justify-between items-center gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-satoyama-main flex items-center justify-center shadow-inner text-white font-black text-sm sm:text-base shrink-0">
+                        <i class="fas fa-leaf"></i>
                     </div>
-                    <p class="text-[11px] text-emerald-200 font-medium">指導單位：水里里山生態廊道－教育部推動大學社會責任實踐計畫「臺大。山林。學院 2.0」</p>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <h1 class="text-sm sm:text-base font-black tracking-tight text-white truncate">水里里山生態廊道 SROI 數位工作台</h1>
+                            <span class="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded shrink-0">V6.6 雲端核定版</span>
+                        </div>
+                        <p class="hidden sm:block text-[10.5px] text-emerald-200 font-medium truncate">指導單位：水里里山生態廊道－教育部推動大學社會責任實踐計畫「臺大。山林。學院 2.0」</p>
+                    </div>
                 </div>
+
+                <!-- Prominent Blinking Arrow Button to Expand/Collapse Top Header & 3D Controls -->
+                <button onclick="toggleTopBlocksCollapse()" id="topBlockToggleBtn" class="blinking-arrow-badge bg-amber-400 hover:bg-amber-300 text-slate-950 px-3 py-1.5 rounded-full text-[11px] font-black transition flex items-center gap-1.5 shrink-0 border-2 border-white shadow-lg">
+                    <i id="topBlockToggleIcon" class="fas fa-angles-down blinking-arrow-icon text-slate-950 text-xs"></i>
+                    <span id="topBlockToggleText">展開選單與工具</span>
+                </button>
             </div>
 
-            <!-- Export & Data Controls -->
-            <div class="flex flex-wrap items-center gap-2">
-                <button onclick="requirePasswordForAction('開啟雲端與歷史快照管理', '進入資料庫設定與快照中心需輸入授權密碼驗證：', () => openRecordManagerModal())" id="autoSaveIndicatorBtn" class="bg-emerald-700/80 hover:bg-emerald-600 text-emerald-100 px-3 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 border border-emerald-400/50 shadow-sm">
-                    <i id="cloudStatusIcon" class="fas fa-cloud text-amber-300"></i> <span id="autoSaveStatusLabel">雲端連線準備中...</span>
-                </button>
-                <button onclick="triggerProtectedJsonImport()" class="bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-emerald-600/50">
-                    <i class="fas fa-folder-open"></i> 匯入打包檔 (.json)
-                </button>
-                <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="importJSON(event)">
-                <button onclick="exportJSON()" class="bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-emerald-600/50">
-                    <i class="fas fa-save"></i> 匯出備份 (.json)
-                </button>
-                <button onclick="exportWord()" class="bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2 rounded-xl text-xs font-black transition shadow flex items-center gap-1.5">
-                    <i class="fas fa-file-word"></i> 轉出 Word (.doc)
-                </button>
-                <button onclick="exportPDF()" id="pdfExportBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-black transition shadow flex items-center gap-1.5">
-                    <i class="fas fa-file-pdf"></i> 轉出正式報告 (.pdf)
-                </button>
-                <button onclick="openQrShareModal()" class="bg-white/15 hover:bg-white/25 text-white px-3 py-2 rounded-xl text-xs font-black transition border border-white/30 flex items-center gap-1.5 shadow-sm">
-                    <i class="fas fa-qrcode text-amber-300"></i> 分享 QR Code
-                </button>
+            <!-- Collapsible Export & Data Controls (Collapsed by Default) -->
+            <div id="topHeaderCollapsibleBox" class="hidden pt-2 border-t border-emerald-700/80 flex flex-wrap items-center justify-between gap-2">
+                <p class="sm:hidden text-[10px] text-emerald-200 font-medium w-full">指導單位：水里里山生態廊道－教育部 USR「臺大。山林。學院 2.0」</p>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button onclick="requirePasswordForAction('開啟雲端與歷史快照管理', '進入資料庫設定與快照中心需輸入授權密碼驗證：', () => openRecordManagerModal())" id="autoSaveIndicatorBtn" class="bg-emerald-700/80 hover:bg-emerald-600 text-emerald-100 px-2.5 py-1.5 rounded-xl text-[11px] font-black transition flex items-center gap-1 border border-emerald-400/50 shadow-sm">
+                        <i id="cloudStatusIcon" class="fas fa-cloud text-amber-300"></i> <span id="autoSaveStatusLabel">雲端即時同步中</span>
+                    </button>
+                    <button onclick="triggerProtectedJsonImport()" class="bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition flex items-center gap-1 border border-emerald-600/50">
+                        <i class="fas fa-folder-open"></i> 匯入 (.json)
+                    </button>
+                    <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="importJSON(event)">
+                    <button onclick="exportJSON()" class="bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition flex items-center gap-1 border border-emerald-600/50">
+                        <i class="fas fa-save"></i> 備份 (.json)
+                    </button>
+                    <button onclick="exportWord()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-black transition shadow flex items-center gap-1">
+                        <i class="fas fa-file-word"></i> 轉出 Word
+                    </button>
+                    <button onclick="exportPDF()" id="pdfExportBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-xl text-[11px] font-black transition shadow flex items-center gap-1">
+                        <i class="fas fa-file-pdf"></i> 轉出 PDF
+                    </button>
+                    <button onclick="openQrShareModal()" class="bg-white/15 hover:bg-white/25 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-black transition border border-white/30 flex items-center gap-1 shadow-sm">
+                        <i class="fas fa-qrcode text-amber-300"></i> QR Code
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -222,48 +255,70 @@
         <!-- 3D Floating Labels -->
         <div id="cloud3dLabelsContainer" class="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-hidden"></div>
 
-        <!-- Top Controls Overlay -->
-        <div class="relative z-30 max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2 pointer-events-auto">
-            <div class="flex flex-wrap items-center gap-2 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-emerald-500/40">
-                <span class="bg-satoyama-main text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                    <i class="fas fa-cube"></i> <span id="cloudBoardMainTitle">3D 里山生態群島視覺化看板</span>
-                </span>
-                <span id="cloudBoardSubTitle" class="text-xs font-black text-emerald-100">點擊主島(團隊)或小島(農場)開啟側邊面板進入更新或閱覽報告</span>
-                <span id="unpublishedNoticeBadge" class="hidden bg-amber-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full animate-pulse">
-                    ⚠️ 有未經密碼存檔之修改
-                </span>
+        <!-- Compact Floating Top Handle & Collapsible 3D Controls Overlay -->
+        <div class="relative z-30 max-w-[1600px] mx-auto px-3 pt-2 pointer-events-none">
+            <div class="flex justify-between items-center gap-2">
+                <button onclick="toggle3DTopControlsBox()" class="pointer-events-auto bg-slate-900/85 hover:bg-slate-800 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-400/60 flex items-center gap-2 shadow-lg transition">
+                    <span class="bg-satoyama-main text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <i class="fas fa-cube"></i> <span id="cloudBoardMainTitle">水里里山餐桌團隊 3D 群島看板</span>
+                    </span>
+                    <span id="unpublishedNoticeBadge" class="hidden bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">
+                        ⚠️ 未存檔
+                    </span>
+                    <span class="text-amber-300 text-[11px] font-black flex items-center gap-1">
+                        <i id="cloud3DTopControlsArrow" class="fas fa-angles-down blinking-arrow-icon"></i>
+                        <span id="cloud3DTopControlsHint" class="hidden sm:inline">看板控制</span>
+                    </span>
+                </button>
             </div>
-            <div class="flex flex-wrap items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-emerald-500/40">
-                <button onclick="requirePasswordForAction('修改看板名稱與基本資料', '修改群島看板與團隊基本資料需每次輸入授權密碼：', () => openEditTeamModal())" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition shadow flex items-center gap-1">
-                    <i class="fas fa-sliders-h"></i> 修改看板名稱與基本資料
-                </button>
-                <button onclick="requirePasswordForAction('新增專案主島', '新增專案主島需每次輸入授權密碼：', () => openTeamModal('add'))" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shadow border border-emerald-500/50 flex items-center gap-1">
-                    <i class="fas fa-globe-asia"></i> + 新增專案主島
-                </button>
-                <button onclick="requirePasswordForAction('新增農場小島', '新增農場小島需每次輸入授權密碼：', () => openAddFarmModal())" class="bg-sky-700 hover:bg-sky-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shadow border border-sky-500/50 flex items-center gap-1">
-                    <i class="fas fa-seedling"></i> + 新增農場小島
-                </button>
-                <button id="cloudFloatToggleBtn" onclick="toggleCloud3DFloating()" class="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition shadow flex items-center gap-1">
-                    <i id="cloudFloatToggleIcon" class="fas fa-pause"></i> <span id="cloudFloatToggleText">暫停漂浮</span>
-                </button>
-                <button id="cloudHeroCollapseBtn" onclick="toggleCloud3DHeroCollapse()" class="bg-slate-800 hover:bg-slate-700 text-emerald-200 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition border border-emerald-500/40 flex items-center gap-1" title="收合或展開 3D 群島視窗高度">
-                    <i id="cloudHeroCollapseIcon" class="fas fa-compress-arrows-alt"></i> <span id="cloudHeroCollapseText">收合群島高度</span>
-                </button>
-                <button onclick="requirePasswordForAction('複製 3D 群島嵌入語法', '複製外部嵌入語法需輸入授權密碼：', () => copyCloudEmbedCode())" class="bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition border border-amber-400/40 flex items-center gap-1" title="複製可單獨嵌入外部網頁並支援收合與捲動的 iframe 語法">
-                    <i class="fas fa-code"></i> 嵌入網頁
-                </button>
+
+            <!-- Collapsible 3D Action Buttons (Collapsed by Default so Islands are never blocked) -->
+            <div id="cloud3DTopControlsPanel" class="hidden pointer-events-auto mt-2 bg-slate-900/90 backdrop-blur-md p-2.5 rounded-2xl border border-emerald-500/50 shadow-2xl space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800/80 pb-1.5">
+                    <span id="cloudBoardSubTitle" class="text-[11px] font-bold text-emerald-200">【計畫投入】指導單位：臺大。山林。學院 2.0</span>
+                    <button onclick="toggle3DTopControlsBox()" class="text-[10px] text-amber-300 font-black hover:underline flex items-center gap-1">
+                        <i class="fas fa-angles-up"></i> 收合控制列
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button onclick="requirePasswordForAction('修改看板名稱與基本資料', '修改群島看板與團隊基本資料需每次輸入授權密碼：', () => openEditTeamModal())" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition shadow flex items-center gap-1">
+                        <i class="fas fa-sliders-h"></i> 修改看板名稱與基本資料
+                    </button>
+                    <button onclick="requirePasswordForAction('新增專案主島', '新增專案主島需每次輸入授權密碼：', () => openTeamModal('add'))" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shadow border border-emerald-500/50 flex items-center gap-1">
+                        <i class="fas fa-globe-asia"></i> + 新增專案主島
+                    </button>
+                    <button onclick="requirePasswordForAction('新增農場小島', '新增農場小島需每次輸入授權密碼：', () => openAddFarmModal())" class="bg-sky-700 hover:bg-sky-600 text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition shadow border border-sky-500/50 flex items-center gap-1">
+                        <i class="fas fa-seedling"></i> + 新增農場小島
+                    </button>
+                    <button id="cloudFloatToggleBtn" onclick="toggleCloud3DFloating()" class="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition shadow flex items-center gap-1">
+                        <i id="cloudFloatToggleIcon" class="fas fa-pause"></i> <span id="cloudFloatToggleText">暫停漂浮</span>
+                    </button>
+                    <button id="cloudHeroCollapseBtn" onclick="toggleCloud3DHeroCollapse()" class="bg-slate-800 hover:bg-slate-700 text-emerald-200 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition border border-emerald-500/40 flex items-center gap-1" title="收合或展開 3D 群島視窗高度">
+                        <i id="cloudHeroCollapseIcon" class="fas fa-compress-arrows-alt"></i> <span id="cloudHeroCollapseText">收合群島高度</span>
+                    </button>
+                    <button onclick="requirePasswordForAction('複製 3D 群島嵌入語法', '複製外部嵌入語法需輸入授權密碼：', () => copyCloudEmbedCode())" class="bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition border border-amber-400/40 flex items-center gap-1" title="複製可單獨嵌入外部網頁並支援收合與捲動的 iframe 語法">
+                        <i class="fas fa-code"></i> 嵌入網頁
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Bottom Overview Postscript Banner -->
-        <div id="cloudBottomOverviewBar" class="absolute bottom-3 left-4 right-4 z-30 pointer-events-auto max-w-[1600px] mx-auto flex flex-wrap justify-between items-center gap-2 bg-slate-950/85 backdrop-blur-md px-4 py-2 rounded-xl border border-emerald-600/40 text-xs">
-            <div class="flex items-center gap-2 flex-grow">
-                <span class="bg-emerald-700 text-white text-[10px] font-black px-2 py-0.5 rounded shrink-0">📝 總覽附言</span>
-                <span id="cloudBannerOverviewNote" class="text-emerald-100 font-medium truncate">水里里山生態廊道透過微棲地營造與減藥管理，串聯在地農友共創自然正向價值。</span>
-            </div>
-            <button onclick="requirePasswordForAction('編輯看板與總覽附言', '修改總覽附言需每次輸入授權密碼：', () => openEditTeamModal())" class="text-[10px] text-amber-300 hover:underline font-bold shrink-0">
-                <i class="fas fa-pen mr-0.5"></i>編輯看板與總覽附言
+        <!-- Bottom Overview Postscript Banner (Collapsed into compact pill on mobile, expandable via blinking arrow) -->
+        <div id="cloudBottomOverviewBar" class="absolute bottom-2 left-3 right-3 z-30 pointer-events-none max-w-[1600px] mx-auto flex flex-col items-center">
+            <button onclick="toggleBottomInfoBlocks()" class="pointer-events-auto blinking-arrow-badge bg-slate-950/90 hover:bg-slate-900 text-amber-300 px-3.5 py-1 rounded-full border border-amber-400/70 text-[11px] font-black shadow-lg flex items-center gap-1.5">
+                <i id="bottomBlocksArrowIcon" class="fas fa-angles-up blinking-arrow-icon"></i>
+                <span id="bottomBlocksToggleLabel">點擊展開總覽附言與操作提示</span>
+                <i class="fas fa-hand-pointer text-emerald-400 ml-0.5"></i>
             </button>
+            <div id="cloudBottomOverviewContent" class="hidden pointer-events-auto w-full mt-1.5 flex flex-wrap justify-between items-center gap-2 bg-slate-950/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-emerald-500/50 text-xs shadow-2xl">
+                <div class="flex items-center gap-2 flex-grow min-w-0">
+                    <span class="bg-emerald-700 text-white text-[10px] font-black px-2 py-0.5 rounded shrink-0">📝 總覽附言</span>
+                    <span id="cloudBannerOverviewNote" class="text-emerald-100 font-medium truncate">水里里山生態廊道透過微棲地營造與減藥管理，串聯在地農友共創自然正向價值。</span>
+                </div>
+                <button onclick="requirePasswordForAction('編輯看板與總覽附言', '修改總覽附言需每次輸入授權密碼：', () => openEditTeamModal())" class="text-[10px] text-amber-300 hover:underline font-bold shrink-0">
+                    <i class="fas fa-pen mr-0.5"></i>編輯附言
+                </button>
+            </div>
         </div>
 
         <!-- Bottom Quick Strip (Hidden fallback container for compatibility) -->
@@ -368,11 +423,20 @@
         </div>
     </section>
 
-    <!-- Collapsed State Guidance Banner (Shown when workspace is collapsed) -->
-    <div id="collapsedGuideBanner" class="max-w-[1600px] w-full mx-auto px-4 py-4">
-        <div class="bg-white border-2 border-emerald-500/60 rounded-2xl p-4 shadow-sm flex flex-wrap justify-between items-center gap-3">
+    <!-- Collapsed State Guidance Banner (Collapsed by default for clean mobile view, toggled via blinking arrow) -->
+    <div id="collapsedGuideBanner" class="max-w-[1600px] w-full mx-auto px-3 sm:px-4 py-2">
+        <!-- Compact Blinking Prompt Bar -->
+        <div class="flex justify-center">
+            <button onclick="toggleBottomGuideDetail()" id="bottomGuideCompactBtn" class="bg-white hover:bg-emerald-50 border-2 border-emerald-500/80 text-satoyama-dark px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2 text-xs font-black transition">
+                <i id="bottomGuideArrowIcon" class="fas fa-angles-down blinking-arrow-icon text-amber-500 text-sm"></i>
+                <span>💡 點擊上方 3D 島嶼開啟面板｜點此展開操作說明</span>
+                <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">🔒 密碼保護</span>
+            </button>
+        </div>
+        <!-- Expandable Full Guidance Box -->
+        <div id="collapsedGuideDetailBox" class="hidden mt-2 bg-white border-2 border-emerald-500/60 rounded-2xl p-4 shadow-sm flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-satoyama-dark flex items-center justify-center text-lg font-black">
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-satoyama-dark flex items-center justify-center text-lg font-black shrink-0">
                     <i class="fas fa-hand-pointer text-satoyama-main"></i>
                 </div>
                 <div>
@@ -380,9 +444,14 @@
                     <p class="text-xs text-slate-600">請直接點擊上方 3D 動畫中的<strong>「專案主島（團隊）」</strong>或<strong>「農場小島」</strong>開啟右側面板，選擇 <strong>【A. 進入更新數據（需密碼）】</strong> 即會同步展開填寫面板與右側即時報告書；存檔後將自動收合。</p>
                 </div>
             </div>
-            <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-3 py-1.5 rounded-xl">
-                🔒 全站轉檔與修改均受密碼保護
-            </span>
+            <div class="flex items-center gap-2">
+                <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-3 py-1.5 rounded-xl">
+                    🔒 全站轉檔與修改均受密碼保護
+                </span>
+                <button onclick="toggleBottomGuideDetail()" class="text-xs text-slate-500 hover:text-slate-800 font-bold px-2 py-1 rounded border">
+                    <i class="fas fa-angles-up mr-1"></i>收合提示
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1234,6 +1303,76 @@
             requirePasswordForAction('匯入 JSON 專案打包檔', '匯入外部資料檔需每次輸入授權密碼驗證：', () => {
                 document.getElementById('jsonImportInput')?.click();
             });
+        }
+
+        function toggleTopBlocksCollapse() {
+            const headerBox = document.getElementById('topHeaderCollapsibleBox');
+            const panel3D = document.getElementById('cloud3DTopControlsPanel');
+            const icon = document.getElementById('topBlockToggleIcon');
+            const txt = document.getElementById('topBlockToggleText');
+            const arrow3D = document.getElementById('cloud3DTopControlsArrow');
+            if (!headerBox) return;
+            const willExpand = headerBox.classList.contains('hidden');
+            if (willExpand) {
+                headerBox.classList.remove('hidden');
+                panel3D?.classList.remove('hidden');
+                if (icon) icon.className = 'fas fa-angles-up blinking-arrow-icon text-slate-950 text-xs';
+                if (txt) txt.innerText = '收合上方選單';
+                if (arrow3D) arrow3D.className = 'fas fa-angles-up blinking-arrow-icon';
+            } else {
+                headerBox.classList.add('hidden');
+                panel3D?.classList.add('hidden');
+                if (icon) icon.className = 'fas fa-angles-down blinking-arrow-icon text-slate-950 text-xs';
+                if (txt) txt.innerText = '展開選單與工具';
+                if (arrow3D) arrow3D.className = 'fas fa-angles-down blinking-arrow-icon';
+            }
+        }
+
+        function toggle3DTopControlsBox() {
+            const panel3D = document.getElementById('cloud3DTopControlsPanel');
+            const arrow3D = document.getElementById('cloud3DTopControlsArrow');
+            if (!panel3D) return;
+            panel3D.classList.toggle('hidden');
+            const isHidden = panel3D.classList.contains('hidden');
+            if (arrow3D) {
+                arrow3D.className = isHidden ? 'fas fa-angles-down blinking-arrow-icon' : 'fas fa-angles-up blinking-arrow-icon';
+            }
+        }
+
+        function toggleBottomInfoBlocks() {
+            const content = document.getElementById('cloudBottomOverviewContent');
+            const icon = document.getElementById('bottomBlocksArrowIcon');
+            const label = document.getElementById('bottomBlocksToggleLabel');
+            const detailBox = document.getElementById('collapsedGuideDetailBox');
+            const guideIcon = document.getElementById('bottomGuideArrowIcon');
+            if (!content) return;
+            const willExpand = content.classList.contains('hidden');
+            if (willExpand) {
+                content.classList.remove('hidden');
+                detailBox?.classList.remove('hidden');
+                if (icon) icon.className = 'fas fa-angles-down blinking-arrow-icon';
+                if (label) label.innerText = '點擊收合總覽附言與操作提示';
+                if (guideIcon) guideIcon.className = 'fas fa-angles-up blinking-arrow-icon text-amber-500 text-sm';
+            } else {
+                content.classList.add('hidden');
+                detailBox?.classList.add('hidden');
+                if (icon) icon.className = 'fas fa-angles-up blinking-arrow-icon';
+                if (label) label.innerText = '點擊展開總覽附言與操作提示';
+                if (guideIcon) guideIcon.className = 'fas fa-angles-down blinking-arrow-icon text-amber-500 text-sm';
+            }
+        }
+
+        function toggleBottomGuideDetail() {
+            const detailBox = document.getElementById('collapsedGuideDetailBox');
+            const guideIcon = document.getElementById('bottomGuideArrowIcon');
+            if (!detailBox) return;
+            detailBox.classList.toggle('hidden');
+            const isHidden = detailBox.classList.contains('hidden');
+            if (guideIcon) {
+                guideIcon.className = isHidden
+                    ? 'fas fa-angles-down blinking-arrow-icon text-amber-500 text-sm'
+                    : 'fas fa-angles-up blinking-arrow-icon text-amber-500 text-sm';
+            }
         }
 
         function expandWorkbenchFrom3D(mode = 'edit_and_report') {
@@ -4074,6 +4213,8 @@
                 if (container) {
                     const cw = container.clientWidth;
                     const ch = container.clientHeight;
+                    const topPanelOpen = !document.getElementById('cloud3DTopControlsPanel')?.classList.contains('hidden');
+                    const minTopBound = topPanelOpen ? 145 : 58;
                     cIslandItems.forEach(item => {
                         const wp = new THREE.Vector3();
                         item.mesh.getWorldPosition(wp);
@@ -4085,8 +4226,8 @@
                             item.el.style.display = 'block';
                             const rawX = (wp.x * 0.5 + 0.5) * cw;
                             const rawY = (-wp.y * 0.5 + 0.5) * ch;
-                            item.el.style.left = `${Math.max(105, Math.min(cw - 105, rawX))}px`;
-                            item.el.style.top = `${Math.max(145, Math.min(ch - 55, rawY))}px`;
+                            item.el.style.left = `${Math.max(92, Math.min(cw - 92, rawX))}px`;
+                            item.el.style.top = `${Math.max(minTopBound, Math.min(ch - 48, rawY))}px`;
                         }
                     });
                 }
