@@ -106,12 +106,23 @@
         .report-doc-container .center-col {
             text-align: center !important;
         }
-        body.embed-3d-only header,
-        body.embed-3d-only main {
+        body.embed-3d-only {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        body.embed-3d-only header {
             display: none !important;
         }
-        body.embed-3d-only #cloud-3d-hero-section {
-            height: 100vh !important;
+        #cloud-3d-hero-section {
+            transition: height 0.35s ease;
+        }
+        #cloud-3d-hero-section.island-hero-collapsed {
+            height: 76px !important;
+        }
+        #cloud-3d-hero-section.island-hero-collapsed #cloud3dCanvasContainer,
+        #cloud-3d-hero-section.island-hero-collapsed #cloud3dLabelsContainer,
+        #cloud-3d-hero-section.island-hero-collapsed #cloudBottomOverviewBar {
+            display: none !important;
         }
         .cloud-island-label {
             position: absolute;
@@ -207,14 +218,17 @@
                 <button id="cloudFloatToggleBtn" onclick="toggleCloud3DFloating()" class="bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition shadow flex items-center gap-1">
                     <i id="cloudFloatToggleIcon" class="fas fa-pause"></i> <span id="cloudFloatToggleText">暫停漂浮</span>
                 </button>
-                <button onclick="requirePasswordForAction('複製 3D 群島嵌入語法', '複製外部嵌入語法需輸入授權密碼：', () => copyCloudEmbedCode())" class="bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition border border-amber-400/40 flex items-center gap-1" title="複製可單獨嵌入外部網頁的 iframe 語法">
+                <button id="cloudHeroCollapseBtn" onclick="toggleCloud3DHeroCollapse()" class="bg-slate-800 hover:bg-slate-700 text-emerald-200 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition border border-emerald-500/40 flex items-center gap-1" title="收合或展開 3D 群島視窗高度">
+                    <i id="cloudHeroCollapseIcon" class="fas fa-compress-arrows-alt"></i> <span id="cloudHeroCollapseText">收合群島高度</span>
+                </button>
+                <button onclick="requirePasswordForAction('複製 3D 群島嵌入語法', '複製外部嵌入語法需輸入授權密碼：', () => copyCloudEmbedCode())" class="bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition border border-amber-400/40 flex items-center gap-1" title="複製可單獨嵌入外部網頁並支援收合與捲動的 iframe 語法">
                     <i class="fas fa-code"></i> 嵌入網頁
                 </button>
             </div>
         </div>
 
         <!-- Bottom Overview Postscript Banner -->
-        <div class="absolute bottom-3 left-4 right-4 z-30 pointer-events-auto max-w-[1600px] mx-auto flex flex-wrap justify-between items-center gap-2 bg-slate-950/85 backdrop-blur-md px-4 py-2 rounded-xl border border-emerald-600/40 text-xs">
+        <div id="cloudBottomOverviewBar" class="absolute bottom-3 left-4 right-4 z-30 pointer-events-auto max-w-[1600px] mx-auto flex flex-wrap justify-between items-center gap-2 bg-slate-950/85 backdrop-blur-md px-4 py-2 rounded-xl border border-emerald-600/40 text-xs">
             <div class="flex items-center gap-2 flex-grow">
                 <span class="bg-emerald-700 text-white text-[10px] font-black px-2 py-0.5 rounded shrink-0">📝 總覽附言</span>
                 <span id="cloudBannerOverviewNote" class="text-emerald-100 font-medium truncate">水里里山生態廊道透過微棲地營造與減藥管理，串聯在地農友共創自然正向價值。</span>
@@ -261,6 +275,10 @@
                     <div class="flex justify-between border-b border-emerald-800/60 pb-1">
                         <span class="text-emerald-300 font-bold">5. 農產品</span>
                         <span id="cDrawerCrops" class="font-bold text-emerald-200 text-right">酪梨、檸檬、蜂蜜</span>
+                    </div>
+                    <div class="flex justify-between border-b border-emerald-800/60 pb-1">
+                        <span class="text-emerald-300 font-bold">核定狀態與存檔日期</span>
+                        <span id="cDrawerSaveStatus" class="font-black text-emerald-300 text-right">✅ 已完成核定 (2026/11/12)</span>
                     </div>
                     <div class="flex justify-between items-center pt-1">
                         <span class="text-amber-300 font-black">6. 核定 SROI</span>
@@ -570,7 +588,7 @@
 
                 <div class="bg-sky-50/70 p-3 rounded-xl border border-sky-200 space-y-2">
                     <div class="flex justify-between items-center">
-                        <span class="font-black text-sky-950 text-[11px]"><i class="fas fa-shield-alt text-satoyama-water mr-1"></i>專章揭露之「管理正向与市場波動韌性」參數（僅供報告書專章揭露，不列入 SROI 財務計算）</span>
+                        <span class="font-black text-sky-950 text-[11px]"><i class="fas fa-shield-alt text-satoyama-water mr-1"></i>專章揭露之「管理正向與市場波動韌性」參數（僅供報告書專章揭露，不列入 SROI 財務計算）</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-white p-2 rounded-lg border border-sky-200">
@@ -1469,18 +1487,18 @@
         // DEFAULT FARMS & TEAMS DATA
         // ==========================================
         const DEFAULT_5_FARMS = [
-            { id: 1, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '湧健酪梨園', crops: '酪梨', areaHa: 1.1, areaDesc: '約 1.1 公頃（興隆段679、680、751號）', speciesDesc: '9種（含穿山甲、食蟹獴、山羌、白鼻心、鼬獾、大冠鷲、領角鴞、莫氏樹蛙、柴棺龜）', certDesc: '零農藥殘留檢測、綠保標章申請中', routeDesc: '完成全區生態導覽解說路線 1 條', ecoObsNote: '長期農作體感觀測顯示，自全面停用除草劑並維持水陸微棲地後，園區穿山甲洞穴與食蟹獴活動蹤跡明顯增加，夜間莫氏樹蛙鳴叫族群量較往年提升約 18%，草生棲地穩定延伸且未遭破壞。', costExecNote: '2025基期至當期全面停用除草劑，改以背負式割草機維持草生栽培，並採購蘇力菌與誘蟲器等友善資材。', yieldEduExecNote: '果園授粉率穩定提升，並配合臺大山林學院接待企業ESG生態導覽與食農體驗團。', stakeholderQuote: '「以前噴除草劑雖然快，但心裡總覺得對土地有虧欠；現在改用草生栽培並保留3處水域與6處陸域微棲地，轉型初期人工割草確實多花了不少體力與摸索成本，但看到穿山甲與莫氏樹蛙回到果園，且透過導覽課程能向企業訪客親自解說里山價值，這份轉型非常值得！」—— 湧健酪梨園農場主與受訓導覽員', negTransitionCost: 5500, waterBase: 3, landBase: 6, speciesPrev: 7, routesBase: 1, guidesBase: 2, traineesBase: 3, water: 3, land: 6, species: 9, routes: 1, guides: 3, trainees: 4, bioIndexPrev: 100, bioIndexCurr: 118, convHerbicideCost: 13000, convPesticideCost: 12000, convOtherCost: 5000, convMaintCost: 5000, ecoWeedingCost: 8500, ecoMaterialCost: 5500, ecoOtherCost: 2500, ecoMaintCost: 3500, oldCost2025: 35000, newCost2025: 20000, yieldBase: 1200, yield2026: 1380, cropPrice: 80, eduBase: 50000, eduCurr: 85000, recordCheck: true },
-            { id: 2, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '指令教育農場', crops: '季節蔬菜', areaHa: 0.8, areaDesc: '約 0.8 公頃（水里鄉農牧用地）', speciesDesc: '7種（含莫氏樹蛙、貢德氏赤蛙、獨角仙、竹雞等）', certDesc: '友善耕作無農藥殘留', routeDesc: '完成食農與微棲地導覽路線 1 條', ecoObsNote: '於日常農務體感觀測中，生態池周邊貢德氏赤蛙與莫氏樹蛙卵泡及蝌蚪族群量穩定成長約 15%，腐植質區獨角仙幼蟲數量增加，微棲地範圍維持良好。', costExecNote: '菜園採用輪作與物理防蟲網、生物防治資材，省下傳統化學農藥開支。', yieldEduExecNote: '結合季節蔬菜採摘與生態池蛙類觀察，食農教育活動場次穩定成長。', stakeholderQuote: '「參與『臺大。山林。學院 2.0』的微棲地盤點與導覽培訓後，我們2位導覽員學會如何把生態池裡的貢德氏赤蛙與獨角仙轉化為食農教育教案。雖然初期不用農藥時蔬菜曾遭遇約一成的蟲咬耗損與人工除草負擔，但來自政府與企業ESG的食農教育活動收入明顯成長，幫我們抵銷了菜價波動的風險！」—— 指令教育農場經營者與合格導覽員', negTransitionCost: 4500, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 115, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1000, yield2026: 1080, cropPrice: 50, eduBase: 60000, eduCurr: 105000, recordCheck: true },
-            { id: 3, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '阿爾喜農場', crops: '檸檬', areaHa: 0.9, areaDesc: '約 0.9 公頃（水里里山廊道核心區）', speciesDesc: '7種（含領角鴞、五色鳥、拉都希氏赤蛙等）', certDesc: '全園草生栽培友善管理', routeDesc: '完成果園生態走讀路線 1 條', ecoObsNote: '果園維持全園草生栽培與友善資材管理，長期農作期間常觀測到領角鴞與五色鳥於林緣棲息覓食，地表昆蟲與蛙類總族群量體感約增加 14%。', costExecNote: '全園維持草生植被覆蓋，僅於採收動線進行重點割草，減少化肥與農藥依賴。', yieldEduExecNote: '無毒檸檬果品深獲友善通路肯定，並逐步開展果園生態走讀體驗。', stakeholderQuote: '「全園草生栽培初期最怕雜草搶肥與病蟲害摸索期，但在微棲地天敵生態系建立後，領角鴞與瓢蟲成了果園最好的守護者。透過SROI自主記帳，我們第一次清楚算出友善農法對農民自身健康與水土保持的真實價值。」—— 阿爾喜農場主與導覽員', negTransitionCost: 4200, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 9500, convPesticideCost: 9000, convOtherCost: 3000, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1500, yield2026: 1650, cropPrice: 45, eduBase: 40000, eduCurr: 68000, recordCheck: true },
-            { id: 4, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '明揚養蜂', crops: '蜂蜜、酪梨', areaHa: 1.0, areaDesc: '約 1.0 公頃（無毒蜜源與果園複合區）', speciesDesc: '6種（含中華蜜蜂、熊蜂、食蟹獴、樹蛙等）', certDesc: '無毒蜜源棲地驗證', routeDesc: '完成蜜源與授粉生態導覽路線 1 條', ecoObsNote: '營造無毒蜜源植物帶與水源微棲地後，野蜂與授粉昆蟲訪花密度明顯提升，且周邊食蟹獴與樹蛙出現頻率增加，整體生物族群量體感提升約 20%。', costExecNote: '為保護授粉蜂群全面禁用殺蟲劑與除草劑，營造四季蜜源綠籬。', yieldEduExecNote: '蜂蜜與酪梨授粉著果雙雙受惠，並辦理蜜蜂生態環境教育活動。', stakeholderQuote: '「蜜蜂對農藥極度敏感，營造無毒蜜源綠籬與水源棲地雖然在初期需要額外投入人工撫育與除草工時，卻讓蜂群授粉率與蜂蜜品質大幅提升，也吸引許多親子與企業團體來體驗蜜蜂生態導覽。」—— 明揚養蜂農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 120, convHerbicideCost: 10000, convPesticideCost: 8000, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 3500, ecoOtherCost: 2000, ecoMaintCost: 3000, oldCost2025: 25000, newCost2025: 15000, yieldBase: 800, yield2026: 880, cropPrice: 120, eduBase: 45000, eduCurr: 72000, recordCheck: true },
-            { id: 5, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '雨社山下', crops: '絲瓜、蓮霧', areaHa: 0.8, areaDesc: '約 0.8 公頃（雨社山麓友善耕作區）', speciesDesc: '6種（含穿山甲、白鼻心、盤古蟾蜍等）', certDesc: '友善無毒耕作', routeDesc: '完成里山步道與棲地導覽路線 1 條', ecoObsNote: '田間保留石積與草生緩衝帶，農作期間體感觀察盤古蟾蜍與地表天敵昆蟲數量穩定上升約 12%，山麓邊坡偶見穿山甲與白鼻心覓食痕跡，棲地連結度良好。', costExecNote: '採用套袋與物理誘捕取代化學噴藥，維持石積與草生緩衝帶。', yieldEduExecNote: '里山步道走讀結合食農體驗，有效分散單一農產市場拍賣價波動風險。', stakeholderQuote: '「過去單靠販售絲瓜與蓮霧常受拍賣市場價格起伏影響，自從跟隨團隊完成里山步道與微棲地導覽培訓後，我們開始接待生態走讀遊客，即使扣除轉型初期的套袋與人工除草隱形成本，整體經營韌性仍顯著提升。」—— 雨社山下農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1100, yield2026: 1210, cropPrice: 55, eduBase: 35000, eduCurr: 56000, recordCheck: true }
+            { id: 1, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '湧健酪梨園', crops: '酪梨', areaHa: 1.1, areaDesc: '約 1.1 公頃（興隆段679、680、751號）', speciesDesc: '9種（含穿山甲、食蟹獴、山羌、白鼻心、鼬獾、大冠鷲、領角鴞、莫氏樹蛙、柴棺龜）', certDesc: '零農藥殘留檢測、綠保標章申請中', routeDesc: '完成全區生態導覽解說路線 1 條', ecoObsNote: '長期農作體感觀測顯示，自全面停用除草劑並維持水陸微棲地後，園區穿山甲洞穴與食蟹獴活動蹤跡明顯增加，夜間莫氏樹蛙鳴叫族群量較往年提升約 18%，草生棲地穩定延伸且未遭破壞。', costExecNote: '2025基期至當期全面停用除草劑，改以背負式割草機維持草生栽培，並採購蘇力菌與誘蟲器等友善資材。', yieldEduExecNote: '果園授粉率穩定提升，並配合臺大山林學院接待企業ESG生態導覽與食農體驗團。', stakeholderQuote: '「以前噴除草劑雖然快，但心裡總覺得對土地有虧欠；現在改用草生栽培並保留3處水域與6處陸域微棲地，轉型初期人工割草確實多花了不少體力與摸索成本，但看到穿山甲與莫氏樹蛙回到果園，且透過導覽課程能向企業訪客親自解說里山價值，這份轉型非常值得！」—— 湧健酪梨園農場主與受訓導覽員', negTransitionCost: 5500, waterBase: 3, landBase: 6, speciesPrev: 7, routesBase: 1, guidesBase: 2, traineesBase: 3, water: 3, land: 6, species: 9, routes: 1, guides: 3, trainees: 4, bioIndexPrev: 100, bioIndexCurr: 118, convHerbicideCost: 13000, convPesticideCost: 12000, convOtherCost: 5000, convMaintCost: 5000, ecoWeedingCost: 8500, ecoMaterialCost: 5500, ecoOtherCost: 2500, ecoMaintCost: 3500, oldCost2025: 35000, newCost2025: 20000, yieldBase: 1200, yield2026: 1380, cropPrice: 80, eduBase: 50000, eduCurr: 85000, recordCheck: true },
+            { id: 2, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '指令教育農場', crops: '季節蔬菜', areaHa: 0.8, areaDesc: '約 0.8 公頃（水里鄉農牧用地）', speciesDesc: '7種（含莫氏樹蛙、貢德氏赤蛙、獨角仙、竹雞等）', certDesc: '友善耕作無農藥殘留', routeDesc: '完成食農與微棲地導覽路線 1 條', ecoObsNote: '於日常農務體感觀測中，生態池周邊貢德氏赤蛙與莫氏樹蛙卵泡及蝌蚪族群量穩定成長約 15%，腐植質區獨角仙幼蟲數量增加，微棲地範圍維持良好。', costExecNote: '菜園採用輪作與物理防蟲網、生物防治資材，省下傳統化學農藥開支。', yieldEduExecNote: '結合季節蔬菜採摘與生態池蛙類觀察，食農教育活動場次穩定成長。', stakeholderQuote: '「參與『臺大。山林。學院 2.0』的微棲地盤點與導覽培訓後，我們2位導覽員學會如何把生態池裡的貢德氏赤蛙與獨角仙轉化為食農教育教案。雖然初期不用農藥時蔬菜曾遭遇約一成的蟲咬耗損與人工除草負擔，但來自政府與企業ESG的食農教育活動收入明顯成長，幫我們抵銷了菜價波動的風險！」—— 指令教育農場經營者與合格導覽員', negTransitionCost: 4500, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 115, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1000, yield2026: 1080, cropPrice: 50, eduBase: 60000, eduCurr: 105000, recordCheck: true },
+            { id: 3, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '阿爾喜農場', crops: '檸檬', areaHa: 0.9, areaDesc: '約 0.9 公頃（水里里山廊道核心區）', speciesDesc: '7種（含領角鴞、五色鳥、拉都希氏赤蛙等）', certDesc: '全園草生栽培友善管理', routeDesc: '完成果園生態走讀路線 1 條', ecoObsNote: '果園維持全園草生栽培與友善資材管理，長期農作期間常觀測到領角鴞與五色鳥於林緣棲息覓食，地表昆蟲與蛙類總族群量體感約增加 14%。', costExecNote: '全園維持草生植被覆蓋，僅於採收動線進行重點割草，減少化肥與農藥依賴。', yieldEduExecNote: '無毒檸檬果品深獲友善通路肯定，並逐步開展果園生態走讀體驗。', stakeholderQuote: '「全園草生栽培初期最怕雜草搶肥與病蟲害摸索期，但在微棲地天敵生態系建立後，領角鴞與瓢蟲成了果園最好的守護者。透過SROI自主記帳，我們第一次清楚算出友善農法對農民自身健康與水土保持的真實價值。」—— 阿爾喜農場主與導覽員', negTransitionCost: 4200, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 9500, convPesticideCost: 9000, convOtherCost: 3000, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1500, yield2026: 1650, cropPrice: 45, eduBase: 40000, eduCurr: 68000, recordCheck: true },
+            { id: 4, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '明揚養蜂', crops: '蜂蜜、酪梨', areaHa: 1.0, areaDesc: '約 1.0 公頃（無毒蜜源與果園複合區）', speciesDesc: '6種（含中華蜜蜂、熊蜂、食蟹獴、樹蛙等）', certDesc: '無毒蜜源棲地驗證', routeDesc: '完成蜜源與授粉生態導覽路線 1 條', ecoObsNote: '營造無毒蜜源植物帶與水源微棲地後，野蜂與授粉昆蟲訪花密度明顯提升，且周邊食蟹獴與樹蛙出現頻率增加，整體生物族群量體感提升約 20%。', costExecNote: '為保護授粉蜂群全面禁用殺蟲劑與除草劑，營造四季蜜源綠籬。', yieldEduExecNote: '蜂蜜與酪梨授粉著果雙雙受惠，並辦理蜜蜂生態環境教育活動。', stakeholderQuote: '「蜜蜂對農藥極度敏感，營造無毒蜜源綠籬與水源棲地雖然在初期需要額外投入人工撫育與除草工時，卻讓蜂群授粉率與蜂蜜品質大幅提升，也吸引許多親子與企業團體來體驗蜜蜂生態導覽。」—— 明揚養蜂農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 120, convHerbicideCost: 10000, convPesticideCost: 8000, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 3500, ecoOtherCost: 2000, ecoMaintCost: 3000, oldCost2025: 25000, newCost2025: 15000, yieldBase: 800, yield2026: 880, cropPrice: 120, eduBase: 45000, eduCurr: 72000, recordCheck: true },
+            { id: 5, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '雨社山下', crops: '絲瓜、蓮霧', areaHa: 0.8, areaDesc: '約 0.8 公頃（雨社山麓友善耕作區）', speciesDesc: '6種（含穿山甲、白鼻心、盤古蟾蜍等）', certDesc: '友善無毒耕作', routeDesc: '完成里山步道與棲地導覽路線 1 條', ecoObsNote: '田間保留石積與草生緩衝帶，農作期間體感觀察盤古蟾蜍與地表天敵昆蟲數量穩定上升約 12%，山麓邊坡偶見穿山甲與白鼻心覓食痕跡，棲地連結度良好。', costExecNote: '採用套袋與物理誘捕取代化學噴藥，維持石積與草生緩衝帶。', yieldEduExecNote: '里山步道走讀結合食農體驗，有效分散單一農產市場拍賣價波動風險。', stakeholderQuote: '「過去單靠販售絲瓜與蓮霧常受拍賣市場價格起伏影響，自從跟隨團隊完成里山步道與微棲地導覽培訓後，我們開始接待生態走讀遊客，即使扣除轉型初期的套袋與人工除草隱形成本，整體經營韌性仍顯著提升。」—— 雨社山下農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1100, yield2026: 1210, cropPrice: 55, eduBase: 35000, eduCurr: 56000, recordCheck: true }
         ];
 
         const EXPANDED_4_FARMS_2026 = [
-            { id: 6, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '里山夥伴農場 A', crops: '山蕉、梅子', areaHa: 0.9, areaDesc: '約 0.9 公頃', speciesDesc: '5種', certDesc: '友善耕作', routeDesc: '導覽路線 1 條', ecoObsNote: '長期農作體感觀測原生鳥類與蛙類族群穩定增加約 12%。', costExecNote: '全面採用機械草生除草。', yieldEduExecNote: '結合農產體驗活動。', stakeholderQuote: '「加入擴編團隊後，縮短了草生栽培摸索期，園區鳥類與蛙類明顯增加。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 40, eduBase: 30000, eduCurr: 48000, recordCheck: true },
-            { id: 7, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '里山夥伴農場 B', crops: '苦茶油、柑橘', areaHa: 1.0, areaDesc: '約 1.0 公頃', speciesDesc: '5種', certDesc: '草生栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '苦茶園採草生管理，體感觀測授粉昆蟲成長約 14%。', costExecNote: '減藥管理與草生護土。', yieldEduExecNote: '辦理苦茶油食農工作坊。', stakeholderQuote: '「結合食農教育體驗後，消費者更認同我們保護土地的理念。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 45, eduBase: 30000, eduCurr: 50000, recordCheck: true },
-            { id: 8, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '里山夥伴農場 C', crops: '高山茶、筍', areaHa: 0.7, areaDesc: '約 0.7 公頃', speciesDesc: '5種', certDesc: '友善茶園', routeDesc: '導覽路線 1 條', ecoObsNote: '竹林與茶園交界微棲地完整，山鳥活動量增加約 10%。', costExecNote: '保留綠籬天敵抑制害蟲。', yieldEduExecNote: '生態茶席體驗成長。', stakeholderQuote: '「保留微棲地後，天敵昆蟲幫助抑制了茶園害蟲。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 700, yield2026: 770, cropPrice: 60, eduBase: 25000, eduCurr: 42000, recordCheck: true },
-            { id: 9, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, password: String(545366), selected: true, name: '里山夥伴農場 D', crops: '咖啡、香草', areaHa: 0.8, areaDesc: '約 0.8 公頃', speciesDesc: '4種', certDesc: '無毒栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '複合林下棲地穩定，觀察蝶類與蜂群數量提升約 10%。', costExecNote: '林下草生與有機資材管理。', yieldEduExecNote: '香草咖啡莊園導覽。', stakeholderQuote: '「複合式林下栽培結合香草生態導覽，成為具備多元收入韌性的里山教室。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 3, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 4, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 600, yield2026: 660, cropPrice: 70, eduBase: 25000, eduCurr: 45000, recordCheck: true }
+            { id: 6, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 A', crops: '山蕉、梅子', areaHa: 0.9, areaDesc: '約 0.9 公頃', speciesDesc: '5種', certDesc: '友善耕作', routeDesc: '導覽路線 1 條', ecoObsNote: '長期農作體感觀測原生鳥類與蛙類族群穩定增加約 12%。', costExecNote: '全面採用機械草生除草。', yieldEduExecNote: '結合農產體驗活動。', stakeholderQuote: '「加入擴編團隊後，縮短了草生栽培摸索期，園區鳥類與蛙類明顯增加。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 40, eduBase: 30000, eduCurr: 48000, recordCheck: true },
+            { id: 7, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 B', crops: '苦茶油、柑橘', areaHa: 1.0, areaDesc: '約 1.0 公頃', speciesDesc: '5種', certDesc: '草生栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '苦茶園採草生管理，體感觀測授粉昆蟲成長約 14%。', costExecNote: '減藥管理與草生護土。', yieldEduExecNote: '辦理苦茶油食農工作坊。', stakeholderQuote: '「結合食農教育體驗後，消費者更認同我們保護土地的理念。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 45, eduBase: 30000, eduCurr: 50000, recordCheck: true },
+            { id: 8, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 C', crops: '高山茶、筍', areaHa: 0.7, areaDesc: '約 0.7 公頃', speciesDesc: '5種', certDesc: '友善茶園', routeDesc: '導覽路線 1 條', ecoObsNote: '竹林與茶園交界微棲地完整，山鳥活動量增加約 10%。', costExecNote: '保留綠籬天敵抑制害蟲。', yieldEduExecNote: '生態茶席體驗成長。', stakeholderQuote: '「保留微棲地後，天敵昆蟲幫助抑制了茶園害蟲。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 700, yield2026: 770, cropPrice: 60, eduBase: 25000, eduCurr: 42000, recordCheck: true },
+            { id: 9, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 D', crops: '咖啡、香草', areaHa: 0.8, areaDesc: '約 0.8 公頃', speciesDesc: '4種', certDesc: '無毒栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '複合林下棲地穩定，觀察蝶類與蜂群數量提升約 10%。', costExecNote: '林下草生與有機資材管理。', yieldEduExecNote: '香草咖啡莊園導覽。', stakeholderQuote: '「複合式林下栽培結合香草生態導覽，成為具備多元收入韌性的里山教室。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 3, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 4, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 600, yield2026: 660, cropPrice: 70, eduBase: 25000, eduCurr: 45000, recordCheck: true }
         ];
 
         let farmsData = JSON.parse(JSON.stringify(DEFAULT_5_FARMS));
@@ -1491,6 +1509,8 @@
                 name: '水里里山餐桌團隊',
                 investType: '計畫投入',
                 investTypeOther: '',
+                isCompleted: true,
+                lastSavedDate: '2026/11/12',
                 overviewNote: '水里里山生態廊道透過微棲地營造、減藥管理與導覽培力，串聯在地農友共創自然正向價值與經營韌性。',
                 guidanceTitle: '指導單位：臺大。山林。學院 2.0',
                 execPeriod: '2025/01/01 ~ 2026/10/31',
@@ -1963,6 +1983,7 @@
                         name, crops, teamId, areaDesc, certDesc, speciesDesc, routeDesc, ecoObsNote,
                         water, land, species, bioIndexPrev: 100, bioIndexCurr: 100 + bioPct,
                         oldCost2025: oldCost, newCost2025: newCost,
+                        isCompleted: true, lastSavedDate: getFormattedToday(),
                         convHerbicideCost: Math.round(oldCost * 0.5), convPesticideCost: oldCost - Math.round(oldCost * 0.5),
                         convOtherCost: 0, convMaintCost: 0,
                         ecoWeedingCost: Math.round(newCost * 0.55), ecoMaterialCost: newCost - Math.round(newCost * 0.55),
@@ -1974,6 +1995,7 @@
                 const newId = Date.now();
                 targetFarmObj = {
                     id: newId, teamId, investType: '計畫投入', investTypeOther: '', habBaseLocked: true,
+                    isCompleted: true, lastSavedDate: getFormattedToday(),
                     password: String(545366), selected: true, name, crops, areaHa: 1.0,
                     areaDesc, speciesDesc, certDesc, routeDesc, ecoObsNote,
                     costExecNote: '採用草生栽培與友善生物防治資材。',
@@ -2163,13 +2185,26 @@
 
             if (pendingPublishTarget === 'farm' && pendingPublishEntityId) {
                 const farm = farmsData.find(f => f.id === pendingPublishEntityId);
-                if (farm && newPwd) {
-                    farm.password = newPwd;
+                if (farm) {
+                    farm.isCompleted = true;
+                    farm.lastSavedDate = getFormattedToday();
+                    if (newPwd) farm.password = newPwd;
                 }
-            } else if (newPwd) {
-                systemLockPassword = newPwd;
+            } else {
+                const todayStr = getFormattedToday();
                 const activeTeam = getActiveTeamObj();
-                if (activeTeam) activeTeam.password = newPwd;
+                if (activeTeam) {
+                    activeTeam.isCompleted = true;
+                    activeTeam.lastSavedDate = todayStr;
+                    if (newPwd) activeTeam.password = newPwd;
+                }
+                farmsData.forEach(f => {
+                    if (f.selected) {
+                        f.isCompleted = true;
+                        f.lastSavedDate = todayStr;
+                    }
+                });
+                if (newPwd) systemLockPassword = newPwd;
             }
 
             refreshPublishedBoardRecords();
@@ -2245,11 +2280,11 @@
             let savedTeamObj = null;
             if (editingTeamId) {
                 const t = getActiveTeamObj();
-                Object.assign(t, { name, guidanceTitle, investType, investTypeOther, overviewNote, execPeriod, keyOutputs, projectInput, habitatGrantPerFarm, maintGrantPerFarm, farmIds: selectedIds });
+                Object.assign(t, { name, guidanceTitle, investType, investTypeOther, overviewNote, execPeriod, keyOutputs, projectInput, habitatGrantPerFarm, maintGrantPerFarm, farmIds: selectedIds, isCompleted: true, lastSavedDate: getFormattedToday() });
                 savedTeamObj = t;
             } else {
                 const newTeamId = 'team_' + Date.now();
-                savedTeamObj = { id: newTeamId, password: String(545366), name, guidanceTitle, investType, investTypeOther, overviewNote, execPeriod, keyOutputs, projectInput, habitatGrantPerFarm, maintGrantPerFarm, farmIds: selectedIds };
+                savedTeamObj = { id: newTeamId, password: String(545366), name, guidanceTitle, investType, investTypeOther, overviewNote, execPeriod, keyOutputs, projectInput, habitatGrantPerFarm, maintGrantPerFarm, farmIds: selectedIds, isCompleted: true, lastSavedDate: getFormattedToday() };
                 teamsData.push(savedTeamObj);
                 activeTeamId = newTeamId;
             }
@@ -2853,7 +2888,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width:16%;">農場名稱与面積</th>
+                                <th style="width:16%;">農場名稱與面積</th>
                                 <th class="num-col" style="width:18%;">(S) 共同培訓應用</th>
                                 <th class="num-col" style="width:22%;">(E-1) 林業署場域面積定價<br><span style="font-size:9.5px;font-weight:normal;">(依面積定價×棲地保留率)</span></th>
                                 <th class="num-col" style="width:22%;">(E-2) 獨立棲地生物觀測<br><span style="font-size:9.5px;font-weight:normal;">(物種與數量增減×棲地保留率)</span></th>
@@ -2943,6 +2978,51 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <h2>七、 附錄：水里里山生態廊道 SROI 社會價值評估方法論版本全文（2025 V3.0 基期賦能版 ＆ 2026 V4.2 農務實證與林業署法規對標版）</h2>
+                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:16px 18px; font-size:11.5px; color:#1e293b; line-height:1.75; space-y:10px;">
+                        <p style="font-weight:900; color:#0f4c3a; font-size:13.5px; margin-bottom:6px;">
+                            📜 附錄全文說明：本章節完整收錄水里里山生態廊道計畫核定之 SROI 社會價值評估方法論全文（當前報告鎖定套用版本：${ver}｜核定存檔日期：${m.activeTeam.lastSavedDate || today}），作為第三方查證確信與企業 ESG 盡職調查之正式規範依據。
+                        </p>
+
+                        <h3 style="margin-top:10px; color:#0f4c3a;">【壹、 方法論核心精神與防範漂綠雙重防線】</h3>
+                        <p>
+                            本方法論由「水里里山生態廊道－教育部推動大學社會責任實踐計畫『臺大。山林。學院 2.0』」制定，遵循國際社會價值標準（Social Value International, SVI）之八大原則（特別針對 Principle 4 僅納入重大性項目、Principle 5 不誇大宣稱 Do not overclaim、Principle 6 透明公開 Be transparent）。為解決傳統環境公益活動缺乏量化依據之痛點，本方法論建立三大誠信治理防線：<br>
+                            1. <strong>資源共享、效益按實證比例落地並設法規上限（元/場）：</strong>團隊共同培訓經費（預設 $70,000 元）於投入端為團隊共享資源，避免重複累加分母；於成果端則依各農場實際受訓人數（50%）、合格導覽員數（35%）與導覽路線數（15%）按比例核算落地應用價值，且單一農場最高不得超過 <strong>$70,000 元/場</strong> 之法定上限。<br>
+                            2. <strong>場域面積定價與生物物種／族群數量觀測完全分離（Stock & Flow 分離評估）：</strong>徹底解除過往將生物觀測百分比直接乘算於棲地基數之交互膨脹風險，將環境資本拆分為獨立的「(E-1) 農業部林業署生態服務給付基準之場域面積與微棲地定價」與「(E-2) 獨立之棲地生物物種數及族群數量體感增減 (%) 評估」，兩者各自受「元/場」法規上限封頂，再分別乘以棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%)$。<br>
+                            3. <strong>嚴格劃分 SROI 財務計算與第五章專章揭露邊界：</strong>SROI 財務計算僅納入「(S) 共同培訓應用」、「(E-1) 林業署場域面積定價」、「(E-2) 獨立生物物種與數量體感觀測 (%)」、「(G) 農務實證成本差額與農產產量成長率 (%)」四大實證項目；其餘教育活動成長率 (%)、涵養水源、土壤碳匯、農民健康風險降低、土壤沖刷防治、市場價格波動韌性評估與農友各項執行狀況說明附言，一律列為第五章「專章揭露事項（不列入 SROI 財務計算）」，100% 杜絕重複計價（Double Counting）。
+                        </p>
+
+                        <h3 style="margin-top:12px; color:#0f4c3a;">【貳、 2025 年度 (V3.0) 基期賦能方法論全文（第一年基準鎖定）】</h3>
+                        <p>
+                            1. <strong>2025 基期總投入成本 ($I_{\text{2025}}$)：</strong>$I_{\text{2025}} = C_{\text{training (共同培訓 \$70,000)}} + (N_{\text{farms}} \times C_{\text{build (單場棲地建置補助 \$10,000 元/場)}})$。<br>
+                            2. <strong>2025 基期三大成果衡量基準：</strong><br>
+                            • <strong>(S) 人力資本賦能：</strong>完成微棲地盤點、減藥管理、生態導覽與 SROI 記帳培訓，單場應用價值上限 $70,000 元/場。<br>
+                            • <strong>(E) 微棲地與生態基期盤點：</strong>建立各農場基期水域微棲地（生態池、草溝）與陸域微棲地（石積、枯木堆、原生綠籬）處數及基期物種數（設定基期生物族群數量觀測基準為 100%），完成鎖定後作為後續年度正向變動之比較基準。<br>
+                            • <strong>(G) 農務生產管理基期成本【A】：</strong>盤點並鎖定 2025 基期總成本【A】與基期農產產量 (kg)，作為跨年度淨效益對照基準。
+                        </p>
+
+                        <h3 style="margin-top:12px; color:#0f4c3a;">【參、 2026 年度 (V4.2) 行為改變實證與林業署二階段法規對標方法論全文】</h3>
+                        <p>
+                            進入第二年度（2026 V4.2）及後續跨年度（2027+ V5.0），硬體建置成本不重疊申報，僅計算當期棲地維護輔導費（預設 $2,000 元/場）與共同培訓投入，並依農場主輸入之實證數據按以下四大公式核算：<br>
+                            1. <strong>(S) 共同培訓各場落地應用價值 ($V_{\text{S}}$)：</strong><br>
+                            $$V_{\text{S, 淨值}} = \sum_{i=1}^{N} \min\Big( \$70,000 \times \big[0.50 \times \tfrac{\text{受訓人數}_i}{3} + 0.35 \times \tfrac{\text{導覽員數}_i}{2} + 0.15 \times \tfrac{\text{路線數}_i}{1}\big], \; \$70,000\text{ 元/場} \Big) \times (1 - \text{DW}_{\text{S}}\% - \text{Attr}_{\text{S}}\%)$$<br>
+                            2. <strong>(E-1) 場域面積與微棲地定價（依農業部林業及自然保育署《瀕危物種及重要棲地生態服務給付推動方案》基準法，上限單位：元/場）：</strong><br>
+                            • <strong>友善農地場域面積核算：</strong>依農場實際友善耕作面積（公頃）× <strong>$30,000 元/公頃</strong>（林業署友善農地生態薪水基準，每場最高 5 公頃 = <strong>$150,000 元/場</strong>）。<br>
+                            • <strong>水陸微棲地協力維護費：</strong>依水陸微棲地設施核算，受林業署棲地營造維護法規上限（預設 <strong>$20,000 元/場</strong>）封頂。<br>
+                            • <strong>單場場域定價法定上限封頂與保留率計算：</strong>兩者加總受<strong>「單場場域定價法定上限（預設 $150,000 元/場）」</strong>封頂，再乘以<strong>棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%)$</strong>（團隊彙整預設扣除 80% 自然背景無謂影響與 10% 外部歸因，淨保留率 10%；單場獨立評估預設淨保留率 60%）。<br>
+                            3. <strong>(E-2) 獨立之「棲地生物觀測（生物物種數 & 生物族群數量增減 %）」評估（與場域定價完全分開，上限單位：元/場）：</strong><br>
+                            • 對標林業署方案第二階段「自主生態觀察與巡護監測獎勵金（法定上限 <strong>$60,000 元/場</strong>）」，單獨針對農友日常農作觀察之新物種及原生生物總族群量增減進行獨立核算：<br>
+                            $$V_{\text{E2, 淨值}} = \sum_{i=1}^{N} \min\Big( \big[(S_{\text{當期},i} \times \$3,500) + (\Delta S_{\text{物種增減},i} \times \$3,500)\big] \times \big(1 + \min(\text{生物數量增減}\%_i, +25\%)\big), \; \$60,000\text{ 元/場} \Big) \times (1 - \text{無謂影響}\% - \text{歸因}\%)$$<br>
+                            4. <strong>(G) 農務實證與農產產量成長率 (%) 淨效益 ($V_{\text{G}}$，上限單位：元/場）：</strong><br>
+                            • 結合「【A】過去基期總成本 - 【B】當期生態農法成本」之實證節省差額，以及「農產產量成長率 (%)（認列上限最高 +25%）」之生產效益，單場毛值總上限不得超過該農場之【A】過去基期總成本（元/場），再乘以農務管理保留率 $(1 - \text{DW}_{\text{G}}\% - \text{Attr}_{\text{G}}\% = 70\%)$。
+                        </p>
+
+                        <h3 style="margin-top:12px; color:#0f4c3a;">【肆、 影響力期程 (Duration)、跨年衰減率 (Drop-off) 與敏感度壓力測試結論】</h3>
+                        <p>
+                            本專案基礎執行期程為 22 個月（2025/01/01 ~ 2026/10/31），營造之微棲地與導覽路線具備 3～5 年之持續存續效益（預設跨年衰減率 Drop-off 為每年遞減 15%）。經敏感度壓力測試：若將環境生態毛價值全面下修 20%，SROI 仍達 <strong>1 : ${sroiEcoMinus20}</strong>；若將轉型初期隱形耗損全額自農務管理構面扣除，SROI 仍達 <strong>1 : ${sroiDoubleNeg}</strong>，證實本方法論具備極高之抗風險能力與審計嚴謹度。
+                        </p>
+                    </div>
                 </div>
             `;
 
@@ -3474,8 +3554,13 @@
             mainMesh.position.set(0, 0.45, 0);
             cIslandsGroup.add(mainMesh);
 
+            const teamSaveDate = team.lastSavedDate || getFormattedToday();
+            const teamStatusBadge = team.isCompleted !== false
+                ? `<span class="bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 text-[8.5px] font-black px-1.5 py-0.5 rounded">✅ 已完成｜存檔：${teamSaveDate}</span>`
+                : `<span class="bg-amber-500/25 text-amber-300 text-[8.5px] font-black px-1.5 py-0.5 rounded">⏳ 待核定存檔</span>`;
+
             const mainEl = document.createElement('div');
-            mainEl.className = 'cloud-island-label bg-slate-900/95 text-white px-3 py-2 rounded-2xl border-2 border-amber-400 shadow-2xl min-w-[215px]';
+            mainEl.className = 'cloud-island-label bg-slate-900/95 text-white px-3 py-2 rounded-2xl border-2 border-amber-400 shadow-2xl min-w-[225px]';
             mainEl.innerHTML = `
                 <div class="flex justify-between items-center gap-2 border-b border-emerald-700 pb-0.5 mb-0.5">
                     <span class="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">🏝️ ${teamInvestLabel} (${m.nFarms}場/${m.totalTrainees}人)</span>
@@ -3484,6 +3569,9 @@
                 <div class="text-xs font-black text-white truncate">${team.name}</div>
                 <div class="text-[9.5px] text-emerald-300 truncate">${team.guidanceTitle}</div>
                 <div class="text-[9.5px] text-slate-300 truncate">農產：${cropsStr}</div>
+                <div class="mt-1 flex justify-between items-center">
+                    ${teamStatusBadge}
+                </div>
                 <div class="mt-0.5 pt-0.5 border-t border-emerald-800 flex justify-between items-baseline">
                     <span class="text-[9.5px] text-amber-200 font-bold">核定 SROI</span>
                     <span class="text-sm font-black text-amber-400">1 : ${m.sroiRatio}</span>
@@ -3516,8 +3604,12 @@
 
                 const sroiVal = computeSingleFarmOfficialSroi(f);
                 const fInvestLabel = getInvestBadgeText(f);
+                const fSaveDate = f.lastSavedDate || team.lastSavedDate || getFormattedToday();
+                const fStatusBadge = f.isCompleted !== false
+                    ? `<span class="text-[8.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-black">✅ 已完成｜${fSaveDate}</span>`
+                    : `<span class="text-[8.5px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-bold">⏳ 填報中</span>`;
                 const subEl = document.createElement('div');
-                subEl.className = 'cloud-island-label bg-white/95 text-slate-800 px-2.5 py-1.5 rounded-xl border-2 border-emerald-500 shadow-lg min-w-[170px]';
+                subEl.className = 'cloud-island-label bg-white/95 text-slate-800 px-2.5 py-1.5 rounded-xl border-2 border-emerald-500 shadow-lg min-w-[180px]';
                 subEl.innerHTML = `
                     <div class="flex justify-between items-center gap-1 border-b border-slate-100 pb-0.5">
                         <span class="bg-emerald-700 text-white text-[8.5px] font-black px-1.5 py-0.5 rounded">🌱 ${fInvestLabel} #${idx + 1}</span>
@@ -3525,6 +3617,9 @@
                     </div>
                     <div class="text-xs font-black text-satoyama-dark truncate">${f.name}</div>
                     <div class="text-[9.5px] text-emerald-800 font-bold truncate">農產：${f.crops}</div>
+                    <div class="mt-0.5 flex justify-between items-center">
+                        ${fStatusBadge}
+                    </div>
                     <div class="mt-0.5 pt-0.5 border-t border-slate-100 flex justify-between items-baseline">
                         <span class="text-[9px] text-slate-500 font-bold">SROI</span>
                         <span class="text-xs font-black text-satoyama-main">1 : ${sroiVal}</span>
@@ -3587,6 +3682,7 @@
             if (pwdBox) pwdBox.classList.add('hidden');
             if (pwdInput) pwdInput.value = '';
             if (type === 'team') {
+                const tSaveDate = team.lastSavedDate || getFormattedToday();
                 document.getElementById('cDrawerBadge').innerText = `🏝️ ${getInvestBadgeText(team)} (專案主島)`;
                 document.getElementById('cDrawerTitle').innerText = team.name;
                 document.getElementById('cDrawerPartner').innerText = team.guidanceTitle;
@@ -3595,12 +3691,16 @@
                 document.getElementById('cDrawerName').innerText = `${team.name} (${getInvestBadgeText(team)})`;
                 document.getElementById('cDrawerCoop').innerText = team.guidanceTitle;
                 document.getElementById('cDrawerCrops').innerText = m.activeFarms.map(f => f.crops).join('、');
+                if (document.getElementById('cDrawerSaveStatus')) {
+                    document.getElementById('cDrawerSaveStatus').innerText = `✅ 已完成核定 (存檔：${tSaveDate})`;
+                }
                 document.getElementById('cDrawerSroi').innerText = `1 : ${m.sroiRatio}`;
                 if (document.getElementById('cDrawerOverviewNote')) {
                     document.getElementById('cDrawerOverviewNote').innerText = team.overviewNote || '尚無總覽附言';
                 }
             } else {
                 const f = farmsData.find(x => x.id === id) || farmsData[0];
+                const fSaveDate = f.lastSavedDate || team.lastSavedDate || getFormattedToday();
                 document.getElementById('cDrawerBadge').innerText = `🌱 ${getInvestBadgeText(f)} (農場小島)`;
                 document.getElementById('cDrawerTitle').innerText = f.name;
                 document.getElementById('cDrawerPartner').innerText = team.guidanceTitle;
@@ -3609,6 +3709,9 @@
                 document.getElementById('cDrawerName').innerText = `${f.name} (${getInvestBadgeText(f)})`;
                 document.getElementById('cDrawerCoop').innerText = team.guidanceTitle;
                 document.getElementById('cDrawerCrops').innerText = f.crops;
+                if (document.getElementById('cDrawerSaveStatus')) {
+                    document.getElementById('cDrawerSaveStatus').innerText = `✅ 已完成核定 (存檔：${fSaveDate})`;
+                }
                 document.getElementById('cDrawerSroi').innerText = `1 : ${computeSingleFarmOfficialSroi(f)}`;
                 if (document.getElementById('cDrawerOverviewNote')) {
                     document.getElementById('cDrawerOverviewNote').innerText = f.ecoObsNote || team.overviewNote || '尚無附言';
@@ -3655,23 +3758,19 @@
         }
 
         function cloudDrawerActionB() {
-            requirePasswordForAction('觀看專屬 SROI 報告書', '開啟與檢視報告書需輸入授權密碼驗證：', () => {
-                if (cSelectedTarget.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
-                else selectTeamFromBanner(cSelectedTarget.id);
-                document.getElementById('cloudIslandSideDrawer')?.classList.add('translate-x-full');
-                expandWorkbenchFrom3D('report_only');
-                showToast('📄 已展開專屬 SROI 報告書預覽');
-            });
+            if (cSelectedTarget.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
+            else selectTeamFromBanner(cSelectedTarget.id);
+            document.getElementById('cloudIslandSideDrawer')?.classList.add('translate-x-full');
+            expandWorkbenchFrom3D('report_only');
+            showToast('📄 已展開專屬 SROI 報告書預覽（免密碼閱覽）');
         }
 
         function cloudDrawerActionC() {
-            requirePasswordForAction('觀看完整視覺化看板與圖卡', '開啟視覺化看板與圖卡需輸入授權密碼驗證：', () => {
-                if (cSelectedTarget.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
-                else selectTeamFromBanner(cSelectedTarget.id);
-                document.getElementById('cloudIslandSideDrawer')?.classList.add('translate-x-full');
-                expandWorkbenchFrom3D('cards_only');
-                showToast('📊 已展開完整視覺化看板與圖卡');
-            });
+            if (cSelectedTarget.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
+            else selectTeamFromBanner(cSelectedTarget.id);
+            document.getElementById('cloudIslandSideDrawer')?.classList.add('translate-x-full');
+            expandWorkbenchFrom3D('cards_only');
+            showToast('📊 已展開完整視覺化看板與圖卡（免密碼閱覽）');
         }
         // ==========================================
         // EXPORTS (.JSON, .DOC, .PDF, .PNG, QR) — ALL PASSWORD PROTECTED
@@ -3821,16 +3920,27 @@
             }, 3400);
         }
 
+        function toggleCloud3DHeroCollapse() {
+            const hero = document.getElementById('cloud-3d-hero-section');
+            const icon = document.getElementById('cloudHeroCollapseIcon');
+            const txt = document.getElementById('cloudHeroCollapseText');
+            if (!hero) return;
+            hero.classList.toggle('island-hero-collapsed');
+            const isCollapsed = hero.classList.contains('island-hero-collapsed');
+            if (icon) icon.className = isCollapsed ? 'fas fa-expand-arrows-alt' : 'fas fa-compress-arrows-alt';
+            if (txt) txt.innerText = isCollapsed ? '展開 3D 群島' : '收合群島高度';
+        }
+
         function copyCloudEmbedCode() {
             const url = window.location.href.split('?')[0] + '?embed=3d';
-            const code = `<iframe src="${url}" width="100%" height="560" style="border:0;border-radius:16px;overflow:hidden;" allowfullscreen></iframe>`;
+            const code = `<!-- 水里里山生態廊道 3D 群島 SROI 互動看板 (支援收合與捲動) -->\n<details open style="width:100%; border:2px solid #10b981; border-radius:16px; background:#0f172a; overflow:hidden; margin:12px 0;">\n  <summary style="cursor:pointer; padding:10px 16px; color:#ecfdf5; font-weight:bold; font-size:14px; background:#0f4c3a; user-select:none;">🏝️ 點擊展開／收合：水里里山生態廊道 3D SROI 視覺化群島看板（內建捲動檢視報告）</summary>\n  <div style="width:100%; max-height:85vh; overflow-y:auto; -webkit-overflow-scrolling:touch;">\n    <iframe src="${url}" width="100%" height="780" scrolling="yes" style="border:0; width:100%; min-height:560px; display:block; overflow-y:auto;" allowfullscreen></iframe>\n  </div>\n</details>`;
             const t = document.createElement('textarea');
             t.value = code;
             document.body.appendChild(t);
             t.select();
             document.execCommand('copy');
             document.body.removeChild(t);
-            showToast('已複製 3D 群島外部網頁嵌入 (iframe) 語法！');
+            showToast('已複製支援「收合與上下捲動」之 3D 群島 iframe 嵌入語法！');
         }
 
         function openQrShareModal() {
