@@ -136,6 +136,34 @@
             transform: translate(-50%, -105%) scale(1.04);
             z-index: 30;
         }
+        .locked-gradient-shield {
+            position: relative;
+            overflow: hidden;
+        }
+        .locked-gradient-shield::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(15, 76, 58, 0.14) 0%, rgba(245, 158, 11, 0.18) 50%, rgba(2, 132, 199, 0.14) 100%);
+            pointer-events: none;
+            z-index: 10;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.55);
+        }
+        .locked-baseline-shield {
+            position: relative;
+            overflow: hidden;
+        }
+        .locked-baseline-shield::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.15) 0%, rgba(16, 185, 129, 0.15) 55%, rgba(15, 23, 42, 0.12) 100%);
+            pointer-events: none;
+            z-index: 10;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.6);
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -374,6 +402,32 @@
         <!-- LEFT COLUMN: Controls, Parameters & Farm Cards (5 Cols) -->
         <div id="leftInputPanelCol" class="lg:col-span-5 space-y-4">
 
+            <!-- 1. Evaluation Mode Switcher (2025 V3.0 / 2026 V4.2 / 2027+) -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h3 class="text-sm font-black text-satoyama-dark flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-satoyama-dark text-white text-[11px] flex items-center justify-center">1</span>
+                        評估年度與方法論模式切換（無預設範本覆蓋）
+                    </h3>
+                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">切換時保留鎖定基準</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setMethodMode('2025')" id="modeBtn2025" class="py-2 px-2.5 rounded-xl text-xs font-black border transition text-center bg-satoyama-dark text-white border-satoyama-dark shadow">
+                        2025 (V3.0)<br><span class="text-[9.5px] font-normal opacity-85">基期賦能核定版</span>
+                    </button>
+                    <button onclick="setMethodMode('2026')" id="modeBtn2026" class="py-2 px-2.5 rounded-xl text-xs font-black border transition text-center bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
+                        2026 (V4.2)<br><span class="text-[9.5px] font-normal opacity-85">林業署基準與農務實證</span>
+                    </button>
+                    <button onclick="setMethodMode('annual')" id="modeBtnAnnual" class="py-2 px-2.5 rounded-xl text-xs font-black border transition text-center bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
+                        2027+ 跨年<br><span class="text-[9.5px] font-normal opacity-85">長期存續永續年報</span>
+                    </button>
+                </div>
+                <div id="annualYearConfigBox" class="hidden bg-amber-50/80 p-2.5 rounded-xl border border-amber-200 flex items-center justify-between text-xs">
+                    <span class="font-bold text-amber-950"><i class="fas fa-calendar-check mr-1"></i>設定目標跨年評估年度：</span>
+                    <input type="number" value="2027" min="2027" max="2035" onchange="targetEvalYear=parseInt(this.value,10)||2027; recalculateAll();" class="clean-num-input w-24 bg-white border border-amber-400 rounded-lg px-2 py-1 font-black text-center text-amber-950">
+                </div>
+            </div>
+
             <!-- 2. Team & Farm Scope Selection -->
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
                 <div class="flex justify-between items-center border-b pb-2">
@@ -544,117 +598,125 @@
                     <input type="checkbox" id="paramIncludeProdCostInInput">
                 </div>
 
-                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
-                    <label class="font-bold text-slate-700 block text-[11px]">🌲 (E-1) 農業部林業署生態服務給付基準法 — 場域面積定價與法定上限（元/場）設定：</label>
-                    <select id="paramHabitatPricingMode" onchange="toggleHabitatPricingInputs(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 text-[11px]">
-                        <option value="unified" selected>林業署基準法 A：依場域面積核算（$30,000/公頃）＋ 微棲地協力維護費，受「單場法定上限（元/場）」封頂</option>
-                        <option value="split">林業署基準法 B：場域面積核算 ＋ 水陸微棲地分項維護費，受「單場法定上限（元/場）」封頂</option>
-                    </select>
-                    <div id="unifiedPricingConfigBox" class="grid grid-cols-3 gap-2 pt-1">
-                        <div class="bg-white p-2 rounded-lg border border-emerald-200">
-                            <span class="text-[9.5px] text-emerald-900 block font-bold">友善農地面積核算基準 (元/公頃)</span>
-                            <input type="number" id="paramUnifiedAreaRate" value="30000" step="1000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black mt-0.5">
-                        </div>
-                        <div class="bg-white p-2 rounded-lg border border-sky-200">
-                            <span class="text-[9.5px] text-sky-900 block font-bold">微棲地維護法規上限 (元/場)</span>
-                            <input type="number" id="paramUnifiedHabitatUnit" value="20000" step="1000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black mt-0.5">
-                        </div>
-                        <div class="bg-white p-2 rounded-lg border border-rose-300">
-                            <span class="text-[9.5px] text-rose-900 block font-bold">🚨 單場場域定價法定上限 (元/場)</span>
-                            <input type="number" id="paramFieldEcoCap" value="150000" step="5000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-rose-800 mt-0.5">
-                        </div>
+                <!-- Lockable Financial Proxy Parameters Wrapper (Covered with gradient when locked) -->
+                <div id="financialProxiesLockableWrapper" class="space-y-3 rounded-xl p-1 transition-all duration-300">
+                    <div id="proxyLockedGradientBanner" class="hidden bg-gradient-to-r from-amber-500/25 via-emerald-600/20 to-sky-600/25 border border-amber-400 rounded-xl px-3 py-2 text-[11px] font-black text-amber-950 flex items-center justify-between">
+                        <span><i class="fas fa-lock text-amber-600 mr-1.5"></i>財務代理定價已鎖定並套用全團隊（漸層保護中，除非開鎖否則不會復原預設）</span>
+                        <span class="bg-amber-500 text-slate-950 px-2 py-0.5 rounded text-[10px]">LOCKED</span>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-3 gap-2 bg-amber-50/60 p-2.5 rounded-xl border border-amber-200">
-                    <div>
-                        <label class="text-[10px] font-bold text-emerald-900 block">🦋 (E-2) 獨立生物物種基準 (元/種)</label>
-                        <input type="number" id="paramSpeciesEcoProxy" value="3500" step="500" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border rounded-lg px-2 py-1 font-black mt-0.5">
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
+                        <label class="font-bold text-slate-700 block text-[11px]">🌲 (E-1) 農業部林業署生態服務給付基準法 — 場域面積定價與法定上限（元/場）設定：</label>
+                        <select id="paramHabitatPricingMode" onchange="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800 text-[11px]">
+                            <option value="unified" selected>林業署基準法 A：依場域面積核算（$30,000/公頃）＋ 微棲地協力維護費，受「單場法定上限（元/場）」封頂</option>
+                            <option value="split">林業署基準法 B：場域面積核算 ＋ 水陸微棲地分項維護費，受「單場法定上限（元/場）」封頂</option>
+                        </select>
+                        <div id="unifiedPricingConfigBox" class="grid grid-cols-3 gap-2 pt-1">
+                            <div class="bg-white p-2 rounded-lg border border-emerald-200">
+                                <span class="text-[9.5px] text-emerald-900 block font-bold">友善農地面積核算基準 (元/公頃)</span>
+                                <input type="number" id="paramUnifiedAreaRate" value="30000" step="1000" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-sky-200">
+                                <span class="text-[9.5px] text-sky-900 block font-bold">微棲地維護法規上限 (元/場)</span>
+                                <input type="number" id="paramUnifiedHabitatUnit" value="20000" step="1000" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-rose-300">
+                                <span class="text-[9.5px] text-rose-900 block font-bold">🚨 單場場域定價法定上限 (元/場)</span>
+                                <input type="number" id="paramFieldEcoCap" value="150000" step="5000" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-rose-800 mt-0.5">
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-rose-900 block">🚨 (E-2) 生物觀測法定上限 (元/場)</label>
-                        <input type="number" id="paramBioObsEcoCap" value="60000" step="5000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-rose-300 rounded-lg px-2 py-1 font-black text-rose-800 mt-0.5">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-amber-900 block">📈 生物數量增減認列上限 (%)</label>
-                        <input type="number" id="paramBioPopCapPct" value="25" min="5" max="50" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border rounded-lg px-2 py-1 font-black mt-0.5">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200">
-                    <div>
-                        <label class="text-[10px] font-bold text-emerald-950 block">⏳ (G) 持續投入生態年資每滿1年加權 (%)</label>
-                        <input type="number" id="paramEcoYearWeightStep" value="15" min="5" max="50" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-emerald-300 rounded-lg px-2 py-1 font-black mt-0.5">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-rose-900 block">🚨 (G) 農務與產量實證單場上限 (元/場)</label>
-                        <input type="number" id="paramMgmtEcoCap" value="80000" step="5000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-rose-300 rounded-lg px-2 py-1 font-black text-rose-800 mt-0.5">
-                    </div>
-                </div>
-                <div class="hidden">
-                    <input type="number" id="paramGuideEduProxy" value="12000">
-                    <input type="number" id="paramRouteTourProxy" value="25000">
-                </div>
 
-                <!-- Independent Eco-Positive & Management-Positive Financial Proxies (De-linked from Crop Market Prices) -->
-                <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="font-black text-emerald-950 text-[11px]"><i class="fas fa-seedling text-satoyama-main mr-1"></i>專章揭露之「生態正向」參考定價參數（僅供報告書專章揭露，不列入 SROI 財務計算）</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-white p-2 rounded-lg border border-emerald-200">
-                            <label class="text-[9.5px] font-bold text-sky-900 block">💧 涵養水源替代成本<br><span class="text-[9px] text-slate-400">(微型水庫/處水域)</span></label>
-                            <input type="number" id="proxyWaterStorage" value="15000" step="1000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                    <div class="grid grid-cols-3 gap-2 bg-amber-50/60 p-2.5 rounded-xl border border-amber-200">
+                        <div>
+                            <label class="text-[10px] font-bold text-emerald-900 block">🦋 (E-2) 獨立生物物種基準 (元/種)</label>
+                            <input type="number" id="paramSpeciesEcoProxy" value="3500" step="500" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border rounded-lg px-2 py-1 font-black mt-0.5">
                         </div>
-                        <div class="bg-white p-2 rounded-lg border border-emerald-200">
-                            <label class="text-[9.5px] font-bold text-emerald-900 block">🦋 生物多樣性維持<br><span class="text-[9px] text-slate-400">(減藥生態服務/處陸域)</span></label>
-                            <input type="number" id="proxyBioService" value="6000" step="500" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                        <div>
+                            <label class="text-[10px] font-bold text-rose-900 block">🚨 (E-2) 生物觀測法定上限 (元/場)</label>
+                            <input type="number" id="paramBioObsEcoCap" value="60000" step="5000" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-rose-300 rounded-lg px-2 py-1 font-black text-rose-800 mt-0.5">
                         </div>
-                        <div class="bg-white p-2 rounded-lg border border-emerald-200">
-                            <label class="text-[9.5px] font-bold text-teal-900 block">🌱 土壤碳匯定價<br><span class="text-[9px] text-slate-400">(碳權價值/公頃/年)</span></label>
-                            <input type="number" id="proxySoilCarbon" value="8000" step="500" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                        <div>
+                            <label class="text-[10px] font-bold text-amber-900 block">📈 生物數量增減認列上限 (%)</label>
+                            <input type="number" id="paramBioPopCapPct" value="25" min="5" max="50" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border rounded-lg px-2 py-1 font-black mt-0.5">
                         </div>
                     </div>
-                </div>
+                    <div class="grid grid-cols-2 gap-2 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200">
+                        <div>
+                            <label class="text-[10px] font-bold text-emerald-950 block">⏳ (G) 持續投入生態年資每滿1年加權 (%)</label>
+                            <input type="number" id="paramEcoYearWeightStep" value="15" min="5" max="50" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-emerald-300 rounded-lg px-2 py-1 font-black mt-0.5">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-rose-900 block">🚨 (G) 農務與產量實證單場上限 (元/場)</label>
+                            <input type="number" id="paramMgmtEcoCap" value="80000" step="5000" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-rose-300 rounded-lg px-2 py-1 font-black text-rose-800 mt-0.5">
+                        </div>
+                    </div>
+                    <div class="hidden">
+                        <input type="number" id="paramGuideEduProxy" value="12000">
+                        <input type="number" id="paramRouteTourProxy" value="25000">
+                    </div>
 
-                <div class="bg-sky-50/70 p-3 rounded-xl border border-sky-200 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="font-black text-sky-950 text-[11px]"><i class="fas fa-shield-alt text-satoyama-water mr-1"></i>專章揭露之「管理正向與市場波動韌性」參數（僅供報告書專章揭露，不列入 SROI 財務計算）</span>
+                    <!-- Independent Eco-Positive & Management-Positive Financial Proxies (De-linked from Crop Market Prices) -->
+                    <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-black text-emerald-950 text-[11px]"><i class="fas fa-seedling text-satoyama-main mr-1"></i>專章揭露之「生態正向」參考定價參數（僅供報告書專章揭露，不列入 SROI 財務計算）</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-white p-2 rounded-lg border border-emerald-200">
+                                <label class="text-[9.5px] font-bold text-sky-900 block">💧 涵養水源替代成本<br><span class="text-[9px] text-slate-400">(微型水庫/處水域)</span></label>
+                                <input type="number" id="proxyWaterStorage" value="15000" step="1000" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-emerald-200">
+                                <label class="text-[9.5px] font-bold text-emerald-900 block">🦋 生物多樣性維持<br><span class="text-[9px] text-slate-400">(減藥生態服務/處陸域)</span></label>
+                                <input type="number" id="proxyBioService" value="6000" step="500" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-emerald-200">
+                                <label class="text-[9.5px] font-bold text-teal-900 block">🌱 土壤碳匯定價<br><span class="text-[9px] text-slate-400">(碳權價值/公頃/年)</span></label>
+                                <input type="number" id="proxySoilCarbon" value="8000" step="500" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                            </div>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-white p-2 rounded-lg border border-sky-200">
-                            <label class="text-[9.5px] font-bold text-sky-900 block">🩺 農民健康風險降低<br><span class="text-[9px] text-slate-400">(潛在醫療節省/人)</span></label>
-                            <input type="number" id="proxyHealthRisk" value="6000" step="500" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
-                        </div>
-                        <div class="bg-white p-2 rounded-lg border border-sky-200">
-                            <label class="text-[9.5px] font-bold text-amber-900 block">⛰️ 土壤沖刷防治成本<br><span class="text-[9px] text-slate-400">(減化肥護土/公頃)</span></label>
-                            <input type="number" id="proxySoilErosion" value="12000" step="1000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
-                        </div>
-                        <div class="bg-white p-2 rounded-lg border border-sky-200">
-                            <label class="text-[9.5px] font-bold text-rose-900 block">🛡️ 農產市價波動風險率<br><span class="text-[9px] text-slate-400">(韌性定價參數 %)</span></label>
-                            <input type="number" id="proxyMarketVolatility" value="25" min="5" max="80" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
-                        </div>
-                    </div>
-                </div>
 
-                <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="font-black text-amber-950"><i class="fas fa-filter text-amber-600 mr-1"></i>分項「淨影響力保留比例」(1 - 無謂影響% - 歸因%)</span>
-                        <span id="activeMethodologyRetentionBadge" class="bg-amber-200/80 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded">當期建議值</span>
+                    <div class="bg-sky-50/70 p-3 rounded-xl border border-sky-200 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-black text-sky-950 text-[11px]"><i class="fas fa-shield-alt text-satoyama-water mr-1"></i>專章揭露之「管理正向與市場波動韌性」參數（僅供報告書專章揭露，不列入 SROI 財務計算）</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-white p-2 rounded-lg border border-sky-200">
+                                <label class="text-[9.5px] font-bold text-sky-900 block">🩺 農民健康風險降低<br><span class="text-[9px] text-slate-400">(潛在醫療節省/人)</span></label>
+                                <input type="number" id="proxyHealthRisk" value="6000" step="500" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-sky-200">
+                                <label class="text-[9.5px] font-bold text-amber-900 block">⛰️ 土壤沖刷防治成本<br><span class="text-[9px] text-slate-400">(減化肥護土/公頃)</span></label>
+                                <input type="number" id="proxySoilErosion" value="12000" step="1000" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-sky-200">
+                                <label class="text-[9.5px] font-bold text-rose-900 block">🛡️ 農產市價波動風險率<br><span class="text-[9px] text-slate-400">(韌性定價參數 %)</span></label>
+                                <input type="number" id="proxyMarketVolatility" value="25" min="5" max="80" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-1.5 py-1 font-black text-center mt-0.5">
+                            </div>
+                        </div>
                     </div>
-                    <p id="methodologyRetentionHintText" class="text-[11px] text-amber-900 bg-white/80 p-2 rounded-lg border border-amber-200/80 leading-relaxed"></p>
 
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="bg-white p-2 rounded-lg border border-amber-200">
-                            <label class="text-[10px] font-bold text-emerald-800 block">(S) 人力與環教保留率 %</label>
-                            <input type="number" id="paramNetHuman" value="80" min="5" max="100" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-center mt-0.5">
+                    <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-black text-amber-950"><i class="fas fa-filter text-amber-600 mr-1"></i>分項「淨影響力保留比例」(1 - 無謂影響% - 歸因%)</span>
+                            <span id="activeMethodologyRetentionBadge" class="bg-amber-200/80 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded">當期建議值</span>
                         </div>
-                        <div class="bg-white p-2 rounded-lg border border-amber-200">
-                            <label class="text-[10px] font-bold text-sky-800 block">(E) 棲地生態保留率 %</label>
-                            <input type="number" id="paramNetEco" value="10" min="5" max="100" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-center mt-0.5">
-                        </div>
-                        <div class="bg-white p-2 rounded-lg border border-amber-200">
-                            <label class="text-[10px] font-bold text-amber-800 block">(G) 農務管理保留率 %</label>
-                            <input type="number" id="paramNetMgmt" value="70" min="5" max="100" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-center mt-0.5">
+                        <p id="methodologyRetentionHintText" class="text-[11px] text-amber-900 bg-white/80 p-2 rounded-lg border border-amber-200/80 leading-relaxed"></p>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-white p-2 rounded-lg border border-amber-200">
+                                <label class="text-[10px] font-bold text-emerald-800 block">(S) 人力與環教保留率 %</label>
+                                <input type="number" id="paramNetHuman" value="80" min="5" max="100" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-center mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-amber-200">
+                                <label class="text-[10px] font-bold text-sky-800 block">(E) 棲地生態保留率 %</label>
+                                <input type="number" id="paramNetEco" value="10" min="5" max="100" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-center mt-0.5">
+                            </div>
+                            <div class="bg-white p-2 rounded-lg border border-amber-200">
+                                <label class="text-[10px] font-bold text-amber-800 block">(G) 農務管理保留率 %</label>
+                                <input type="number" id="paramNetMgmt" value="70" min="5" max="100" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-center mt-0.5">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -705,14 +767,14 @@
                         <h4 class="text-xs font-black text-satoyama-dark text-center mb-1">圖 1：淨影響力價值結構佔比 (Net Impact)</h4>
                         <p class="text-[10px] text-slate-400 text-center mb-2">三大資本經無謂影響與歸因折減後之實質貢獻</p>
                         <div class="h-52 flex items-center justify-center">
-                            <canvas id="mainDoughnutChart"></canvas>
+                            <canvas id="mainDoughnutChart" width="320" height="200"></canvas>
                         </div>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                         <h4 class="text-xs font-black text-satoyama-dark text-center mb-1">圖 2：防漂綠折減前後對比 (Gross vs. Net)</h4>
                         <p class="text-[10px] text-slate-400 text-center mb-2">展現棲地無謂影響扣除之誠信治理防線</p>
                         <div class="h-52 flex items-center justify-center">
-                            <canvas id="grossNetBarChart"></canvas>
+                            <canvas id="grossNetBarChart" width="320" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -842,14 +904,20 @@
                     </div>
                 </div>
 
-                <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block font-bold text-slate-700">勾選隸屬於此團隊的成員農場（有勾選才會在主面板顯示小島，可於此新增或刪除農場）：</label>
-                        <button type="button" onclick="closeTeamModal(); openAddFarmModal();" class="bg-satoyama-main hover:bg-satoyama-dark text-white px-2.5 py-1 rounded-lg text-[11px] font-black shadow flex items-center gap-1">
-                            <i class="fas fa-plus"></i> 新增農場
-                        </button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">[A] 過去基期總成本 (基期基準年度:2025)</label>
+                        <input type="number" id="newFarmOldCost" value="25000" step="1000" class="clean-num-input w-full bg-slate-50 border rounded-xl px-3 py-1.5 font-black">
                     </div>
-                    <div id="teamModalFarmsChecklist" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto bg-slate-50 p-3 rounded-xl border"></div>
+                    <div>
+                        <label class="block font-bold text-emerald-800 mb-1">[B] 2025/當期 生態農法成本</label>
+                        <input type="number" id="newFarmNewCost" value="15000" step="1000" class="clean-num-input w-full bg-emerald-50 border border-emerald-300 rounded-xl px-3 py-1.5 font-black text-emerald-900">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">📝 棲地與生物族群體感觀測說明附言</label>
+                    <textarea id="newFarmEcoObsNote" rows="2" class="w-full bg-slate-50 border rounded-xl px-3 py-1.5 text-xs"></textarea>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-3 border-t">
@@ -924,9 +992,22 @@
                         <input type="number" id="teamModalMaintGrant" value="2000" step="500" class="clean-num-input w-full bg-white border border-amber-300 rounded-lg px-2 py-1.5 font-black text-amber-900">
                     </div>
                 </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1.5">勾選隸屬於此團隊的成員農場：</label>
-                    <div id="teamModalFarmsChecklist" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto bg-slate-50 p-3 rounded-xl border"></div>
+                <div class="space-y-2">
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <label class="block font-black text-slate-800">✅ 勾選隸屬於此團隊的成員農場（有勾選才會在 3D 主面板顯示小島）：</label>
+                        <button type="button" onclick="closeTeamModal(); openAddFarmModal();" class="bg-satoyama-main hover:bg-satoyama-dark text-white px-3 py-1 rounded-lg text-[11px] font-black shadow flex items-center gap-1">
+                            <i class="fas fa-plus"></i> + 新增農場
+                        </button>
+                    </div>
+                    <!-- Quick inline farm creation bar inside Team Modal -->
+                    <div class="flex flex-wrap items-center gap-1.5 bg-emerald-50/80 p-2 rounded-xl border border-emerald-200">
+                        <input type="text" id="quickModalFarmName" placeholder="快速新增農場名稱..." class="flex-grow bg-white border border-emerald-300 rounded-lg px-2.5 py-1 text-xs font-bold">
+                        <input type="text" id="quickModalFarmCrops" placeholder="農產品 (如：酪梨)" class="w-32 bg-white border border-emerald-300 rounded-lg px-2.5 py-1 text-xs font-bold">
+                        <button type="button" onclick="quickAddFarmInTeamModal()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[11px] font-black shadow shrink-0">
+                            <i class="fas fa-plus-circle mr-0.5"></i>直接新增並勾選
+                        </button>
+                    </div>
+                    <div id="teamModalFarmsChecklist" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto bg-slate-50 p-3 rounded-xl border border-slate-200"></div>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-3 border-t">
@@ -1092,6 +1173,36 @@
         let isCloudBaselineLocked = false;
         let systemLockPassword = String(545366);
         let pendingCustomCallback = null;
+        let savedProxyParams = null;
+
+        const PROXY_PARAM_IDS = [
+            'lockedMethodYearInput', 'lockedMethodVerInput', 'paramHabitatPricingMode',
+            'paramUnifiedAreaRate', 'paramUnifiedHabitatUnit', 'paramFieldEcoCap',
+            'paramSpeciesEcoProxy', 'paramBioObsEcoCap', 'paramBioPopCapPct',
+            'paramEcoYearWeightStep', 'paramMgmtEcoCap',
+            'proxyWaterStorage', 'proxyBioService', 'proxySoilCarbon',
+            'proxyHealthRisk', 'proxySoilErosion', 'proxyMarketVolatility',
+            'paramNetHuman', 'paramNetEco', 'paramNetMgmt'
+        ];
+
+        function saveCurrentProxyParamsState() {
+            const obj = {};
+            PROXY_PARAM_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) obj[id] = el.value;
+            });
+            savedProxyParams = obj;
+        }
+
+        function restoreSavedProxyParamsToDOM() {
+            if (!savedProxyParams) return;
+            PROXY_PARAM_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && savedProxyParams[id] !== undefined) {
+                    el.value = savedProxyParams[id];
+                }
+            });
+        }
 
         const PUBLISH_PASSWORD = String(545366);
         const LOCAL_STORAGE_KEY = 'SHUILI_SATOYAMA_SROI_WORKSPACE_V6_COMMITTED';
@@ -1258,6 +1369,9 @@
                     if (!isProxyLocked && document.getElementById('paramNetEco')) document.getElementById('paramNetEco').value = 60;
                 }
             }
+            if (isProxyLocked) {
+                restoreSavedProxyParamsToDOM();
+            }
             updateRetentionGuidanceUI();
             renderSelectionControls();
             renderFarmsList();
@@ -1347,12 +1461,28 @@
         }
 
         function applyProxyLockUI() {
+            if (isProxyLocked && savedProxyParams) {
+                restoreSavedProxyParamsToDOM();
+            } else {
+                saveCurrentProxyParamsState();
+            }
             const els = document.querySelectorAll('.proxy-lockable');
             els.forEach(el => {
                 el.disabled = isProxyLocked;
-                if (isProxyLocked) el.classList.add('opacity-70', 'cursor-not-allowed');
-                else el.classList.remove('opacity-70', 'cursor-not-allowed');
+                if (isProxyLocked) el.classList.add('opacity-75', 'cursor-not-allowed');
+                else el.classList.remove('opacity-75', 'cursor-not-allowed');
             });
+
+            const wrapper = document.getElementById('financialProxiesLockableWrapper');
+            const gradBanner = document.getElementById('proxyLockedGradientBanner');
+            if (wrapper) {
+                if (isProxyLocked) wrapper.classList.add('locked-gradient-shield');
+                else wrapper.classList.remove('locked-gradient-shield');
+            }
+            if (gradBanner) {
+                if (isProxyLocked) gradBanner.classList.remove('hidden');
+                else gradBanner.classList.add('hidden');
+            }
 
             const badge = document.getElementById('proxyLockBadge');
             const icon = document.getElementById('proxyLockIcon');
@@ -1372,7 +1502,7 @@
                     btn.innerHTML = '<i class="fas fa-unlock"></i> 驗證密碼解鎖代理基準';
                 }
                 if (notice) {
-                    notice.innerHTML = `🔒 <strong>已於 ${lockedTimestamp} 密碼鎖定（年度：${yr}｜版本：${ver}）並套用至全專案及各農場</strong>。農場當期填報不受鎖定限制，農友仍可進行單場填報。`;
+                    notice.innerHTML = `🔒 <strong>已於 ${lockedTimestamp} 密碼鎖定（年度：${yr}｜版本：${ver}）並覆蓋漸層保護套用至全專案及各農場</strong>。除非驗證密碼開鎖變更數據，否則絕不會被復原預設。`;
                 }
             } else {
                 if (badge) badge.className = 'bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded flex items-center gap-1';
@@ -1383,7 +1513,7 @@
                     btn.innerHTML = '<i class="fas fa-key"></i> 密碼確認並鎖定財務代理定價';
                 }
                 if (notice) {
-                    notice.innerHTML = '💡 填寫完成並驗證密碼鎖定後，財務代理定價將套用至專案及所有農場，作為團隊總計算依據。';
+                    notice.innerHTML = '💡 填寫完成並驗證密碼鎖定後，財務代理定價將覆蓋漸層保護並套用至專案及所有農場，作為團隊總計算依據。';
                 }
             }
         }
@@ -1508,13 +1638,15 @@
         function toggleFarmSelection(farmId, checked) {
             const farm = farmsData.find(f => f.id === farmId);
             if (farm) farm.selected = checked;
-            if (!farmsData.some(f => f.selected) && farmsData.length > 0) farmsData[0].selected = true;
             const team = getActiveTeamObj();
             team.farmIds = farmsData.filter(f => f.selected).map(f => f.id);
             markUncommittedChanges();
             renderSelectionControls();
             renderFarmsList();
             recalculateAll();
+            saveWorkspaceToLocalStorage(true);
+            if (window.syncFarmToCloud && farm) window.syncFarmToCloud(farm);
+            if (window.syncTeamToCloud) window.syncTeamToCloud(team);
         }
 
         // ==========================================
@@ -2206,6 +2338,7 @@
                 isProxyLocked = !isProxyLocked;
                 if (isProxyLocked) {
                     lockedTimestamp = `${getFormattedToday()} ${getFormattedTime()}`;
+                    saveCurrentProxyParamsState();
                     syncTeamProxiesToAllFarms();
                 }
                 applyProxyLockUI();
@@ -2214,7 +2347,7 @@
                 saveWorkspaceToLocalStorage(true);
                 if (window.forcePushAllToCloud) window.forcePushAllToCloud(true);
                 closePublishModal();
-                showToast(isProxyLocked ? '🔒 已鎖定 2026(V4.2) 財務代理定價並自動套用至各農場！' : '🔓 已解鎖 2026(V4.2) 財務代理定價');
+                showToast(isProxyLocked ? '🔒 已鎖定 2026(V4.2) 財務代理定價並覆蓋漸層保護套用至全團隊！' : '🔓 已解鎖 2026(V4.2) 財務代理定價');
                 return;
             }
 
@@ -2283,6 +2416,75 @@
         // ==========================================
         // TEAM & FARM MODALS
         // ==========================================
+        function renderTeamModalChecklist(mode = 'edit') {
+            const checklist = document.getElementById('teamModalFarmsChecklist');
+            if (!checklist) return;
+            const t = getActiveTeamObj();
+            checklist.innerHTML = farmsData.map((f, idx) => {
+                const isChecked = (mode === 'add') ? true : !!(f.selected || (t.farmIds && t.farmIds.includes(f.id)));
+                return `
+                    <div class="flex items-center justify-between gap-2 p-2.5 bg-white rounded-xl border ${isChecked ? 'border-emerald-500 bg-emerald-50/40' : 'border-slate-200'} text-xs font-bold shadow-sm">
+                        <label class="flex items-center gap-2 cursor-pointer truncate flex-grow">
+                            <input type="checkbox" class="team-modal-farm-cb w-4 h-4 rounded text-satoyama-main" value="${f.id}" ${isChecked ? 'checked' : ''} onchange="toggleFarmSelection(${f.id}, this.checked); renderTeamModalChecklist('${mode}');">
+                            <span class="truncate text-satoyama-dark">#${idx + 1} ${f.name} <span class="text-emerald-700">(${f.crops})</span></span>
+                        </label>
+                        <button type="button" onclick="deleteFarmInsideTeamModal(${f.id}, '${mode}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-lg text-[10px] font-black shrink-0 flex items-center gap-1" title="刪除此農場">
+                            <i class="fas fa-trash-alt"></i> 刪除
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function quickAddFarmInTeamModal() {
+            const nameInput = document.getElementById('quickModalFarmName');
+            const cropsInput = document.getElementById('quickModalFarmCrops');
+            const name = (nameInput?.value || '').trim() || `里山友善農場 #${farmsData.length + 1}`;
+            const crops = (cropsInput?.value || '').trim() || '友善農產';
+            const newId = Date.now();
+            const newFarm = {
+                id: newId, teamId: activeTeamId, investType: '計畫投入', investTypeOther: '', habBaseLocked: isCloudBaselineLocked,
+                isCompleted: true, lastSavedDate: getFormattedToday(), ecoYears: 2,
+                password: String(545366), selected: true, name, crops, areaHa: 1.0,
+                areaDesc: '約 1.0 公頃', speciesDesc: '6種里山物種', certDesc: '友善耕作', routeDesc: '導覽路線 1 條',
+                ecoObsNote: '長期農作體感觀測原生生物族群穩定成長。',
+                costExecNote: '採用草生栽培與友善生物防治資材。',
+                yieldEduExecNote: '結合友善農產收成與環境教育體驗活動。',
+                stakeholderQuote: '「透過微棲地營造與導覽員培訓，提升了面對市場價格波動的經營韌性！」',
+                negTransitionCost: 4000,
+                waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2,
+                water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3,
+                bioIndexPrev: 100, bioIndexCurr: 115,
+                convHerbicideCost: 12500, convPesticideCost: 12500, convOtherCost: 0, convMaintCost: 0,
+                ecoWeedingCost: 8000, ecoMaterialCost: 7000, ecoOtherCost: 0, ecoMaintCost: 0,
+                oldCost2025: 25000, newCost2025: 15000,
+                yieldBase: 1000, yield2026: 1100, cropPrice: 55, eduBase: 40000, eduCurr: 65000, recordCheck: true,
+                customProxies: createDefaultCustomProxies()
+            };
+            farmsData.push(newFarm);
+            const t = getActiveTeamObj();
+            if (!t.farmIds.includes(newId)) t.farmIds.push(newId);
+            if (nameInput) nameInput.value = '';
+            if (cropsInput) cropsInput.value = '';
+            renderTeamModalChecklist(editingTeamId ? 'edit' : 'add');
+            renderSelectionControls();
+            renderFarmsList();
+            recalculateAll();
+            saveWorkspaceToLocalStorage(true);
+            if (window.syncFarmToCloud) window.syncFarmToCloud(newFarm);
+            if (window.syncTeamToCloud) window.syncTeamToCloud(t);
+            showToast(`已新增並勾選農場「${name}」，3D 群島已即時新增小島！`);
+        }
+
+        function deleteFarmInsideTeamModal(farmId, mode = 'edit') {
+            if (farmsData.length <= 1) {
+                showToast('系統至少需保留一處農場！', 'fa-exclamation-triangle text-amber-400');
+                return;
+            }
+            removeFarm(farmId);
+            renderTeamModalChecklist(mode);
+        }
+
         function openTeamModal(mode = 'add') {
             editingTeamId = (mode === 'edit') ? activeTeamId : null;
             const t = getActiveTeamObj();
@@ -2297,20 +2499,7 @@
             document.getElementById('teamModalHabitatGrant').value = mode === 'edit' ? t.habitatGrantPerFarm : 10000;
             document.getElementById('teamModalMaintGrant').value = mode === 'edit' ? t.maintGrantPerFarm : 2000;
 
-            const checklist = document.getElementById('teamModalFarmsChecklist');
-            if (checklist) {
-                checklist.innerHTML = farmsData.map((f, idx) => `
-                    <div class="flex items-center justify-between gap-2 p-2 bg-white rounded-lg border text-xs font-bold">
-                        <label class="flex items-center gap-2 cursor-pointer truncate flex-grow">
-                            <input type="checkbox" class="team-modal-farm-cb rounded text-satoyama-main" value="${f.id}" ${(mode !== 'edit' || f.selected) ? 'checked' : ''}>
-                            <span class="truncate">#${idx + 1} ${f.name} (${f.crops})</span>
-                        </label>
-                        <button type="button" onclick="removeFarm(${f.id}); openTeamModal('${mode}');" class="text-rose-500 hover:text-rose-700 px-1.5 py-0.5 rounded" title="刪除此農場">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                `).join('');
-            }
+            renderTeamModalChecklist(mode);
             document.getElementById('teamModal').classList.remove('hidden');
         }
 
@@ -2328,9 +2517,8 @@
             const projectInput = parseFloat(document.getElementById('teamModalProjectInput').value) || 70000;
             const habitatGrantPerFarm = parseFloat(document.getElementById('teamModalHabitatGrant').value) || 10000;
             const maintGrantPerFarm = parseFloat(document.getElementById('teamModalMaintGrant').value) || 2000;
-            const checkedBoxes = Array.from(document.querySelectorAll('.team-modal-farm-cb:checked'));
-            let selectedIds = checkedBoxes.map(cb => parseInt(cb.value, 10));
-            if (selectedIds.length === 0 && farmsData.length > 0) selectedIds = [farmsData[0].id];
+            const checkedBoxes = Array.from(document.querySelectorAll('#teamModalFarmsChecklist .team-modal-farm-cb:checked'));
+            const selectedIds = checkedBoxes.map(cb => parseInt(cb.value, 10));
 
             let savedTeamObj = null;
             if (editingTeamId) {
@@ -2449,10 +2637,10 @@
                             </button>
                         </div>
 
-                        <!-- Baseline Survey Row (Lockable) -->
-                        <div class="bg-slate-100/90 p-2.5 rounded-lg border border-slate-300 space-y-1.5">
+                        <!-- Baseline Survey Row (Lockable + Covered with gradient when locked) -->
+                        <div class="${baseLocked ? 'locked-baseline-shield bg-sky-50/90 border-sky-400' : 'bg-slate-100/90 border-slate-300'} p-2.5 rounded-lg border space-y-1.5 transition-all duration-300">
                             <div class="flex justify-between items-center text-[10.5px] font-black text-slate-700">
-                                <span>📌 基期調查數據 (2025 V3.0 比較基準) ${baseLocked ? '🔒 常駐鎖定中' : '🔓 可編輯'}</span>
+                                <span>📌 基期調查數據 (2025 V3.0 比較基準) ${baseLocked ? '🔒 漸層常駐鎖定中（除非開鎖否則不復原）' : '🔓 可編輯'}</span>
                                 <span class="text-slate-500">基期合計：${(f.waterBase || 0) + (f.landBase || 0)} 處棲地</span>
                             </div>
                             <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -2537,9 +2725,9 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                            <div class="${baseLocked ? 'locked-baseline-shield bg-sky-50/80 border-sky-400' : 'bg-white border-slate-200'} p-2.5 rounded-xl border space-y-1.5 transition-all duration-300">
                                 <div class="flex justify-between font-black text-slate-700 text-[11px]">
-                                    <span>[A] 過去基期總成本 (基期基準年度:2025) ${baseLocked ? '🔒' : ''}</span>
+                                    <span>[A] 過去基期總成本 (基期基準年度:2025) ${baseLocked ? '🔒 漸層鎖定' : ''}</span>
                                     <span>$${f.oldCost2025.toLocaleString()}</span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-1.5 text-[10px]">
@@ -2707,48 +2895,58 @@
         }
 
         function updateCharts(m) {
-            const ctxD = document.getElementById('mainDoughnutChart')?.getContext('2d');
-            const ctxB = document.getElementById('grossNetBarChart')?.getContext('2d');
+            const canvasD = document.getElementById('mainDoughnutChart');
+            const canvasB = document.getElementById('grossNetBarChart');
+            const ctxD = canvasD?.getContext('2d');
+            const ctxB = canvasB?.getContext('2d');
             if (!ctxD || !ctxB) return;
 
-            if (mainDoughnutChartInstance) mainDoughnutChartInstance.destroy();
-            mainDoughnutChartInstance = new Chart(ctxD, {
-                type: 'doughnut',
-                data: {
-                    labels: ['(S) 人力與環教旅遊淨值', '(E) 微棲地與物種復育淨值', '(G) 友善農務管理淨值'],
-                    datasets: [{
-                        data: [Math.max(0, m.netHuman), Math.max(0, m.netEco), Math.max(0, m.netMgmt)],
-                        backgroundColor: ['#10b981', '#0284c7', '#d97706'],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } }
+            try {
+                if (mainDoughnutChartInstance) mainDoughnutChartInstance.destroy();
+                mainDoughnutChartInstance = new Chart(ctxD, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['(S) 人力與環教旅遊淨值', '(E) 微棲地與物種復育淨值', '(G) 友善農務管理淨值'],
+                        datasets: [{
+                            data: [Math.max(0, m.netHuman), Math.max(0, m.netEco), Math.max(0, m.netMgmt)],
+                            backgroundColor: ['#10b981', '#0284c7', '#d97706'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } }
+                    }
+                });
+                if (canvasD.width > 0 && canvasD.height > 0) {
+                    chartDoughnutDataUrl = canvasD.toDataURL('image/png');
                 }
-            });
-            chartDoughnutDataUrl = document.getElementById('mainDoughnutChart').toDataURL('image/png');
 
-            if (grossNetBarChartInstance) grossNetBarChartInstance.destroy();
-            grossNetBarChartInstance = new Chart(ctxB, {
-                type: 'bar',
-                data: {
-                    labels: ['(S) 社會人力', '(E) 棲地生態', '(G) 農務治理'],
-                    datasets: [
-                        { label: '折減前毛價值 (Gross)', data: [m.grossHuman, m.grossEco, m.grossMgmt], backgroundColor: '#94a3b8' },
-                        { label: '防漂綠折減後淨值 (Net)', data: [m.netHuman, m.netEco, m.netMgmt], backgroundColor: '#0f4c3a' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } }
+                if (grossNetBarChartInstance) grossNetBarChartInstance.destroy();
+                grossNetBarChartInstance = new Chart(ctxB, {
+                    type: 'bar',
+                    data: {
+                        labels: ['(S) 社會人力', '(E) 棲地生態', '(G) 農務治理'],
+                        datasets: [
+                            { label: '折減前毛價值 (Gross)', data: [m.grossHuman, m.grossEco, m.grossMgmt], backgroundColor: '#94a3b8' },
+                            { label: '防漂綠折減後淨值 (Net)', data: [m.netHuman, m.netEco, m.netMgmt], backgroundColor: '#0f4c3a' }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        plugins: { legend: { position: 'bottom', labels: { font: { size: 10, weight: 'bold' } } } }
+                    }
+                });
+                if (canvasB.width > 0 && canvasB.height > 0) {
+                    chartBarDataUrl = canvasB.toDataURL('image/png');
                 }
-            });
-            chartBarDataUrl = document.getElementById('grossNetBarChart').toDataURL('image/png');
+            } catch (err) {
+                console.warn('Chart update warning:', err);
+            }
         }
 
         function renderReportAndCards(m) {
@@ -2760,364 +2958,341 @@
             const badgeEl = document.getElementById('liveTopSroiBadge');
             if (badgeEl) badgeEl.innerText = `1 : ${m.sroiRatio}`;
 
-            const dwS = Math.max(0, Math.round((1 - m.rateH) * 100 * 0.4));
-            const attrS = Math.max(0, Math.round((1 - m.rateH) * 100) - dwS);
-            const dwE = reportScope === 'single' ? Math.max(0, Math.round((1 - m.rateE) * 100) - 15) : 80;
+            const unifiedAreaRate = parseFloat(document.getElementById('paramUnifiedAreaRate')?.value) || 30000;
+            const habMaintCapPerFarm = parseFloat(document.getElementById('paramUnifiedHabitatUnit')?.value) || 20000;
+            const fieldEcoCap = parseFloat(document.getElementById('paramFieldEcoCap')?.value) || 150000;
+            const speciesProxy = parseFloat(document.getElementById('paramSpeciesEcoProxy')?.value) || 3500;
+            const bioObsEcoCap = parseFloat(document.getElementById('paramBioObsEcoCap')?.value) || 60000;
+            const mgmtEcoCap = parseFloat(document.getElementById('paramMgmtEcoCap')?.value) || 80000;
+
+            const dwH = Math.max(0, Math.round((1 - m.rateH) * 50));
+            const attrH = Math.max(0, Math.round((1 - m.rateH) * 100) - dwH);
+            const dwE = reportScope === 'single' ? 30 : 80;
             const attrE = Math.max(0, Math.round((1 - m.rateE) * 100) - dwE);
-            const dwG = Math.max(0, Math.round((1 - m.rateM) * 100 * 0.6));
-            const attrG = Math.max(0, Math.round((1 - m.rateM) * 100) - dwG);
+            const dwM = 20;
+            const attrM = Math.max(0, Math.round((1 - m.rateM) * 100) - dwM);
 
-            let totalResilienceVal = 0, totalNegCost = 0;
-            m.farmDetails.forEach(({ stats }) => {
-                totalResilienceVal += stats.resilienceVal;
-                totalNegCost += stats.negCost;
-            });
-
-            const sroiEcoMinus20 = ((Math.round(m.grossHuman * m.rateH) + Math.round(m.grossEco * 0.8 * m.rateE) + Math.round(m.grossMgmt * m.rateM)) / m.totalInput).toFixed(2);
-            const sroiZeroResilience = ((Math.round(m.grossHuman * m.rateH) + m.netEco + Math.round((m.grossMgmt - totalResilienceVal) * m.rateM)) / m.totalInput).toFixed(2);
-            const sroiDoubleNeg = ((Math.round(m.grossHuman * m.rateH) + m.netEco + Math.round((m.grossMgmt - totalNegCost) * m.rateM)) / m.totalInput).toFixed(2);
-
-            const profileRowsHtml = m.farmDetails.map(({ farm, stats }) => `
-                <tr>
-                    <td><strong>${farm.name}</strong><br><span style="font-size:10.5px;color:#047857;">主要農產：${farm.crops}</span></td>
-                    <td>${farm.areaDesc || `約 ${stats.areaHa} 公頃`}</td>
-                    <td>${farm.speciesDesc || `${stats.sCurr}種里山指標物種`}</td>
-                    <td>${farm.certDesc || '友善草生栽培'}</td>
-                    <td>${farm.routeDesc || `導覽路線 ${stats.rCurr} 條（導覽員 ${stats.gCurr} 位）`}</td>
-                </tr>
-            `).join('');
-
-            // Table 1: Official SROI Included Calculation Breakdown (Separated E-1 Field Area Pricing & E-2 Biodiversity Observation)
+            // Table 3-2: Core SROI Breakdown
             const sroiCoreCalcRowsHtml = m.farmDetails.map(({ farm, stats }) => `
                 <tr>
-                    <td><strong>${farm.name}</strong><br><span style="font-size:10px;color:#64748b;">面積 ${stats.areaHa} ha ｜ 分攤培訓 $${m.sharedTrainPerFarmInput.toLocaleString()}</span></td>
-                    <td class="num-col" style="color:#047857;"><strong>毛值 $${stats.farmGrossHuman.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#64748b;">${stats.tCurr}人(${stats.gCurr}導) 應用${stats.humanCapPct}% (上限$70,000元/場)</span></td>
-                    <td class="num-col" style="color:#0369a1;"><strong>毛值 $${stats.baseAnnualEco.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#0284c7;">淨值 $${Math.round(stats.baseAnnualEco * m.rateE).toLocaleString()} (保留${Math.round(m.rateE*100)}%)</span><br><span style="font-size:9px;color:#64748b;">面積$${stats.areaPaymentRaw.toLocaleString()}+微棲地維護$${stats.habMaintRaw.toLocaleString()} (上限$${stats.fieldEcoCap.toLocaleString()}元/場)</span></td>
-                    <td class="num-col" style="color:#0f766e;"><strong>毛值 $${stats.bioBonusEcoVal.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#0d9488;">淨值 $${Math.round(stats.bioBonusEcoVal * m.rateE).toLocaleString()} (保留${Math.round(m.rateE*100)}%)</span><br><span style="font-size:9px;color:#64748b;">物種${stats.sPrev}➔${stats.sCurr}種｜數量${stats.bioObsPct>=0?'+':''}${stats.bioObsPct}% (上限$${stats.bioObsEcoCap.toLocaleString()}元/場)</span></td>
-                    <td class="num-col" style="color:#d97706;"><strong>毛值 $${stats.effectiveMaintBenefit.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#b45309;">淨值 $${Math.round(stats.effectiveMaintBenefit * m.rateM).toLocaleString()} (保留${Math.round(m.rateM*100)}%)</span><br><span style="font-size:9px;color:#64748b;">【B】$${farm.newCost2025.toLocaleString()}×(1+產量${parseFloat(stats.yieldGrowthPct)>=0?'+':''}${stats.yieldGrowthPct}%)×年資${stats.ecoYears}年(${stats.ecoYearsWeight}x)</span></td>
-                </tr>
-            `).join('');
-
-            // Table 2: Non-SROI Disclosure Chapter Rows (Educational Activity Growth %, Water/Carbon/Health/Soil/Resilience & Notes)
-            const nonSroiDisclosureRowsHtml = m.farmDetails.map(({ farm, stats }) => `
-                <tr>
-                    <td><strong>${farm.name}</strong> (${stats.areaHa} ha)</td>
-                    <td class="center-col" style="color:#0284c7;font-weight:bold;">${parseFloat(stats.eduGrowthPct) >= 0 ? '+' : ''}${stats.eduGrowthPct}%<br><span style="font-size:10px;color:#64748b;">(活動配比 ${stats.activitySharePct}%)</span></td>
-                    <td class="num-col">水源 $${stats.waterStorageVal.toLocaleString()}<br>多樣性 $${stats.bioServiceVal.toLocaleString()}<br>碳匯 $${stats.soilCarbonVal.toLocaleString()}</td>
-                    <td class="num-col">健康 $${stats.healthRiskVal.toLocaleString()}<br>護土 $${stats.soilErosionVal.toLocaleString()}<br>波動韌性 $${stats.resilienceVal.toLocaleString()}</td>
-                    <td class="num-col" style="color:#be123c;">-$${stats.negCost.toLocaleString()}</td>
-                    <td style="font-size:10.5px;color:#334155;line-height:1.45;">
-                        <strong>• 棲地與體感附言：</strong>${farm.ecoObsNote || '—'}<br>
-                        <strong>• 生態農法【B】附言：</strong>${farm.costExecNote || '—'}<br>
-                        <strong>• 產量與活動附言：</strong>${farm.yieldEduExecNote || '—'}
+                    <td>
+                        <strong>${farm.name}</strong><br>
+                        <span style="font-size:10.5px;color:#0f766e;">農產：${farm.crops}｜面積：${stats.areaHa} ha</span><br>
+                        <span style="font-size:10px;color:#64748b;">投入屬性：${getInvestBadgeText(farm)}｜生態年資：${stats.ecoYears}年 (${stats.ecoYearsWeight}x)</span>
+                    </td>
+                    <td class="num-col">
+                        應用比例：${stats.humanCapPct}%<br>
+                        毛值：<strong>$${stats.farmGrossHuman.toLocaleString()}</strong><br>
+                        <span style="font-size:10px;color:#047857;">淨值：$${Math.round(stats.farmGrossHuman * m.rateH).toLocaleString()}</span>
+                    </td>
+                    <td class="num-col">
+                        面積 $${stats.areaPaymentRaw.toLocaleString()} + 棲地(${stats.habCurr}處) $${stats.habMaintRaw.toLocaleString()}<br>
+                        毛值：<strong>$${stats.baseAnnualEco.toLocaleString()}</strong><br>
+                        <span style="font-size:10px;color:#0369a1;">保留率 ${Math.round(m.rateE*100)}% ➔ 淨值：$${stats.fieldEcoNetVal.toLocaleString()}</span>
+                    </td>
+                    <td class="num-col">
+                        物種 ${stats.sCurr}種 (${stats.speciesDiff>=0?'+'+stats.speciesDiff:stats.speciesDiff})｜族群 ${stats.bioObsPct>=0?'+'+stats.bioObsPct:stats.bioObsPct}%<br>
+                        毛值：<strong>$${stats.bioBonusEcoVal.toLocaleString()}</strong><br>
+                        <span style="font-size:10px;color:#0369a1;">保留率 ${Math.round(m.rateE*100)}% ➔ 淨值：$${stats.bioObsEcoNetVal.toLocaleString()}</span>
+                    </td>
+                    <td class="num-col">
+                        【B】生態成本 $${farm.newCost2025.toLocaleString()} × (1 + 產量 ${parseFloat(stats.yieldGrowthPct)>=0?'+':''}${stats.yieldGrowthPct}%) × 年資 ${stats.ecoYearsWeight}x<br>
+                        毛值：<strong>$${stats.effectiveMaintBenefit.toLocaleString()}</strong><br>
+                        <span style="font-size:10px;color:#b45309;">保留率 ${Math.round(m.rateM*100)}% ➔ 淨值：$${Math.round(stats.effectiveMaintBenefit * m.rateM).toLocaleString()}</span>
+                    </td>
+                    <td class="center-col" style="font-weight:900;color:#0f4c3a;">
+                        1 : ${computeSingleFarmOfficialSroi(farm)}<br>
+                        <span style="font-size:9.5px;color:#059669;">${farm.isCompleted !== false ? '✅ ' + (farm.lastSavedDate || today) : '⏳ 填報中'}</span>
                     </td>
                 </tr>
             `).join('');
 
-            const farmBreakdownRowsHtml = m.farmDetails.map(({ farm, stats }) => {
-                const fNet = Math.round((stats.farmGrossHuman * m.rateH) + (stats.totalFarmEcoGross * m.rateE) + (stats.effectiveMaintBenefit * m.rateM));
-                return `
+            // Chapter 5: Dedicated Disclosure Items (Not in SROI calculation)
+            const disclosureRowsHtml = m.farmDetails.map(({ farm, stats }) => `
                 <tr>
-                    <td><strong>${farm.name}</strong></td>
-                    <td>${farm.crops}</td>
-                    <td class="center-col"><strong>${stats.habCurr}處</strong> (${stats.wCurr}/${stats.lCurr})</td>
-                    <td class="center-col">${stats.sCurr}種 (${stats.bioObsPct >= 0 ? '+' + stats.bioObsPct : stats.bioObsPct}%)</td>
-                    <td class="center-col">${stats.tCurr}人 (${stats.gCurr}導/${stats.rCurr}線)</td>
-                    <td class="num-col">$${stats.farmGrossHuman.toLocaleString()}</td>
-                    <td class="num-col">$${stats.totalFarmEcoGross.toLocaleString()}</td>
-                    <td class="num-col">$${stats.effectiveMaintBenefit.toLocaleString()}</td>
-                    <td class="num-col" style="color:#0f4c3a;font-weight:800;">$${fNet.toLocaleString()}</td>
-                </tr>`;
-            }).join('');
+                    <td><strong>${farm.name}</strong><br><span style="font-size:10px;color:#64748b;">面積 ${stats.areaHa} ha｜水${stats.wCurr}/陸${stats.lCurr}處</span></td>
+                    <td class="center-col"><strong style="color:#0284c7;">${parseFloat(stats.eduGrowthPct)>=0?'+'+stats.eduGrowthPct:stats.eduGrowthPct}%</strong><br><span style="font-size:10px;color:#64748b;">活動佔比 ${stats.activitySharePct}%</span></td>
+                    <td class="num-col">
+                        💧水源：$${stats.waterStorageVal.toLocaleString()}<br>
+                        🦋多樣性：$${stats.bioServiceVal.toLocaleString()}<br>
+                        🌱碳匯：$${stats.soilCarbonVal.toLocaleString()}
+                    </td>
+                    <td class="num-col">
+                        🩺健康：$${stats.healthRiskVal.toLocaleString()}<br>
+                        ⛰️護土：$${stats.soilErosionVal.toLocaleString()}<br>
+                        🛡️韌性：+$${stats.resilienceVal.toLocaleString()}<br>
+                        <span style="color:#be123c;font-size:10px;">⚠️轉型耗損：-$${stats.negCost.toLocaleString()}</span>
+                    </td>
+                    <td style="font-size:11px;line-height:1.45;">
+                        <div><strong>• 棲地與生物觀測：</strong>${farm.ecoObsNote || '穩定維護中'}</div>
+                        <div><strong>• 生態農法成本執行：</strong>${farm.costExecNote || '落實草生栽培'}</div>
+                        <div><strong>• 產量與教育活動：</strong>${farm.yieldEduExecNote || '穩健推動食農教育'}</div>
+                    </td>
+                </tr>
+            `).join('');
 
-            const reportHtml = `
-                <div class="pdf-block">
-                    <div class="border-b-4 border-satoyama-dark pb-4 mb-5 flex flex-wrap justify-between items-start gap-4">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-xs font-bold text-satoyama-main uppercase tracking-widest">Shuili Satoyama Corridor SROI Report</span>
-                                <span style="background:#0f4c3a; color:#ffffff; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px;">方法論版本：${ver}</span>
-                            </div>
-                            <h1>${subjectTitle} SROI 社會價值報告書</h1>
-                            <p class="text-xs text-slate-600 font-bold">【${getInvestBadgeText(m.activeTeam)}】${m.activeTeam.guidanceTitle} ｜ 核心產出：<strong>${m.activeTeam.keyOutputs}</strong></p>
-                        </div>
-                        <div class="text-right text-xs text-slate-700 shrink-0 bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-200">
-                            <p><strong>📅 執行期間：</strong>${m.activeTeam.execPeriod || '2025/01/01 ~ 2026/10/31'}</p>
-                            <p><strong>🌱 有效友善農產：</strong>${cropsListStr}</p>
-                            <p><strong>📄 報告產出日期：</strong>${today}</p>
-                        </div>
-                    </div>
-
-                    <h2>一、 執行摘要 (Executive Summary) 與總覽附言</h2>
-                    <p>
-                        本報告依據國際社會價值標準 (Social Value International, SVI) 之 SROI（社會投資報酬率）V3.0 / V4.2 嚴謹方法論架構，量化分析 <strong>${subjectTitle}</strong> 於執行期間（<strong>${m.activeTeam.execPeriod || '2025/01/01 ~ 2026/10/31'}</strong>）之實質影響力。本方法論嚴格界定：<strong>SROI 財務計算僅納入「團隊共同培訓各場應用價值 (S)」、「微棲地與農友自主填寫之生物族群體感觀測 % (E)」、「農務實證成本節省與農產產量成長率 % (G)」</strong>，且各項指標均受<strong>「財務代理上限 (Cap)」</strong>嚴格約束；其餘教育活動成長率 (%)、水源涵養、土壤碳匯、健康護土、市場波動韌性評估與農友執行附言，全面列為第五章<strong>「專章揭露事項（不列入 SROI 財務計算）」</strong>，確保報告具備最高防漂綠公信力。
-                    </p>
-                    <p style="background:#f0fdf4; border-left:4px solid #10b981; padding:8px 12px; font-size:12px; color:#065f46;">
-                        <strong>📝 專案總覽附言：</strong>${m.activeTeam.overviewNote || '水里里山生態廊道透過微棲地營造、減藥管理與導覽培力，串聯在地農友共創自然正向價值與經營韌性。'}
-                    </p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>農場名稱與作物</th>
-                                <th>農場面積與地段地號</th>
-                                <th>監測與利用物種名錄</th>
-                                <th>環境友善程度／驗證</th>
-                                <th>生態導覽解說路線</th>
-                            </tr>
-                        </thead>
-                        <tbody>${profileRowsHtml}</tbody>
-                    </table>
-
-                    <h2>三、 SROI 數學公式公開、農業部林業署場域定價與獨立生物觀測計算結果</h2>
-                    <div style="background:#f8fafc; border:2px solid #0f4c3a; border-radius:12px; padding:14px 16px; margin:10px 0 14px 0; font-size:12px; line-height:1.75;">
-                        <div style="font-weight:900; color:#0f4c3a; font-size:13.5px; margin-bottom:6px; border-bottom:1px solid #cbd5e1; padding-bottom:4px;">
-                            📐 公開 SROI 核心計算公式與當期數值代入結果（法規上限單位：元/場）：
-                        </div>
-                        <div><strong>1. 總投入成本公式 ($I_{\text{total}}$)：</strong></div>
-                        <div style="padding-left:14px; color:#334155;">
-                            $I_{\text{total}} = C_{\text{training (共同培訓)}} + (N_{\text{farms}} \times C_{\text{habitat (棲地經費)}}) = \$${m.trainInput.toLocaleString()} + (${m.nFarms} \times \$${m.habPerFarm.toLocaleString()}) = \mathbf{\$${m.totalInput.toLocaleString()}\text{ 元}}$
-                        </div>
-                        <div style="margin-top:4px;"><strong>2. 四大核心項目毛價值、法規上限封頂（元/場）與保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%)$ 淨值公式：</strong></div>
-                        <div style="padding-left:14px; color:#334155;">
-                            • <strong>(S) 共同培訓應用價值：</strong> 毛值 $V_{\text{human}} = \sum \min(\$70,000 \times \text{應用比例}, \text{單場上限 }\$70,000\text{ 元/場}) = \$${m.grossHuman.toLocaleString()}$ ➔ 乘以保留率 ${Math.round(m.rateH*100)}% = <strong>淨值 $${m.netHuman.toLocaleString()} 元</strong><br>
-                            • <strong>(E-1) 農業部林業署生態服務給付基準（依場域面積核算，法規上限：元/場）：</strong><br>
-                              &nbsp;&nbsp;毛值 $V_{\text{E1 (場域定價)}} = \sum \min\left((\text{場域面積 ha}_i \times \$30,000\text{ 元/公頃}) + \text{水陸微棲地協力維護費}_i(\text{上限 }\$${(parseFloat(document.getElementById('paramUnifiedHabitatUnit')?.value)||20000).toLocaleString()}\text{ 元/場}), \; \text{單場場域定價法定上限 }\$${(parseFloat(document.getElementById('paramFieldEcoCap')?.value)||150000).toLocaleString()}\text{ 元/場}\right) = \$${m.sumBaseEco.toLocaleString()}$ 元<br>
-                              &nbsp;&nbsp;➔ 乘以<strong>棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%) = ${Math.round(m.rateE*100)}\%$</strong> = <strong>場域生態淨值 $${m.sumFieldEcoNet.toLocaleString()} 元</strong><br>
-                            • <strong>(E-2) 獨立之「棲地生物觀測（物種數增減 & 生物族群量增減 %）」評估（與場域定價分開，法規上限：元/場）：</strong><br>
-                              &nbsp;&nbsp;毛值 $V_{\text{E2 (生物觀測)}} = \sum \min\left([(S_{\text{當期},i} \times \$3,500) + (\Delta S_{\text{物種增減},i} \times \$3,500)] \times (1 + \text{生物數量增減}\%_i), \; \text{單場生態監測法定上限 }\$${(parseFloat(document.getElementById('paramBioObsEcoCap')?.value)||60000).toLocaleString()}\text{ 元/場}\right) = \$${m.sumBioBonusEco.toLocaleString()}$ 元<br>
-                              &nbsp;&nbsp;➔ 乘以<strong>棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%) = ${Math.round(m.rateE*100)}\%$</strong> = <strong>生物觀測生態淨值 $${m.sumBioObsEcoNet.toLocaleString()} 元</strong><br>
-                            • <strong>(G) 農務實證與農產產量成長率 (%) 加權價值（依【B】生態成本對照產量成長率 % 並按持續投入年資加權）：</strong><br>
-                              &nbsp;&nbsp;毛值 $V_{\text{mgmt}} = \sum \min\left(\text{【B】生態農法成本}_i \times (1 + \text{農產產量成長率}\%_i) \times W_{\text{year, }i(\text{投入年資加權})}, \; \text{單場上限 }\$${(parseFloat(document.getElementById('paramMgmtEcoCap')?.value)||80000).toLocaleString()}\text{ 元/場}\right) = \$${m.grossMgmt.toLocaleString()}$ 元<br>
-                              &nbsp;&nbsp;➔ 乘以保留率 ${Math.round(m.rateM*100)}% = <strong>淨值 $${m.netMgmt.toLocaleString()} 元</strong>
-                        </div>
-                        <div style="margin-top:4px;"><strong>3. 防漂綠折減後總淨影響力價值公式 ($V_{\text{net}}$)：</strong></div>
-                        <div style="padding-left:14px; color:#334155;">
-                            $V_{\text{net}} = V_{\text{S淨值}} + V_{\text{E1(場域淨值)}} + V_{\text{E2(生物觀測淨值)}} + V_{\text{G淨值}} = \$${m.netHuman.toLocaleString()} + \$${m.sumFieldEcoNet.toLocaleString()} + \$${m.sumBioObsEcoNet.toLocaleString()} + \$${m.netMgmt.toLocaleString()} = \mathbf{\$${m.totalNet.toLocaleString()}\text{ 元}}$
-                        </div>
-                        <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #94a3b8; font-size:13px; color:#0f4c3a;">
-                            <strong>4. 最終 SROI 社會投資報酬率公開計算結果：</strong>
-                            $$\text{SROI} = \frac{V_{\text{net}}}{I_{\text{total}}} = \frac{\$${m.totalNet.toLocaleString()}}{\$${m.totalInput.toLocaleString()}} = \mathbf{1 : ${m.sroiRatio}}$$
-                        </div>
-                    </div>
-
-                    <h3>📊 表 3-1：財務代理法規上限（單位：元/場）與「場域面積 vs. 獨立生物觀測」符合比例檢核總表</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width:20%;">評估構面與指標</th>
-                                <th style="width:28%;">財務代理定價基準與計算公式</th>
-                                <th style="width:22%;">法規上限規範 (單位：元/場)</th>
-                                <th class="num-col" style="width:14%;">核定毛值 / 淨值</th>
-                                <th class="center-col" style="width:16%;">上限與保留率檢核</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>(S) 共同培訓各場應用價值</strong></td>
-                                <td>依受訓人數(50%)、合格導覽員(35%)、導覽路線(15%)比例計算</td>
-                                <td><strong>單場上限 $70,000 元/場</strong><br>(團隊 ${m.nFarms} 場上限 $${(m.nFarms * 70000).toLocaleString()})</td>
-                                <td class="num-col">毛值 $${m.grossHuman.toLocaleString()}<br><strong style="color:#047857;">淨值 $${m.netHuman.toLocaleString()}</strong></td>
-                                <td class="center-col" style="color:#047857;font-weight:bold;">✅ 符合法規上限<br>保留率 ${Math.round(m.rateH*100)}%</td>
-                            </tr>
-                            <tr>
-                                <td><strong>(E-1) 場域面積與微棲地定價</strong><br><span style="font-size:10px;color:#0369a1;">農業部林業署生態服務給付基準法</span></td>
-                                <td>友善農地實際面積 (${m.totalAreaHa} ha × $30,000/公頃) ＋ 水陸微棲地協力維護費 (上限 $${(parseFloat(document.getElementById('paramUnifiedHabitatUnit')?.value)||20000).toLocaleString()} 元/場)</td>
-                                <td><strong>林業署單場場域法定上限</strong><br><strong>$${(parseFloat(document.getElementById('paramFieldEcoCap')?.value)||150000).toLocaleString()} 元/場</strong></td>
-                                <td class="num-col">毛值 $${m.sumBaseEco.toLocaleString()}<br><strong style="color:#0369a1;">淨值 $${m.sumFieldEcoNet.toLocaleString()}</strong></td>
-                                <td class="center-col" style="color:#0369a1;font-weight:bold;">✅ 未超出元/場上限<br>棲地保留率 ${Math.round(m.rateE*100)}%</td>
-                            </tr>
-                            <tr>
-                                <td><strong>(E-2) 獨立棲地生物觀測 (%)</strong><br><span style="font-size:10px;color:#0f766e;">與場域定價分開・物種與數量增減</span></td>
-                                <td>[(當期物種數 × $3,500) + (Δ物種增減 × $3,500)] × (1 + 生物族群量增減 %)</td>
-                                <td><strong>林業署單場生態監測上限</strong><br><strong>$${(parseFloat(document.getElementById('paramBioObsEcoCap')?.value)||60000).toLocaleString()} 元/場</strong> (數量上限 +25%)</td>
-                                <td class="num-col">毛值 $${m.sumBioBonusEco.toLocaleString()}<br><strong style="color:#0f766e;">淨值 $${m.sumBioObsEcoNet.toLocaleString()}</strong></td>
-                                <td class="center-col" style="color:#0f766e;font-weight:bold;">✅ 獨立評估符合上限<br>棲地保留率 ${Math.round(m.rateE*100)}%</td>
-                            </tr>
-                            <tr>
-                                <td><strong>(G) 農務實證與農產產量成長率 (%)</strong><br><span style="font-size:10px;color:#b45309;">依【B】生態成本×產量成長%×投入年資加權</span></td>
-                                <td>【B】生態農法成本 × (1 + 農產產量成長率 %) × 持續投入生態年資權重 $W_{\text{year}}$</td>
-                                <td><strong>單場上限 $${(parseFloat(document.getElementById('paramMgmtEcoCap')?.value)||80000).toLocaleString()} 元/場</strong><br>(產量成長上限+25%｜年資權重最高1.6x)</td>
-                                <td class="num-col">毛值 $${m.grossMgmt.toLocaleString()}<br><strong style="color:#d97706;">淨值 $${m.netMgmt.toLocaleString()}</strong></td>
-                                <td class="center-col" style="color:#047857;font-weight:bold;">✅ 符合元/場上限<br>保留率 ${Math.round(m.rateM*100)}%</td>
-                            </tr>
-                            <tr style="background-color: #ecfdf5;">
-                                <td colspan="3"><strong>總計（經 (1 - 無謂影響% - 歸因%) 折減後之總淨影響力價值 / 總投入 $${m.totalInput.toLocaleString()}）</strong></td>
-                                <td class="num-col"><strong>總毛值 $${m.totalGross.toLocaleString()}</strong></td>
-                                <td class="center-col" style="color:#0f4c3a;font-weight:900;"><strong>總淨值 $${m.totalNet.toLocaleString()}<br>(SROI 1:${m.sroiRatio})</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <h3>🚜 表 3-2：各農場納入 SROI 計算之四大獨立實證項目（(S)培訓應用、(E-1)林業署場域面積定價、(E-2)獨立生物物種與數量觀測、(G)農務與產量成長）明細：</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width:16%;">農場名稱與面積</th>
-                                <th class="num-col" style="width:18%;">(S) 共同培訓應用</th>
-                                <th class="num-col" style="width:22%;">(E-1) 林業署場域面積定價<br><span style="font-size:9.5px;font-weight:normal;">(依面積定價×棲地保留率)</span></th>
-                                <th class="num-col" style="width:22%;">(E-2) 獨立棲地生物觀測<br><span style="font-size:9.5px;font-weight:normal;">(物種與數量增減×棲地保留率)</span></th>
-                                <th class="num-col" style="width:22%;">(G) 農務實證與產量成長</th>
-                            </tr>
-                        </thead>
-                        <tbody>${sroiCoreCalcRowsHtml}</tbody>
-                    </table>
-
-                    <h2>四、 納入計算之合作農場 SROI 效益彙整總表</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>農場名稱</th>
-                                <th>友善農產</th>
-                                <th class="center-col">微棲地(水/陸)</th>
-                                <th class="center-col">物種(體感觀測%)</th>
-                                <th class="center-col">培力(導覽/路線)</th>
-                                <th class="num-col">社會(S)毛值</th>
-                                <th class="num-col">環境(E)毛值</th>
-                                <th class="num-col">農務(G)毛值</th>
-                                <th class="num-col">分項淨價值</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${farmBreakdownRowsHtml}
-                            <tr style="background-color:#ecfdf5;font-weight:bold;color:#0f4c3a;">
-                                <td colspan="2"><strong>總計（共 ${m.nFarms} 處農場彙整）</strong></td>
-                                <td class="center-col"><strong>${m.totalHabitats}處</strong> (${m.totalWater}/${m.totalLand})</td>
-                                <td class="center-col"><strong>${m.totalSpecies}種</strong></td>
-                                <td class="center-col"><strong>${m.totalTrainees}人</strong> (${m.totalGuides}導/${m.totalRoutes}線)</td>
-                                <td class="num-col"><strong>$${m.grossHuman.toLocaleString()}</strong></td>
-                                <td class="num-col"><strong>$${m.grossEco.toLocaleString()}</strong></td>
-                                <td class="num-col"><strong>$${m.grossMgmt.toLocaleString()}</strong></td>
-                                <td class="num-col"><strong>$${m.totalNet.toLocaleString()}</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <h2>五、 專章揭露事項（多元生態服務、教育活動成長率 %、市場波動韌性與農友執行附言 — 不列入 SROI 財務計算）</h2>
-                    <p style="background:#fffbeb; border:1px solid #fde68a; padding:8px 12px; border-radius:8px; color:#92400e; font-size:12px;">
-                        <strong>📌 審計邊界聲明：</strong>依據本專案修正後之 V4.2 嚴謹方法論規範，下列<strong>「教育活動（政府、ESG等）產值成長率 (%)」、「涵養水源替代價值」、「土壤自然碳匯」、「農民健康風險降低」、「土壤沖刷防治」、「以活動取代農產市場價格波動之經營韌性評估」、「轉型初期負面隱形成本」以及「農友各項執行狀況說明附言」</strong>，均屬重要之永續質化與延伸量化佐證，統一於本章節獨立公開揭露，<strong>不列入上方第三章與第四章之 SROI 財務分子／分母計算</strong>，以徹底杜絕重複計價（Double Counting）疑慮。
-                    </p>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width:13%;">農場名稱 (面積)</th>
-                                <th class="center-col" style="width:13%;">教育活動成長率 (%)<br><span style="font-size:9.5px;font-weight:normal;">(僅揭露百分比)</span></th>
-                                <th class="num-col" style="width:15%;">延伸生態服務參考值<br><span style="font-size:9.5px;font-weight:normal;">(水源/多樣性/碳匯)</span></th>
-                                <th class="num-col" style="width:15%;">健康護土與波動韌性<br><span style="font-size:9.5px;font-weight:normal;">(自主韌性揭露)</span></th>
-                                <th class="num-col" style="width:10%;">轉型初期隱形耗損</th>
-                                <th style="width:34%;">農友自主填寫之各項執行狀況說明附言與訪談紀錄</th>
-                            </tr>
-                        </thead>
-                        <tbody>${nonSroiDisclosureRowsHtml}</tbody>
-                    </table>
-
-                    <h2>六、 企業永續採購雙贏戰略：115 年 ESG 評鑑與 GRI 對應指南</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>115年 ESG 評鑑指標</th>
-                                <th>國際 GRI 準則</th>
-                                <th>本報告提供予合作企業之量化實證數據與永續報告書揭露內容</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>E-10 生物多樣性指標</strong></td>
-                                <td>GRI 304-3 / 301-1</td>
-                                <td>提供 <strong>${m.totalHabitats} 處里山微棲地</strong>（${m.totalWater}處水域、${m.totalLand}處陸域）與 <strong>${m.totalSpecies} 種棲地保護物種紀錄</strong>，直接佐證企業推動「自然正向 (Nature-positive)」棲地復育成果。</td>
-                            </tr>
-                            <tr>
-                                <td><strong>G-25 供應商 ESG 管理</strong></td>
-                                <td>GRI 308-1 / 204-1</td>
-                                <td>採用嚴格財務代理上限封頂與防漂綠折減模型（核定 SROI <strong>1 : ${m.sroiRatio}</strong>），可直接列為企業「綠色供應鏈環境與社會盡職調查 (Due Diligence)」第三方實證報告。</td>
-                            </tr>
-                            <tr>
-                                <td><strong>S-14 供應商永續培訓</strong></td>
-                                <td>GRI 404-1</td>
-                                <td>認列「${m.activeTeam.guidanceTitle}」培育之 <strong>${m.totalTrainees} 位農友與夥伴</strong>（含 <strong>${m.totalGuides} 位合格生態導覽員</strong>）之生態監測與 SROI 自主記帳職能。</td>
-                            </tr>
-                            <tr>
-                                <td><strong>S-5 社區參與及支持</strong></td>
-                                <td>GRI 413-1</td>
-                                <td>支持南投水里里山友善農產（<strong>${cropsListStr}</strong>）與 <strong>${m.totalRoutes} 條里山生態旅遊導覽路線</strong>，實踐城鄉共好與環境教育推廣。</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <h2>七、 附錄：水里里山生態廊道 SROI 社會價值評估方法論版本全文（2025 V3.0 基期賦能版 ＆ 2026 V4.2 農務實證與林業署法規對標版）</h2>
-                    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:12px; padding:16px 18px; font-size:11.5px; color:#1e293b; line-height:1.75; space-y:10px;">
-                        <p style="font-weight:900; color:#0f4c3a; font-size:13.5px; margin-bottom:6px;">
-                            📜 附錄全文說明：本章節完整收錄水里里山生態廊道計畫核定之 SROI 社會價值評估方法論全文（當前報告鎖定套用版本：${ver}｜核定存檔日期：${m.activeTeam.lastSavedDate || today}），作為第三方查證確信與企業 ESG 盡職調查之正式規範依據。
-                        </p>
-
-                        <h3 style="margin-top:10px; color:#0f4c3a;">【壹、 方法論核心精神與防範漂綠雙重防線】</h3>
-                        <p>
-                            本方法論由「水里里山生態廊道－教育部推動大學社會責任實踐計畫『臺大。山林。學院 2.0』」制定，遵循國際社會價值標準（Social Value International, SVI）之八大原則（特別針對 Principle 4 僅納入重大性項目、Principle 5 不誇大宣稱 Do not overclaim、Principle 6 透明公開 Be transparent）。為解決傳統環境公益活動缺乏量化依據之痛點，本方法論建立三大誠信治理防線：<br>
-                            1. <strong>資源共享、效益按實證比例落地並設法規上限（元/場）：</strong>團隊共同培訓經費（預設 $70,000 元）於投入端為團隊共享資源，避免重複累加分母；於成果端則依各農場實際受訓人數（50%）、合格導覽員數（35%）與導覽路線數（15%）按比例核算落地應用價值，且單一農場最高不得超過 <strong>$70,000 元/場</strong> 之法定上限。<br>
-                            2. <strong>場域面積定價與生物物種／族群數量觀測完全分離（Stock & Flow 分離評估）：</strong>徹底解除過往將生物觀測百分比直接乘算於棲地基數之交互膨脹風險，將環境資本拆分為獨立的「(E-1) 農業部林業署生態服務給付基準之場域面積與微棲地定價」與「(E-2) 獨立之棲地生物物種數及族群數量體感增減 (%) 評估」，兩者各自受「元/場」法規上限封頂，再分別乘以棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%)$。<br>
-                            3. <strong>嚴格劃分 SROI 財務計算與第五章專章揭露邊界：</strong>SROI 財務計算僅納入「(S) 共同培訓應用」、「(E-1) 林業署場域面積定價」、「(E-2) 獨立生物物種與數量體感觀測 (%)」、「(G) 農務實證成本差額與農產產量成長率 (%)」四大實證項目；其餘教育活動成長率 (%)、涵養水源、土壤碳匯、農民健康風險降低、土壤沖刷防治、市場價格波動韌性評估與農友各項執行狀況說明附言，一律列為第五章「專章揭露事項（不列入 SROI 財務計算）」，100% 杜絕重複計價（Double Counting）。
-                        </p>
-
-                        <h3 style="margin-top:12px; color:#0f4c3a;">【貳、 2025 年度 (V3.0) 基期賦能方法論全文（第一年基準鎖定）】</h3>
-                        <p>
-                            1. <strong>2025 基期總投入成本 ($I_{\text{2025}}$)：</strong>$I_{\text{2025}} = C_{\text{training (共同培訓 \$70,000)}} + (N_{\text{farms}} \times C_{\text{build (單場棲地建置補助 \$10,000 元/場)}})$。<br>
-                            2. <strong>2025 基期三大成果衡量基準：</strong><br>
-                            • <strong>(S) 人力資本賦能：</strong>完成微棲地盤點、減藥管理、生態導覽與 SROI 記帳培訓，單場應用價值上限 $70,000 元/場。<br>
-                            • <strong>(E) 微棲地與生態基期盤點：</strong>建立各農場基期水域微棲地（生態池、草溝）與陸域微棲地（石積、枯木堆、原生綠籬）處數及基期物種數（設定基期生物族群數量觀測基準為 100%），完成鎖定後作為後續年度正向變動之比較基準。<br>
-                            • <strong>(G) 農務生產管理基期成本【A】：</strong>盤點並鎖定 2025 基期總成本【A】與基期農產產量 (kg)，作為跨年度淨效益對照基準。
-                        </p>
-
-                        <h3 style="margin-top:12px; color:#0f4c3a;">【參、 2026 年度 (V4.2) 行為改變實證與林業署二階段法規對標方法論全文】</h3>
-                        <p>
-                            進入第二年度（2026 V4.2）及後續跨年度（2027+ V5.0），硬體建置成本不重疊申報，僅計算當期棲地維護輔導費（預設 $2,000 元/場）與共同培訓投入，並依農場主輸入之實證數據按以下四大公式核算：<br>
-                            1. <strong>(S) 共同培訓各場落地應用價值 ($V_{\text{S}}$)：</strong><br>
-                            $$V_{\text{S, 淨值}} = \sum_{i=1}^{N} \min\Big( \$70,000 \times \big[0.50 \times \tfrac{\text{受訓人數}_i}{3} + 0.35 \times \tfrac{\text{導覽員數}_i}{2} + 0.15 \times \tfrac{\text{路線數}_i}{1}\big], \; \$70,000\text{ 元/場} \Big) \times (1 - \text{DW}_{\text{S}}\% - \text{Attr}_{\text{S}}\%)$$<br>
-                            2. <strong>(E-1) 場域面積與微棲地定價（依農業部林業及自然保育署《瀕危物種及重要棲地生態服務給付推動方案》基準法，上限單位：元/場）：</strong><br>
-                            • <strong>友善農地場域面積核算：</strong>依農場實際友善耕作面積（公頃）× <strong>$30,000 元/公頃</strong>（林業署友善農地生態薪水基準，每場最高 5 公頃 = <strong>$150,000 元/場</strong>）。<br>
-                            • <strong>水陸微棲地協力維護費：</strong>依水陸微棲地設施核算，受林業署棲地營造維護法規上限（預設 <strong>$20,000 元/場</strong>）封頂。<br>
-                            • <strong>單場場域定價法定上限封頂與保留率計算：</strong>兩者加總受<strong>「單場場域定價法定上限（預設 $150,000 元/場）」</strong>封頂，再乘以<strong>棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%)$</strong>（團隊彙整預設扣除 80% 自然背景無謂影響與 10% 外部歸因，淨保留率 10%；單場獨立評估預設淨保留率 60%）。<br>
-                            3. <strong>(E-2) 獨立之「棲地生物觀測（生物物種數 & 生物族群數量增減 %）」評估（與場域定價完全分開，上限單位：元/場）：</strong><br>
-                            • 對標林業署方案第二階段「自主生態觀察與巡護監測獎勵金（法定上限 <strong>$60,000 元/場</strong>）」，單獨針對農友日常農作觀察之新物種及原生生物總族群量增減進行獨立核算：<br>
-                            $$V_{\text{E2, 淨值}} = \sum_{i=1}^{N} \min\Big( \big[(S_{\text{當期},i} \times \$3,500) + (\Delta S_{\text{物種增減},i} \times \$3,500)\big] \times \big(1 + \min(\text{生物數量增減}\%_i, +25\%)\big), \; \$60,000\text{ 元/場} \Big) \times (1 - \text{無謂影響}\% - \text{歸因}\%)$$<br>
-                            4. <strong>(G) 農務實證與農產產量成長率 (%) 加權淨效益 ($V_{\text{G}}$，依【B】生態成本對照產量成長率 % 並依投入年資加權，上限單位：元/場）：</strong><br>
-                            • 為真實反映農友持續投入友善耕作之正向累積效益，以農友實際投入之<strong>【B】當期生態農法成本</strong>對照其<strong>農產產量成長率 (%)（認列上限 +25%）</strong>，並乘以<strong>「持續投入生態農法年資加權權重 $W_{\text{year}} = 1 + (\text{年資}-1)\times 15\%$（最高封頂 1.60 倍）」</strong>，即投入【B】生態成本越高、產量成長率越高、持續投入年資越久，該場加權權重與計算價值越高，受單場上限（預設 <strong>$80,000 元/場</strong>）封頂後，再乘以農務管理保留率 $(1 - \text{DW}_{\text{G}}\% - \text{Attr}_{\text{G}}\% = 70\%)$。
-                        </p>
-
-                        <h3 style="margin-top:12px; color:#0f4c3a;">【肆、 影響力期程 (Duration)、跨年衰減率 (Drop-off) 與敏感度壓力測試結論】</h3>
-                        <p>
-                            本專案基礎執行期程為 22 個月（2025/01/01 ~ 2026/10/31），營造之微棲地與導覽路線具備 3～5 年之持續存續效益（預設跨年衰減率 Drop-off 為每年遞減 15%）。經敏感度壓力測試：若將環境生態毛價值全面下修 20%，SROI 仍達 <strong>1 : ${sroiEcoMinus20}</strong>；若將轉型初期隱形耗損全額自農務管理構面扣除，SROI 仍達 <strong>1 : ${sroiDoubleNeg}</strong>，證實本方法論具備極高之抗風險能力與審計嚴謹度。
-                        </p>
-                    </div>
+            const quotesHtml = m.farmDetails.map(({ farm }) => `
+                <div style="background:#f8fafc;border-left:4px solid #10b981;padding:8px 12px;margin-bottom:8px;border-radius:6px;font-size:12px;">
+                    <strong>【${farm.name}（${farm.crops}）】</strong> ${farm.stakeholderQuote || '透過微棲地營造與減藥管理，兼顧生態保育與農場經營韌性。'}
                 </div>
-            `;
+            `).join('');
+
+            // Sensitivity Scenarios
+            const sroiEcoDown20 = ((m.netHuman + Math.round(m.netEco * 0.8) + m.netMgmt) / m.totalInput).toFixed(2);
+            const sroiStrictDrop10 = (((m.netHuman + m.netEco + m.netMgmt) * 0.9) / m.totalInput).toFixed(2);
+            const y1Net = m.totalNet;
+            const y2Net = Math.round(m.totalNet * 0.85);
+            const y3Net = Math.round(m.totalNet * 0.85 * 0.85);
 
             const repContainer = document.getElementById('reportPreviewContainer');
-            if (repContainer) repContainer.innerHTML = reportHtml;
+            if (repContainer) {
+                repContainer.innerHTML = `
+                    <div class="pdf-block">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f4c3a;padding-bottom:10px;margin-bottom:14px;">
+                            <div>
+                                <div style="font-size:11px;font-weight:900;color:#059669;letter-spacing:1px;">SHUILI SATOYAMA ECOLOGICAL CORRIDOR SROI REPORT</div>
+                                <h1>${subjectTitle} — SROI 社會價值影響力評估報告書</h1>
+                                <p style="margin:2px 0;color:#475569;font-weight:700;">
+                                    指導／合作單位：${m.activeTeam.guidanceTitle} ｜ 投入類型：【${getInvestBadgeText(m.activeTeam)}】 ｜ 方法論版本：${ver}
+                                </p>
+                            </div>
+                            <div style="background:#ecfdf5;border:2px solid #10b981;border-radius:12px;padding:8px 14px;text-align:center;min-width:155px;">
+                                <div style="font-size:10px;font-weight:800;color:#0f4c3a;">核定社會投資報酬率</div>
+                                <div style="font-size:24px;font-weight:900;color:#059669;">1 : ${m.sroiRatio}</div>
+                                <div style="font-size:9.5px;color:#475569;">核定存檔：${m.activeTeam.lastSavedDate || today}</div>
+                            </div>
+                        </div>
 
-            // Populate 4 PNG Cards
+                        <h2>第一章、執行摘要與專案總覽附言 (Executive Summary)</h2>
+                        <p>
+                            本報告旨在評估 <strong>${subjectTitle}</strong>（主要友善農產：<strong>${cropsListStr}</strong>，總計友善耕作面積 <strong>${m.totalAreaHa} 公頃</strong>）於執行期間（<strong>${m.activeTeam.execPeriod || '2025/01/01 ~ 2026/10/31'}</strong>）所創造之社會、環境與農務治理綜合淨影響力。
+                            本案核心產出包含：<strong>${m.activeTeam.keyOutputs}</strong>，共計維護 <strong>${m.totalHabitats} 處微棲地（水域 ${m.totalWater} 處、陸域 ${m.totalLand} 處）</strong>、保育及監測至少 <strong>${m.totalSpecies} 種里山指標物種</strong>，並培育 <strong>${m.totalTrainees} 位專業人員（含 ${m.totalGuides} 位合格生態導覽員）</strong>與建置 <strong>${m.totalRoutes} 條生態導覽路線</strong>。
+                        </p>
+                        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:12px;">
+                            <strong>📝 群島專案視覺化看板總覽附言：</strong><br>
+                            ${m.activeTeam.overviewNote || '水里里山生態廊道透過微棲地營造、減藥管理與導覽培力，串聯在地農友共創自然正向價值與經營韌性。'}
+                        </div>
+
+                        <h2>第二章、利害關係人議合實證與團隊共同培訓資源配置</h2>
+                        <p>
+                            <strong>1. 團隊共同培訓投入與各農場落地應用原則：</strong>本專案由指導單位投入共同培訓總經費 <strong>$${m.trainInput.toLocaleString()} 元</strong>（平均每場分攤投入成本為 $${m.sharedTrainPerFarmInput.toLocaleString()} 元），加計微棲地建置與當期維護輔導經費 <strong>$${m.habInput.toLocaleString()} 元</strong>，總投入成本（分母 $I_{\text{total}}$）合計為 <strong>$${m.totalInput.toLocaleString()} 元</strong>。各農場完訓後將知識轉化為田間微棲地監測、減藥管理與導覽解說，依各場實際受訓人數（權重 50%）、合格導覽員數（權重 35%）與導覽路線數（權重 15%）按比例核計其落地應用價值，且單場最高不得逾越法規與市場代理上限 <strong>$70,000 元/場</strong>。
+                        </p>
+                        <h3>💬 合作農場主與受訓導覽員質性議合實證語錄 (Stakeholder Engagement)</h3>
+                        ${quotesHtml}
+
+                        <h2>第三章、SROI 核心數學公式、公開驗算過程與林業署法規上限對照表</h2>
+                        <div style="background:#0f172a;color:#f8fafc;border-radius:12px;padding:14px 16px;margin:10px 0;font-size:12px;line-height:1.7;">
+                            <div style="color:#fbbf24;font-weight:900;font-size:13px;margin-bottom:6px;">📐 公開 SROI 數學公式與當期數值代入驗算結果：</div>
+                            <div>• <strong>公式定義：</strong> $\\text{SROI} = \\frac{V_{\\text{Net (總淨影響力價值)}}}{I_{\\text{Total (總投入成本)}}} = \\frac{\\text{Net}(S) + \\text{Net}(E_1) + \\text{Net}(E_2) + \\text{Net}(G)}{I_{\\text{共同培訓}} + I_{\\text{微棲地補助與維護}}}$</div>
+                            <div>• <strong>① (S) 共同培訓應用淨值：</strong> 毛值 $${m.grossHuman.toLocaleString()} × 保留率 ${Math.round(m.rateH*100)}% (扣除無謂 ${dwH}%、歸因 ${attrH}%) = <strong>$${m.netHuman.toLocaleString()} 元</strong></div>
+                            <div>• <strong>② (E-1) 林業署場域面積定價淨值：</strong> 毛值 $${m.sumBaseEco.toLocaleString()} × 棲地生態保留率 ${Math.round(m.rateE*100)}% (扣除無謂 ${dwE}%、歸因 ${attrE}%) = <strong>$${m.sumFieldEcoNet.toLocaleString()} 元</strong></div>
+                            <div>• <strong>③ (E-2) 獨立棲地生物觀測淨值：</strong> 毛值 $${m.sumBioBonusEco.toLocaleString()} × 棲地生態保留率 ${Math.round(m.rateE*100)}% (扣除無謂 ${dwE}%、歸因 ${attrE}%) = <strong>$${m.sumBioObsEcoNet.toLocaleString()} 元</strong></div>
+                            <div>• <strong>④ (G) 農務實證與產量成長年資加權淨值：</strong> 毛值 $${m.grossMgmt.toLocaleString()} × 農務管理保留率 ${Math.round(m.rateM*100)}% (扣除無謂 ${dwM}%、歸因 ${attrM}%) = <strong>$${m.netMgmt.toLocaleString()} 元</strong></div>
+                            <div style="border-top:1px solid #334155;margin-top:6px;padding-top:6px;color:#34d399;font-weight:900;">
+                                ✅ 公開驗算結果：總淨影響力價值 $${m.totalNet.toLocaleString()} 元 ÷ 總投入成本 $${m.totalInput.toLocaleString()} 元 = <strong>SROI 1 : ${m.sroiRatio}</strong>
+                            </div>
+                        </div>
+
+                        <h3>表 3-1：V4.2 財務代理變數 (Financial Proxies) 文獻依據與法定上限（元/場）規範表</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:18%;">評估構面與代碼</th>
+                                    <th style="width:27%;">計算公式與比例原則</th>
+                                    <th style="width:20%;" class="num-col">代理單價與法定上限 (元/場)</th>
+                                    <th style="width:35%;">官方文獻與法規依據來源</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>(S) 共同培訓各場應用價值</strong></td>
+                                    <td>依受訓人數(50%)、合格導覽員(35%)、導覽路線(15%)比例核算</td>
+                                    <td class="num-col">法定上限：<br><strong>$${m.trainInput.toLocaleString()} 元/場</strong></td>
+                                    <td>勞動部勞動力發展署職能培訓市場成本基準、教育部 USR 專業培力課程定價</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>(E-1) 場域面積與微棲地定價</strong><br><span style="font-size:10px;color:#059669;">(林業署生態服務給付基準)</span></td>
+                                    <td>友善農地面積(公頃) × $${unifiedAreaRate.toLocaleString()}/公頃 + 微棲地維護費(上限 $${habMaintCapPerFarm.toLocaleString()} 元/場)，再乘以棲地生態保留率 ${Math.round(m.rateE*100)}%</td>
+                                    <td class="num-col">單場場域法定上限：<br><strong style="color:#be123c;">$${fieldEcoCap.toLocaleString()} 元/場</strong></td>
+                                    <td>農業部林業及自然保育署《瀕危物種及重要棲地生態服務給付推動方案》友善農地給付上限（元/場）</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>(E-2) 獨立棲地生物觀測價值</strong><br><span style="font-size:10px;color:#0284c7;">(與場域定價分開獨立計算)</span></td>
+                                    <td>[(當期物種數 + 物種增減) × $${speciesProxy.toLocaleString()}] × (1 + 生物族群體感增減%)，再乘以棲地生態保留率 ${Math.round(m.rateE*100)}%</td>
+                                    <td class="num-col">單場生物觀測上限：<br><strong style="color:#be123c;">$${bioObsEcoCap.toLocaleString()} 元/場</strong></td>
+                                    <td>農業部林業及自然保育署《生態服務給付方案》自主生態觀察與巡護監測獎勵金基準（元/場）</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>(G) 農務實證與產量成長加權</strong><br><span style="font-size:10px;color:#b45309;">(【B】生態成本×產量%×年資權重)</span></td>
+                                    <td>【B】當期生態農法成本 × (1 + 農產產量成長率%) × 持續投入生態年資權重 $W_{\\text{year}}$，再乘以保留率 ${Math.round(m.rateM*100)}%</td>
+                                    <td class="num-col">單場農務實證上限：<br><strong style="color:#be123c;">$${mgmtEcoCap.toLocaleString()} 元/場</strong></td>
+                                    <td>農糧署友善環境耕作資材補助基準與農場自主田間記帳實證模型（持續投入年資越高權重越高）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>表 3-2：合作農場 SROI 四大核心實證指標分項核算明細表</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:18%;">農場名稱與基本資料</th>
+                                    <th style="width:15%;" class="num-col">(S) 共同培訓應用<br>(上限 $70,000 元/場)</th>
+                                    <th style="width:20%;" class="num-col">(E-1) 林業署場域面積定價<br>(上限 $${fieldEcoCap.toLocaleString()} 元/場)</th>
+                                    <th style="width:19%;" class="num-col">(E-2) 獨立棲地生物觀測<br>(上限 $${bioObsEcoCap.toLocaleString()} 元/場)</th>
+                                    <th style="width:20%;" class="num-col">(G) 【B】生態成本×產量%×年資<br>(上限 $${mgmtEcoCap.toLocaleString()} 元/場)</th>
+                                    <th style="width:8%;" class="center-col">單場 SROI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sroiCoreCalcRowsHtml}
+                                <tr style="background:#ecfdf5;font-weight:900;">
+                                    <td>總計 (${m.nFarms} 處農場｜${m.totalAreaHa} ha)</td>
+                                    <td class="num-col">毛值 $${m.grossHuman.toLocaleString()}<br>淨值 $${m.netHuman.toLocaleString()}</td>
+                                    <td class="num-col">毛值 $${m.sumBaseEco.toLocaleString()}<br>淨值 $${m.sumFieldEcoNet.toLocaleString()}</td>
+                                    <td class="num-col">毛值 $${m.sumBioBonusEco.toLocaleString()}<br>淨值 $${m.sumBioObsEcoNet.toLocaleString()}</td>
+                                    <td class="num-col">毛值 $${m.grossMgmt.toLocaleString()}<br>淨值 $${m.netMgmt.toLocaleString()}</td>
+                                    <td class="center-col" style="color:#059669;font-size:13px;">1 : ${m.sroiRatio}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2>第四章、敏感度分析 (Sensitivity Analysis) 與影響力存續期程 (Duration & Drop-off)</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>壓力測試與跨期情境設定</th>
+                                    <th>參數調整說明</th>
+                                    <th class="num-col">模擬總淨價值 (NT$)</th>
+                                    <th class="center-col">模擬 SROI 比率</th>
+                                    <th>抗風險與確信結論</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>基準核定情境 (Baseline)</strong></td>
+                                    <td>依表 3-1 法定上限與分項保留率核算</td>
+                                    <td class="num-col">$${m.totalNet.toLocaleString()}</td>
+                                    <td class="center-col"><strong>1 : ${m.sroiRatio}</strong></td>
+                                    <td>通過 SVI 防漂綠確信基準</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>情境一：微棲地與生物觀測價值下修 20%</strong></td>
+                                    <td>假設極端氣候導致環境資本 (E-1 + E-2) 下修 20%</td>
+                                    <td class="num-col">$${(m.netHuman + Math.round(m.netEco * 0.8) + m.netMgmt).toLocaleString()}</td>
+                                    <td class="center-col"><strong>1 : ${sroiEcoDown20}</strong></td>
+                                    <td>仍遠高於 1:1，具備高度生態韌性</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>情境二：全體折減因子再加嚴 10%</strong></td>
+                                    <td>無謂影響與歸因折減再提高 10% 之保守壓力測試</td>
+                                    <td class="num-col">$${Math.round(m.totalNet * 0.9).toLocaleString()}</td>
+                                    <td class="center-col"><strong>1 : ${sroiStrictDrop10}</strong></td>
+                                    <td>證明無過度歸因或灌水疑慮</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>跨期存續與衰減率 (Drop-off 15%/年)</strong></td>
+                                    <td>執行期 22 個月後，微棲地與路線存續 3 年（年衰減 15%）</td>
+                                    <td class="num-col">Y1: $${y1Net.toLocaleString()}<br>Y2: $${y2Net.toLocaleString()}<br>Y3: $${y3Net.toLocaleString()}</td>
+                                    <td class="center-col">3年累計淨值<br><strong>$${(y1Net+y2Net+y3Net).toLocaleString()}</strong></td>
+                                    <td>微棲地與導覽教案具長期複利效益</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2>第五章、多元生態與經營韌性專章揭露事項（不列入 SROI 財務計算）</h2>
+                        <p>
+                            依據本專案 V4.2 方法論審計邊界規範，為維持 SROI 財務計算之純粹性並保護農友商業營收隱私，各農場之<strong>「教育活動（政府計畫、企業 ESG 等）成長率 (%)」</strong>、<strong>「獨立生態正向代理估算（水源涵養、生物多樣性維持、土壤碳匯）」</strong>、<strong>「管理正向與市場價格波動韌性評估（農民健康風險降低、土壤沖刷防治、活動取代純農產波動韌性定價、初期轉型隱形成本）」</strong>以及<strong>「農民各項執行狀況說明附言」</strong>，統一於本專章完整揭露，不計入第三章 SROI 分子與分母：
+                        </p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:15%;">農場名稱</th>
+                                    <th style="width:14%;" class="center-col">教育活動成長率 (%)<br><span style="font-size:9.5px;">(隱藏敏感金額)</span></th>
+                                    <th style="width:18%;" class="num-col">生態正向參考定價<br>(水源/多樣性/碳匯)</th>
+                                    <th style="width:20%;" class="num-col">健康護土、市場波動韌性<br>與轉型隱形成本揭露</th>
+                                    <th style="width:33%;">農友三軌執行狀況說明附言</th>
+                                </tr>
+                            </thead>
+                            <tbody>${disclosureRowsHtml}</tbody>
+                        </table>
+
+                        <h2>第六章、115 年度企業 ESG 評鑑指標與國際 GRI 準則對應</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:22%;">ESG 評鑑 / GRI 指標</th>
+                                    <th style="width:28%;">指標核心要求</th>
+                                    <th style="width:50%;">本專案提供之量化實證與風險緩釋價值</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>ESG 評鑑 E-10</strong><br>GRI 304 生物多樣性</td>
+                                    <td>生物多樣性風險評估與具體棲地保育實績</td>
+                                    <td>提供 <strong>${m.totalHabitats} 處微棲地（水 ${m.totalWater}、陸 ${m.totalLand}）</strong>、<strong>${m.totalAreaHa} 公頃友善農地</strong>及 <strong>${m.totalSpecies} 種里山物種監測紀錄</strong>，對標農業部林業署生態服務給付基準法。</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ESG 評鑑 G-25</strong><br>GRI 308 供應商環境評估</td>
+                                    <td>供應鏈永續選任標準與實地盡職調查</td>
+                                    <td>提供經密碼核定鎖定之【A】基期成本 vs.【B】生態農法成本實證帳本與持續投入生態年資加權紀錄，杜絕漂綠風險。</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ESG 評鑑 S-14 & S-5</strong><br>GRI 404 & 413 在地社區</td>
+                                    <td>供應商永續培訓與支持在地農村社區發展</td>
+                                    <td>共同培訓 <strong>${m.totalTrainees} 位農友與夥伴（含 ${m.totalGuides} 位合格導覽員）</strong>並建置 <strong>${m.totalRoutes} 條生態導覽路線</strong>，強化里山農村多元經營韌性。</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h2>第七章、附錄：水里里山生態廊道 SROI 社會價值評估方法論版本全文</h2>
+                        <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:12px 16px;font-size:11.5px;line-height:1.65;">
+                            <p><strong>【一、2025 (V3.0) 基期賦能核定版方法論全文摘要】</strong><br>
+                            1. <strong>資源共享、效益獨立：</strong>共同培訓經費（預設 $70,000）於投入端為團隊共享資源，避免重複高估投入分母；微棲地建置費（預設 $10,000/場）依實際參與場數核算。<br>
+                            2. <strong>防漂綠高標準折減：</strong>團隊彙整模式下，棲地環境價值扣除 80% 自然背景無謂影響 (Deadweight) 與 10% 外部歸因 (Attribution)，僅認列 10% 淨影響力（單場獨立評估模式認列 60%）。<br>
+                            3. <strong>2025 (V3.0) 基本數據常駐鎖定：</strong>基期棲地處數、基期物種數與【A】過去基期總成本 (基期基準年度:2025) 經密碼驗證鎖定後即覆蓋防竄改漸層保護，作為跨年度正向變動之唯一比較基準。</p>
+                            <p style="margin-top:8px;"><strong>【二、2026 (V4.2) 農務實證與農業部林業署二階段法規對標版方法論全文】</strong><br>
+                            1. <strong>SROI 財務計算純化邊界：</strong>僅將「(S) 團隊共同培訓各場落地應用」、「(E-1) 林業署場域面積與微棲地定價」、「(E-2) 獨立棲地生物觀測（物種與族群體感增減 %）」及「(G) 【B】當期生態農法成本對照農產產量成長率 (%) 與持續投入生態年資加權」納入 SROI 財務計算；其餘教育活動成長率 (%)、水源涵養、土壤碳匯、健康護土、市場價格波動韌性評估與農民執行附言，全面改列為報告書第五章「專章揭露事項（不列入 SROI 財務計算）」。<br>
+                            2. <strong>(E-1) 場域面積定價（依林業署生態服務給付基準法，上限單位：元/場）：</strong>依農場實際友善耕作面積（公頃）× $${unifiedAreaRate.toLocaleString()} 元/公頃 ＋ 水陸微棲地協力維護費（受微棲地維護法規上限 $${habMaintCapPerFarm.toLocaleString()} 元/場 封頂），並受「單場場域定價法定上限 $${fieldEcoCap.toLocaleString()} 元/場」嚴格封頂，再乘以棲地生態保留率 $(1 - \\text{無謂影響}\\% - \\text{歸因}\\%)$。<br>
+                            3. <strong>(E-2) 棲地生物觀測 (%) 與場域定價分開獨立評估（上限單位：元/場）：</strong>單獨針對各場「生物物種數增減」與「生物族群數量體感增減 (%)」進行計算，受林業署自主生態觀察獎勵法定上限 $${bioObsEcoCap.toLocaleString()} 元/場 封頂，再乘以棲地生態保留率 $(1 - \\text{無謂影響}\\% - \\text{歸因}\\%)$。<br>
+                            4. <strong>(G) 農務實證與農產產量成長率 (%) 依【B】生態成本與持續投入年資加權：</strong>以農友實際投入之【B】當期生態農法成本為基底，對照農產產量成長率 (%) 是否越高，並乘以「持續投入生態年資加權權重 $W_{\\text{year}} = 1 + (\\text{年資}-1)\\times 15\\%$」（年資越久權重越高，最高 1.60x），受單場上限 $${mgmtEcoCap.toLocaleString()} 元/場 封頂，再乘以農務管理保留率。</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Populate 4 High-Res Infographic Cards
             const c1 = document.getElementById('infographic-card-1');
             if (c1) {
                 c1.innerHTML = `
-                    <div class="flex justify-between items-center border-b border-emerald-700 pb-3">
-                        <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full">SROI 核定總覽圖卡</span>
-                        <span class="text-xs text-emerald-200 font-bold">📅 ${m.activeTeam.execPeriod || '2025/01/01 ~ 2026/10/31'}</span>
-                    </div>
-                    <div>
-                        <div class="text-xs text-emerald-300 font-bold">${m.activeTeam.guidanceTitle}</div>
-                        <div class="text-xl font-black text-white mt-0.5">${subjectTitle}</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 bg-white/10 p-4 rounded-xl border border-white/15">
+                    <div class="flex justify-between items-start border-b border-emerald-700 pb-3">
                         <div>
-                            <div class="text-[11px] text-emerald-200">總投入成本 (Input)</div>
-                            <div class="text-lg font-black text-white">$${m.totalInput.toLocaleString()}</div>
+                            <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded">${getInvestBadgeText(m.activeTeam)}｜${ver}</span>
+                            <h4 class="text-lg font-black text-white mt-1">${subjectTitle}</h4>
+                            <p class="text-[11px] text-emerald-200">${m.activeTeam.guidanceTitle}</p>
                         </div>
-                        <div>
-                            <div class="text-[11px] text-emerald-200">防漂綠折減後淨社會價值</div>
-                            <div class="text-lg font-black text-emerald-300">$${m.totalNet.toLocaleString()}</div>
+                        <div class="bg-white/10 border border-amber-400/50 rounded-xl px-3 py-2 text-center">
+                            <div class="text-[9px] text-amber-200 font-bold">核定 SROI</div>
+                            <div class="text-2xl font-black text-amber-400">1 : ${m.sroiRatio}</div>
                         </div>
                     </div>
-                    <div class="bg-amber-400 text-slate-950 p-3.5 rounded-xl flex justify-between items-center">
-                        <span class="font-black text-xs">核定社會投資報酬率 (SROI)</span>
-                        <span class="font-black text-2xl">1 : ${m.sroiRatio}</span>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-emerald-950/80 p-3 rounded-xl border border-emerald-700">
+                            <span class="text-emerald-300 text-[10px] block">總投入成本 (Input)</span>
+                            <span class="text-lg font-black text-white">$${m.totalInput.toLocaleString()}</span>
+                        </div>
+                        <div class="bg-emerald-950/80 p-3 rounded-xl border border-emerald-700">
+                            <span class="text-amber-300 text-[10px] block">總淨影響力價值 (Net)</span>
+                            <span class="text-lg font-black text-amber-400">$${m.totalNet.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-[11px] text-center">
+                        <div class="bg-white/10 p-2 rounded-lg"><span class="block text-emerald-300 text-[9.5px]">(S) 共同培訓淨值</span><strong>$${m.netHuman.toLocaleString()}</strong></div>
+                        <div class="bg-white/10 p-2 rounded-lg"><span class="block text-sky-300 text-[9.5px]">(E-1+E-2) 生態淨值</span><strong>$${m.netEco.toLocaleString()}</strong></div>
+                        <div class="bg-white/10 p-2 rounded-lg"><span class="block text-amber-300 text-[9.5px]">(G) 農務年資加權淨值</span><strong>$${m.netMgmt.toLocaleString()}</strong></div>
+                    </div>
+                    <div class="text-[10px] text-emerald-200 flex justify-between pt-1 border-t border-emerald-800">
+                        <span>執行期間：${m.activeTeam.execPeriod}</span>
+                        <span>✅ 核定日期：${m.activeTeam.lastSavedDate || today}</span>
                     </div>
                 `;
             }
@@ -3125,27 +3300,28 @@
             const c2 = document.getElementById('infographic-card-2');
             if (c2) {
                 c2.innerHTML = `
-                    <div class="border-b pb-2 flex justify-between items-center">
-                        <span class="font-black text-sm text-satoyama-dark">🦋 微棲地物種復育 × 培訓導覽環教價值</span>
-                        <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">${ver}</span>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <div>
+                            <span class="bg-emerald-100 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded">林業署二階段法規對標 (元/場)</span>
+                            <h4 class="text-base font-black text-satoyama-dark mt-1">微棲地場域面積定價 × 獨立生物觀測</h4>
+                        </div>
+                        <i class="fas fa-frog text-2xl text-satoyama-main"></i>
                     </div>
-                    <div class="grid grid-cols-2 gap-2.5 text-xs">
-                        <div class="bg-sky-50 p-3 rounded-xl border border-sky-200">
-                            <div class="text-sky-800 font-bold">營造維護里山微棲地</div>
-                            <div class="text-lg font-black text-sky-950 mt-0.5">${m.totalHabitats} 處 (${m.totalWater}水/${m.totalLand}陸)</div>
-                        </div>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
                         <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
-                            <div class="text-emerald-800 font-bold">環境生態淨影響力價值</div>
-                            <div class="text-lg font-black text-emerald-950 mt-0.5">$${m.netEco.toLocaleString()}</div>
+                            <div class="text-[10px] font-bold text-emerald-800">(E-1) 場域面積與微棲地</div>
+                            <div class="text-lg font-black text-satoyama-dark mt-0.5">${m.totalAreaHa} ha / ${m.totalHabitats} 處</div>
+                            <div class="text-[10px] text-slate-500">水 ${m.totalWater} 處、陸 ${m.totalLand} 處｜淨值 $${m.sumFieldEcoNet.toLocaleString()}</div>
                         </div>
-                        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200">
-                            <div class="text-amber-900 font-bold">合格導覽員與旅遊路線</div>
-                            <div class="text-lg font-black text-amber-950 mt-0.5">${m.totalGuides} 導覽員 / ${m.totalRoutes} 路線</div>
+                        <div class="bg-sky-50 p-3 rounded-xl border border-sky-200">
+                            <div class="text-[10px] font-bold text-sky-800">(E-2) 獨立棲地生物觀測</div>
+                            <div class="text-lg font-black text-sky-900 mt-0.5">${m.totalSpecies} 種指標物種</div>
+                            <div class="text-[10px] text-slate-500">獨立核算物種與數量%｜淨值 $${m.sumBioObsEcoNet.toLocaleString()}</div>
                         </div>
-                        <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-200">
-                            <div class="text-indigo-900 font-bold">社會人力培力淨價值</div>
-                            <div class="text-lg font-black text-indigo-950 mt-0.5">$${m.netHuman.toLocaleString()}</div>
-                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border text-[11px] flex justify-between items-center">
+                        <span>🎓 共同培訓 ${m.totalTrainees} 人（含 ${m.totalGuides} 位導覽員 / ${m.totalRoutes} 條路線）</span>
+                        <span class="font-black text-satoyama-dark">淨值 $${m.netHuman.toLocaleString()}</span>
                     </div>
                 `;
             }
@@ -3153,23 +3329,29 @@
             const c3 = document.getElementById('infographic-card-3');
             if (c3) {
                 c3.innerHTML = `
-                    <div class="border-b pb-2 flex justify-between items-center">
-                        <span class="font-black text-sm text-sky-900">🚜 友善生產管理費用【A】vs【B】實證對照</span>
-                        <span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded font-bold">${m.nFarms} 處農場彙整</span>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <div>
+                            <span class="bg-sky-100 text-sky-900 text-[10px] font-black px-2 py-0.5 rounded">農務實證 × 產量成長% × 生態年資加權</span>
+                            <h4 class="text-base font-black text-sky-950 mt-1">【A】基期成本 vs.【B】生態農法投入加權</h4>
+                        </div>
+                        <i class="fas fa-tractor text-2xl text-satoyama-water"></i>
                     </div>
                     <div class="grid grid-cols-2 gap-3 text-xs">
                         <div class="bg-slate-100 p-3 rounded-xl border">
-                            <div class="text-slate-600 font-bold">【A】前期生產管理總費用</div>
-                            <div class="text-lg font-black text-slate-900 mt-1">$${m.sumOldCostA.toLocaleString()}</div>
+                            <span class="text-[10px] text-slate-500 font-bold block">[A] 過去基期總成本 (2025)</span>
+                            <span class="text-lg font-black text-slate-800">$${m.sumOldCostA.toLocaleString()}</span>
                         </div>
                         <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-300">
-                            <div class="text-emerald-800 font-bold">【B】當期友善生產管理總費用</div>
-                            <div class="text-lg font-black text-emerald-950 mt-1">$${m.sumNewCostB.toLocaleString()}</div>
+                            <span class="text-[10px] text-emerald-800 font-bold block">[B] 當期生態農法總成本</span>
+                            <span class="text-lg font-black text-emerald-900">$${m.sumNewCostB.toLocaleString()}</span>
                         </div>
                     </div>
-                    <div class="bg-sky-900 text-white p-3.5 rounded-xl flex justify-between items-center text-xs">
-                        <span class="font-bold">農務管理綜合淨效益 (折減後 Net)</span>
-                        <span class="text-lg font-black text-amber-300">$${m.netMgmt.toLocaleString()}</span>
+                    <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
+                        <div>
+                            <div class="font-black text-amber-950">(G) 生態成本對照產量成長%與年資加權</div>
+                            <div class="text-[10px] text-amber-800">毛值 $${m.grossMgmt.toLocaleString()} × 保留率 ${Math.round(m.rateM*100)}%</div>
+                        </div>
+                        <div class="text-lg font-black text-amber-900">$${m.netMgmt.toLocaleString()}</div>
                     </div>
                 `;
             }
@@ -3177,26 +3359,29 @@
             const c4 = document.getElementById('infographic-card-4');
             if (c4) {
                 c4.innerHTML = `
-                    <div class="border-b pb-2 flex justify-between items-center">
-                        <span class="font-black text-sm text-amber-900">🏆 115年 ESG 評鑑與國際 GRI 準則對接卡</span>
-                        <span class="text-[10px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold">防漂綠確信</span>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <div>
+                            <span class="bg-amber-100 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded">Corporate ESG & GRI Standards</span>
+                            <h4 class="text-base font-black text-satoyama-dark mt-1">115年 ESG 評鑑指標與專章韌性揭露</h4>
+                        </div>
+                        <i class="fas fa-shield-alt text-2xl text-amber-500"></i>
                     </div>
-                    <div class="space-y-2 text-xs">
-                        <div class="bg-slate-50 p-2.5 rounded-lg border flex justify-between">
-                            <span class="font-black text-satoyama-dark">E-10 生物多樣性 (GRI 304-3)</span>
-                            <span class="font-bold text-slate-700">${m.totalHabitats} 處微棲地 / ${m.totalSpecies} 種物種</span>
+                    <div class="grid grid-cols-2 gap-2.5 text-[11px]">
+                        <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                            <strong class="text-emerald-900 block">E-10 生物多樣性 (GRI 304)</strong>
+                            <span class="text-slate-600">${m.totalHabitats} 處微棲地、${m.totalSpecies} 種物種復育實證</span>
                         </div>
-                        <div class="bg-slate-50 p-2.5 rounded-lg border flex justify-between">
-                            <span class="font-black text-satoyama-dark">G-25 供應商管理 (GRI 308-1)</span>
-                            <span class="font-bold text-slate-700">SROI 1 : ${m.sroiRatio} 盡職調查實證</span>
+                        <div class="bg-sky-50 p-2.5 rounded-xl border border-sky-200">
+                            <strong class="text-sky-900 block">G-25 供應商管理 (GRI 308)</strong>
+                            <span class="text-slate-600">密碼鎖定之減藥帳本與林業署基準對標</span>
                         </div>
-                        <div class="bg-slate-50 p-2.5 rounded-lg border flex justify-between">
-                            <span class="font-black text-satoyama-dark">S-14 供應商培訓 (GRI 404-1)</span>
-                            <span class="font-bold text-slate-700">培力 ${m.totalTrainees} 人 (${m.totalGuides} 位導覽員)</span>
+                        <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                            <strong class="text-amber-900 block">S-14 供應商培訓 (GRI 404)</strong>
+                            <span class="text-slate-600">${m.totalTrainees} 位農友培力與 ${m.totalGuides} 位合格導覽員</span>
                         </div>
-                        <div class="bg-slate-50 p-2.5 rounded-lg border flex justify-between">
-                            <span class="font-black text-satoyama-dark">S-5 社區支持 (GRI 413-1)</span>
-                            <span class="font-bold text-slate-700">${cropsListStr} / ${m.totalRoutes} 條導覽路線</span>
+                        <div class="bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                            <strong class="text-rose-900 block">S-5 社區與經營韌性 (GRI 413)</strong>
+                            <span class="text-slate-600">教育活動取代單一農產市場價格波動風險</span>
                         </div>
                     </div>
                 `;
@@ -3343,93 +3528,259 @@
         function createWoodenSkyBridge3D(length) {
             const bridge = new THREE.Group();
             const woodMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.85 });
-            const railMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 });
-            const deck = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, length), woodMat);
-            bridge.add(deck);
-            for (const side of [-0.38, 0.38]) {
+            const plankMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 });
+            const railMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.75 });
+
+            // Main bridge beams
+            for (const side of [-0.36, 0.36]) {
+                const beam = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, length), woodMat);
+                beam.position.set(side, -0.02, 0);
+                bridge.add(beam);
+            }
+            // Individual wooden planks
+            const numPlanks = Math.max(4, Math.floor(length / 0.34));
+            for (let i = 0; i < numPlanks; i++) {
+                const zPos = -length / 2 + (i + 0.5) * (length / numPlanks);
+                const plank = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.06, 0.24), plankMat);
+                plank.position.set(0, 0.04, zPos);
+                bridge.add(plank);
+            }
+            // Bridge posts & double handrails on both sides
+            const numPosts = Math.max(3, Math.floor(length / 0.95) + 1);
+            for (const side of [-0.40, 0.40]) {
                 const topRail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, length), railMat);
-                topRail.position.set(side, 0.34, 0);
+                topRail.position.set(side, 0.42, 0);
                 bridge.add(topRail);
+                const midRail = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, length), railMat);
+                midRail.position.set(side, 0.24, 0);
+                bridge.add(midRail);
+                for (let j = 0; j < numPosts; j++) {
+                    const zPost = -length / 2 + j * (length / Math.max(1, numPosts - 1));
+                    const post = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.46, 0.07), woodMat);
+                    post.position.set(side, 0.23, zPost);
+                    bridge.add(post);
+                }
             }
             return bridge;
         }
 
         function buildSingle3DIslandMesh(radius, height, isMain, index = 0) {
             const g = new THREE.Group();
+            // Multi-layered floating rock cliff base
             const rockLower = new THREE.Mesh(
-                new THREE.ConeGeometry(radius * 0.88, height * 0.95, 7),
+                new THREE.ConeGeometry(radius * 0.85, height * 0.95, 7),
                 new THREE.MeshStandardMaterial({ color: 0x78350f, flatShading: true, roughness: 0.92 })
             );
             rockLower.rotation.x = Math.PI;
-            rockLower.position.y = -height * 0.38;
+            rockLower.position.y = -height * 0.45;
             g.add(rockLower);
 
+            const rockMid = new THREE.Mesh(
+                new THREE.CylinderGeometry(radius * 0.98, radius * 0.72, height * 0.48, 8),
+                new THREE.MeshStandardMaterial({ color: 0x92400e, flatShading: true, roughness: 0.88 })
+            );
+            rockMid.position.y = -height * 0.12;
+            g.add(rockMid);
+
+            // Lush grass terrace top & rim
+            const turfRim = new THREE.Mesh(
+                new THREE.CylinderGeometry(radius * 1.04, radius * 1.0, 0.24, 8),
+                new THREE.MeshStandardMaterial({ color: 0x16a34a, flatShading: true })
+            );
+            turfRim.position.y = 0.14;
+            g.add(turfRim);
+
             const turf = new THREE.Mesh(
-                new THREE.CylinderGeometry(radius * 1.03, radius * 0.98, 0.42, 8),
+                new THREE.CylinderGeometry(radius * 1.0, radius * 0.98, 0.28, 8),
                 new THREE.MeshStandardMaterial({ color: isMain ? 0x34d399 : 0x84cc16, flatShading: true })
             );
-            turf.position.y = 0.25;
+            turf.position.y = 0.30;
             g.add(turf);
 
             if (isMain) {
+                // Distant Twin Snow-Capped Satoyama Mountains on Main Island
+                const mtn1 = new THREE.Mesh(
+                    new THREE.ConeGeometry(1.45, 2.5, 6),
+                    new THREE.MeshStandardMaterial({ color: 0x15803d, flatShading: true })
+                );
+                mtn1.position.set(1.2, 1.55, -1.35);
+                g.add(mtn1);
+                const snow1 = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.62, 0.85, 6),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, flatShading: true })
+                );
+                snow1.position.set(1.2, 2.40, -1.35);
+                g.add(snow1);
+
+                const mtn2 = new THREE.Mesh(
+                    new THREE.ConeGeometry(1.15, 2.0, 6),
+                    new THREE.MeshStandardMaterial({ color: 0x166534, flatShading: true })
+                );
+                mtn2.position.set(-0.2, 1.32, -1.65);
+                g.add(mtn2);
+
+                // Elevated Satoyama Academy Terrace
                 const baseDeck = new THREE.Mesh(
-                    new THREE.CylinderGeometry(radius * 0.68, radius * 0.72, 0.26, 8),
+                    new THREE.CylinderGeometry(radius * 0.62, radius * 0.66, 0.26, 8),
                     new THREE.MeshStandardMaterial({ color: 0xe0f2fe, flatShading: true })
                 );
                 baseDeck.position.y = 0.54;
                 g.add(baseDeck);
 
+                // Main Hall Building + Door + Windows
                 const hall = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.55, 1.0, 1.25),
+                    new THREE.BoxGeometry(1.6, 1.05, 1.3),
                     new THREE.MeshStandardMaterial({ color: 0xffffff })
                 );
-                hall.position.set(-0.2, 1.15, 0.15);
+                hall.position.set(-0.35, 1.16, 0.15);
                 g.add(hall);
 
                 const roof = new THREE.Mesh(
-                    new THREE.ConeGeometry(1.38, 0.78, 4),
+                    new THREE.ConeGeometry(1.45, 0.82, 4),
                     new THREE.MeshStandardMaterial({ color: 0x0284c7, flatShading: true })
                 );
-                roof.position.set(-0.2, 2.02, 0.15);
+                roof.position.set(-0.35, 2.05, 0.15);
                 roof.rotation.y = Math.PI / 4;
                 g.add(roof);
+
+                const mainDoor = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.32, 0.52, 0.06),
+                    new THREE.MeshStandardMaterial({ color: 0x92400e })
+                );
+                mainDoor.position.set(-0.35, 0.92, 0.81);
+                g.add(mainDoor);
+
+                // Arched Glass Greenhouse next to Main Hall
+                const greenhouse = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.52, 0.52, 0.95, 10, 1, false, 0, Math.PI),
+                    new THREE.MeshStandardMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.78 })
+                );
+                greenhouse.rotation.z = Math.PI / 2;
+                greenhouse.rotation.y = Math.PI / 2;
+                greenhouse.position.set(0.75, 0.68, 0.25);
+                g.add(greenhouse);
+
+                // Stream & Waterfall pouring down the edge
+                const stream = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.65, 0.06, 2.2),
+                    new THREE.MeshStandardMaterial({ color: 0x38bdf8 })
+                );
+                stream.position.set(1.35, 0.45, 0.85);
+                stream.rotation.y = 0.35;
+                g.add(stream);
+
+                const waterfall = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.58, 1.35, 0.14),
+                    new THREE.MeshStandardMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.88 })
+                );
+                waterfall.position.set(1.68, -0.18, 1.85);
+                waterfall.rotation.y = 0.35;
+                g.add(waterfall);
+
+                // Trees & Farmers on Main Island
+                const pt1 = createPineTree3D(1.05);
+                pt1.position.set(-1.95, 0.42, -0.75);
+                g.add(pt1);
+                const pt2 = createPineTree3D(0.9);
+                pt2.position.set(-1.55, 0.42, -1.45);
+                g.add(pt2);
+                const bt1 = createBroadleafTree3D(1.0);
+                bt1.position.set(-1.85, 0.42, 0.55);
+                g.add(bt1);
 
                 const f1 = createFarmerFigure3D(0x0284c7);
-                f1.position.set(-1.1, 0.66, 1.1);
+                f1.position.set(-0.95, 0.66, 1.15);
                 g.add(f1);
+                const f2 = createFarmerFigure3D(0xe11d48);
+                f2.position.set(0.35, 0.66, 1.10);
+                g.add(f2);
             } else {
-                const house = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.95, 0.65, 0.75),
+                // L-shaped Traditional Farmhouse Courtyard
+                const houseMain = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.05, 0.68, 0.78),
                     new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
                 );
-                house.position.set(-0.45, 0.76, -0.35);
-                g.add(house);
+                houseMain.position.set(-0.48, 0.76, -0.42);
+                g.add(houseMain);
 
-                const roof = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.82, 0.52, 4),
+                const roofMain = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.88, 0.54, 4),
                     new THREE.MeshStandardMaterial({ color: 0xb45309, flatShading: true })
                 );
-                roof.position.set(-0.45, 1.34, -0.35);
-                roof.rotation.y = Math.PI / 4;
-                g.add(roof);
+                roofMain.position.set(-0.48, 1.35, -0.42);
+                roofMain.rotation.y = Math.PI / 4;
+                g.add(roofMain);
 
+                const houseWing = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.62, 0.56, 0.72),
+                    new THREE.MeshStandardMaterial({ color: 0xfde68a })
+                );
+                houseWing.position.set(-0.88, 0.70, 0.12);
+                g.add(houseWing);
+
+                const roofWing = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.58, 0.44, 4),
+                    new THREE.MeshStandardMaterial({ color: 0x92400e, flatShading: true })
+                );
+                roofWing.position.set(-0.88, 1.18, 0.12);
+                roofWing.rotation.y = Math.PI / 4;
+                g.add(roofWing);
+
+                // Cultivated Farm Field with Soil Ridges & Plump Cabbages/Crops
                 const soilBase = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.15, 0.08, 0.95),
+                    new THREE.BoxGeometry(1.28, 0.08, 1.08),
                     new THREE.MeshStandardMaterial({ color: 0x713f12 })
                 );
-                soilBase.position.set(0.55, 0.48, 0.35);
+                soilBase.position.set(0.62, 0.46, 0.38);
                 g.add(soilBase);
 
-                const pTree = createPineTree3D(0.85);
-                pTree.position.set(-1.1, 0.45, 0.45);
+                for (let r = -1; r <= 1; r++) {
+                    const ridge = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.12, 0.08, 0.22),
+                        new THREE.MeshStandardMaterial({ color: 0x5c2d0c })
+                    );
+                    ridge.position.set(0.62, 0.52, 0.38 + r * 0.32);
+                    g.add(ridge);
+
+                    for (let c = -1; c <= 1; c++) {
+                        const cabbage = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.11, 7, 7),
+                            new THREE.MeshStandardMaterial({ color: (r + c) % 2 === 0 ? 0x16a34a : 0x4ade80, flatShading: true })
+                        );
+                        cabbage.position.set(0.62 + c * 0.32, 0.61, 0.38 + r * 0.32);
+                        g.add(cabbage);
+                    }
+                }
+
+                // Ecological Pond (Water Micro-habitat) with Lotus Pads
+                const pond = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.52, 0.48, 0.07, 10),
+                    new THREE.MeshStandardMaterial({ color: 0x38bdf8 })
+                );
+                pond.position.set(0.72, 0.45, -0.68);
+                g.add(pond);
+
+                const lotus1 = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.12, 0.12, 0.03, 7),
+                    new THREE.MeshStandardMaterial({ color: 0x15803d })
+                );
+                lotus1.position.set(0.62, 0.49, -0.62);
+                g.add(lotus1);
+
+                // Forest Trees & Farmer with Bamboo Hat
+                const pTree = createPineTree3D(0.9);
+                pTree.position.set(-1.25, 0.44, 0.68);
                 g.add(pTree);
-                const bTree = createBroadleafTree3D(0.85);
-                bTree.position.set(0.35, 0.45, -1.05);
-                g.add(bTree);
+                const bTree1 = createBroadleafTree3D(0.92);
+                bTree1.position.set(0.18, 0.44, -1.22);
+                g.add(bTree1);
+                const bTree2 = createBroadleafTree3D(0.76);
+                bTree2.position.set(-1.32, 0.44, -0.88);
+                g.add(bTree2);
 
                 const farmerColors = [0x16a34a, 0x2563eb, 0xd97706, 0xe11d48, 0x7c3aed];
                 const farmer = createFarmerFigure3D(farmerColors[index % farmerColors.length]);
-                farmer.position.set(0.05, 0.46, 0.85);
+                farmer.position.set(-0.08, 0.45, 0.92);
                 g.add(farmer);
             }
             return g;
@@ -3598,6 +3949,7 @@
         }
 
         function toggleCloudDrawerStatusEdit() {
+            if (!cSelectedTarget) cSelectedTarget = { type: 'team', id: activeTeamId };
             const box = document.getElementById('cDrawerStatusEditBox');
             if (!box) return;
             box.classList.toggle('hidden');
@@ -3615,6 +3967,7 @@
         }
 
         function confirmCloudDrawerStatusUpdate() {
+            if (!cSelectedTarget) cSelectedTarget = { type: 'team', id: activeTeamId };
             const pwdInput = document.getElementById('cDrawerStatusPwdInput');
             const pwd = pwdInput?.value.trim() || '';
             if (pwd !== PUBLISH_PASSWORD && pwd !== systemLockPassword) {
@@ -3945,8 +4298,9 @@
         }
 
         function buildCompleteWorkspacePayload() {
+            if (!isProxyLocked) saveCurrentProxyParamsState();
             return {
-                version: 'V6.5',
+                version: 'V6.6',
                 timestamp: new Date().toISOString(),
                 currentMode,
                 targetEvalYear,
@@ -3957,6 +4311,7 @@
                 lockedTimestamp,
                 isCloudBaselineLocked,
                 systemLockPassword,
+                savedProxyParams,
                 teamsData,
                 farms: farmsData,
                 publishedBoard
@@ -3988,6 +4343,10 @@
             if (data.lockedTimestamp) lockedTimestamp = data.lockedTimestamp;
             if (typeof data.isCloudBaselineLocked === 'boolean') isCloudBaselineLocked = data.isCloudBaselineLocked;
             if (data.systemLockPassword) systemLockPassword = String(data.systemLockPassword);
+            if (data.savedProxyParams) {
+                savedProxyParams = data.savedProxyParams;
+                restoreSavedProxyParamsToDOM();
+            }
             return true;
         }
 
@@ -4084,6 +4443,10 @@
         }
 
         function resetToDefaultData() {
+            if (isProxyLocked || isCloudBaselineLocked) {
+                showToast('⚠️ 目前 2025 基期或 2026 財務代理處於鎖定狀態！除非先輸入密碼開鎖，否則系統禁止復原預設值。', 'fa-lock text-amber-400');
+                return;
+            }
             farmsData = JSON.parse(JSON.stringify(DEFAULT_5_FARMS));
             activeTeamId = 'team_1';
             activeSingleFarmId = 1;
@@ -4201,13 +4564,50 @@
                     if (change.type === 'removed') {
                         if (idx >= 0 && farmsData.length > 1) farmsData.splice(idx, 1);
                     } else {
-                        if (idx >= 0) farmsData[idx] = { ...farmsData[idx], ...data };
-                        else farmsData.push(data);
+                        if (idx >= 0) {
+                            const keepBase = (isCloudBaselineLocked || farmsData[idx].habBaseLocked) ? {
+                                waterBase: farmsData[idx].waterBase,
+                                landBase: farmsData[idx].landBase,
+                                speciesPrev: farmsData[idx].speciesPrev,
+                                routesBase: farmsData[idx].routesBase,
+                                guidesBase: farmsData[idx].guidesBase,
+                                convHerbicideCost: farmsData[idx].convHerbicideCost,
+                                convPesticideCost: farmsData[idx].convPesticideCost,
+                                oldCost2025: farmsData[idx].oldCost2025,
+                                yieldBase: farmsData[idx].yieldBase,
+                                eduBase: farmsData[idx].eduBase,
+                                habBaseLocked: true
+                            } : {};
+                            farmsData[idx] = { ...farmsData[idx], ...data, ...keepBase };
+                        } else {
+                            farmsData.push(data);
+                        }
                     }
                 });
                 renderPublishedBanner();
                 renderSelectionControls();
                 renderFarmsList();
+                recalculateAll();
+                isApplyingRemote = false;
+            }, () => {});
+
+            const metaDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_meta', 'workspace_state');
+            onSnapshot(metaDocRef, (docSnap) => {
+                if (!docSnap.exists()) return;
+                const d = docSnap.data();
+                if (!d) return;
+                isApplyingRemote = true;
+                if (typeof d.isProxyLocked === 'boolean') isProxyLocked = d.isProxyLocked;
+                if (d.lockedTimestamp) lockedTimestamp = d.lockedTimestamp;
+                if (typeof d.isCloudBaselineLocked === 'boolean') isCloudBaselineLocked = d.isCloudBaselineLocked;
+                if (d.savedProxyParamsJson) {
+                    try {
+                        savedProxyParams = JSON.parse(d.savedProxyParamsJson);
+                        restoreSavedProxyParamsToDOM();
+                    } catch (e) {}
+                }
+                applyProxyLockUI();
+                applyCloudBaselineLockUI();
                 recalculateAll();
                 isApplyingRemote = false;
             }, () => {});
@@ -4254,12 +4654,17 @@
         window.syncMetaToCloud = async function() {
             if (!currentUser || !db || isApplyingRemote) return;
             try {
+                if (!isProxyLocked) saveCurrentProxyParamsState();
                 const metaDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_meta', 'workspace_state');
                 await setDoc(metaDocRef, {
                     currentMode,
                     targetEvalYear,
                     reportScope,
                     activeTeamId,
+                    isProxyLocked,
+                    lockedTimestamp,
+                    isCloudBaselineLocked,
+                    savedProxyParamsJson: JSON.stringify(savedProxyParams || {}),
                     publishedBoardJson: JSON.stringify(publishedBoard),
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUser.uid
