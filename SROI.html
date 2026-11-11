@@ -276,9 +276,29 @@
                         <span class="text-emerald-300 font-bold">5. 農產品</span>
                         <span id="cDrawerCrops" class="font-bold text-emerald-200 text-right">酪梨、檸檬、蜂蜜</span>
                     </div>
-                    <div class="flex justify-between border-b border-emerald-800/60 pb-1">
-                        <span class="text-emerald-300 font-bold">核定狀態與存檔日期</span>
-                        <span id="cDrawerSaveStatus" class="font-black text-emerald-300 text-right">✅ 已完成核定 (2026/11/12)</span>
+                    <div class="border-b border-emerald-800/60 pb-1.5 space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-emerald-300 font-bold">核定狀態與存檔日期</span>
+                            <button onclick="toggleCloudDrawerStatusEdit()" class="text-[10px] bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded font-black transition">
+                                <i class="fas fa-user-shield mr-0.5"></i>最高權限修改
+                            </button>
+                        </div>
+                        <div id="cDrawerSaveStatus" class="font-black text-emerald-300 text-right">✅ 已完成核定 (2026/11/12)</div>
+                        <!-- Admin Status & Date Editor -->
+                        <div id="cDrawerStatusEditBox" class="hidden bg-slate-900/95 p-2.5 rounded-xl border border-amber-400/50 space-y-2 text-[11px]">
+                            <div class="font-black text-amber-300"><i class="fas fa-key mr-1"></i>最高權限修改完成狀態與日期</div>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <select id="cDrawerStatusSelect" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 font-black text-white">
+                                    <option value="completed">✅ 已完成核定</option>
+                                    <option value="incomplete">⏳ 未完成(填報中)</option>
+                                </select>
+                                <input type="date" id="cDrawerDateInput" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 font-black text-white">
+                            </div>
+                            <input type="password" id="cDrawerStatusPwdInput" value="" placeholder="請輸入最高權限密碼..." autocomplete="off" class="w-full bg-slate-950 border border-amber-400 rounded px-2 py-1 font-black text-white">
+                            <button onclick="confirmCloudDrawerStatusUpdate()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-1 rounded font-black transition">
+                                儲存狀態與日期並同步群島看板
+                            </button>
+                        </div>
                     </div>
                     <div class="flex justify-between items-center pt-1">
                         <span class="text-amber-300 font-black">6. 核定 SROI</span>
@@ -513,7 +533,7 @@
                         <strong>1. (S) 共同培訓各場應用價值：</strong>依各場受訓人數與合格導覽員比例計算，單場法規上限封頂 <strong>$70,000 元/場</strong>，再乘以人力保留率 $(1 - \text{DW}\% - \text{Attr}\%)$。<br>
                         <strong>2. (E-1) 場域面積與微棲地定價（依農業部林業署生態服務給付基準法）：</strong>依農場實際友善耕作面積（公頃）× <strong>$30,000 元/公頃</strong>（面積核算基準）＋ 水陸微棲地協力維護費（受微棲地維護法規上限 <strong>$20,000 元/場</strong> 封頂），並受<strong>「單場場域定價法定上限（預設 $150,000 元/場）」</strong>嚴格封頂，再乘以<strong>棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%)$</strong>。<br>
                         <strong>3. (E-2) 棲地生物觀測（與場域定價分開獨立計算）：</strong>單獨針對<strong>「生物物種數增減」與「生物族群數量體感增減 (%)」</strong>進行評估，受<strong>「林業署自主生態觀察獎勵法規上限（預設 $60,000 元/場）」</strong>封頂，再乘以<strong>棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%)$</strong>。<br>
-                        <strong>4. (G) 農務與產量成長實證上限：</strong>產量成長率認列上限最高 <strong>+25%</strong>，且單場法規上限不得超過【A】過去基期總成本（<strong>元/場</strong>）。
+                        <strong>4. (G) 農務實證與農產產量成長率 (%)（依【B】生態成本 × 產量成長率 % × 持續投入年資加權）：</strong>投入之【B】生態農法成本越高、對照農產產量成長率 (%) 越高，並依農場<strong>「持續投入生態農法年資」</strong>加權（年資越高權重越高：$W_{\text{year}} = 1 + (\text{年資}-1)\times 15\%$），受單場法規上限（預設 <strong>$80,000 元/場</strong>）封頂。
                     </p>
                     <select id="paramCalcRigorMode" onchange="markUncommittedChanges(); recalculateAll();" class="hidden">
                         <option value="svi_strict" selected>模式一</option>
@@ -558,6 +578,16 @@
                     <div>
                         <label class="text-[10px] font-bold text-amber-900 block">📈 生物數量增減認列上限 (%)</label>
                         <input type="number" id="paramBioPopCapPct" value="25" min="5" max="50" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border rounded-lg px-2 py-1 font-black mt-0.5">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200">
+                    <div>
+                        <label class="text-[10px] font-bold text-emerald-950 block">⏳ (G) 持續投入生態年資每滿1年加權 (%)</label>
+                        <input type="number" id="paramEcoYearWeightStep" value="15" min="5" max="50" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-emerald-300 rounded-lg px-2 py-1 font-black mt-0.5">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-rose-900 block">🚨 (G) 農務與產量實證單場上限 (元/場)</label>
+                        <input type="number" id="paramMgmtEcoCap" value="80000" step="5000" oninput="markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full bg-white border border-rose-300 rounded-lg px-2 py-1 font-black text-rose-800 mt-0.5">
                     </div>
                 </div>
                 <div class="hidden">
@@ -813,19 +843,13 @@
                 </div>
 
                 <div>
-                    <label class="block font-bold text-emerald-950 mb-1">📝 生態觀測附言（自主填寫觀測結果，500字以內）</label>
-                    <textarea id="newFarmEcoObsNote" rows="2" maxlength="500" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 font-medium text-xs leading-relaxed"></textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 pt-1">
-                    <div class="bg-slate-50 p-2.5 rounded-xl border">
-                        <label class="block font-bold text-slate-600 mb-1">【A】前期慣行/基期管理總費用</label>
-                        <input type="number" id="newFarmOldCost" value="25000" step="500" class="clean-num-input w-full bg-white border rounded-lg px-2.5 py-1.5 font-black">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block font-bold text-slate-700">勾選隸屬於此團隊的成員農場（有勾選才會在主面板顯示小島，可於此新增或刪除農場）：</label>
+                        <button type="button" onclick="closeTeamModal(); openAddFarmModal();" class="bg-satoyama-main hover:bg-satoyama-dark text-white px-2.5 py-1 rounded-lg text-[11px] font-black shadow flex items-center gap-1">
+                            <i class="fas fa-plus"></i> 新增農場
+                        </button>
                     </div>
-                    <div class="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200">
-                        <label class="block font-bold text-emerald-900 mb-1">【B】當期友善生產管理總費用</label>
-                        <input type="number" id="newFarmNewCost" value="15000" step="500" class="clean-num-input w-full bg-white border rounded-lg px-2.5 py-1.5 font-black">
-                    </div>
+                    <div id="teamModalFarmsChecklist" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto bg-slate-50 p-3 rounded-xl border"></div>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-3 border-t">
@@ -1428,10 +1452,15 @@
             if (reportScope === 'multi') {
                 const teamOptions = teamsData.map(t => `<option value="${t.id}" ${t.id === activeTeamId ? 'selected' : ''}>${t.name} — ${t.guidanceTitle}</option>`).join('');
                 const farmCheckboxes = farmsData.map(f => `
-                    <label class="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg border text-[11px] font-bold cursor-pointer hover:border-emerald-400">
-                        <input type="checkbox" ${f.selected ? 'checked' : ''} onchange="toggleFarmSelection(${f.id}, this.checked)" class="rounded text-satoyama-main">
-                        <span class="truncate">${f.name} (${f.crops})</span>
-                    </label>
+                    <div class="flex items-center justify-between gap-1 bg-white px-2.5 py-1.5 rounded-lg border text-[11px] font-bold hover:border-emerald-400">
+                        <label class="flex items-center gap-1.5 cursor-pointer truncate flex-grow">
+                            <input type="checkbox" ${f.selected ? 'checked' : ''} onchange="toggleFarmSelection(${f.id}, this.checked)" class="rounded text-satoyama-main">
+                            <span class="truncate">${f.name} (${f.crops})</span>
+                        </label>
+                        <button type="button" onclick="requirePasswordForAction('刪除農場', '刪除農場需輸入授權密碼：', () => removeFarm(${f.id}))" class="text-rose-500 hover:text-rose-700 px-1 shrink-0" title="刪除此農場">
+                            <i class="fas fa-trash-alt text-[10px]"></i>
+                        </button>
+                    </div>
                 `).join('');
 
                 container.innerHTML = `
@@ -1441,8 +1470,13 @@
                             ${teamOptions}
                         </select>
                         <div class="pt-1">
-                            <span class="text-[10px] font-bold text-slate-500 block mb-1">勾選納入此團隊評估之合作農場：</span>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">${farmCheckboxes}</div>
+                            <div class="flex flex-wrap justify-between items-center gap-1 mb-1.5">
+                                <span class="text-[10.5px] font-black text-emerald-900">✅ 勾選隸屬於此團隊的成員農場（有勾選才會在上方 3D 主面板顯示小島）：</span>
+                                <button type="button" onclick="requirePasswordForAction('新增合作農場', '新增農場需每次輸入授權密碼：', () => openAddFarmModal())" class="bg-satoyama-main hover:bg-satoyama-dark text-white px-2.5 py-1 rounded-lg text-[10px] font-black transition shadow flex items-center gap-1">
+                                    <i class="fas fa-plus"></i> 新增農場(小島)
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">${farmCheckboxes}</div>
                         </div>
                     </div>
                 `;
@@ -1487,18 +1521,18 @@
         // DEFAULT FARMS & TEAMS DATA
         // ==========================================
         const DEFAULT_5_FARMS = [
-            { id: 1, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '湧健酪梨園', crops: '酪梨', areaHa: 1.1, areaDesc: '約 1.1 公頃（興隆段679、680、751號）', speciesDesc: '9種（含穿山甲、食蟹獴、山羌、白鼻心、鼬獾、大冠鷲、領角鴞、莫氏樹蛙、柴棺龜）', certDesc: '零農藥殘留檢測、綠保標章申請中', routeDesc: '完成全區生態導覽解說路線 1 條', ecoObsNote: '長期農作體感觀測顯示，自全面停用除草劑並維持水陸微棲地後，園區穿山甲洞穴與食蟹獴活動蹤跡明顯增加，夜間莫氏樹蛙鳴叫族群量較往年提升約 18%，草生棲地穩定延伸且未遭破壞。', costExecNote: '2025基期至當期全面停用除草劑，改以背負式割草機維持草生栽培，並採購蘇力菌與誘蟲器等友善資材。', yieldEduExecNote: '果園授粉率穩定提升，並配合臺大山林學院接待企業ESG生態導覽與食農體驗團。', stakeholderQuote: '「以前噴除草劑雖然快，但心裡總覺得對土地有虧欠；現在改用草生栽培並保留3處水域與6處陸域微棲地，轉型初期人工割草確實多花了不少體力與摸索成本，但看到穿山甲與莫氏樹蛙回到果園，且透過導覽課程能向企業訪客親自解說里山價值，這份轉型非常值得！」—— 湧健酪梨園農場主與受訓導覽員', negTransitionCost: 5500, waterBase: 3, landBase: 6, speciesPrev: 7, routesBase: 1, guidesBase: 2, traineesBase: 3, water: 3, land: 6, species: 9, routes: 1, guides: 3, trainees: 4, bioIndexPrev: 100, bioIndexCurr: 118, convHerbicideCost: 13000, convPesticideCost: 12000, convOtherCost: 5000, convMaintCost: 5000, ecoWeedingCost: 8500, ecoMaterialCost: 5500, ecoOtherCost: 2500, ecoMaintCost: 3500, oldCost2025: 35000, newCost2025: 20000, yieldBase: 1200, yield2026: 1380, cropPrice: 80, eduBase: 50000, eduCurr: 85000, recordCheck: true },
-            { id: 2, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '指令教育農場', crops: '季節蔬菜', areaHa: 0.8, areaDesc: '約 0.8 公頃（水里鄉農牧用地）', speciesDesc: '7種（含莫氏樹蛙、貢德氏赤蛙、獨角仙、竹雞等）', certDesc: '友善耕作無農藥殘留', routeDesc: '完成食農與微棲地導覽路線 1 條', ecoObsNote: '於日常農務體感觀測中，生態池周邊貢德氏赤蛙與莫氏樹蛙卵泡及蝌蚪族群量穩定成長約 15%，腐植質區獨角仙幼蟲數量增加，微棲地範圍維持良好。', costExecNote: '菜園採用輪作與物理防蟲網、生物防治資材，省下傳統化學農藥開支。', yieldEduExecNote: '結合季節蔬菜採摘與生態池蛙類觀察，食農教育活動場次穩定成長。', stakeholderQuote: '「參與『臺大。山林。學院 2.0』的微棲地盤點與導覽培訓後，我們2位導覽員學會如何把生態池裡的貢德氏赤蛙與獨角仙轉化為食農教育教案。雖然初期不用農藥時蔬菜曾遭遇約一成的蟲咬耗損與人工除草負擔，但來自政府與企業ESG的食農教育活動收入明顯成長，幫我們抵銷了菜價波動的風險！」—— 指令教育農場經營者與合格導覽員', negTransitionCost: 4500, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 115, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1000, yield2026: 1080, cropPrice: 50, eduBase: 60000, eduCurr: 105000, recordCheck: true },
-            { id: 3, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '阿爾喜農場', crops: '檸檬', areaHa: 0.9, areaDesc: '約 0.9 公頃（水里里山廊道核心區）', speciesDesc: '7種（含領角鴞、五色鳥、拉都希氏赤蛙等）', certDesc: '全園草生栽培友善管理', routeDesc: '完成果園生態走讀路線 1 條', ecoObsNote: '果園維持全園草生栽培與友善資材管理，長期農作期間常觀測到領角鴞與五色鳥於林緣棲息覓食，地表昆蟲與蛙類總族群量體感約增加 14%。', costExecNote: '全園維持草生植被覆蓋，僅於採收動線進行重點割草，減少化肥與農藥依賴。', yieldEduExecNote: '無毒檸檬果品深獲友善通路肯定，並逐步開展果園生態走讀體驗。', stakeholderQuote: '「全園草生栽培初期最怕雜草搶肥與病蟲害摸索期，但在微棲地天敵生態系建立後，領角鴞與瓢蟲成了果園最好的守護者。透過SROI自主記帳，我們第一次清楚算出友善農法對農民自身健康與水土保持的真實價值。」—— 阿爾喜農場主與導覽員', negTransitionCost: 4200, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 9500, convPesticideCost: 9000, convOtherCost: 3000, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1500, yield2026: 1650, cropPrice: 45, eduBase: 40000, eduCurr: 68000, recordCheck: true },
-            { id: 4, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '明揚養蜂', crops: '蜂蜜、酪梨', areaHa: 1.0, areaDesc: '約 1.0 公頃（無毒蜜源與果園複合區）', speciesDesc: '6種（含中華蜜蜂、熊蜂、食蟹獴、樹蛙等）', certDesc: '無毒蜜源棲地驗證', routeDesc: '完成蜜源與授粉生態導覽路線 1 條', ecoObsNote: '營造無毒蜜源植物帶與水源微棲地後，野蜂與授粉昆蟲訪花密度明顯提升，且周邊食蟹獴與樹蛙出現頻率增加，整體生物族群量體感提升約 20%。', costExecNote: '為保護授粉蜂群全面禁用殺蟲劑與除草劑，營造四季蜜源綠籬。', yieldEduExecNote: '蜂蜜與酪梨授粉著果雙雙受惠，並辦理蜜蜂生態環境教育活動。', stakeholderQuote: '「蜜蜂對農藥極度敏感，營造無毒蜜源綠籬與水源棲地雖然在初期需要額外投入人工撫育與除草工時，卻讓蜂群授粉率與蜂蜜品質大幅提升，也吸引許多親子與企業團體來體驗蜜蜂生態導覽。」—— 明揚養蜂農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 120, convHerbicideCost: 10000, convPesticideCost: 8000, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 3500, ecoOtherCost: 2000, ecoMaintCost: 3000, oldCost2025: 25000, newCost2025: 15000, yieldBase: 800, yield2026: 880, cropPrice: 120, eduBase: 45000, eduCurr: 72000, recordCheck: true },
-            { id: 5, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '雨社山下', crops: '絲瓜、蓮霧', areaHa: 0.8, areaDesc: '約 0.8 公頃（雨社山麓友善耕作區）', speciesDesc: '6種（含穿山甲、白鼻心、盤古蟾蜍等）', certDesc: '友善無毒耕作', routeDesc: '完成里山步道與棲地導覽路線 1 條', ecoObsNote: '田間保留石積與草生緩衝帶，農作期間體感觀察盤古蟾蜍與地表天敵昆蟲數量穩定上升約 12%，山麓邊坡偶見穿山甲與白鼻心覓食痕跡，棲地連結度良好。', costExecNote: '採用套袋與物理誘捕取代化學噴藥，維持石積與草生緩衝帶。', yieldEduExecNote: '里山步道走讀結合食農體驗，有效分散單一農產市場拍賣價波動風險。', stakeholderQuote: '「過去單靠販售絲瓜與蓮霧常受拍賣市場價格起伏影響，自從跟隨團隊完成里山步道與微棲地導覽培訓後，我們開始接待生態走讀遊客，即使扣除轉型初期的套袋與人工除草隱形成本，整體經營韌性仍顯著提升。」—— 雨社山下農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1100, yield2026: 1210, cropPrice: 55, eduBase: 35000, eduCurr: 56000, recordCheck: true }
+            { id: 1, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 2, password: String(545366), selected: true, name: '湧健酪梨園', crops: '酪梨', areaHa: 1.1, areaDesc: '約 1.1 公頃（興隆段679、680、751號）', speciesDesc: '9種（含穿山甲、食蟹獴、山羌、白鼻心、鼬獾、大冠鷲、領角鴞、莫氏樹蛙、柴棺龜）', certDesc: '零農藥殘留檢測、綠保標章申請中', routeDesc: '完成全區生態導覽解說路線 1 條', ecoObsNote: '長期農作體感觀測顯示，自全面停用除草劑並維持水陸微棲地後，園區穿山甲洞穴與食蟹獴活動蹤跡明顯增加，夜間莫氏樹蛙鳴叫族群量較往年提升約 18%，草生棲地穩定延伸且未遭破壞。', costExecNote: '2025基期至當期全面停用除草劑，改以背負式割草機維持草生栽培，並採購蘇力菌與誘蟲器等友善資材。', yieldEduExecNote: '果園授粉率穩定提升，並配合臺大山林學院接待企業ESG生態導覽與食農體驗團。', stakeholderQuote: '「以前噴除草劑雖然快，但心裡總覺得對土地有虧欠；現在改用草生栽培並保留3處水域與6處陸域微棲地，轉型初期人工割草確實多花了不少體力與摸索成本，但看到穿山甲與莫氏樹蛙回到果園，且透過導覽課程能向企業訪客親自解說里山價值，這份轉型非常值得！」—— 湧健酪梨園農場主與受訓導覽員', negTransitionCost: 5500, waterBase: 3, landBase: 6, speciesPrev: 7, routesBase: 1, guidesBase: 2, traineesBase: 3, water: 3, land: 6, species: 9, routes: 1, guides: 3, trainees: 4, bioIndexPrev: 100, bioIndexCurr: 118, convHerbicideCost: 13000, convPesticideCost: 12000, convOtherCost: 5000, convMaintCost: 5000, ecoWeedingCost: 8500, ecoMaterialCost: 5500, ecoOtherCost: 2500, ecoMaintCost: 3500, oldCost2025: 35000, newCost2025: 20000, yieldBase: 1200, yield2026: 1380, cropPrice: 80, eduBase: 50000, eduCurr: 85000, recordCheck: true },
+            { id: 2, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 2, password: String(545366), selected: true, name: '指令教育農場', crops: '季節蔬菜', areaHa: 0.8, areaDesc: '約 0.8 公頃（水里鄉農牧用地）', speciesDesc: '7種（含莫氏樹蛙、貢德氏赤蛙、獨角仙、竹雞等）', certDesc: '友善耕作無農藥殘留', routeDesc: '完成食農與微棲地導覽路線 1 條', ecoObsNote: '於日常農務體感觀測中，生態池周邊貢德氏赤蛙與莫氏樹蛙卵泡及蝌蚪族群量穩定成長約 15%，腐植質區獨角仙幼蟲數量增加，微棲地範圍維持良好。', costExecNote: '菜園採用輪作與物理防蟲網、生物防治資材，省下傳統化學農藥開支。', yieldEduExecNote: '結合季節蔬菜採摘與生態池蛙類觀察，食農教育活動場次穩定成長。', stakeholderQuote: '「參與『臺大。山林。學院 2.0』的微棲地盤點與導覽培訓後，我們2位導覽員學會如何把生態池裡的貢德氏赤蛙與獨角仙轉化為食農教育教案。雖然初期不用農藥時蔬菜曾遭遇約一成的蟲咬耗損與人工除草負擔，但來自政府與企業ESG的食農教育活動收入明顯成長，幫我們抵銷了菜價波動的風險！」—— 指令教育農場經營者與合格導覽員', negTransitionCost: 4500, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 115, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1000, yield2026: 1080, cropPrice: 50, eduBase: 60000, eduCurr: 105000, recordCheck: true },
+            { id: 3, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 2, password: String(545366), selected: true, name: '阿爾喜農場', crops: '檸檬', areaHa: 0.9, areaDesc: '約 0.9 公頃（水里里山廊道核心區）', speciesDesc: '7種（含領角鴞、五色鳥、拉都希氏赤蛙等）', certDesc: '全園草生栽培友善管理', routeDesc: '完成果園生態走讀路線 1 條', ecoObsNote: '果園維持全園草生栽培與友善資材管理，長期農作期間常觀測到領角鴞與五色鳥於林緣棲息覓食，地表昆蟲與蛙類總族群量體感約增加 14%。', costExecNote: '全園維持草生植被覆蓋，僅於採收動線進行重點割草，減少化肥與農藥依賴。', yieldEduExecNote: '無毒檸檬果品深獲友善通路肯定，並逐步開展果園生態走讀體驗。', stakeholderQuote: '「全園草生栽培初期最怕雜草搶肥與病蟲害摸索期，但在微棲地天敵生態系建立後，領角鴞與瓢蟲成了果園最好的守護者。透過SROI自主記帳，我們第一次清楚算出友善農法對農民自身健康與水土保持的真實價值。」—— 阿爾喜農場主與導覽員', negTransitionCost: 4200, waterBase: 2, landBase: 4, speciesPrev: 6, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 2, land: 4, species: 7, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 9500, convPesticideCost: 9000, convOtherCost: 3000, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1500, yield2026: 1650, cropPrice: 45, eduBase: 40000, eduCurr: 68000, recordCheck: true },
+            { id: 4, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 2, password: String(545366), selected: true, name: '明揚養蜂', crops: '蜂蜜、酪梨', areaHa: 1.0, areaDesc: '約 1.0 公頃（無毒蜜源與果園複合區）', speciesDesc: '6種（含中華蜜蜂、熊蜂、食蟹獴、樹蛙等）', certDesc: '無毒蜜源棲地驗證', routeDesc: '完成蜜源與授粉生態導覽路線 1 條', ecoObsNote: '營造無毒蜜源植物帶與水源微棲地後，野蜂與授粉昆蟲訪花密度明顯提升，且周邊食蟹獴與樹蛙出現頻率增加，整體生物族群量體感提升約 20%。', costExecNote: '為保護授粉蜂群全面禁用殺蟲劑與除草劑，營造四季蜜源綠籬。', yieldEduExecNote: '蜂蜜與酪梨授粉著果雙雙受惠，並辦理蜜蜂生態環境教育活動。', stakeholderQuote: '「蜜蜂對農藥極度敏感，營造無毒蜜源綠籬與水源棲地雖然在初期需要額外投入人工撫育與除草工時，卻讓蜂群授粉率與蜂蜜品質大幅提升，也吸引許多親子與企業團體來體驗蜜蜂生態導覽。」—— 明揚養蜂農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 120, convHerbicideCost: 10000, convPesticideCost: 8000, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 3500, ecoOtherCost: 2000, ecoMaintCost: 3000, oldCost2025: 25000, newCost2025: 15000, yieldBase: 800, yield2026: 880, cropPrice: 120, eduBase: 45000, eduCurr: 72000, recordCheck: true },
+            { id: 5, teamId: 'team_1', investType: '計畫投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 2, password: String(545366), selected: true, name: '雨社山下', crops: '絲瓜、蓮霧', areaHa: 0.8, areaDesc: '約 0.8 公頃（雨社山麓友善耕作區）', speciesDesc: '6種（含穿山甲、白鼻心、盤古蟾蜍等）', certDesc: '友善無毒耕作', routeDesc: '完成里山步道與棲地導覽路線 1 條', ecoObsNote: '田間保留石積與草生緩衝帶，農作期間體感觀察盤古蟾蜍與地表天敵昆蟲數量穩定上升約 12%，山麓邊坡偶見穿山甲與白鼻心覓食痕跡，棲地連結度良好。', costExecNote: '採用套袋與物理誘捕取代化學噴藥，維持石積與草生緩衝帶。', yieldEduExecNote: '里山步道走讀結合食農體驗，有效分散單一農產市場拍賣價波動風險。', stakeholderQuote: '「過去單靠販售絲瓜與蓮霧常受拍賣市場價格起伏影響，自從跟隨團隊完成里山步道與微棲地導覽培訓後，我們開始接待生態走讀遊客，即使扣除轉型初期的套袋與人工除草隱形成本，整體經營韌性仍顯著提升。」—— 雨社山下農場主', negTransitionCost: 4000, waterBase: 1, landBase: 4, speciesPrev: 5, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 4, species: 6, routes: 1, guides: 2, trainees: 3, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 9500, convPesticideCost: 8500, convOtherCost: 3500, convMaintCost: 3500, ecoWeedingCost: 6500, ecoMaterialCost: 4000, ecoOtherCost: 2000, ecoMaintCost: 2500, oldCost2025: 25000, newCost2025: 15000, yieldBase: 1100, yield2026: 1210, cropPrice: 55, eduBase: 35000, eduCurr: 56000, recordCheck: true }
         ];
 
         const EXPANDED_4_FARMS_2026 = [
-            { id: 6, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 A', crops: '山蕉、梅子', areaHa: 0.9, areaDesc: '約 0.9 公頃', speciesDesc: '5種', certDesc: '友善耕作', routeDesc: '導覽路線 1 條', ecoObsNote: '長期農作體感觀測原生鳥類與蛙類族群穩定增加約 12%。', costExecNote: '全面採用機械草生除草。', yieldEduExecNote: '結合農產體驗活動。', stakeholderQuote: '「加入擴編團隊後，縮短了草生栽培摸索期，園區鳥類與蛙類明顯增加。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 40, eduBase: 30000, eduCurr: 48000, recordCheck: true },
-            { id: 7, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 B', crops: '苦茶油、柑橘', areaHa: 1.0, areaDesc: '約 1.0 公頃', speciesDesc: '5種', certDesc: '草生栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '苦茶園採草生管理，體感觀測授粉昆蟲成長約 14%。', costExecNote: '減藥管理與草生護土。', yieldEduExecNote: '辦理苦茶油食農工作坊。', stakeholderQuote: '「結合食農教育體驗後，消費者更認同我們保護土地的理念。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 45, eduBase: 30000, eduCurr: 50000, recordCheck: true },
-            { id: 8, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 C', crops: '高山茶、筍', areaHa: 0.7, areaDesc: '約 0.7 公頃', speciesDesc: '5種', certDesc: '友善茶園', routeDesc: '導覽路線 1 條', ecoObsNote: '竹林與茶園交界微棲地完整，山鳥活動量增加約 10%。', costExecNote: '保留綠籬天敵抑制害蟲。', yieldEduExecNote: '生態茶席體驗成長。', stakeholderQuote: '「保留微棲地後，天敵昆蟲幫助抑制了茶園害蟲。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 700, yield2026: 770, cropPrice: 60, eduBase: 25000, eduCurr: 42000, recordCheck: true },
-            { id: 9, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', password: String(545366), selected: true, name: '里山夥伴農場 D', crops: '咖啡、香草', areaHa: 0.8, areaDesc: '約 0.8 公頃', speciesDesc: '4種', certDesc: '無毒栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '複合林下棲地穩定，觀察蝶類與蜂群數量提升約 10%。', costExecNote: '林下草生與有機資材管理。', yieldEduExecNote: '香草咖啡莊園導覽。', stakeholderQuote: '「複合式林下栽培結合香草生態導覽，成為具備多元收入韌性的里山教室。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 3, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 4, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 600, yield2026: 660, cropPrice: 70, eduBase: 25000, eduCurr: 45000, recordCheck: true }
+            { id: 6, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 1, password: String(545366), selected: true, name: '里山夥伴農場 A', crops: '山蕉、梅子', areaHa: 0.9, areaDesc: '約 0.9 公頃', speciesDesc: '5種', certDesc: '友善耕作', routeDesc: '導覽路線 1 條', ecoObsNote: '長期農作體感觀測原生鳥類與蛙類族群穩定增加約 12%。', costExecNote: '全面採用機械草生除草。', yieldEduExecNote: '結合農產體驗活動。', stakeholderQuote: '「加入擴編團隊後，縮短了草生栽培摸索期，園區鳥類與蛙類明顯增加。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 112, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 40, eduBase: 30000, eduCurr: 48000, recordCheck: true },
+            { id: 7, teamId: 'team_2', investType: '企業投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 1, password: String(545366), selected: true, name: '里山夥伴農場 B', crops: '苦茶油、柑橘', areaHa: 1.0, areaDesc: '約 1.0 公頃', speciesDesc: '5種', certDesc: '草生栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '苦茶園採草生管理，體感觀測授粉昆蟲成長約 14%。', costExecNote: '減藥管理與草生護土。', yieldEduExecNote: '辦理苦茶油食農工作坊。', stakeholderQuote: '「結合食農教育體驗後，消費者更認同我們保護土地的理念。」', negTransitionCost: 3500, waterBase: 1, landBase: 3, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 3, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 114, convHerbicideCost: 8000, convPesticideCost: 6000, convOtherCost: 3000, convMaintCost: 3000, ecoWeedingCost: 5000, ecoMaterialCost: 3500, ecoOtherCost: 1500, ecoMaintCost: 2000, oldCost2025: 20000, newCost2025: 12000, yieldBase: 900, yield2026: 990, cropPrice: 45, eduBase: 30000, eduCurr: 50000, recordCheck: true },
+            { id: 8, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 1, password: String(545366), selected: true, name: '里山夥伴農場 C', crops: '高山茶、筍', areaHa: 0.7, areaDesc: '約 0.7 公頃', speciesDesc: '5種', certDesc: '友善茶園', routeDesc: '導覽路線 1 條', ecoObsNote: '竹林與茶園交界微棲地完整，山鳥活動量增加約 10%。', costExecNote: '保留綠籬天敵抑制害蟲。', yieldEduExecNote: '生態茶席體驗成長。', stakeholderQuote: '「保留微棲地後，天敵昆蟲幫助抑制了茶園害蟲。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 4, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 5, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 700, yield2026: 770, cropPrice: 60, eduBase: 25000, eduCurr: 42000, recordCheck: true },
+            { id: 9, teamId: 'team_2', investType: '自主投入', investTypeOther: '', habBaseLocked: true, isCompleted: true, lastSavedDate: '2026/11/12', ecoYears: 1, password: String(545366), selected: true, name: '里山夥伴農場 D', crops: '咖啡、香草', areaHa: 0.8, areaDesc: '約 0.8 公頃', speciesDesc: '4種', certDesc: '無毒栽培', routeDesc: '導覽路線 1 條', ecoObsNote: '複合林下棲地穩定，觀察蝶類與蜂群數量提升約 10%。', costExecNote: '林下草生與有機資材管理。', yieldEduExecNote: '香草咖啡莊園導覽。', stakeholderQuote: '「複合式林下栽培結合香草生態導覽，成為具備多元收入韌性的里山教室。」', negTransitionCost: 3000, waterBase: 1, landBase: 2, speciesPrev: 3, routesBase: 1, guidesBase: 1, traineesBase: 2, water: 1, land: 2, species: 4, routes: 1, guides: 1, trainees: 2, bioIndexPrev: 100, bioIndexCurr: 110, convHerbicideCost: 7000, convPesticideCost: 5500, convOtherCost: 2500, convMaintCost: 3000, ecoWeedingCost: 4500, ecoMaterialCost: 2500, ecoOtherCost: 1500, ecoMaintCost: 1500, oldCost2025: 18000, newCost2025: 10000, yieldBase: 600, yield2026: 660, cropPrice: 70, eduBase: 25000, eduCurr: 45000, recordCheck: true }
         ];
 
         let farmsData = JSON.parse(JSON.stringify(DEFAULT_5_FARMS));
@@ -1656,49 +1690,46 @@
             const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || (reportScope === 'single' ? 60 : 10)) / 100;
 
             // =========================================================================
-            // 1. (S) 團隊共同培訓後應用於各農場之合理價值與「財務代理上限 (元/場)」檢核
+            // 1. (S) 團隊共同培訓投入後應用於各農場之合理計算與代理上限 (Cap: 單場最高 $70,000 元/場)
             // =========================================================================
-            const rawTrainingAppRatio = (0.50 * (tCurr / 3)) + (0.35 * (gCurr / 2)) + (0.15 * (rCurr / 1));
-            const cappedTrainingAppRatio = Math.min(1.0, Math.max(0.2, rawTrainingAppRatio));
+            const rawTrainingAppRatio = (0.50 * Math.min(1.2, tCurr / 3)) + (0.35 * Math.min(1.2, gCurr / 2)) + (0.15 * Math.min(1.0, rCurr / 1));
+            const cappedTrainingAppRatio = Math.min(1.0, rawTrainingAppRatio);
             const uncappedHumanVal = Math.round(sharedTrainingCap * rawTrainingAppRatio);
-            const farmGrossHuman = Math.min(sharedTrainingCap, Math.round(sharedTrainingCap * cappedTrainingAppRatio));
+            const farmGrossHuman = (currentMode === '2025')
+                ? sharedTrainingCap
+                : Math.min(sharedTrainingCap, Math.round(sharedTrainingCap * cappedTrainingAppRatio));
             const humanCapPct = Math.round(cappedTrainingAppRatio * 100);
 
             // =========================================================================
-            // 2A. (E-1) 場域面積與微棲地定價（依農業部林業署生態服務給付基準法，法規上限以「元/場」封頂）
-            // 友善農地場域面積給付：實際面積(ha) × $30,000 元/公頃（受林業署每場 5 公頃上限 = $150,000 元/場 封頂）
-            // ＋ 水陸微棲地協力維護費（依林業署棲地營造獎勵法規上限 habMaintCapPerFarm 元/場 封頂）
-            // 總和再受「單場場域定價法定上限 fieldEcoCap (元/場)」嚴格封頂，再乘以棲地生態保留率 (1 - 無謂影響% - 歸因%)
+            // 2-A. (E-1) 微棲地場域定價：依「農業部林業署生態服務給付基準法」以場域面積定價，並受「元/場」法規上限規範
             // =========================================================================
             const areaPaymentRaw = Math.min(fieldEcoCap, Math.round(areaHa * unifiedAreaRate));
-            const habMaintCalc = (pricingMode === 'unified')
-                ? ((wCurr > 0 ? 10000 : 0) + (lCurr > 0 ? 10000 : 0) + (habCurr * 2000))
-                : ((wCurr * 10000) + (lCurr * 5000));
-            const habMaintRaw = Math.min(habMaintCapPerFarm, habMaintCalc);
+            const habMaintRaw = pricingMode === 'unified'
+                ? Math.min(habMaintCapPerFarm, Math.round(habCurr * 3000))
+                : Math.min(habMaintCapPerFarm, Math.round((wCurr * 4500) + (lCurr * 2500)));
             const uncappedFieldEco = areaPaymentRaw + habMaintRaw;
-            const baseAnnualEco = Math.min(fieldEcoCap, uncappedFieldEco); // 單場場域定價毛值（已受林業署法定上限 元/場 封頂）
-            const fieldEcoNetVal = Math.round(baseAnnualEco * rateE);     // 場域面積定價淨值 = 毛值 × 棲地生態保留率
+            const baseAnnualEco = Math.min(fieldEcoCap, uncappedFieldEco);
+            const fieldEcoNetVal = Math.round(baseAnnualEco * rateE);
 
             // =========================================================================
-            // 2B. (E-2) 棲地生物觀測 (%) — 與場域定價完全分開！
-            // 單獨針對「生物物種增減 (sCurr, speciesDiff)」及「生物數量增減 (bioObsPct %)」進行獨立評估計算
-            // 受林業署自主生態觀察獎勵上限 (bioObsEcoCap) 封頂，再以棲地生態保留率 (1 - 無謂影響% - 歸因%) 計算
+            // 2-B. (E-2) 棲地生物觀測 (%) 與場域定價分開：單獨針對生物物種數及生物族群數量增減評估，受「元/場」上限規範
             // =========================================================================
-            const rawBioRate = bioObsPct / 100;
-            const cappedBioRate = (currentMode === '2025') ? 0 : Math.max(-0.30, Math.min(rawBioRate, bioPopCapPct));
+            const rawBioRate = (bCurr - bPrev) / (bPrev || 100);
+            const cappedBioRate = Math.max(-0.30, Math.min(rawBioRate, bioPopCapPct));
             const speciesBaseAndDeltaVal = Math.max(0, (sCurr * speciesProxy) + (speciesDiff * speciesProxy));
             const uncappedBioObsVal = Math.round(speciesBaseAndDeltaVal * (1 + cappedBioRate));
             const bioBonusEcoVal = (currentMode === '2025')
-                ? Math.min(bioObsEcoCap, sCurr * speciesProxy)
-                : Math.min(bioObsEcoCap, uncappedBioObsVal); // 獨立生物觀測毛值（物種+數量增減，受上限封頂）
-            const bioObsEcoNetVal = Math.round(bioBonusEcoVal * rateE); // 獨立生物觀測淨值 = 毛值 × 棲地生態保留率
+                ? 0
+                : Math.min(bioObsEcoCap, Math.max(0, uncappedBioObsVal));
+            const bioObsEcoNetVal = Math.round(bioBonusEcoVal * rateE);
 
             const ecoProxyCapMax = fieldEcoCap + bioObsEcoCap;
             const totalFarmEcoGross = baseAnnualEco + bioBonusEcoVal;
             const totalFarmEcoNet = fieldEcoNetVal + bioObsEcoNetVal;
 
             // =========================================================================
-            // 3. (G) 農務實證 ([A]-[B]) + 「農產產量成長率 (%)」與「財務代理上限」
+            // 3. (G) 農務實證與農產產量成長率 (%) — 依【B】生態農法成本 × (1 + 農產產量成長率%) × 持續投入生態年資加權權重
+            // 投入的【B】生態成本越高、對照農產產量成長率 % 越高，且持續投入生態成本年資越高，該場加權權重越高！
             // =========================================================================
             const costDiffAB = farm.oldCost2025 - farm.newCost2025;
             const yBase = parseFloat(farm.yieldBase) || 1000;
@@ -1706,12 +1737,17 @@
             const rawYieldGrowthRate = yBase > 0 ? ((yCurr - yBase) / yBase) : 0.08;
             const yieldGrowthPct = (rawYieldGrowthRate * 100).toFixed(1);
 
-            const yieldCapRate = (currentMode === '2025') ? 0 : 0.25;
-            const cappedYieldRate = (currentMode === '2025') ? 0 : Math.max(-0.30, Math.min(rawYieldGrowthRate, yieldCapRate));
-            const yieldGrowthBenefitVal = Math.round(farm.oldCost2025 * cappedYieldRate);
-            const mgmtProxyCapMax = farm.oldCost2025;
-            const uncappedMgmtBenefit = costDiffAB + yieldGrowthBenefitVal;
-            const effectiveMaintBenefit = Math.min(mgmtProxyCapMax, uncappedMgmtBenefit);
+            const yieldCapRate = 0.25;
+            const cappedYieldRate = Math.max(-0.25, Math.min(rawYieldGrowthRate, yieldCapRate));
+
+            const ecoYears = Math.max(1, parseFloat(farm.ecoYears) || 2);
+            const weightStep = (parseFloat(document.getElementById('paramEcoYearWeightStep')?.value) || 15) / 100;
+            const ecoYearsWeight = Math.min(1.60, Number((1 + (ecoYears - 1) * weightStep).toFixed(2)));
+
+            const yieldGrowthBenefitVal = Math.round(farm.newCost2025 * Math.max(0, cappedYieldRate) * ecoYearsWeight);
+            const mgmtProxyCapMax = parseFloat(document.getElementById('paramMgmtEcoCap')?.value) || 80000;
+            const uncappedMgmtBenefit = Math.round(farm.newCost2025 * (1 + Math.max(0, cappedYieldRate)) * ecoYearsWeight);
+            const effectiveMaintBenefit = Math.min(mgmtProxyCapMax, Math.max(0, uncappedMgmtBenefit));
 
             // =========================================================================
             // 4. 專章揭露事項（不列入 SROI 財務計算）
@@ -1742,7 +1778,7 @@
                 areaPaymentRaw, habMaintRaw, uncappedFieldEco, fieldEcoCap, baseAnnualEco, fieldEcoNetVal,
                 speciesBaseAndDeltaVal, uncappedBioObsVal, bioObsEcoCap, cappedBioRate, bioBonusEcoVal, bioObsEcoNetVal,
                 ecoProxyCapMax, totalFarmEcoGross, totalFarmEcoNet,
-                costDiffAB, yieldGrowthPct, cappedYieldRate, yieldGrowthBenefitVal, mgmtProxyCapMax, uncappedMgmtBenefit, effectiveMaintBenefit,
+                costDiffAB, yieldGrowthPct, cappedYieldRate, ecoYears, ecoYearsWeight, yieldGrowthBenefitVal, mgmtProxyCapMax, uncappedMgmtBenefit, effectiveMaintBenefit,
                 waterStorageVal, bioServiceVal, soilCarbonVal, ecoPositiveProxiesTotal,
                 eduGrowthPct, activitySharePct,
                 healthRiskVal, soilErosionVal, resilienceVal, mgmtPositiveProxiesTotal,
@@ -1757,35 +1793,49 @@
             const trainInput = team.projectInput || 70000;
             const totalInput = Math.max(1, habInput + trainInput);
 
-            const netH = 0.60 * st.farmGrossHuman;
-            const netE = 0.60 * st.totalFarmEcoGross;
-            const netM = 0.60 * st.effectiveMaintBenefit;
+            const rateH = (parseFloat(document.getElementById('paramNetHuman')?.value) || 80) / 100;
+            const rateE = (reportScope === 'single')
+                ? ((parseFloat(document.getElementById('paramNetEco')?.value) || 60) / 100)
+                : 0.60;
+            const rateM = (parseFloat(document.getElementById('paramNetMgmt')?.value) || 70) / 100;
+
+            const netH = Math.round(st.farmGrossHuman * rateH);
+            const netE = Math.round(st.baseAnnualEco * rateE) + Math.round(st.bioBonusEcoVal * rateE);
+            const netM = Math.round(st.effectiveMaintBenefit * rateM);
             return ((netH + netE + netM) / totalInput).toFixed(2);
         }
 
         function computeTeamOfficialSroi(team) {
-            const teamFarms = farmsData.filter(f => team.farmIds.includes(f.id));
-            const list = teamFarms.length > 0 ? teamFarms : [farmsData[0]];
-            const nFarms = list.length;
+            const teamFarms = farmsData.filter(f => f.selected && team.farmIds.includes(f.id));
+            const list = teamFarms.length > 0 ? teamFarms : farmsData.filter(f => f.selected);
+            const validList = list.length > 0 ? list : [farmsData[0]];
+            const nFarms = validList.length;
 
             const habPerFarm = currentMode === '2025' ? (team.habitatGrantPerFarm || 10000) : (currentMode === '2026' ? (team.maintGrantPerFarm || 2000) : ((team.habitatGrantPerFarm || 10000) + (team.maintGrantPerFarm || 2000)));
             const totalHabInput = habPerFarm * nFarms;
             const totalTrainInput = team.projectInput || 70000;
             const totalInput = Math.max(1, totalHabInput + totalTrainInput);
 
-            let grossHuman = 0, grossEco = 0, grossMgmt = 0;
-            list.forEach(f => {
+            const rateH = (parseFloat(document.getElementById('paramNetHuman')?.value) || 80) / 100;
+            const rateE = (reportScope === 'multi')
+                ? ((parseFloat(document.getElementById('paramNetEco')?.value) || 10) / 100)
+                : 0.10;
+            const rateM = (parseFloat(document.getElementById('paramNetMgmt')?.value) || 70) / 100;
+
+            let grossHuman = 0, grossEco = 0, grossMgmt = 0, sumFieldEcoNet = 0, sumBioObsEcoNet = 0;
+            validList.forEach(f => {
                 const st = computeFarmStats(f);
                 grossHuman += st.farmGrossHuman;
                 grossEco += st.totalFarmEcoGross;
                 grossMgmt += st.effectiveMaintBenefit;
+                sumFieldEcoNet += Math.round(st.baseAnnualEco * rateE);
+                sumBioObsEcoNet += Math.round(st.bioBonusEcoVal * rateE);
             });
 
-            const rateH = (parseFloat(document.getElementById('paramNetHuman')?.value) || 80) / 100;
-            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || 10) / 100;
-            const rateM = (parseFloat(document.getElementById('paramNetMgmt')?.value) || 70) / 100;
-
-            const netValue = Math.round((grossHuman * rateH) + (grossEco * rateE) + (grossMgmt * rateM));
+            const netHuman = Math.round(grossHuman * rateH);
+            const netEco = sumFieldEcoNet + sumBioObsEcoNet;
+            const netMgmt = Math.round(grossMgmt * rateM);
+            const netValue = netHuman + netEco + netMgmt;
             return { nFarms, totalInput, netValue, sroi: (netValue / totalInput).toFixed(2) };
         }
 
@@ -2250,10 +2300,15 @@
             const checklist = document.getElementById('teamModalFarmsChecklist');
             if (checklist) {
                 checklist.innerHTML = farmsData.map((f, idx) => `
-                    <label class="flex items-center gap-2 p-2 bg-white rounded-lg border text-xs font-bold cursor-pointer">
-                        <input type="checkbox" class="team-modal-farm-cb rounded text-satoyama-main" value="${f.id}" ${(mode !== 'edit' || t.farmIds.includes(f.id)) ? 'checked' : ''}>
-                        <span>#${idx + 1} ${f.name} (${f.crops})</span>
-                    </label>
+                    <div class="flex items-center justify-between gap-2 p-2 bg-white rounded-lg border text-xs font-bold">
+                        <label class="flex items-center gap-2 cursor-pointer truncate flex-grow">
+                            <input type="checkbox" class="team-modal-farm-cb rounded text-satoyama-main" value="${f.id}" ${(mode !== 'edit' || f.selected) ? 'checked' : ''}>
+                            <span class="truncate">#${idx + 1} ${f.name} (${f.crops})</span>
+                        </label>
+                        <button type="button" onclick="removeFarm(${f.id}); openTeamModal('${mode}');" class="text-rose-500 hover:text-rose-700 px-1.5 py-0.5 rounded" title="刪除此農場">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
                 `).join('');
             }
             document.getElementById('teamModal').classList.remove('hidden');
@@ -2329,40 +2384,36 @@
             const container = document.getElementById('farmsListContainer');
             if (!container) return;
 
-            const visibleFarms = (reportScope === 'single')
+            const displayFarms = reportScope === 'single'
                 ? farmsData.filter(f => f.id === activeSingleFarmId)
                 : farmsData;
 
-            container.innerHTML = visibleFarms.map((f) => {
-                const idx = farmsData.findIndex(x => x.id === f.id);
+            container.innerHTML = displayFarms.map((f, idx) => {
                 const st = computeFarmStats(f);
-                const signPct = st.bioObsPct >= 0 ? '+' : '';
+                const sroiSingle = computeSingleFarmOfficialSroi(f);
+                const isSelected = reportScope === 'single' ? (f.id === activeSingleFarmId) : f.selected;
+                const signPct = st.bioObsPct >= 0 ? `+${st.bioObsPct}` : `${st.bioObsPct}`;
                 const cp = { ...createDefaultCustomProxies(), ...(f.customProxies || {}) };
-                const baseLocked = isCloudBaselineLocked || !!f.habBaseLocked;
-                const fInvestType = f.investType || '計畫投入';
+                const baseLocked = !!(isCloudBaselineLocked || f.habBaseLocked);
 
                 return `
-                <div class="rounded-2xl border-2 p-4 space-y-3.5 transition ${(reportScope === 'single' || f.selected) ? 'bg-white border-emerald-500/80 shadow-sm' : 'bg-slate-50 border-slate-200 opacity-75'}">
-                    <!-- Top Identity & Investment Type Row -->
+                <div id="farm-card-${f.id}" class="p-4 rounded-2xl border-2 transition ${isSelected ? 'bg-white border-emerald-500 shadow-sm' : 'bg-slate-50/70 border-slate-200 opacity-75'} space-y-3">
                     <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-2.5">
-                        <div class="flex flex-wrap items-center gap-1.5">
+                        <div class="flex items-center gap-2">
                             ${reportScope === 'multi' ? `
-                                <input type="checkbox" ${f.selected ? 'checked' : ''} onchange="toggleFarmSelection(${f.id}, this.checked)" class="rounded text-satoyama-main w-4 h-4 cursor-pointer">
-                            ` : `
-                                <span class="bg-sky-600 text-white text-[10px] font-black px-2 py-0.5 rounded">單場獨立填報</span>
-                            `}
-                            <span class="bg-satoyama-dark text-white text-[10px] font-black px-2 py-0.5 rounded">#${idx + 1}</span>
-                            <input type="text" value="${f.name}" onchange="updateFarmField(${f.id}, 'name', this.value, true)" class="font-black text-sm text-satoyama-dark bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 w-32 sm:w-36">
-                            <input type="text" value="${f.crops}" onchange="updateFarmField(${f.id}, 'crops', this.value, true)" class="font-bold text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-0.5 w-24">
-                            <select onchange="updateFarmField(${f.id}, 'investType', this.value, true); renderFarmsList();" class="bg-amber-50 border border-amber-300 text-amber-950 rounded-lg px-2 py-0.5 text-[11px] font-black">
-                                <option value="計畫投入" ${fInvestType === '計畫投入' ? 'selected' : ''}>計畫投入</option>
-                                <option value="企業投入" ${fInvestType === '企業投入' ? 'selected' : ''}>企業投入</option>
-                                <option value="自主投入" ${fInvestType === '自主投入' ? 'selected' : ''}>自主投入</option>
-                                <option value="其他" ${fInvestType === '其他' ? 'selected' : ''}>其他(說明)</option>
+                                <input type="checkbox" ${f.selected ? 'checked' : ''} onchange="toggleFarmSelection(${f.id}, this.checked)" class="w-4 h-4 rounded text-satoyama-main cursor-pointer">
+                            ` : `<span class="bg-sky-600 text-white text-[10px] font-black px-2 py-0.5 rounded">單一農場獨立評估中</span>`}
+                            <span class="bg-satoyama-dark text-white text-[10px] font-black px-2 py-0.5 rounded-md">#${idx + 1}</span>
+                            <input type="text" value="${f.name}" onchange="updateFarmField(${f.id}, 'name', this.value, true)" class="font-black text-sm text-satoyama-dark bg-slate-50 border border-slate-200 rounded-lg px-2 py-0.5 w-36">
+                            <input type="text" value="${f.crops}" onchange="updateFarmField(${f.id}, 'crops', this.value, true)" class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-0.5 w-24">
+                            <select onchange="updateFarmField(${f.id}, 'investType', this.value, true)" class="text-[11px] font-black bg-amber-50 border border-amber-300 text-amber-950 rounded-lg px-2 py-0.5">
+                                <option value="計畫投入" ${(f.investType||'計畫投入')==='計畫投入'?'selected':''}>計畫投入</option>
+                                <option value="企業投入" ${f.investType==='企業投入'?'selected':''}>企業投入</option>
+                                <option value="自主投入" ${f.investType==='自主投入'?'selected':''}>自主投入</option>
+                                <option value="其他" ${f.investType==='其他'?'selected':''}>其他(說明)</option>
                             </select>
-                            ${fInvestType === '其他' ? `
-                                <input type="text" value="${f.investTypeOther || ''}" onchange="updateFarmField(${f.id}, 'investTypeOther', this.value, true)" placeholder="填寫其他投入說明" class="bg-white border border-amber-300 rounded-lg px-2 py-0.5 text-[11px] font-bold w-28">
-                            ` : ''}
+                            <input type="text" value="${f.investTypeOther || ''}" placeholder="其他說明..." onchange="updateFarmField(${f.id}, 'investTypeOther', this.value, true)" class="${f.investType==='其他'?'':'hidden'} text-[11px] font-bold bg-white border border-amber-300 rounded-lg px-2 py-0.5 w-24">
+                            <span class="bg-amber-100 text-amber-900 text-[11px] font-black px-2 py-0.5 rounded-lg">單場 SROI 1:${sroiSingle}</span>
                         </div>
                         <div class="flex items-center gap-1.5">
                             ${reportScope === 'multi' ? `
@@ -2377,7 +2428,7 @@
                             <button onclick="openEditFarmModal(${f.id})" class="text-[10px] bg-white border border-sky-300 hover:bg-sky-50 text-sky-800 px-2 py-1 rounded-lg font-bold transition">
                                 <i class="fas fa-edit"></i> 基本資料
                             </button>
-                            <button onclick="removeFarm(${f.id})" class="text-[10px] bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 px-2 py-1 rounded-lg font-bold transition">
+                            <button onclick="requirePasswordForAction('刪除農場', '刪除農場需輸入授權密碼：', () => removeFarm(${f.id}))" class="text-[10px] bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 px-2 py-1 rounded-lg font-bold transition">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
@@ -2469,13 +2520,20 @@
                         </div>
                     </div>
 
-                    <!-- SECTION B: [A] Past Baseline Cost (2025) vs. [B] Eco-Farming Cost + Execution Note -->
+                    <!-- SECTION B: [A] Past Baseline Cost (2025) vs. [B] Eco-Farming Cost + Tenure Weight + Execution Note -->
                     <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5 text-xs">
-                        <div>
-                            <span class="font-black text-satoyama-dark text-xs">🚜 類型二：農務生產管理成本比較（[A] 過去基期總成本 vs. [B] 生態農法成本）</span>
-                            <span class="block text-[10.5px] text-slate-600 font-bold mt-0.5">
-                                📋 填寫依據說明：請依據「田間帳本、資材採購單據與除草工時紀錄」填寫；[A] 鎖定為 2025 基期基準，[B] 由農友填報當期生態農法實際支出。
-                            </span>
+                        <div class="flex flex-wrap justify-between items-start gap-2">
+                            <div>
+                                <span class="font-black text-satoyama-dark text-xs">🚜 類型二：農務生產管理成本與持續投入生態年資加權（以【B】生態成本對照產量成長率 % 並依年資加權）</span>
+                                <span class="block text-[10.5px] text-slate-600 font-bold mt-0.5">
+                                    📋 填寫依據說明：依「田間帳本、資材單據與除草紀錄」填寫；投入之【B】生態農法成本越高、對照農產產量成長率 % 越高，且持續投入年資越久，加權權重越高。
+                                </span>
+                            </div>
+                            <div class="bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shrink-0">
+                                <span class="text-[10.5px] font-black text-amber-950">⏳ 持續投入生態年資：</span>
+                                <input type="number" min="1" max="20" value="${f.ecoYears ?? 2}" onchange="updateFarmField(${f.id}, 'ecoYears', this.value)" class="clean-num-input w-12 bg-white border border-amber-400 rounded px-1 py-0.5 text-center font-black text-amber-950">
+                                <span class="text-[10.5px] font-black text-emerald-800">年 (權重 ${st.ecoYearsWeight}x)</span>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2499,6 +2557,10 @@
                                     <div>友善資材 <input type="number" value="${f.ecoMaterialCost}" step="500" onchange="updateFarmField(${f.id}, 'ecoMaterialCost', this.value)" class="clean-num-input w-full bg-white border border-emerald-300 rounded px-1.5 py-0.5 font-black"></div>
                                 </div>
                             </div>
+                        </div>
+                        <div class="bg-amber-50/80 px-2.5 py-1.5 rounded-lg border border-amber-200 flex flex-wrap justify-between items-center text-[10.5px] font-bold text-amber-950">
+                            <span>📐 (G) 農務與產量加權毛值 = 【B】$${f.newCost2025.toLocaleString()} × (1 + 產量成長 ${parseFloat(st.yieldGrowthPct)>=0?'+':''}${st.yieldGrowthPct}%) × 年資權重 ${st.ecoYearsWeight}x</span>
+                            <span class="text-emerald-800 font-black">= $${st.effectiveMaintBenefit.toLocaleString()} 元</span>
                         </div>
 
                         <div>
@@ -2732,7 +2794,7 @@
                     <td class="num-col" style="color:#047857;"><strong>毛值 $${stats.farmGrossHuman.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#64748b;">${stats.tCurr}人(${stats.gCurr}導) 應用${stats.humanCapPct}% (上限$70,000元/場)</span></td>
                     <td class="num-col" style="color:#0369a1;"><strong>毛值 $${stats.baseAnnualEco.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#0284c7;">淨值 $${Math.round(stats.baseAnnualEco * m.rateE).toLocaleString()} (保留${Math.round(m.rateE*100)}%)</span><br><span style="font-size:9px;color:#64748b;">面積$${stats.areaPaymentRaw.toLocaleString()}+微棲地維護$${stats.habMaintRaw.toLocaleString()} (上限$${stats.fieldEcoCap.toLocaleString()}元/場)</span></td>
                     <td class="num-col" style="color:#0f766e;"><strong>毛值 $${stats.bioBonusEcoVal.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#0d9488;">淨值 $${Math.round(stats.bioBonusEcoVal * m.rateE).toLocaleString()} (保留${Math.round(m.rateE*100)}%)</span><br><span style="font-size:9px;color:#64748b;">物種${stats.sPrev}➔${stats.sCurr}種｜數量${stats.bioObsPct>=0?'+':''}${stats.bioObsPct}% (上限$${stats.bioObsEcoCap.toLocaleString()}元/場)</span></td>
-                    <td class="num-col" style="color:#d97706;"><strong>毛值 $${stats.effectiveMaintBenefit.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#b45309;">淨值 $${Math.round(stats.effectiveMaintBenefit * m.rateM).toLocaleString()} (保留${Math.round(m.rateM*100)}%)</span><br><span style="font-size:9px;color:#64748b;">[A]-[B]$${stats.costDiffAB.toLocaleString()}+產量${parseFloat(stats.yieldGrowthPct)>=0?'+':''}${stats.yieldGrowthPct}% (上限$${stats.mgmtProxyCapMax.toLocaleString()}元/場)</span></td>
+                    <td class="num-col" style="color:#d97706;"><strong>毛值 $${stats.effectiveMaintBenefit.toLocaleString()}</strong><br><span style="font-size:9.5px;color:#b45309;">淨值 $${Math.round(stats.effectiveMaintBenefit * m.rateM).toLocaleString()} (保留${Math.round(m.rateM*100)}%)</span><br><span style="font-size:9px;color:#64748b;">【B】$${farm.newCost2025.toLocaleString()}×(1+產量${parseFloat(stats.yieldGrowthPct)>=0?'+':''}${stats.yieldGrowthPct}%)×年資${stats.ecoYears}年(${stats.ecoYearsWeight}x)</span></td>
                 </tr>
             `).join('');
 
@@ -2824,7 +2886,9 @@
                             • <strong>(E-2) 獨立之「棲地生物觀測（物種數增減 & 生物族群量增減 %）」評估（與場域定價分開，法規上限：元/場）：</strong><br>
                               &nbsp;&nbsp;毛值 $V_{\text{E2 (生物觀測)}} = \sum \min\left([(S_{\text{當期},i} \times \$3,500) + (\Delta S_{\text{物種增減},i} \times \$3,500)] \times (1 + \text{生物數量增減}\%_i), \; \text{單場生態監測法定上限 }\$${(parseFloat(document.getElementById('paramBioObsEcoCap')?.value)||60000).toLocaleString()}\text{ 元/場}\right) = \$${m.sumBioBonusEco.toLocaleString()}$ 元<br>
                               &nbsp;&nbsp;➔ 乘以<strong>棲地生態保留率 $(1 - \text{無謂影響}\% - \text{歸因}\%) = ${Math.round(m.rateE*100)}\%$</strong> = <strong>生物觀測生態淨值 $${m.sumBioObsEcoNet.toLocaleString()} 元</strong><br>
-                            • <strong>(G) 農務實證與農產產量成長率 (%) 價值：</strong> 毛值 $V_{\text{mgmt}} = \$${m.grossMgmt.toLocaleString()}$ ➔ 乘以保留率 ${Math.round(m.rateM*100)}% = <strong>淨值 $${m.netMgmt.toLocaleString()} 元</strong>
+                            • <strong>(G) 農務實證與農產產量成長率 (%) 加權價值（依【B】生態成本對照產量成長率 % 並按持續投入年資加權）：</strong><br>
+                              &nbsp;&nbsp;毛值 $V_{\text{mgmt}} = \sum \min\left(\text{【B】生態農法成本}_i \times (1 + \text{農產產量成長率}\%_i) \times W_{\text{year, }i(\text{投入年資加權})}, \; \text{單場上限 }\$${(parseFloat(document.getElementById('paramMgmtEcoCap')?.value)||80000).toLocaleString()}\text{ 元/場}\right) = \$${m.grossMgmt.toLocaleString()}$ 元<br>
+                              &nbsp;&nbsp;➔ 乘以保留率 ${Math.round(m.rateM*100)}% = <strong>淨值 $${m.netMgmt.toLocaleString()} 元</strong>
                         </div>
                         <div style="margin-top:4px;"><strong>3. 防漂綠折減後總淨影響力價值公式 ($V_{\text{net}}$)：</strong></div>
                         <div style="padding-left:14px; color:#334155;">
@@ -2870,9 +2934,9 @@
                                 <td class="center-col" style="color:#0f766e;font-weight:bold;">✅ 獨立評估符合上限<br>棲地保留率 ${Math.round(m.rateE*100)}%</td>
                             </tr>
                             <tr>
-                                <td><strong>(G) 農務實證與農產產量成長率 (%)</strong></td>
-                                <td>([A]基期成本 - [B]生態成本) + ([A] × 農產產量成長率 %)</td>
-                                <td><strong>單場上限 &le; [A]基期成本 (元/場)</strong><br>(產量成長率認列上限 +25%)</td>
+                                <td><strong>(G) 農務實證與農產產量成長率 (%)</strong><br><span style="font-size:10px;color:#b45309;">依【B】生態成本×產量成長%×投入年資加權</span></td>
+                                <td>【B】生態農法成本 × (1 + 農產產量成長率 %) × 持續投入生態年資權重 $W_{\text{year}}$</td>
+                                <td><strong>單場上限 $${(parseFloat(document.getElementById('paramMgmtEcoCap')?.value)||80000).toLocaleString()} 元/場</strong><br>(產量成長上限+25%｜年資權重最高1.6x)</td>
                                 <td class="num-col">毛值 $${m.grossMgmt.toLocaleString()}<br><strong style="color:#d97706;">淨值 $${m.netMgmt.toLocaleString()}</strong></td>
                                 <td class="center-col" style="color:#047857;font-weight:bold;">✅ 符合元/場上限<br>保留率 ${Math.round(m.rateM*100)}%</td>
                             </tr>
@@ -3014,8 +3078,8 @@
                             3. <strong>(E-2) 獨立之「棲地生物觀測（生物物種數 & 生物族群數量增減 %）」評估（與場域定價完全分開，上限單位：元/場）：</strong><br>
                             • 對標林業署方案第二階段「自主生態觀察與巡護監測獎勵金（法定上限 <strong>$60,000 元/場</strong>）」，單獨針對農友日常農作觀察之新物種及原生生物總族群量增減進行獨立核算：<br>
                             $$V_{\text{E2, 淨值}} = \sum_{i=1}^{N} \min\Big( \big[(S_{\text{當期},i} \times \$3,500) + (\Delta S_{\text{物種增減},i} \times \$3,500)\big] \times \big(1 + \min(\text{生物數量增減}\%_i, +25\%)\big), \; \$60,000\text{ 元/場} \Big) \times (1 - \text{無謂影響}\% - \text{歸因}\%)$$<br>
-                            4. <strong>(G) 農務實證與農產產量成長率 (%) 淨效益 ($V_{\text{G}}$，上限單位：元/場）：</strong><br>
-                            • 結合「【A】過去基期總成本 - 【B】當期生態農法成本」之實證節省差額，以及「農產產量成長率 (%)（認列上限最高 +25%）」之生產效益，單場毛值總上限不得超過該農場之【A】過去基期總成本（元/場），再乘以農務管理保留率 $(1 - \text{DW}_{\text{G}}\% - \text{Attr}_{\text{G}}\% = 70\%)$。
+                            4. <strong>(G) 農務實證與農產產量成長率 (%) 加權淨效益 ($V_{\text{G}}$，依【B】生態成本對照產量成長率 % 並依投入年資加權，上限單位：元/場）：</strong><br>
+                            • 為真實反映農友持續投入友善耕作之正向累積效益，以農友實際投入之<strong>【B】當期生態農法成本</strong>對照其<strong>農產產量成長率 (%)（認列上限 +25%）</strong>，並乘以<strong>「持續投入生態農法年資加權權重 $W_{\text{year}} = 1 + (\text{年資}-1)\times 15\%$（最高封頂 1.60 倍）」</strong>，即投入【B】生態成本越高、產量成長率越高、持續投入年資越久，該場加權權重與計算價值越高，受單場上限（預設 <strong>$80,000 元/場</strong>）封頂後，再乘以農務管理保留率 $(1 - \text{DW}_{\text{G}}\% - \text{Attr}_{\text{G}}\% = 70\%)$。
                         </p>
 
                         <h3 style="margin-top:12px; color:#0f4c3a;">【肆、 影響力期程 (Duration)、跨年衰減率 (Drop-off) 與敏感度壓力測試結論】</h3>
@@ -3146,424 +3210,257 @@
             if (typeof rebuildCloud3DIslands === 'function') {
                 rebuildCloud3DIslands(metrics);
             }
+            if (typeof refreshOpenCloudDrawer === 'function') {
+                refreshOpenCloudDrawer();
+            }
         }
 
         // ==========================================
-        // CLOUD WORKBENCH 3D FLOATING ISLANDS ENGINE
+        // 3D FLOATING SATOYAMA ARCHIPELAGO (CLOUD WORKBENCH)
         // ==========================================
-        let cScene3D, cCamera3D, cRenderer3D, cIslandsGroup;
+        let cScene = null, cCamera = null, cRenderer = null, cIslandsGroup = null;
         let cIslandItems = [];
         let cIsFloating = true;
-        let cIsDragging = false;
-        let cPrevMouse = { x: 0, y: 0 };
-        let cCamAngle = { theta: 0.48, phi: 0.96, radius: 27 };
-        let cSelectedTarget = { type: 'team', id: 'team_1' };
+        let cSelectedTarget = null;
+        let cDrag = false, cPrevPos = { x: 0, y: 0 }, cSpherical = { theta: 0.35, phi: 1.08, radius: 22 };
 
-        function createFarmerFigure3D(shirtColor, hatBrim = true) {
-            const farmer = new THREE.Group();
-            // Legs
-            const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.32, 6);
-            const legMat = new THREE.MeshLambertMaterial({ color: 0x1e3a8a });
-            const legL = new THREE.Mesh(legGeo, legMat);
-            legL.position.set(-0.09, 0.16, 0);
-            const legR = new THREE.Mesh(legGeo, legMat);
-            legR.position.set(0.09, 0.16, 0);
-            farmer.add(legL, legR);
+        function initCloud3DScene() {
+            const container = document.getElementById('cloud3dCanvasContainer');
+            if (!container || typeof THREE === 'undefined') return;
 
-            // Torso
-            const bodyMesh = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.18, 0.21, 0.42, 8),
-                new THREE.MeshLambertMaterial({ color: shirtColor, flatShading: true })
-            );
-            bodyMesh.position.y = 0.48;
-            farmer.add(bodyMesh);
-
-            // Head
-            const headMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.17, 10, 10),
-                new THREE.MeshLambertMaterial({ color: 0xfde68a })
-            );
-            headMesh.position.y = 0.82;
-            farmer.add(headMesh);
-
-            // Conical Bamboo Hat (斗笠)
-            if (hatBrim) {
-                const hatMesh = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.34, 0.18, 10),
-                    new THREE.MeshLambertMaterial({ color: 0xeab308, flatShading: true })
-                );
-                hatMesh.position.y = 0.98;
-                farmer.add(hatMesh);
-            } else {
-                const hairMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.175, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
-                    new THREE.MeshLambertMaterial({ color: 0x27272a })
-                );
-                hairMesh.position.y = 0.84;
-                farmer.add(hairMesh);
+            if (new URLSearchParams(window.location.search).get('embed') === '3d') {
+                document.body.classList.add('embed-3d-only');
             }
-            return farmer;
+
+            cScene = new THREE.Scene();
+            const w = container.clientWidth || 900;
+            const h = container.clientHeight || 520;
+            cCamera = new THREE.PerspectiveCamera(42, w / h, 0.1, 500);
+            syncCloud3DCamera();
+
+            cRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            cRenderer.setSize(w, h);
+            cRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.innerHTML = '';
+            container.appendChild(cRenderer.domElement);
+
+            cScene.add(new THREE.AmbientLight(0xffffff, 0.85));
+            const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.9);
+            dirLight.position.set(14, 24, 16);
+            cScene.add(dirLight);
+
+            cIslandsGroup = new THREE.Group();
+            cScene.add(cIslandsGroup);
+
+            const dom = cRenderer.domElement;
+            dom.addEventListener('mousedown', e => { cDrag = true; cPrevPos = { x: e.clientX, y: e.clientY }; });
+            window.addEventListener('mouseup', () => { cDrag = false; });
+            window.addEventListener('mousemove', e => {
+                if (!cDrag) return;
+                cSpherical.theta -= (e.clientX - cPrevPos.x) * 0.007;
+                cSpherical.phi = Math.max(0.45, Math.min(1.42, cSpherical.phi - (e.clientY - cPrevPos.y) * 0.006));
+                cPrevPos = { x: e.clientX, y: e.clientY };
+                syncCloud3DCamera();
+            });
+
+            window.addEventListener('resize', () => {
+                if (!container || !cRenderer || !cCamera) return;
+                cCamera.aspect = container.clientWidth / container.clientHeight;
+                cCamera.updateProjectionMatrix();
+                cRenderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            rebuildCloud3DIslands(calculateSroiMetrics());
+            animateCloud3DLoop();
+        }
+
+        function syncCloud3DCamera() {
+            if (!cCamera) return;
+            cCamera.position.x = cSpherical.radius * Math.sin(cSpherical.phi) * Math.sin(cSpherical.theta);
+            cCamera.position.y = cSpherical.radius * Math.cos(cSpherical.phi);
+            cCamera.position.z = cSpherical.radius * Math.sin(cSpherical.phi) * Math.cos(cSpherical.theta);
+            cCamera.lookAt(0, 0.6, 0);
         }
 
         function createPineTree3D(scale = 1) {
             const tree = new THREE.Group();
             const trunk = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.12 * scale, 0.16 * scale, 0.6 * scale, 6),
-                new THREE.MeshLambertMaterial({ color: 0x78350f })
+                new THREE.CylinderGeometry(0.08 * scale, 0.13 * scale, 0.55 * scale, 6),
+                new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 })
             );
-            trunk.position.y = 0.3 * scale;
+            trunk.position.y = 0.25 * scale;
             tree.add(trunk);
-
-            const colors = [0x15803d, 0x16a34a, 0x22c55e];
-            for (let i = 0; i < 3; i++) {
+            const foliageColors = [0x15803d, 0x16a34a, 0x22c55e];
+            for (let l = 0; l < 3; l++) {
                 const cone = new THREE.Mesh(
-                    new THREE.ConeGeometry((0.68 - i * 0.14) * scale, (0.85 - i * 0.1) * scale, 7),
-                    new THREE.MeshLambertMaterial({ color: colors[i], flatShading: true })
+                    new THREE.ConeGeometry((0.52 - l * 0.11) * scale, (0.65 - l * 0.08) * scale, 7),
+                    new THREE.MeshStandardMaterial({ color: foliageColors[l], flatShading: true })
                 );
-                cone.position.y = (0.75 + i * 0.45) * scale;
+                cone.position.y = (0.62 + l * 0.34) * scale;
                 tree.add(cone);
             }
             return tree;
         }
 
-        function createBroadTree3D(scale = 1) {
+        function createBroadleafTree3D(scale = 1) {
             const tree = new THREE.Group();
             const trunk = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.13 * scale, 0.18 * scale, 0.65 * scale, 6),
-                new THREE.MeshLambertMaterial({ color: 0x713f12 })
+                new THREE.CylinderGeometry(0.09 * scale, 0.14 * scale, 0.65 * scale, 6),
+                new THREE.MeshStandardMaterial({ color: 0x713f12, roughness: 0.9 })
             );
             trunk.position.y = 0.32 * scale;
             tree.add(trunk);
-
-            const crownMat = new THREE.MeshLambertMaterial({ color: 0x4d7c0f, flatShading: true });
-            const c1 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55 * scale, 0), crownMat);
-            c1.position.set(0, 0.95 * scale, 0);
-            const c2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42 * scale, 0), new THREE.MeshLambertMaterial({ color: 0x65a30d, flatShading: true }));
-            c2.position.set(0.28 * scale, 0.85 * scale, 0.2 * scale);
-            const c3 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.4 * scale, 0), crownMat);
-            c3.position.set(-0.26 * scale, 0.82 * scale, -0.18 * scale);
-            tree.add(c1, c2, c3);
+            const crownMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, flatShading: true });
+            const c1 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.48 * scale, 0), crownMat);
+            c1.position.set(0, 0.85 * scale, 0);
+            tree.add(c1);
             return tree;
+        }
+
+        function createFarmerFigure3D(shirtColor = 0x2563eb) {
+            const fig = new THREE.Group();
+            const body = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.11, 0.14, 0.36, 8),
+                new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.7 })
+            );
+            body.position.y = 0.24;
+            fig.add(body);
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.12, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.6 })
+            );
+            head.position.y = 0.52;
+            fig.add(head);
+            const hat = new THREE.Mesh(
+                new THREE.ConeGeometry(0.26, 0.14, 10),
+                new THREE.MeshStandardMaterial({ color: 0xfbbf24, flatShading: true })
+            );
+            hat.position.y = 0.63;
+            fig.add(hat);
+            return fig;
         }
 
         function createWoodenSkyBridge3D(length) {
             const bridge = new THREE.Group();
-            const woodDeckMat = new THREE.MeshLambertMaterial({ color: 0xd97706 });
-            const railMat = new THREE.MeshLambertMaterial({ color: 0x92400e });
-
-            // Main bridge deck planks
-            const plankCount = Math.max(4, Math.floor(length / 0.38));
-            const step = length / plankCount;
-            for (let i = 0; i < plankCount; i++) {
-                const plank = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.05, 0.1, step * 0.82),
-                    woodDeckMat
-                );
-                plank.position.set(0, 0, -length / 2 + (i + 0.5) * step);
-                bridge.add(plank);
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.85 });
+            const railMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 });
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, length), woodMat);
+            bridge.add(deck);
+            for (const side of [-0.38, 0.38]) {
+                const topRail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, length), railMat);
+                topRail.position.set(side, 0.34, 0);
+                bridge.add(topRail);
             }
-
-            // Side support beams
-            [-0.46, 0.46].forEach(xPos => {
-                const beam = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.1, length), railMat);
-                beam.position.set(xPos, -0.04, 0);
-                bridge.add(beam);
-
-                // Top & middle handrails
-                const topRail = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, length), railMat);
-                topRail.position.set(xPos, 0.48, 0);
-                const midRail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, length), woodDeckMat);
-                midRail.position.set(xPos, 0.26, 0);
-                bridge.add(topRail, midRail);
-
-                // Vertical posts
-                const postCount = Math.max(3, Math.floor(length / 0.95));
-                for (let p = 0; p <= postCount; p++) {
-                    const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.08), railMat);
-                    post.position.set(xPos, 0.25, -length / 2 + (p / postCount) * length);
-                    bridge.add(post);
-                }
-            });
-
             return bridge;
         }
 
-        function buildSingle3DIslandMesh(radius, height, isMain, variantIdx = 0) {
-            const grp = new THREE.Group();
-
-            // 1. Multi-faceted rocky cliff base (like illustration)
-            const rockUpper = new THREE.Mesh(
-                new THREE.CylinderGeometry(radius * 0.95, radius * 0.62, height * 0.55, 8),
-                new THREE.MeshLambertMaterial({ color: 0xa16207, flatShading: true })
-            );
-            rockUpper.position.y = -height * 0.27;
-            grp.add(rockUpper);
-
+        function buildSingle3DIslandMesh(radius, height, isMain, index = 0) {
+            const g = new THREE.Group();
             const rockLower = new THREE.Mesh(
-                new THREE.ConeGeometry(radius * 0.64, height * 0.65, 7),
-                new THREE.MeshLambertMaterial({ color: 0x78350f, flatShading: true })
+                new THREE.ConeGeometry(radius * 0.88, height * 0.95, 7),
+                new THREE.MeshStandardMaterial({ color: 0x78350f, flatShading: true, roughness: 0.92 })
             );
             rockLower.rotation.x = Math.PI;
-            rockLower.position.y = -height * 0.85;
-            grp.add(rockLower);
+            rockLower.position.y = -height * 0.38;
+            g.add(rockLower);
 
-            // 2. Stepped green grass rim & top platform
-            const rimGrass = new THREE.Mesh(
-                new THREE.CylinderGeometry(radius * 1.03, radius * 0.96, 0.42, 8),
-                new THREE.MeshLambertMaterial({ color: isMain ? 0x0ea5e9 : 0x65a30d, flatShading: true })
+            const turf = new THREE.Mesh(
+                new THREE.CylinderGeometry(radius * 1.03, radius * 0.98, 0.42, 8),
+                new THREE.MeshStandardMaterial({ color: isMain ? 0x34d399 : 0x84cc16, flatShading: true })
             );
-            rimGrass.position.y = 0.2;
-            grp.add(rimGrass);
-
-            const topLawn = new THREE.Mesh(
-                new THREE.CylinderGeometry(radius * 0.97, radius * 1.0, 0.34, 8),
-                new THREE.MeshLambertMaterial({ color: isMain ? 0xe0f2fe : 0xbef264, flatShading: true })
-            );
-            topLawn.position.y = 0.52;
-            grp.add(topLawn);
-
-            const surfaceY = 0.69;
+            turf.position.y = 0.25;
+            g.add(turf);
 
             if (isMain) {
-                // === MAIN PROJECT ISLAND (Satoyama Academy + Glass Greenhouse + Snow Mountains + Waterfall + Farmers) ===
-                // Snow-capped twin mountains at back
-                const mtn1 = new THREE.Mesh(new THREE.ConeGeometry(1.45, 3.1, 6), new THREE.MeshLambertMaterial({ color: 0x15803d, flatShading: true }));
-                mtn1.position.set(-1.35, surfaceY + 1.5, -1.55);
-                const cap1 = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.95, 6), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }));
-                cap1.position.set(-1.35, surfaceY + 2.6, -1.55);
-                const mtn2 = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.5, 6), new THREE.MeshLambertMaterial({ color: 0x16a34a, flatShading: true }));
-                mtn2.position.set(0.15, surfaceY + 1.2, -1.85);
-                const cap2 = new THREE.Mesh(new THREE.ConeGeometry(0.48, 0.75, 6), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }));
-                cap2.position.set(0.15, surfaceY + 2.1, -1.85);
-                grp.add(mtn1, cap1, mtn2, cap2);
-
-                // Main White & Blue-Roofed Satoyama Center Building
-                const mainHouse = new THREE.Mesh(
-                    new THREE.BoxGeometry(2.15, 1.35, 1.65),
-                    new THREE.MeshLambertMaterial({ color: 0xffffff })
+                const baseDeck = new THREE.Mesh(
+                    new THREE.CylinderGeometry(radius * 0.68, radius * 0.72, 0.26, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xe0f2fe, flatShading: true })
                 );
-                mainHouse.position.set(-0.2, surfaceY + 0.68, 0.05);
-                grp.add(mainHouse);
+                baseDeck.position.y = 0.54;
+                g.add(baseDeck);
 
-                // Gabled roof
-                const mainRoof = new THREE.Mesh(
-                    new THREE.ConeGeometry(1.78, 1.05, 4),
-                    new THREE.MeshLambertMaterial({ color: 0x0284c7, flatShading: true })
+                const hall = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.55, 1.0, 1.25),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff })
                 );
-                mainRoof.position.set(-0.2, surfaceY + 1.85, 0.05);
-                mainRoof.rotation.y = Math.PI / 4;
-                grp.add(mainRoof);
+                hall.position.set(-0.2, 1.15, 0.15);
+                g.add(hall);
 
-                // Door & Windows
-                const door = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.68, 0.06), new THREE.MeshLambertMaterial({ color: 0x92400e }));
-                door.position.set(-0.2, surfaceY + 0.35, 0.86);
-                const winL = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.06), new THREE.MeshLambertMaterial({ color: 0x38bdf8 }));
-                winL.position.set(-0.82, surfaceY + 0.72, 0.86);
-                const winR = winL.clone();
-                winR.position.set(0.42, surfaceY + 0.72, 0.86);
-                grp.add(door, winL, winR);
-
-                // Arched Glass Greenhouse on the right
-                const ghBase = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.15, 0.55, 1.25),
-                    new THREE.MeshLambertMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.85 })
+                const roof = new THREE.Mesh(
+                    new THREE.ConeGeometry(1.38, 0.78, 4),
+                    new THREE.MeshStandardMaterial({ color: 0x0284c7, flatShading: true })
                 );
-                ghBase.position.set(1.42, surfaceY + 0.28, 0.15);
-                const ghArch = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.58, 0.58, 1.25, 10, 1, false, 0, Math.PI),
-                    new THREE.MeshLambertMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.82 })
-                );
-                ghArch.rotation.x = Math.PI / 2;
-                ghArch.position.set(1.42, surfaceY + 0.55, 0.15);
-                grp.add(ghBase, ghArch);
+                roof.position.set(-0.2, 2.02, 0.15);
+                roof.rotation.y = Math.PI / 4;
+                g.add(roof);
 
-                // Stream & Waterfall cascading down the edge
-                const riverSurface = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.75, 0.06, 1.8),
-                    new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
-                );
-                riverSurface.position.set(1.1, surfaceY + 0.02, 1.75);
-                const waterfall = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.68, 1.65, 0.18),
-                    new THREE.MeshLambertMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.9 })
-                );
-                waterfall.position.set(1.1, surfaceY - 0.8, 2.65);
-                grp.add(riverSurface, waterfall);
-
-                // Pine trees & Farmers on Main Island
-                const p1 = createPineTree3D(1.05); p1.position.set(-2.25, surfaceY, -0.4);
-                const p2 = createPineTree3D(0.85); p2.position.set(2.05, surfaceY, -1.2);
-                const f1 = createFarmerFigure3D(0xffffff, false); f1.position.set(-0.35, surfaceY, 1.65);
-                const f2 = createFarmerFigure3D(0x0284c7, true); f2.position.set(1.55, surfaceY, 1.35);
-                grp.add(p1, p2, f1, f2);
-
+                const f1 = createFarmerFigure3D(0x0284c7);
+                f1.position.set(-1.1, 0.66, 1.1);
+                g.add(f1);
             } else {
-                // === FARM SUB-ISLANDS (L-Shaped Farmhouse / Cottages + Vegetable Plots + Water Habitat + Forest + Farmer) ===
-                // 1. Traditional Warm Farmhouse with Terracotta Roof
-                const houseA = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.15, 0.82, 0.88),
-                    new THREE.MeshLambertMaterial({ color: 0xfef3c7 })
+                const house = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.95, 0.65, 0.75),
+                    new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
                 );
-                houseA.position.set(-0.58, surfaceY + 0.41, -0.35);
-                const roofA = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.92, 0.62, 4),
-                    new THREE.MeshLambertMaterial({ color: 0xb45309, flatShading: true })
-                );
-                roofA.position.set(-0.58, surfaceY + 1.1, -0.35);
-                roofA.rotation.y = Math.PI / 4;
-                grp.add(houseA, roofA);
+                house.position.set(-0.45, 0.76, -0.35);
+                g.add(house);
 
-                // Secondary wing (L-shape courtyard feel)
-                const houseB = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.75, 0.72, 0.85),
-                    new THREE.MeshLambertMaterial({ color: 0xfde68a })
+                const roof = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.82, 0.52, 4),
+                    new THREE.MeshStandardMaterial({ color: 0xb45309, flatShading: true })
                 );
-                houseB.position.set(-1.12, surfaceY + 0.36, 0.25);
-                const roofB = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.68, 0.52, 4),
-                    new THREE.MeshLambertMaterial({ color: 0x9a3412, flatShading: true })
-                );
-                roofB.position.set(-1.12, surfaceY + 0.96, 0.25);
-                roofB.rotation.y = Math.PI / 4;
-                grp.add(houseB, roofB);
+                roof.position.set(-0.45, 1.34, -0.35);
+                roof.rotation.y = Math.PI / 4;
+                g.add(roof);
 
-                // 2. Vegetable Farmland Plots & Cabbage Crops (農田與作物)
                 const soilBase = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.38, 0.08, 1.25),
-                    new THREE.MeshLambertMaterial({ color: 0x78350f })
+                    new THREE.BoxGeometry(1.15, 0.08, 0.95),
+                    new THREE.MeshStandardMaterial({ color: 0x713f12 })
                 );
-                soilBase.position.set(0.68, surfaceY + 0.04, 0.38);
-                grp.add(soilBase);
+                soilBase.position.set(0.55, 0.48, 0.35);
+                g.add(soilBase);
 
-                for (let r = 0; r < 3; r++) {
-                    const ridge = new THREE.Mesh(
-                        new THREE.BoxGeometry(1.22, 0.12, 0.26),
-                        new THREE.MeshLambertMaterial({ color: 0x5c4033 })
-                    );
-                    ridge.position.set(0.68, surfaceY + 0.1, -0.02 + r * 0.4);
-                    grp.add(ridge);
+                const pTree = createPineTree3D(0.85);
+                pTree.position.set(-1.1, 0.45, 0.45);
+                g.add(pTree);
+                const bTree = createBroadleafTree3D(0.85);
+                bTree.position.set(0.35, 0.45, -1.05);
+                g.add(bTree);
 
-                    // Green cabbages / crops along each ridge
-                    for (let c = 0; c < 3; c++) {
-                        const crop = new THREE.Mesh(
-                            new THREE.DodecahedronGeometry(0.13, 0),
-                            new THREE.MeshLambertMaterial({ color: (r + c) % 2 === 0 ? 0x16a34a : 0x4d7c0f, flatShading: true })
-                        );
-                        crop.position.set(0.28 + c * 0.4, surfaceY + 0.22, -0.02 + r * 0.4);
-                        grp.add(crop);
-                    }
-                }
-
-                // 3. Water Micro-Habitat Pond + Stones (水域微棲地)
-                const pondWater = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.62, 0.58, 0.1, 12),
-                    new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
-                );
-                pondWater.position.set(0.75, surfaceY + 0.05, -0.95);
-                grp.add(pondWater);
-
-                // Lily pad on pond
-                const lily = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.16, 0.16, 0.03, 8),
-                    new THREE.MeshLambertMaterial({ color: 0x22c55e })
-                );
-                lily.position.set(0.85, surfaceY + 0.11, -0.88);
-                grp.add(lily);
-
-                // 4. Trees Cluster (Pine + Broadleaf Fruit Trees)
-                const t1 = (variantIdx % 2 === 0) ? createBroadTree3D(0.88) : createPineTree3D(0.92);
-                t1.position.set(-1.35, surfaceY, -1.05);
-                const t2 = createPineTree3D(0.78);
-                t2.position.set(-0.15, surfaceY, -1.42);
-                const t3 = createBroadTree3D(0.72);
-                t3.position.set(-1.45, surfaceY, 1.05);
-                grp.add(t1, t2, t3);
-
-                // 5. Farmer with Bamboo Hat tending the field
-                const shirtColors = [0x10b981, 0xf97316, 0x0284c7, 0xe11d48, 0x8b5cf6];
-                const farmer = createFarmerFigure3D(shirtColors[variantIdx % shirtColors.length], true);
-                farmer.position.set(0.05, surfaceY, 0.92);
-                farmer.rotation.y = 0.4;
-                grp.add(farmer);
+                const farmerColors = [0x16a34a, 0x2563eb, 0xd97706, 0xe11d48, 0x7c3aed];
+                const farmer = createFarmerFigure3D(farmerColors[index % farmerColors.length]);
+                farmer.position.set(0.05, 0.46, 0.85);
+                g.add(farmer);
             }
-
-            return grp;
-        }
-
-        function initCloud3DScene() {
-            const container = document.getElementById('cloud3dCanvasContainer');
-            if (!container || typeof THREE === 'undefined') return;
-            cScene3D = new THREE.Scene();
-            cCamera3D = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 200);
-            updateCloudCamPos();
-
-            cRenderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            cRenderer3D.setSize(container.clientWidth, container.clientHeight);
-            cRenderer3D.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            container.innerHTML = '';
-            container.appendChild(cRenderer3D.domElement);
-
-            cScene3D.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const dir = new THREE.DirectionalLight(0xfffbeb, 0.85);
-            dir.position.set(16, 26, 15);
-            cScene3D.add(dir);
-
-            cIslandsGroup = new THREE.Group();
-            cScene3D.add(cIslandsGroup);
-
-            const dom = cRenderer3D.domElement;
-            dom.addEventListener('mousedown', e => { cIsDragging = true; cPrevMouse = { x: e.clientX, y: e.clientY }; });
-            window.addEventListener('mouseup', () => { cIsDragging = false; });
-            window.addEventListener('mousemove', e => {
-                if (!cIsDragging) return;
-                cCamAngle.theta -= (e.clientX - cPrevMouse.x) * 0.007;
-                cCamAngle.phi = Math.max(0.35, Math.min(1.38, cCamAngle.phi - (e.clientY - cPrevMouse.y) * 0.006));
-                cPrevMouse = { x: e.clientX, y: e.clientY };
-                updateCloudCamPos();
-            });
-
-            if (window.location.search.includes('embed=3d')) {
-                document.body.classList.add('embed-3d-only');
-            }
-
-            rebuildCloud3DIslands(calculateSroiMetrics());
-            animateCloud3D();
-        }
-
-        function updateCloudCamPos() {
-            if (!cCamera3D) return;
-            cCamera3D.position.x = cCamAngle.radius * Math.sin(cCamAngle.phi) * Math.sin(cCamAngle.theta);
-            cCamera3D.position.y = cCamAngle.radius * Math.cos(cCamAngle.phi);
-            cCamera3D.position.z = cCamAngle.radius * Math.sin(cCamAngle.phi) * Math.cos(cCamAngle.theta);
-            cCamera3D.lookAt(0, 0.5, 0);
+            return g;
         }
 
         function rebuildCloud3DIslands(m) {
             if (!cIslandsGroup) return;
             while (cIslandsGroup.children.length > 0) cIslandsGroup.remove(cIslandsGroup.children[0]);
-            cIslandItems = [];
             const layer = document.getElementById('cloud3dLabelsContainer');
             if (layer) layer.innerHTML = '';
+            cIslandItems = [];
 
             const team = m.activeTeam;
-            const cropsStr = m.activeFarms.map(f => f.crops).join('、');
-            const teamInvestLabel = getInvestBadgeText(team);
+            const cropsStr = farmsData.filter(f => f.selected).map(f => f.crops).slice(0, 3).join('、');
 
             // Main Team Island
-            const mainMesh = buildSingle3DIslandMesh(3.6, 2.8, true, 0);
+            const mainMesh = buildSingle3DIslandMesh(3.8, 3.0, true, 0);
             mainMesh.position.set(0, 0.45, 0);
             cIslandsGroup.add(mainMesh);
 
+            const teamInvestLabel = getInvestBadgeText(team);
             const teamSaveDate = team.lastSavedDate || getFormattedToday();
             const teamStatusBadge = team.isCompleted !== false
-                ? `<span class="bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 text-[8.5px] font-black px-1.5 py-0.5 rounded">✅ 已完成｜存檔：${teamSaveDate}</span>`
-                : `<span class="bg-amber-500/25 text-amber-300 text-[8.5px] font-black px-1.5 py-0.5 rounded">⏳ 待核定存檔</span>`;
-
+                ? `<span class="text-[9px] text-emerald-300 bg-emerald-950/90 border border-emerald-500/40 px-1.5 py-0.5 rounded font-black">✅ 已完成｜存檔：${teamSaveDate}</span>`
+                : `<span class="text-[9px] text-amber-300 bg-amber-950/90 border border-amber-500/40 px-1.5 py-0.5 rounded font-black">⏳ 未完成｜日期：${teamSaveDate}</span>`;
             const mainEl = document.createElement('div');
             mainEl.className = 'cloud-island-label bg-slate-900/95 text-white px-3 py-2 rounded-2xl border-2 border-amber-400 shadow-2xl min-w-[225px]';
+            const mainSroiDisplay = (reportScope === 'multi') ? m.sroiRatio : computeTeamOfficialSroi(team).sroi;
             mainEl.innerHTML = `
                 <div class="flex justify-between items-center gap-2 border-b border-emerald-700 pb-0.5 mb-0.5">
-                    <span class="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">🏝️ ${teamInvestLabel} (${m.nFarms}場/${m.totalTrainees}人)</span>
+                    <span class="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">🏝️ ${teamInvestLabel} (${farmsData.filter(f => f.selected).length}場)</span>
                     <span class="text-[9px] text-sky-300 font-mono">${team.execPeriod || '2025~2026'}</span>
                 </div>
                 <div class="text-xs font-black text-white truncate">${team.name}</div>
@@ -3574,18 +3471,18 @@
                 </div>
                 <div class="mt-0.5 pt-0.5 border-t border-emerald-800 flex justify-between items-baseline">
                     <span class="text-[9.5px] text-amber-200 font-bold">核定 SROI</span>
-                    <span class="text-sm font-black text-amber-400">1 : ${m.sroiRatio}</span>
+                    <span class="text-sm font-black text-amber-400">1 : ${mainSroiDisplay}</span>
                 </div>
             `;
             mainEl.onclick = () => selectCloudIsland('team', team.id);
             if (layer) layer.appendChild(mainEl);
             cIslandItems.push({ mesh: mainMesh, baseY: 0.45, phase: 0, el: mainEl, offsetY: 3.7 });
 
-            // Farm Sub-Islands + Wooden Sky Bridges
-            const list = farmsData;
+            // Farm Sub-Islands + Wooden Sky Bridges (Only checked/selected team member farms are shown on the 3D main board!)
+            const list = farmsData.filter(f => f.selected);
             const orbitR = list.length <= 5 ? 9.0 : 11.0;
             list.forEach((f, idx) => {
-                const ang = (idx / list.length) * Math.PI * 2;
+                const ang = (idx / Math.max(1, list.length)) * Math.PI * 2;
                 const subMesh = buildSingle3DIslandMesh(2.4, 2.0, false, idx);
                 const by = (idx % 2 === 0) ? -0.15 : 0.25;
                 subMesh.position.set(Math.cos(ang) * orbitR, by, Math.sin(ang) * orbitR);
@@ -3602,18 +3499,18 @@
                 skyBridge.rotation.y = -ang + Math.PI / 2;
                 cIslandsGroup.add(skyBridge);
 
-                const sroiVal = computeSingleFarmOfficialSroi(f);
+                const sroiVal = (reportScope === 'single' && activeSingleFarmId === f.id) ? m.sroiRatio : computeSingleFarmOfficialSroi(f);
                 const fInvestLabel = getInvestBadgeText(f);
                 const fSaveDate = f.lastSavedDate || team.lastSavedDate || getFormattedToday();
                 const fStatusBadge = f.isCompleted !== false
                     ? `<span class="text-[8.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-black">✅ 已完成｜${fSaveDate}</span>`
-                    : `<span class="text-[8.5px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-bold">⏳ 填報中</span>`;
+                    : `<span class="text-[8.5px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-black">⏳ 未完成｜${fSaveDate}</span>`;
                 const subEl = document.createElement('div');
                 subEl.className = 'cloud-island-label bg-white/95 text-slate-800 px-2.5 py-1.5 rounded-xl border-2 border-emerald-500 shadow-lg min-w-[180px]';
                 subEl.innerHTML = `
                     <div class="flex justify-between items-center gap-1 border-b border-slate-100 pb-0.5">
                         <span class="bg-emerald-700 text-white text-[8.5px] font-black px-1.5 py-0.5 rounded">🌱 ${fInvestLabel} #${idx + 1}</span>
-                        <span class="text-[8.5px] text-slate-500 font-bold">${f.trainees}人(${f.guides}導)</span>
+                        <span class="text-[8.5px] text-slate-500 font-bold">年資${f.ecoYears||2}年</span>
                     </div>
                     <div class="text-xs font-black text-satoyama-dark truncate">${f.name}</div>
                     <div class="text-[9.5px] text-emerald-800 font-bold truncate">農產：${f.crops}</div>
@@ -3630,105 +3527,122 @@
                 cIslandItems.push({ mesh: subMesh, baseY: by, phase: idx * 1.1, el: subEl, offsetY: 2.7 });
             });
         }
-
-        function animateCloud3D() {
-            requestAnimationFrame(animateCloud3D);
-            if (!cRenderer3D || !cScene3D || !cCamera3D) return;
-            const t = Date.now() * 0.0015;
-            if (cIsFloating && cIslandsGroup) {
-                cIslandsGroup.rotation.y += 0.0015;
-                cIslandItems.forEach(it => {
-                    it.mesh.position.y = it.baseY + Math.sin(t + it.phase) * 0.2;
-                });
-            }
-            cRenderer3D.render(cScene3D, cCamera3D);
-
-            const container = document.getElementById('cloud3dCanvasContainer');
-            if (!container) return;
-            const w = container.clientWidth, h = container.clientHeight;
-            cIslandItems.forEach(it => {
-                const pos = new THREE.Vector3();
-                it.mesh.getWorldPosition(pos);
-                pos.y += it.offsetY;
-                pos.project(cCamera3D);
-                if (pos.z > 1) {
-                    it.el.style.display = 'none';
-                } else {
-                    const clampedX = Math.max(105, Math.min(w - 105, (pos.x * 0.5 + 0.5) * w));
-                    const rawY = (-(pos.y * 0.5) + 0.5) * h;
-                    const clampedY = Math.max(150, Math.min(h - 70, rawY));
-                    it.el.style.display = 'block';
-                    it.el.style.left = `${clampedX}px`;
-                    it.el.style.top = `${clampedY}px`;
-                }
-            });
-        }
-
-        function toggleCloud3DFloating(force) {
-            cIsFloating = typeof force === 'boolean' ? force : !cIsFloating;
-            const icon = document.getElementById('cloudFloatToggleIcon');
-            const txt = document.getElementById('cloudFloatToggleText');
-            if (icon) icon.className = cIsFloating ? 'fas fa-pause' : 'fas fa-play';
-            if (txt) txt.innerText = cIsFloating ? '暫停漂浮' : '恢復漂浮';
-        }
-
         function selectCloudIsland(type, id) {
             toggleCloud3DFloating(false);
             cSelectedTarget = { type, id };
-            const m = calculateSroiMetrics();
-            const team = m.activeTeam;
             const pwdBox = document.getElementById('cDrawerPwdBox');
             const pwdInput = document.getElementById('cDrawerPwdInput');
+            const statusEditBox = document.getElementById('cDrawerStatusEditBox');
             if (pwdBox) pwdBox.classList.add('hidden');
             if (pwdInput) pwdInput.value = '';
+            if (statusEditBox) statusEditBox.classList.add('hidden');
+            populateCloudDrawerDetails(type, id);
+            document.getElementById('cloudIslandSideDrawer')?.classList.remove('translate-x-full');
+        }
+
+        function populateCloudDrawerDetails(type, id) {
+            const m = calculateSroiMetrics();
+            const team = m.activeTeam;
             if (type === 'team') {
                 const tSaveDate = team.lastSavedDate || getFormattedToday();
+                const isComp = team.isCompleted !== false;
+                const teamCalc = computeTeamOfficialSroi(team);
+                const sroiStr = (reportScope === 'multi') ? m.sroiRatio : teamCalc.sroi;
                 document.getElementById('cDrawerBadge').innerText = `🏝️ ${getInvestBadgeText(team)} (專案主島)`;
                 document.getElementById('cDrawerTitle').innerText = team.name;
                 document.getElementById('cDrawerPartner').innerText = team.guidanceTitle;
-                document.getElementById('cDrawerMembers').innerText = `${m.nFarms} 處農場 / ${m.totalTrainees} 人`;
+                document.getElementById('cDrawerMembers').innerText = `${farmsData.filter(f => f.selected).length} 處農場 / ${m.totalTrainees} 人`;
                 document.getElementById('cDrawerPeriod').innerText = team.execPeriod || '2025/01/01 ~ 2026/10/31';
                 document.getElementById('cDrawerName').innerText = `${team.name} (${getInvestBadgeText(team)})`;
                 document.getElementById('cDrawerCoop').innerText = team.guidanceTitle;
-                document.getElementById('cDrawerCrops').innerText = m.activeFarms.map(f => f.crops).join('、');
+                document.getElementById('cDrawerCrops').innerText = farmsData.filter(f => f.selected).map(f => f.crops).join('、');
                 if (document.getElementById('cDrawerSaveStatus')) {
-                    document.getElementById('cDrawerSaveStatus').innerText = `✅ 已完成核定 (存檔：${tSaveDate})`;
+                    document.getElementById('cDrawerSaveStatus').innerHTML = isComp
+                        ? `<span class="text-emerald-300">✅ 已完成核定 (存檔：${tSaveDate})</span>`
+                        : `<span class="text-amber-300">⏳ 未完成填報 (日期：${tSaveDate})</span>`;
                 }
-                document.getElementById('cDrawerSroi').innerText = `1 : ${m.sroiRatio}`;
+                document.getElementById('cDrawerSroi').innerText = `1 : ${sroiStr}`;
                 if (document.getElementById('cDrawerOverviewNote')) {
                     document.getElementById('cDrawerOverviewNote').innerText = team.overviewNote || '尚無總覽附言';
                 }
             } else {
                 const f = farmsData.find(x => x.id === id) || farmsData[0];
                 const fSaveDate = f.lastSavedDate || team.lastSavedDate || getFormattedToday();
+                const isComp = f.isCompleted !== false;
+                const fSroiStr = (reportScope === 'single' && activeSingleFarmId === f.id) ? m.sroiRatio : computeSingleFarmOfficialSroi(f);
                 document.getElementById('cDrawerBadge').innerText = `🌱 ${getInvestBadgeText(f)} (農場小島)`;
                 document.getElementById('cDrawerTitle').innerText = f.name;
                 document.getElementById('cDrawerPartner').innerText = team.guidanceTitle;
-                document.getElementById('cDrawerMembers').innerText = `培力 ${f.trainees} 人 (${f.guides} 導覽員)`;
+                document.getElementById('cDrawerMembers').innerText = `培力 ${f.trainees} 人 (${f.guides} 導覽員｜年資 ${f.ecoYears||2} 年)`;
                 document.getElementById('cDrawerPeriod').innerText = team.execPeriod || '2025/01/01 ~ 2026/10/31';
                 document.getElementById('cDrawerName').innerText = `${f.name} (${getInvestBadgeText(f)})`;
                 document.getElementById('cDrawerCoop').innerText = team.guidanceTitle;
                 document.getElementById('cDrawerCrops').innerText = f.crops;
                 if (document.getElementById('cDrawerSaveStatus')) {
-                    document.getElementById('cDrawerSaveStatus').innerText = `✅ 已完成核定 (存檔：${fSaveDate})`;
+                    document.getElementById('cDrawerSaveStatus').innerHTML = isComp
+                        ? `<span class="text-emerald-300">✅ 已完成核定 (存檔：${fSaveDate})</span>`
+                        : `<span class="text-amber-300">⏳ 未完成填報 (日期：${fSaveDate})</span>`;
                 }
-                document.getElementById('cDrawerSroi').innerText = `1 : ${computeSingleFarmOfficialSroi(f)}`;
+                document.getElementById('cDrawerSroi').innerText = `1 : ${fSroiStr}`;
                 if (document.getElementById('cDrawerOverviewNote')) {
                     document.getElementById('cDrawerOverviewNote').innerText = f.ecoObsNote || team.overviewNote || '尚無附言';
                 }
             }
-            document.getElementById('cloudIslandSideDrawer')?.classList.remove('translate-x-full');
         }
 
-        function toggleCloudDrawerPwdBox() {
-            const box = document.getElementById('cDrawerPwdBox');
-            const input = document.getElementById('cDrawerPwdInput');
+        function refreshOpenCloudDrawer() {
+            const drawer = document.getElementById('cloudIslandSideDrawer');
+            if (drawer && !drawer.classList.contains('translate-x-full') && cSelectedTarget) {
+                populateCloudDrawerDetails(cSelectedTarget.type, cSelectedTarget.id);
+            }
+        }
+
+        function toggleCloudDrawerStatusEdit() {
+            const box = document.getElementById('cDrawerStatusEditBox');
             if (!box) return;
             box.classList.toggle('hidden');
-            if (!box.classList.contains('hidden') && input) {
-                input.value = '';
-                setTimeout(() => input.focus(), 50);
+            if (!box.classList.contains('hidden')) {
+                const pwdInput = document.getElementById('cDrawerStatusPwdInput');
+                const dateInput = document.getElementById('cDrawerDateInput');
+                const statusSel = document.getElementById('cDrawerStatusSelect');
+                if (pwdInput) pwdInput.value = '';
+                const team = getActiveTeamObj();
+                const targetObj = cSelectedTarget.type === 'team' ? team : (farmsData.find(f => f.id === cSelectedTarget.id) || farmsData[0]);
+                const rawDate = (targetObj.lastSavedDate || getFormattedToday()).replace(/\//g, '-');
+                if (dateInput) dateInput.value = rawDate;
+                if (statusSel) statusSel.value = targetObj.isCompleted !== false ? 'completed' : 'incomplete';
             }
+        }
+
+        function confirmCloudDrawerStatusUpdate() {
+            const pwdInput = document.getElementById('cDrawerStatusPwdInput');
+            const pwd = pwdInput?.value.trim() || '';
+            if (pwd !== PUBLISH_PASSWORD && pwd !== systemLockPassword) {
+                showToast('密碼錯誤！僅最高權限者可修改核定狀態與日期', 'fa-times-circle text-rose-400');
+                return;
+            }
+            const statusVal = document.getElementById('cDrawerStatusSelect')?.value || 'completed';
+            const rawDate = document.getElementById('cDrawerDateInput')?.value || '';
+            const formattedDate = rawDate ? rawDate.replace(/-/g, '/') : getFormattedToday();
+
+            if (cSelectedTarget.type === 'team') {
+                const team = getActiveTeamObj();
+                team.isCompleted = (statusVal === 'completed');
+                team.lastSavedDate = formattedDate;
+                if (window.syncTeamToCloud) window.syncTeamToCloud(team);
+            } else {
+                const f = farmsData.find(x => x.id === cSelectedTarget.id);
+                if (f) {
+                    f.isCompleted = (statusVal === 'completed');
+                    f.lastSavedDate = formattedDate;
+                    if (window.syncFarmToCloud) window.syncFarmToCloud(f);
+                }
+            }
+            if (pwdInput) pwdInput.value = '';
+            document.getElementById('cDrawerStatusEditBox')?.classList.add('hidden');
+            saveWorkspaceToLocalStorage(true);
+            recalculateAll();
+            showToast('✅ 已更新核定狀態與存檔日期並同步至 3D 群島儀表板！');
         }
 
         function closeCloudIslandDrawer() {
@@ -3736,11 +3650,28 @@
             toggleCloud3DFloating(true);
         }
 
+        function toggleCloud3DFloating(force) {
+            cIsFloating = (typeof force === 'boolean') ? force : !cIsFloating;
+            const icon = document.getElementById('cloudFloatToggleIcon');
+            const txt = document.getElementById('cloudFloatToggleText');
+            if (cIsFloating) {
+                if (icon) icon.className = 'fas fa-pause';
+                if (txt) txt.innerText = '暫停漂浮';
+            } else {
+                if (icon) icon.className = 'fas fa-play';
+                if (txt) txt.innerText = '恢復漂浮';
+            }
+        }
+
+        function toggleCloudDrawerPwdBox() {
+            document.getElementById('cDrawerPwdBox')?.classList.toggle('hidden');
+        }
+
         function cloudDrawerActionA() {
             const pwdInput = document.getElementById('cDrawerPwdInput');
-            const pwd = pwdInput?.value.trim() || '';
-            let valid = (pwd === '545366' || pwd === systemLockPassword);
-            if (!valid && cSelectedTarget.type === 'farm') {
+            const pwd = pwdInput?.value.trim();
+            let valid = (pwd === PUBLISH_PASSWORD || pwd === systemLockPassword);
+            if (!valid && cSelectedTarget?.type === 'farm') {
                 const f = farmsData.find(x => x.id === cSelectedTarget.id);
                 if (f && String(f.password || '545366') === pwd) valid = true;
             }
@@ -3749,41 +3680,78 @@
                 return;
             }
             if (pwdInput) pwdInput.value = '';
-            document.getElementById('cDrawerPwdBox')?.classList.add('hidden');
-            if (cSelectedTarget.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
-            else selectTeamFromBanner(cSelectedTarget.id);
             document.getElementById('cloudIslandSideDrawer')?.classList.add('translate-x-full');
+            if (cSelectedTarget?.type === 'farm') {
+                selectFarmFromBanner(cSelectedTarget.id);
+            } else {
+                setReportScope('multi');
+            }
             expandWorkbenchFrom3D('edit_and_report');
-            showToast('🔓 密碼驗證通過！已同步開啟左方數據填寫介面與右方 SROI 報告書');
+            showToast('🔓 密碼驗證成功！已同步開啟數據填報面板與右側即時報告書');
         }
 
         function cloudDrawerActionB() {
-            if (cSelectedTarget.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
-            else selectTeamFromBanner(cSelectedTarget.id);
             document.getElementById('cloudIslandSideDrawer')?.classList.add('translate-x-full');
+            if (cSelectedTarget?.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
+            else setReportScope('multi');
             expandWorkbenchFrom3D('report_only');
-            showToast('📄 已展開專屬 SROI 報告書預覽（免密碼閱覽）');
+            showToast('📄 已展開專屬 SROI 報告書');
         }
 
         function cloudDrawerActionC() {
-            if (cSelectedTarget.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
-            else selectTeamFromBanner(cSelectedTarget.id);
             document.getElementById('cloudIslandSideDrawer')?.classList.add('translate-x-full');
+            if (cSelectedTarget?.type === 'farm') selectFarmFromBanner(cSelectedTarget.id);
+            else setReportScope('multi');
             expandWorkbenchFrom3D('cards_only');
-            showToast('📊 已展開完整視覺化看板與圖卡（免密碼閱覽）');
+            showToast('📊 已展開完整視覺化看板與高解析度圖卡');
         }
+
+        function animateCloud3DLoop() {
+            requestAnimationFrame(animateCloud3DLoop);
+            const t = performance.now() * 0.0012;
+            if (cIsFloating && cIslandsGroup) {
+                cIslandsGroup.rotation.y += 0.0015;
+                cIslandItems.forEach(item => {
+                    item.mesh.position.y = item.baseY + Math.sin(t + item.phase) * 0.22;
+                });
+            }
+            if (cRenderer && cScene && cCamera) {
+                cRenderer.render(cScene, cCamera);
+                const container = document.getElementById('cloud3dCanvasContainer');
+                if (container) {
+                    const cw = container.clientWidth;
+                    const ch = container.clientHeight;
+                    cIslandItems.forEach(item => {
+                        const wp = new THREE.Vector3();
+                        item.mesh.getWorldPosition(wp);
+                        wp.y += item.offsetY;
+                        wp.project(cCamera);
+                        if (wp.z > 1) {
+                            item.el.style.display = 'none';
+                        } else {
+                            item.el.style.display = 'block';
+                            const rawX = (wp.x * 0.5 + 0.5) * cw;
+                            const rawY = (-wp.y * 0.5 + 0.5) * ch;
+                            item.el.style.left = `${Math.max(105, Math.min(cw - 105, rawX))}px`;
+                            item.el.style.top = `${Math.max(145, Math.min(ch - 55, rawY))}px`;
+                        }
+                    });
+                }
+            }
+        }
+
         // ==========================================
-        // EXPORTS (.JSON, .DOC, .PDF, .PNG, QR) — ALL PASSWORD PROTECTED
+        // EXPORT: JSON, WORD (.DOC), PDF, PNG CARDS
         // ==========================================
         function exportJSON() {
-            requirePasswordForAction('匯出 JSON 備份檔', '所有轉檔與匯出均需每次輸入授權密碼：', () => {
+            requirePasswordForAction('匯出 JSON 專案備份檔', '轉出 JSON 備份檔需每次輸入授權密碼：', () => {
                 const payload = buildCompleteWorkspacePayload();
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = `水里里山_SROI備份_${currentMode}.json`;
+                a.download = `水里里山_SROI專案打包_${currentMode}_${new Date().toISOString().slice(0,10)}.json`;
                 a.click();
-                showToast('已驗證密碼並匯出 .json 備份檔');
+                showToast('已驗證密碼並匯出 JSON 專案備份檔！');
             });
         }
 
@@ -3794,15 +3762,20 @@
             reader.onload = function(evt) {
                 try {
                     const data = JSON.parse(evt.target.result);
-                    applyWorkspacePayload(data);
-                    syncTeamInputsToUI();
-                    renderPublishedBanner();
-                    renderSelectionControls();
-                    renderFarmsList();
-                    recalculateAll();
-                    showToast('已成功匯入 JSON 資料！');
+                    if (applyWorkspacePayload(data)) {
+                        syncTeamInputsToUI();
+                        applyProxyLockUI();
+                        applyCloudBaselineLockUI();
+                        renderPublishedBanner();
+                        renderSelectionControls();
+                        renderFarmsList();
+                        recalculateAll();
+                        saveWorkspaceToLocalStorage(true);
+                        if (window.forcePushAllToCloud) window.forcePushAllToCloud(true);
+                        showToast('成功匯入 JSON 專案檔並同步至雲端！');
+                    }
                 } catch (err) {
-                    showToast('匯入失敗，請確認 JSON 格式', 'fa-times-circle text-rose-400');
+                    showToast('JSON 檔案格式錯誤', 'fa-times-circle text-rose-400');
                 }
             };
             reader.readAsText(file);
