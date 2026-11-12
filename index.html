@@ -132,6 +132,43 @@
                 </div>
             </div>
 
+            <!-- 🌟 SROI 永續影響力 3D 群島嵌入區塊 -->
+            <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md mb-8 border border-mori-light relative overflow-hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 border-b border-gray-100 pb-3">
+                    <div>
+                        <h3 class="text-xl font-bold text-mori-dark flex items-center gap-2">
+                            <i class="fas fa-cubes text-mori-forest"></i>
+                            <span>里山 SROI 社會價值 3D 生態群島</span>
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-1 font-medium">透過 3D 視覺化群島互動，探索在地農場與夥伴的社會投資報酬率 (SROI) 永續影響力（可拖曳旋轉、縮放視角）</p>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                        <a href="https://farmcmd.github.io/ESGT/SROI.html" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-mori-forest to-mori-sage hover:from-mori-dark hover:to-mori-forest text-white text-xs md:text-sm font-bold rounded-full shadow-md hover:shadow-lg transition-all flex items-center justify-center group">
+                            <span>前往 SROI 完整網站</span>
+                            <i class="fas fa-external-link-alt ml-2 text-xs group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 3D 群島 Iframe 視窗容器 (依據 3D 畫布最佳比例與響應式高度配置) -->
+                <div class="relative w-full h-[520px] sm:h-[600px] md:h-[680px] rounded-xl overflow-hidden border-2 border-mori-light shadow-inner bg-[#0f172a]">
+                    <div id="sroi-iframe-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 z-10 transition-opacity duration-500 pointer-events-none">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-400 mb-3"></div>
+                        <p class="text-emerald-50 text-xs font-bold tracking-widest">正在載入 3D 永續群島模型...</p>
+                    </div>
+                    <iframe 
+                        id="sroi-3d-iframe"
+                        src="https://farmcmd.github.io/ESGT/SROI.html" 
+                        class="w-full h-full border-0"
+                        title="里山 SROI 3D 群島互動視窗"
+                        loading="lazy"
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowfullscreen
+                        onload="const loader = document.getElementById('sroi-iframe-loader'); if(loader) { loader.style.opacity = '0'; setTimeout(() => loader.style.display = 'none', 500); }">
+                    </iframe>
+                </div>
+            </div>
+
             <div class="mt-8 mb-24 bg-gray-50 rounded-2xl p-6 text-center shadow-inner">
                  <div class="flex flex-wrap justify-center gap-3 mb-6">
                      <button id="export-data-button" class="px-6 py-3 bg-gradient-to-r from-mori-sage to-mori-forest text-white rounded-lg hover:shadow-lg transition text-sm font-bold shadow flex items-center"><i class="fas fa-file-export mr-2"></i> 匯出個人進度檔</button>
@@ -549,8 +586,14 @@
             </div>
             
             <!-- 🌟 YouTube 播放器區域 -->
-            <div class="w-full bg-black shrink-0 relative pt-[56.25%]">
-                <iframe id="guide-video-iframe" class="absolute inset-0 w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            <div class="w-full bg-black shrink-0 relative pt-[56.25%] overflow-hidden">
+                <!-- 🌟 離線提示畫面 (預設隱藏) -->
+                <div id="offline-video-overlay" class="absolute inset-0 z-20 bg-gray-900 flex flex-col items-center justify-center hidden">
+                    <i class="fas fa-wifi fa-slash text-4xl text-gray-500 mb-3"></i>
+                    <p class="text-white font-bold text-sm tracking-wide">目前處於無網路狀態</p>
+                    <p class="text-gray-400 text-xs mt-1">連線恢復後將自動繼續播放</p>
+                </div>
+                <iframe id="guide-video-iframe" class="absolute inset-0 w-full h-full z-10" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
             </div>
             
             <!-- 🌟 手風琴折疊播放清單 -->
@@ -610,6 +653,24 @@
             const match = cleanUrl.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
             return match ? match[1] : '';
         };
+
+        // 🌟 網路狀態監測機制
+        window.addEventListener('offline', () => {
+            if (!document.getElementById('quick-guide-modal').classList.contains('hidden')) {
+                document.getElementById('offline-video-overlay')?.classList.remove('hidden');
+            }
+        });
+        
+        window.addEventListener('online', () => {
+            document.getElementById('offline-video-overlay')?.classList.add('hidden');
+            // 重新載入 iframe 以恢復播放
+            const iframe = document.getElementById('guide-video-iframe');
+            if (iframe && iframe.src) {
+                const currentSrc = iframe.src;
+                iframe.src = '';
+                setTimeout(() => { iframe.src = currentSrc; }, 100);
+            }
+        });
 
         window.openQuickGuideModal = function() {
             window.openModal('quick-guide-modal');
