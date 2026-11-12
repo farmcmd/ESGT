@@ -589,6 +589,36 @@
                             <input type="number" id="paramNetHuman" value="80" min="5" max="100" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-emerald-900 mt-0.5">
                         </div>
                     </div>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <div class="bg-white p-2 rounded-lg border border-sky-300">
+                            <label class="text-[10px] font-black text-sky-950 block">(E) 棲地生態保留率 (%)</label>
+                            <input type="number" id="paramNetEco" value="60" min="5" max="100" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-sky-900 mt-0.5">
+                        </div>
+                        <div class="bg-white p-2 rounded-lg border border-amber-300">
+                            <label class="text-[10px] font-black text-amber-950 block">(G) 農務管理保留率 (%)</label>
+                            <input type="number" id="paramNetMgmt" value="70" min="5" max="100" oninput="saveCurrentProxyParamsState(); markUncommittedChanges(); recalculateAll();" class="proxy-lockable clean-num-input w-full border rounded px-2 py-1 font-black text-amber-900 mt-0.5">
+                        </div>
+                    </div>
+                    <!-- Hidden authoritative proxy parameters to ensure 100% parity across all files -->
+                    <div class="hidden">
+                        <input type="text" id="lockedMethodYearInput" value="2025-2026">
+                        <input type="text" id="lockedMethodVerInput" value="V4.2 韌性代理核定版">
+                        <select id="paramHabitatPricingMode"><option value="unified" selected>unified</option></select>
+                        <input type="number" id="paramUnifiedAreaRate" value="30000">
+                        <input type="number" id="paramUnifiedHabitatUnit" value="20000">
+                        <input type="number" id="paramFieldEcoCap" value="150000">
+                        <input type="number" id="paramSpeciesEcoProxy" value="3500">
+                        <input type="number" id="paramBioObsEcoCap" value="60000">
+                        <input type="number" id="paramBioPopCapPct" value="25">
+                        <input type="number" id="paramEcoYearWeightStep" value="15">
+                        <input type="number" id="paramMgmtEcoCap" value="80000">
+                        <input type="number" id="proxyWaterStorage" value="15000">
+                        <input type="number" id="proxyBioService" value="6000">
+                        <input type="number" id="proxySoilCarbon" value="8000">
+                        <input type="number" id="proxyHealthRisk" value="6000">
+                        <input type="number" id="proxySoilErosion" value="12000">
+                        <input type="number" id="proxyMarketVolatility" value="25">
+                    </div>
                 </div>
             </div>
 
@@ -959,7 +989,7 @@
     </div>
 
     <script>
-        let currentMode = '2025';
+        let currentMode = '2026';
         let targetEvalYear = 2027;
         let reportScope = 'multi';
         let activeSingleFarmId = 1;
@@ -978,6 +1008,14 @@
         let systemLockPassword = String(545366);
         let pendingCustomCallback = null;
         let savedProxyParams = null;
+
+        // Authoritative Report Snapshot Cache (3D Dashboard & Drawer ALWAYS read from this Report source of truth)
+        window.latestAuthoritativeReport = {
+            teamSroi: '1.85',
+            avgFarmSroi: '1.45',
+            teamEmpowermentBonusSroi: '0.40',
+            farmSroiMap: {}
+        };
 
         // Track farms currently being edited locally so remote snapshots NEVER overwrite or reset them
         const dirtyFarmIds = new Set();
@@ -1610,12 +1648,40 @@
         function syncItemizedCostsToAB(farm) {
             if (!farm.password) farm.password = String(545366);
             if (!farm.teamId) farm.teamId = activeTeamId || 'team_1';
-            farm.oldCost2025 = (parseFloat(farm.convHerbicideCost) || 0) + (parseFloat(farm.convPesticideCost) || 0) + (parseFloat(farm.convOtherCost) || 0) + (parseFloat(farm.convMaintCost) || 0);
-            farm.newCost2025 = (parseFloat(farm.ecoWeedingCost) || 0) + (parseFloat(farm.ecoMaterialCost) || 0) + (parseFloat(farm.ecoOtherCost) || 0) + (parseFloat(farm.ecoMaintCost) || 0);
+            const sumOld = (parseFloat(farm.convHerbicideCost) || 0) + (parseFloat(farm.convPesticideCost) || 0) + (parseFloat(farm.convOtherCost) || 0) + (parseFloat(farm.convMaintCost) || 0);
+            const sumNew = (parseFloat(farm.ecoWeedingCost) || 0) + (parseFloat(farm.ecoMaterialCost) || 0) + (parseFloat(farm.ecoOtherCost) || 0) + (parseFloat(farm.ecoMaintCost) || 0);
+            if (sumOld > 0) {
+                farm.oldCost2025 = sumOld;
+            } else if ((parseFloat(farm.oldCost2025) || 0) > 0) {
+                const oc = parseFloat(farm.oldCost2025);
+                farm.convHerbicideCost = Math.round(oc * 0.5);
+                farm.convPesticideCost = oc - farm.convHerbicideCost;
+                farm.convOtherCost = 0;
+                farm.convMaintCost = 0;
+            } else {
+                farm.oldCost2025 = 25000;
+                farm.convHerbicideCost = 12500;
+                farm.convPesticideCost = 12500;
+            }
+
+            if (sumNew > 0) {
+                farm.newCost2025 = sumNew;
+            } else if ((parseFloat(farm.newCost2025) || 0) > 0) {
+                const nc = parseFloat(farm.newCost2025);
+                farm.ecoWeedingCost = Math.round(nc * 0.55);
+                farm.ecoMaterialCost = nc - farm.ecoWeedingCost;
+                farm.ecoOtherCost = 0;
+                farm.ecoMaintCost = 0;
+            } else {
+                farm.newCost2025 = 15000;
+                farm.ecoWeedingCost = 8000;
+                farm.ecoMaterialCost = 7000;
+            }
         }
 
-        function computeFarmStats(farm) {
+        function computeFarmStats(farm, teamObjOverride = null) {
             syncItemizedCostsToAB(farm);
+            const teamObj = teamObjOverride || getTeamById(farm.teamId);
             const pricingMode = document.getElementById('paramHabitatPricingMode')?.value || 'unified';
             const habMaintCapPerFarm = parseFloat(document.getElementById('paramUnifiedHabitatUnit')?.value) || 20000;
             const unifiedAreaRate = parseFloat(document.getElementById('paramUnifiedAreaRate')?.value) || 30000;
@@ -1623,7 +1689,7 @@
             const speciesProxy = parseFloat(document.getElementById('paramSpeciesEcoProxy')?.value) || 3500;
             const bioObsEcoCap = parseFloat(document.getElementById('paramBioObsEcoCap')?.value) || 60000;
             const bioPopCapPct = (parseFloat(document.getElementById('paramBioPopCapPct')?.value) || 25) / 100;
-            const sharedTrainingCap = parseFloat(document.getElementById('teamProjectInputCost')?.value) || 70000;
+            const sharedTrainingCap = parseFloat(teamObj?.projectInput) || parseFloat(document.getElementById('teamProjectInputCost')?.value) || 70000;
 
             const cp = { ...createDefaultCustomProxies(), ...(farm.customProxies || {}) };
             const useCustom = (reportScope === 'single' && cp.useCustom);
@@ -1654,12 +1720,12 @@
             const gCurr = parseFloat(farm.guides) || 1;
             const rCurr = parseFloat(farm.routes) || 1;
             const tCurr = parseFloat(farm.trainees) || 2;
-            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || 10) / 100;
+            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || 60) / 100;
 
             const rawTrainingAppRatio = (0.50 * Math.min(1.2, tCurr / 3)) + (0.35 * Math.min(1.2, gCurr / 2)) + (0.15 * Math.min(1.0, rCurr / 1));
             const cappedTrainingAppRatio = Math.min(1.0, rawTrainingAppRatio);
             const uncappedHumanVal = Math.round(sharedTrainingCap * rawTrainingAppRatio);
-            const farmGrossHuman = (currentMode === '2025') ? sharedTrainingCap : Math.min(sharedTrainingCap, Math.round(sharedTrainingCap * cappedTrainingAppRatio));
+            const farmGrossHuman = Math.min(sharedTrainingCap, Math.round(sharedTrainingCap * cappedTrainingAppRatio));
             const humanCapPct = Math.round(cappedTrainingAppRatio * 100);
 
             const areaPaymentRaw = Math.min(fieldEcoCap, Math.round(areaHa * unifiedAreaRate));
@@ -1674,7 +1740,7 @@
             const cappedBioRate = Math.max(-0.30, Math.min(rawBioRate, bioPopCapPct));
             const speciesBaseAndDeltaVal = Math.max(0, (sCurr * speciesProxy) + (speciesDiff * speciesProxy));
             const uncappedBioObsVal = Math.round(speciesBaseAndDeltaVal * (1 + cappedBioRate));
-            const bioBonusEcoVal = (currentMode === '2025') ? 0 : Math.min(bioObsEcoCap, Math.max(0, uncappedBioObsVal));
+            const bioBonusEcoVal = Math.min(bioObsEcoCap, Math.max(0, uncappedBioObsVal));
             const bioObsEcoNetVal = Math.round(bioBonusEcoVal * rateE);
 
             const ecoProxyCapMax = fieldEcoCap + bioObsEcoCap;
@@ -1743,20 +1809,23 @@
                 if (target && target.teamId) activeTeam = getTeamById(target.teamId);
             } else {
                 if (entityIdOverride !== null) activeTeam = getTeamById(entityIdOverride);
-                const teamSelected = farmsData.filter(f => f.selected && (!activeTeam.farmIds || activeTeam.farmIds.includes(f.id)));
+                const teamSelected = farmsData.filter(f => f.selected && (!activeTeam.farmIds || activeTeam.farmIds.includes(Number(f.id)) || activeTeam.farmIds.includes(f.id)));
                 activeFarms = teamSelected.length > 0 ? teamSelected : farmsData.filter(f => f.selected);
                 if (activeFarms.length === 0 && farmsData.length > 0) activeFarms = [farmsData[0]];
             }
 
             const nFarms = Math.max(1, activeFarms.length);
-            const habPerFarm = currentMode === '2025' ? (activeTeam.habitatGrantPerFarm || 10000) : (currentMode === '2026' ? (activeTeam.maintGrantPerFarm || 2000) : ((activeTeam.habitatGrantPerFarm || 10000) + (activeTeam.maintGrantPerFarm || 2000)));
+            // Stable, deterministic habitat input per farm (Build + Maintenance) so mode buttons never cause SROI jumps
+            const habBuild = parseFloat(activeTeam.habitatGrantPerFarm) || 10000;
+            const habMaint = parseFloat(activeTeam.maintGrantPerFarm) || 2000;
+            const habPerFarm = habBuild + habMaint;
             const habInput = habPerFarm * nFarms;
-            const trainInput = activeTeam.projectInput || 70000;
+            const trainInput = parseFloat(activeTeam.projectInput) || 70000;
             const sharedTrainPerFarmInput = Math.round(trainInput / nFarms);
             const totalInput = Math.max(1, habInput + trainInput);
 
             const rateH = (parseFloat(document.getElementById('paramNetHuman')?.value) || 80) / 100;
-            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || 10) / 100;
+            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || 60) / 100;
             const rateM = (parseFloat(document.getElementById('paramNetMgmt')?.value) || 70) / 100;
 
             let totalWater = 0, totalLand = 0, totalAreaHa = 0, totalSpecies = 0, totalGuides = 0, totalRoutes = 0, totalTrainees = 0;
@@ -1768,7 +1837,7 @@
             const singleFarmInputBase = Math.max(1, habPerFarm + trainInput);
 
             const farmDetails = activeFarms.map(f => {
-                const st = computeFarmStats(f);
+                const st = computeFarmStats(f, activeTeam);
                 totalWater += st.wCurr;
                 totalLand += st.lCurr;
                 totalAreaHa += st.areaHa;
@@ -1793,6 +1862,7 @@
                 const fNetM = Math.round(st.effectiveMaintBenefit * rateM);
                 const fTotalNet = fNetH + fNetE + fNetM;
                 const fSroiNum = fTotalNet / singleFarmInputBase;
+                const fSroiStr = fSroiNum.toFixed(2);
                 sumFarmSroi += fSroiNum;
                 sumTrainingAppRatio += st.cappedTrainingAppRatio;
 
@@ -1805,7 +1875,7 @@
                     farmNetM: fNetM,
                     farmTotalNet: fTotalNet,
                     farmSroiNum: fSroiNum,
-                    farmSroi: fSroiNum.toFixed(2)
+                    farmSroi: fSroiStr
                 };
             });
 
@@ -1836,7 +1906,6 @@
                 : (avgFarmSroiNum + teamEmpowermentBonusNum);
             const sroiRatio = finalSroiNum.toFixed(2);
 
-            // Normalize Team Net Values to align with Total Input * Final Team SROI
             const avgFarmNetVal = Math.round(totalInput * avgFarmSroiNum);
             const teamEmpowermentNetVal = (effectiveScope === 'single') ? 0 : Math.round(totalInput * teamEmpowermentBonusNum);
             const netHuman = (effectiveScope === 'single')
@@ -1868,8 +1937,34 @@
             };
         }
 
+        function refreshAuthoritativeReportCache() {
+            const teamMetrics = calculateCanonicalReportMetrics('multi', activeTeamId);
+            const farmMap = {};
+            farmsData.forEach(f => {
+                const singleM = calculateCanonicalReportMetrics('single', f.id);
+                farmMap[f.id] = singleM.sroiRatio;
+                f.reportSroi = singleM.sroiRatio;
+            });
+            if (teamMetrics.activeTeam) {
+                teamMetrics.activeTeam.reportSroi = teamMetrics.sroiRatio;
+            }
+            window.latestAuthoritativeReport = {
+                teamSroi: teamMetrics.sroiRatio,
+                avgFarmSroi: teamMetrics.avgFarmSroi,
+                teamEmpowermentBonusSroi: teamMetrics.teamEmpowermentBonusSroi,
+                teamMetrics: teamMetrics,
+                farmSroiMap: farmMap
+            };
+            return reportScope === 'single'
+                ? calculateCanonicalReportMetrics('single', activeSingleFarmId)
+                : teamMetrics;
+        }
+
         function computeSingleFarmOfficialSroi(farm) {
             if (!farm) return '0.00';
+            if (window.latestAuthoritativeReport?.farmSroiMap?.[farm.id]) {
+                return window.latestAuthoritativeReport.farmSroiMap[farm.id];
+            }
             return calculateCanonicalReportMetrics('single', farm.id).sroiRatio;
         }
 
@@ -1880,7 +1975,7 @@
         }
 
         function calculateSroiMetrics() {
-            return calculateCanonicalReportMetrics(reportScope, reportScope === 'single' ? activeSingleFarmId : activeTeamId);
+            return refreshAuthoritativeReportCache();
         }
 
         function refreshPublishedBoardRecords() {}
@@ -2483,10 +2578,12 @@
         }
 
         function recalculateAll() {
-            const metrics = calculateSroiMetrics();
-            updateCharts(metrics);
+            // 1. Compute and render Report FIRST (Report is the single source of truth)
+            const metrics = refreshAuthoritativeReportCache();
             renderReportAndCards(metrics);
-            if (typeof rebuildCloud3DIslands === 'function') rebuildCloud3DIslands(metrics);
+            updateCharts(metrics);
+            // 2. Sync 3D Islands and Side Drawer strictly from the Report's calculated cache
+            if (typeof rebuildCloud3DIslands === 'function') rebuildCloud3DIslands(window.latestAuthoritativeReport.teamMetrics || metrics);
             if (typeof refreshOpenCloudDrawer === 'function') refreshOpenCloudDrawer();
         }
 
@@ -3383,12 +3480,17 @@
         let currentUser = null;
         let appId = 'shuili-satoyama-sroi';
         let isApplyingRemote = false;
+        let isCloudInitialSyncDone = false;
 
         function parseCustomConfig(raw) {
-            if (!raw) return null;
+            if (!raw || !raw.trim()) return null;
             try {
-                const cleaned = raw.replace(/^[^{]*({[\s\S]*})[^}]*$/, '$1');
-                return JSON.parse(cleaned);
+                let text = raw.trim();
+                const match = text.match(/\{[\s\S]*\}/);
+                if (match) text = match[0];
+                text = text.replace(/(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '"$2":');
+                text = text.replace(/,\s*\}/g, '}');
+                return JSON.parse(text);
             } catch (err) {
                 return null;
             }
@@ -3415,12 +3517,12 @@
                     await signInAnonymously(auth);
                 }
 
-                onAuthStateChanged(auth, (user) => {
+                onAuthStateChanged(auth, async (user) => {
                     currentUser = user;
                     const labelEl = document.getElementById('autoSaveStatusLabel');
                     if (user) {
                         if (labelEl) labelEl.innerText = '雲端即時同步中';
-                        setupRealtimeListeners();
+                        await setupRealtimeListeners();
                     }
                 });
             } catch (err) {
@@ -3429,7 +3531,7 @@
             }
         }
 
-        function setupRealtimeListeners() {
+        async function setupRealtimeListeners() {
             if (!currentUser || !db) return;
 
             const isUserTypingInFarmForm = () => {
@@ -3464,7 +3566,7 @@
                 }
             }, (err) => { console.warn('Presence listener warning:', err); });
 
-            // 2. Granular Per-Team Listener
+            // 2. Authoritative Per-Team Listener (`satoyama_teams` is the ONLY source of truth for teams)
             const teamsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'satoyama_teams');
             onSnapshot(teamsColRef, (snapshot) => {
                 if (snapshot.empty || isEditingTeamMetaLocal) return;
@@ -3481,8 +3583,10 @@
                     }
                 });
                 const activeTeam = getActiveTeamObj();
-                if (activeTeam && Array.isArray(activeTeam.farmIds)) {
-                    farmsData.forEach(f => { f.selected = activeTeam.farmIds.includes(f.id); });
+                if (activeTeam && Array.isArray(activeTeam.farmIds) && activeTeam.farmIds.length > 0) {
+                    farmsData.forEach(f => {
+                        f.selected = activeTeam.farmIds.includes(Number(f.id)) || activeTeam.farmIds.includes(f.id);
+                    });
                 }
                 syncTeamInputsToUI();
                 renderSelectionControls();
@@ -3492,9 +3596,10 @@
                 isApplyingRemote = false;
             }, () => {});
 
-            // 3. Granular Per-Farm Listener (Protects Dirty Farms being edited locally!)
+            // 3. Authoritative Per-Farm Listener (`satoyama_farms` is the ONLY source of truth for farms)
             const farmsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'satoyama_farms');
             onSnapshot(farmsColRef, (snapshot) => {
+                isCloudInitialSyncDone = true;
                 if (snapshot.empty) return;
                 isApplyingRemote = true;
                 let hasRemoteFarmUpdate = false;
@@ -3502,7 +3607,6 @@
                     const data = change.doc.data();
                     if (!data || !data.id) return;
                     const farmIdNum = Number(data.id);
-                    // CRITICAL PROTECTION: Never overwrite a farm that the local user is currently typing/editing!
                     if (dirtyFarmIds.has(farmIdNum)) {
                         return;
                     }
@@ -3516,9 +3620,16 @@
                     }
                 });
                 if (hasRemoteFarmUpdate) {
+                    const activeTeam = getActiveTeamObj();
+                    if (activeTeam && Array.isArray(activeTeam.farmIds) && activeTeam.farmIds.length > 0) {
+                        farmsData.forEach(f => {
+                            if (activeTeam.farmIds.includes(Number(f.id)) || activeTeam.farmIds.includes(f.id)) {
+                                f.selected = true;
+                            }
+                        });
+                    }
                     syncTeamInputsToUI();
                     renderSelectionControls();
-                    // Only rebuild farm input DOM if the user isn't actively typing in a farm card
                     if (!isUserTypingInFarmForm()) {
                         renderFarmsList();
                     }
@@ -3526,44 +3637,16 @@
                     saveWorkspaceToLocalStorage(true);
                 }
                 isApplyingRemote = false;
-            }, () => {});
+            }, () => { isCloudInitialSyncDone = true; });
 
-            // 4. Global Methodology & Lock State Listener (Does NOT overwrite individual farms being edited)
+            // 4. Global Methodology & Lock State Listener (NEVER overwrites satoyama_farms or satoyama_teams!)
             const metaDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_meta', 'workspace_state');
             onSnapshot(metaDocRef, (docSnap) => {
+                isCloudInitialSyncDone = true;
                 if (!docSnap.exists()) return;
                 const d = docSnap.data();
                 if (!d) return;
                 isApplyingRemote = true;
-                if (d.teamsDataJson && !isEditingTeamMetaLocal) {
-                    try {
-                        const parsedTeams = JSON.parse(d.teamsDataJson);
-                        if (Array.isArray(parsedTeams) && parsedTeams.length > 0) teamsData = parsedTeams;
-                    } catch (e) {}
-                }
-                // Only merge farms that are NOT dirty locally
-                if (d.farmsDataJson) {
-                    try {
-                        const parsedFarms = JSON.parse(d.farmsDataJson);
-                        if (Array.isArray(parsedFarms) && parsedFarms.length > 0) {
-                            parsedFarms.forEach(remoteFarm => {
-                                const fid = Number(remoteFarm.id);
-                                if (dirtyFarmIds.has(fid)) return; // Protect local unsaved farm edits!
-                                const idx = farmsData.findIndex(f => Number(f.id) === fid);
-                                if (idx >= 0) {
-                                    // Only apply if remoteFarm is newer or local has no edits
-                                    const localTime = farmsData[idx].updatedAt ? new Date(farmsData[idx].updatedAt).getTime() : 0;
-                                    const remoteTime = remoteFarm.updatedAt ? new Date(remoteFarm.updatedAt).getTime() : 0;
-                                    if (remoteTime >= localTime) {
-                                        farmsData[idx] = { ...farmsData[idx], ...remoteFarm };
-                                    }
-                                } else {
-                                    farmsData.push(remoteFarm);
-                                }
-                            });
-                        }
-                    } catch (e) {}
-                }
                 if (d.activeTeamId && !isUserTypingInFarmForm()) activeTeamId = d.activeTeamId;
                 if (d.targetEvalYear) targetEvalYear = d.targetEvalYear;
                 if (d.systemLockPassword) systemLockPassword = String(d.systemLockPassword);
@@ -3572,14 +3655,12 @@
                 if (typeof d.isCloudBaselineLocked === 'boolean') isCloudBaselineLocked = d.isCloudBaselineLocked;
                 if (d.savedProxyParamsJson) {
                     try {
-                        savedProxyParams = JSON.parse(d.savedProxyParamsJson);
-                        restoreSavedProxyParamsToDOM();
+                        const parsedParams = JSON.parse(d.savedProxyParamsJson);
+                        if (parsedParams && Object.keys(parsedParams).length > 0) {
+                            savedProxyParams = parsedParams;
+                            restoreSavedProxyParamsToDOM();
+                        }
                     } catch (e) {}
-                }
-                if (d.currentMode && d.currentMode !== currentMode) {
-                    setMethodMode(d.currentMode, true);
-                } else {
-                    updateRetentionGuidanceUI();
                 }
                 syncTeamInputsToUI();
                 applyProxyLockUI();
@@ -3591,7 +3672,7 @@
                 recalculateAll();
                 saveWorkspaceToLocalStorage(true);
                 isApplyingRemote = false;
-            }, () => {});
+            }, () => { isCloudInitialSyncDone = true; });
         }
 
         let currentPresenceState = { status: 'viewing', targetName: '瀏覽中', targetFarmId: null };
@@ -3623,12 +3704,13 @@
         }, 25000);
 
         window.syncFarmToCloud = async function(farmObj) {
-            if (!currentUser || !db || !farmObj || isApplyingRemote) return;
+            if (!currentUser || !db || !farmObj || isApplyingRemote || !isCloudInitialSyncDone) return;
             try {
                 await window.updatePresenceStatus('saving', farmObj.name, farmObj.id);
                 const nowIso = new Date().toISOString();
                 farmObj.updatedAt = nowIso;
                 farmObj.updatedBy = currentUser.uid;
+                farmObj.reportSroi = computeSingleFarmOfficialSroi(farmObj);
                 const farmDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_farms', `farm_${farmObj.id}`);
                 await setDoc(farmDocRef, { ...farmObj });
                 setTimeout(() => {
@@ -3640,7 +3722,7 @@
         };
 
         window.deleteFarmFromCloud = async function(farmId) {
-            if (!currentUser || !db || !farmId) return;
+            if (!currentUser || !db || !farmId || !isCloudInitialSyncDone) return;
             try {
                 const farmDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_farms', `farm_${farmId}`);
                 await deleteDoc(farmDocRef);
@@ -3649,9 +3731,10 @@
         };
 
         window.syncTeamToCloud = async function(teamObj) {
-            if (!currentUser || !db || !teamObj || isApplyingRemote) return;
+            if (!currentUser || !db || !teamObj || isApplyingRemote || !isCloudInitialSyncDone) return;
             try {
                 await window.updatePresenceStatus('saving', teamObj.name, null);
+                teamObj.reportSroi = window.latestAuthoritativeReport?.teamSroi || computeTeamOfficialSroi(teamObj).sroi;
                 const teamDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_teams', `${teamObj.id}`);
                 await setDoc(teamDocRef, { ...teamObj, updatedAt: new Date().toISOString(), updatedBy: currentUser.uid });
                 setTimeout(() => {
@@ -3661,16 +3744,14 @@
         };
 
         window.syncMetaToCloud = async function() {
-            if (!currentUser || !db || isApplyingRemote) return;
+            if (!currentUser || !db || isApplyingRemote || !isCloudInitialSyncDone) return;
             try {
                 if (!isProxyLocked) saveCurrentProxyParamsState();
                 const metaDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_meta', 'workspace_state');
                 await setDoc(metaDocRef, {
                     currentMode, targetEvalYear, reportScope, activeTeamId,
                     isProxyLocked, lockedTimestamp, isCloudBaselineLocked, systemLockPassword,
-                    teamsDataJson: JSON.stringify(teamsData || []),
                     savedProxyParamsJson: JSON.stringify(savedProxyParams || {}),
-                    publishedBoardJson: JSON.stringify(publishedBoard),
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUser.uid
                 }, { merge: true });
