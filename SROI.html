@@ -124,11 +124,16 @@
         #cloud-3d-hero-section.island-hero-collapsed #cloudBottomOverviewBar {
             display: none !important;
         }
+        #cloud3dCanvasContainer,
+        #cloud3dCanvasContainer canvas {
+            touch-action: none;
+        }
         .cloud-island-label {
             position: absolute;
             transform: translate(-50%, -100%);
             pointer-events: auto;
             cursor: pointer;
+            touch-action: none;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             z-index: 20;
         }
@@ -1520,11 +1525,9 @@
                 if (scope === 'multi') {
                     bMulti.className = 'py-2 px-3 rounded-xl text-xs font-black border transition bg-emerald-700 text-white border-emerald-700 shadow flex items-center justify-center gap-1.5';
                     bSingle.className = 'py-2 px-3 rounded-xl text-xs font-black border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 flex items-center justify-center gap-1.5';
-                    if (!isProxyLocked && document.getElementById('paramNetEco')) document.getElementById('paramNetEco').value = 10;
                 } else {
                     bSingle.className = 'py-2 px-3 rounded-xl text-xs font-black border transition bg-sky-700 text-white border-sky-700 shadow flex items-center justify-center gap-1.5';
                     bMulti.className = 'py-2 px-3 rounded-xl text-xs font-black border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 flex items-center justify-center gap-1.5';
-                    if (!isProxyLocked && document.getElementById('paramNetEco')) document.getElementById('paramNetEco').value = 60;
                 }
             }
             if (isProxyLocked) {
@@ -1540,13 +1543,12 @@
             const badge = document.getElementById('activeMethodologyRetentionBadge');
             const hint = document.getElementById('methodologyRetentionHintText');
             const ver = getMethodVersionDisplay(currentMode);
-            if (badge) badge.innerText = `當前套用：${ver} ${reportScope === 'single' ? '單場評估' : '團隊彙整'}`;
+            const curH = parseFloat(document.getElementById('paramNetHuman')?.value) || 80;
+            const curE = parseFloat(document.getElementById('paramNetEco')?.value) || 10;
+            const curM = parseFloat(document.getElementById('paramNetMgmt')?.value) || 70;
+            if (badge) badge.innerText = `報告書統一基準：${ver} (${reportScope === 'single' ? '單場報告' : '團隊報告'})`;
             if (hint) {
-                if (reportScope === 'single') {
-                    hint.innerHTML = `<strong>📌 ${ver} 單一農場獨立評估模式：</strong>已自動套用團隊核定財務代理變數，建議保留率為 <strong>(S) 80%</strong>、<strong>(E) 60%</strong>、<strong>(G) 70%</strong>。`;
-                } else {
-                    hint.innerHTML = `<strong>📌 ${ver} 里山團隊彙整模式：</strong>跨農場生態廊道採嚴格防漂綠確信標準，建議保留率為 <strong>(S) 80%</strong>、<strong>(E) 10%</strong>（扣除 80% 自然背景無謂影響與 10% 歸因）、<strong>(G) 70%</strong>。`;
-                }
+                hint.innerHTML = `<strong>📌 報告書與 3D 群島統一保留率基準：</strong>目前全站（含 3D 主島、各農場小島與報告書）統一採用 <strong>(S) ${curH}%</strong>、<strong>(E) ${curE}%</strong>、<strong>(G) ${curM}%</strong> 進行核算，確保群島看板與報告書數值 100% 同步一致。`;
             }
         }
 
@@ -1977,7 +1979,7 @@
             const rCurr = parseFloat(farm.routes) || 1;
             const tCurr = parseFloat(farm.trainees) || 2;
 
-            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || (reportScope === 'single' ? 60 : 10)) / 100;
+            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || 10) / 100;
 
             // =========================================================================
             // 1. (S) 團隊共同培訓投入後應用於各農場之合理計算與代理上限 (Cap: 單場最高 $70,000 元/場)
@@ -2076,79 +2078,41 @@
             };
         }
 
-        function computeSingleFarmOfficialSroi(farm) {
-            const st = computeFarmStats(farm);
-            const team = getTeamById(farm.teamId);
-            const habInput = currentMode === '2025' ? (team.habitatGrantPerFarm || 10000) : (currentMode === '2026' ? (team.maintGrantPerFarm || 2000) : ((team.habitatGrantPerFarm || 10000) + (team.maintGrantPerFarm || 2000)));
-            const trainInput = team.projectInput || 70000;
-            const totalInput = Math.max(1, habInput + trainInput);
-
-            const rateH = (parseFloat(document.getElementById('paramNetHuman')?.value) || 80) / 100;
-            const rateE = (reportScope === 'single')
-                ? ((parseFloat(document.getElementById('paramNetEco')?.value) || 60) / 100)
-                : 0.60;
-            const rateM = (parseFloat(document.getElementById('paramNetMgmt')?.value) || 70) / 100;
-
-            const netH = Math.round(st.farmGrossHuman * rateH);
-            const netE = Math.round(st.baseAnnualEco * rateE) + Math.round(st.bioBonusEcoVal * rateE);
-            const netM = Math.round(st.effectiveMaintBenefit * rateM);
-            return ((netH + netE + netM) / totalInput).toFixed(2);
-        }
-
-        function computeTeamOfficialSroi(team) {
-            const teamFarms = farmsData.filter(f => f.selected && team.farmIds.includes(f.id));
-            const list = teamFarms.length > 0 ? teamFarms : farmsData.filter(f => f.selected);
-            const validList = list.length > 0 ? list : [farmsData[0]];
-            const nFarms = validList.length;
-
-            const habPerFarm = currentMode === '2025' ? (team.habitatGrantPerFarm || 10000) : (currentMode === '2026' ? (team.maintGrantPerFarm || 2000) : ((team.habitatGrantPerFarm || 10000) + (team.maintGrantPerFarm || 2000)));
-            const totalHabInput = habPerFarm * nFarms;
-            const totalTrainInput = team.projectInput || 70000;
-            const totalInput = Math.max(1, totalHabInput + totalTrainInput);
-
-            const rateH = (parseFloat(document.getElementById('paramNetHuman')?.value) || 80) / 100;
-            const rateE = (reportScope === 'multi')
-                ? ((parseFloat(document.getElementById('paramNetEco')?.value) || 10) / 100)
-                : 0.10;
-            const rateM = (parseFloat(document.getElementById('paramNetMgmt')?.value) || 70) / 100;
-
-            let grossHuman = 0, grossEco = 0, grossMgmt = 0, sumFieldEcoNet = 0, sumBioObsEcoNet = 0;
-            validList.forEach(f => {
-                const st = computeFarmStats(f);
-                grossHuman += st.farmGrossHuman;
-                grossEco += st.totalFarmEcoGross;
-                grossMgmt += st.effectiveMaintBenefit;
-                sumFieldEcoNet += Math.round(st.baseAnnualEco * rateE);
-                sumBioObsEcoNet += Math.round(st.bioBonusEcoVal * rateE);
-            });
-
-            const netHuman = Math.round(grossHuman * rateH);
-            const netEco = sumFieldEcoNet + sumBioObsEcoNet;
-            const netMgmt = Math.round(grossMgmt * rateM);
-            const netValue = netHuman + netEco + netMgmt;
-            return { nFarms, totalInput, netValue, sroi: (netValue / totalInput).toFixed(2) };
-        }
-
-        function calculateSroiMetrics() {
-            const activeTeam = getActiveTeamObj();
+        // Canonical Report-Driven SROI Calculator (Single Source of Truth for Report, 3D Islands & Drawer)
+        function calculateCanonicalReportMetrics(scopeOverride = null, entityIdOverride = null) {
+            const effectiveScope = scopeOverride || reportScope;
+            let activeTeam = getActiveTeamObj();
             let activeFarms = [];
-            if (reportScope === 'single') {
-                const target = farmsData.find(f => f.id === activeSingleFarmId) || farmsData[0];
-                activeFarms = [target];
+
+            if (effectiveScope === 'single') {
+                const targetFarmId = entityIdOverride !== null ? Number(entityIdOverride) : Number(activeSingleFarmId);
+                const target = farmsData.find(f => Number(f.id) === targetFarmId) || farmsData[0];
+                activeFarms = target ? [target] : [];
+                if (target && target.teamId) {
+                    activeTeam = getTeamById(target.teamId);
+                }
             } else {
-                activeFarms = farmsData.filter(f => f.selected);
+                if (entityIdOverride !== null) {
+                    activeTeam = getTeamById(entityIdOverride);
+                }
+                const teamSelected = farmsData.filter(f => f.selected && (!activeTeam.farmIds || activeTeam.farmIds.includes(f.id)));
+                activeFarms = teamSelected.length > 0 ? teamSelected : farmsData.filter(f => f.selected);
                 if (activeFarms.length === 0 && farmsData.length > 0) activeFarms = [farmsData[0]];
             }
 
-            const nFarms = activeFarms.length;
-            const habPerFarm = currentMode === '2025' ? (activeTeam.habitatGrantPerFarm || 10000) : (currentMode === '2026' ? (activeTeam.maintGrantPerFarm || 2000) : ((activeTeam.habitatGrantPerFarm || 10000) + (activeTeam.maintGrantPerFarm || 2000)));
+            const nFarms = Math.max(1, activeFarms.length);
+            const habPerFarm = currentMode === '2025'
+                ? (activeTeam.habitatGrantPerFarm || 10000)
+                : (currentMode === '2026'
+                    ? (activeTeam.maintGrantPerFarm || 2000)
+                    : ((activeTeam.habitatGrantPerFarm || 10000) + (activeTeam.maintGrantPerFarm || 2000)));
             const habInput = habPerFarm * nFarms;
             const trainInput = activeTeam.projectInput || 70000;
             const sharedTrainPerFarmInput = Math.round(trainInput / nFarms);
             const totalInput = Math.max(1, habInput + trainInput);
 
             const rateH = (parseFloat(document.getElementById('paramNetHuman')?.value) || 80) / 100;
-            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || (reportScope === 'single' ? 60 : 10)) / 100;
+            const rateE = (parseFloat(document.getElementById('paramNetEco')?.value) || 10) / 100;
             const rateM = (parseFloat(document.getElementById('paramNetMgmt')?.value) || 70) / 100;
 
             let totalWater = 0, totalLand = 0, totalAreaHa = 0, totalSpecies = 0, totalGuides = 0, totalRoutes = 0, totalTrainees = 0;
@@ -2171,15 +2135,14 @@
                 sumNewCostB += f.newCost2025;
                 sumBaseEco += st.baseAnnualEco;
                 sumBioBonusEco += st.bioBonusEcoVal;
-                sumFieldEcoNet += Math.round(st.baseAnnualEco * rateE);
-                sumBioObsEcoNet += Math.round(st.bioBonusEcoVal * rateE);
+                sumFieldEcoNet += st.fieldEcoNetVal;
+                sumBioObsEcoNet += st.bioObsEcoNetVal;
                 sumCostDiffAB += st.costDiffAB;
                 sumYieldBenefit += st.yieldGrowthBenefitVal;
                 return { farm: f, stats: st };
             });
 
             const totalGross = grossHuman + grossEco + grossMgmt;
-
             const netHuman = Math.round(grossHuman * rateH);
             const netEco = sumFieldEcoNet + sumBioObsEcoNet;
             const netMgmt = Math.round(grossMgmt * rateM);
@@ -2190,13 +2153,28 @@
                 activeTeam, activeFarms, farmDetails, nFarms,
                 habPerFarm, habInput, trainInput, sharedTrainPerFarmInput, prodCostInput: 0, totalInput,
                 totalWater, totalLand, totalAreaHa: totalAreaHa.toFixed(1), totalHabitats: totalWater + totalLand,
-                totalSpecies: reportScope === 'single' ? totalSpecies : Math.max(15, totalSpecies),
+                totalSpecies: effectiveScope === 'single' ? totalSpecies : Math.max(15, totalSpecies),
                 totalGuides, totalRoutes, totalTrainees,
                 sumOldCostA, sumNewCostB, sumBaseEco, sumBioBonusEco, sumFieldEcoNet, sumBioObsEcoNet, sumCostDiffAB, sumYieldBenefit,
                 grossHuman, grossEco, grossMgmt, totalGross,
                 rateH, rateE, rateM,
                 netHuman, netEco, netMgmt, totalNet, sroiRatio
             };
+        }
+
+        function computeSingleFarmOfficialSroi(farm) {
+            if (!farm) return '0.00';
+            return calculateCanonicalReportMetrics('single', farm.id).sroiRatio;
+        }
+
+        function computeTeamOfficialSroi(team) {
+            const tId = team ? team.id : activeTeamId;
+            const res = calculateCanonicalReportMetrics('multi', tId);
+            return { nFarms: res.nFarms, totalInput: res.totalInput, netValue: res.totalNet, sroi: res.sroiRatio };
+        }
+
+        function calculateSroiMetrics() {
+            return calculateCanonicalReportMetrics(reportScope, reportScope === 'single' ? activeSingleFarmId : activeTeamId);
         }
 
         function refreshPublishedBoardRecords() {
@@ -3566,9 +3544,12 @@
         let cIsFloating = true;
         let cSelectedTarget = null;
         let cDrag = false, cPrevPos = { x: 0, y: 0 }, cSpherical = { theta: 0.35, phi: 1.08, radius: 22 };
+        let cTouchMoved = false;
+        let cPinchDist = 0;
 
         function initCloud3DScene() {
             const container = document.getElementById('cloud3dCanvasContainer');
+            const heroSection = document.getElementById('cloud-3d-hero-section');
             if (!container || typeof THREE === 'undefined') return;
 
             if (new URLSearchParams(window.location.search).get('embed') === '3d') {
@@ -3596,15 +3577,77 @@
             cScene.add(cIslandsGroup);
 
             const dom = cRenderer.domElement;
-            dom.addEventListener('mousedown', e => { cDrag = true; cPrevPos = { x: e.clientX, y: e.clientY }; });
+            // Desktop Mouse Drag Rotation & Wheel Zoom
+            dom.addEventListener('mousedown', e => {
+                cDrag = true;
+                cTouchMoved = false;
+                cPrevPos = { x: e.clientX, y: e.clientY };
+            });
             window.addEventListener('mouseup', () => { cDrag = false; });
             window.addEventListener('mousemove', e => {
                 if (!cDrag) return;
-                cSpherical.theta -= (e.clientX - cPrevPos.x) * 0.007;
-                cSpherical.phi = Math.max(0.45, Math.min(1.42, cSpherical.phi - (e.clientY - cPrevPos.y) * 0.006));
+                const dx = e.clientX - cPrevPos.x;
+                const dy = e.clientY - cPrevPos.y;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) cTouchMoved = true;
+                cSpherical.theta -= dx * 0.007;
+                cSpherical.phi = Math.max(0.42, Math.min(1.45, cSpherical.phi - dy * 0.006));
                 cPrevPos = { x: e.clientX, y: e.clientY };
                 syncCloud3DCamera();
             });
+            dom.addEventListener('wheel', e => {
+                e.preventDefault();
+                cSpherical.radius = Math.max(13, Math.min(34, cSpherical.radius + e.deltaY * 0.012));
+                syncCloud3DCamera();
+            }, { passive: false });
+
+            // Mobile Touchscreen Rotation (1-finger drag) & Pinch Zoom (2-finger pinch)
+            const touchTarget = heroSection || dom;
+            touchTarget.addEventListener('touchstart', e => {
+                if (e.target.closest('#cloudIslandSideDrawer') || e.target.closest('#cloud3DTopControlsPanel') || e.target.closest('button')) return;
+                if (e.touches.length === 1) {
+                    cDrag = true;
+                    cTouchMoved = false;
+                    cPrevPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                } else if (e.touches.length === 2) {
+                    cDrag = false;
+                    cTouchMoved = true;
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    cPinchDist = Math.hypot(dx, dy);
+                }
+            }, { passive: true });
+
+            touchTarget.addEventListener('touchmove', e => {
+                if (e.target.closest('#cloudIslandSideDrawer')) return;
+                if (e.touches.length === 1 && cDrag) {
+                    const dx = e.touches[0].clientX - cPrevPos.x;
+                    const dy = e.touches[0].clientY - cPrevPos.y;
+                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                        cTouchMoved = true;
+                        if (e.cancelable) e.preventDefault();
+                    }
+                    cSpherical.theta -= dx * 0.0085;
+                    cSpherical.phi = Math.max(0.42, Math.min(1.45, cSpherical.phi - dy * 0.007));
+                    cPrevPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                    syncCloud3DCamera();
+                } else if (e.touches.length === 2) {
+                    if (e.cancelable) e.preventDefault();
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const dist = Math.hypot(dx, dy);
+                    if (cPinchDist > 0) {
+                        const delta = cPinchDist - dist;
+                        cSpherical.radius = Math.max(13, Math.min(34, cSpherical.radius + delta * 0.04));
+                        syncCloud3DCamera();
+                    }
+                    cPinchDist = dist;
+                }
+            }, { passive: false });
+
+            touchTarget.addEventListener('touchend', () => {
+                cDrag = false;
+                cPinchDist = 0;
+            }, { passive: true });
 
             window.addEventListener('resize', () => {
                 if (!container || !cRenderer || !cCamera) return;
@@ -3966,7 +4009,7 @@
                 : `<span class="text-[9px] text-amber-300 bg-amber-950/90 border border-amber-500/40 px-1.5 py-0.5 rounded font-black">⏳ 未完成｜日期：${teamSaveDate}</span>`;
             const mainEl = document.createElement('div');
             mainEl.className = 'cloud-island-label main-island-card bg-slate-900/95 text-white px-3 py-2 rounded-2xl border-2 border-amber-400 shadow-2xl min-w-[205px] sm:min-w-[225px]';
-            const mainSroiDisplay = (reportScope === 'multi') ? m.sroiRatio : computeTeamOfficialSroi(team).sroi;
+            const mainSroiDisplay = computeTeamOfficialSroi(team).sroi;
             mainEl.innerHTML = `
                 <div class="flex justify-between items-center gap-2 border-b border-emerald-700 pb-0.5 mb-0.5">
                     <span class="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded">🏝️ ${teamInvestLabel} (${farmsData.filter(f => f.selected).length}場)</span>
@@ -3983,7 +4026,7 @@
                     <span class="text-sm font-black text-amber-400">1 : ${mainSroiDisplay}</span>
                 </div>
             `;
-            mainEl.onclick = () => selectCloudIsland('team', team.id);
+            mainEl.onclick = () => { if (!cTouchMoved) selectCloudIsland('team', team.id); };
             if (layer) layer.appendChild(mainEl);
             cIslandItems.push({ mesh: mainMesh, baseY: 0.45, phase: 0, el: mainEl, offsetY: 3.7, isMain: true });
 
@@ -4008,7 +4051,7 @@
                 skyBridge.rotation.y = -ang + Math.PI / 2;
                 cIslandsGroup.add(skyBridge);
 
-                const sroiVal = (reportScope === 'single' && activeSingleFarmId === f.id) ? m.sroiRatio : computeSingleFarmOfficialSroi(f);
+                const sroiVal = computeSingleFarmOfficialSroi(f);
                 const fInvestLabel = getInvestBadgeText(f);
                 const fSaveDate = f.lastSavedDate || team.lastSavedDate || getFormattedToday();
                 const fStatusBadge = f.isCompleted !== false
@@ -4031,7 +4074,7 @@
                         <span class="text-xs font-black text-satoyama-main">1 : ${sroiVal}</span>
                     </div>
                 `;
-                subEl.onclick = () => selectCloudIsland('farm', f.id);
+                subEl.onclick = () => { if (!cTouchMoved) selectCloudIsland('farm', f.id); };
                 if (layer) layer.appendChild(subEl);
                 cIslandItems.push({ mesh: subMesh, baseY: by, phase: idx * 1.1, el: subEl, offsetY: 2.5, isMain: false });
             });
@@ -4050,35 +4093,34 @@
         }
 
         function populateCloudDrawerDetails(type, id) {
-            const m = calculateSroiMetrics();
-            const team = m.activeTeam;
             if (type === 'team') {
+                const teamMetrics = calculateCanonicalReportMetrics('multi', id || activeTeamId);
+                const team = teamMetrics.activeTeam;
                 const tSaveDate = team.lastSavedDate || getFormattedToday();
                 const isComp = team.isCompleted !== false;
-                const teamCalc = computeTeamOfficialSroi(team);
-                const sroiStr = (reportScope === 'multi') ? m.sroiRatio : teamCalc.sroi;
                 document.getElementById('cDrawerBadge').innerText = `🏝️ ${getInvestBadgeText(team)} (專案主島)`;
                 document.getElementById('cDrawerTitle').innerText = team.name;
                 document.getElementById('cDrawerPartner').innerText = team.guidanceTitle;
-                document.getElementById('cDrawerMembers').innerText = `${farmsData.filter(f => f.selected).length} 處農場 / ${m.totalTrainees} 人`;
+                document.getElementById('cDrawerMembers').innerText = `${teamMetrics.nFarms} 處農場 / ${teamMetrics.totalTrainees} 人`;
                 document.getElementById('cDrawerPeriod').innerText = team.execPeriod || '2025/01/01 ~ 2026/10/31';
                 document.getElementById('cDrawerName').innerText = `${team.name} (${getInvestBadgeText(team)})`;
                 document.getElementById('cDrawerCoop').innerText = team.guidanceTitle;
-                document.getElementById('cDrawerCrops').innerText = farmsData.filter(f => f.selected).map(f => f.crops).join('、');
+                document.getElementById('cDrawerCrops').innerText = teamMetrics.activeFarms.map(f => f.crops).join('、');
                 if (document.getElementById('cDrawerSaveStatus')) {
                     document.getElementById('cDrawerSaveStatus').innerHTML = isComp
                         ? `<span class="text-emerald-300">✅ 已完成核定 (存檔：${tSaveDate})</span>`
                         : `<span class="text-amber-300">⏳ 未完成填報 (日期：${tSaveDate})</span>`;
                 }
-                document.getElementById('cDrawerSroi').innerText = `1 : ${sroiStr}`;
+                document.getElementById('cDrawerSroi').innerText = `1 : ${teamMetrics.sroiRatio}`;
                 if (document.getElementById('cDrawerOverviewNote')) {
                     document.getElementById('cDrawerOverviewNote').innerText = team.overviewNote || '尚無總覽附言';
                 }
             } else {
-                const f = farmsData.find(x => x.id === id) || farmsData[0];
+                const farmMetrics = calculateCanonicalReportMetrics('single', id);
+                const f = farmMetrics.activeFarms[0] || farmsData[0];
+                const team = farmMetrics.activeTeam;
                 const fSaveDate = f.lastSavedDate || team.lastSavedDate || getFormattedToday();
                 const isComp = f.isCompleted !== false;
-                const fSroiStr = (reportScope === 'single' && activeSingleFarmId === f.id) ? m.sroiRatio : computeSingleFarmOfficialSroi(f);
                 document.getElementById('cDrawerBadge').innerText = `🌱 ${getInvestBadgeText(f)} (農場小島)`;
                 document.getElementById('cDrawerTitle').innerText = f.name;
                 document.getElementById('cDrawerPartner').innerText = team.guidanceTitle;
@@ -4092,7 +4134,7 @@
                         ? `<span class="text-emerald-300">✅ 已完成核定 (存檔：${fSaveDate})</span>`
                         : `<span class="text-amber-300">⏳ 未完成填報 (日期：${fSaveDate})</span>`;
                 }
-                document.getElementById('cDrawerSroi').innerText = `1 : ${fSroiStr}`;
+                document.getElementById('cDrawerSroi').innerText = `1 : ${farmMetrics.sroiRatio}`;
                 if (document.getElementById('cDrawerOverviewNote')) {
                     document.getElementById('cDrawerOverviewNote').innerText = f.ecoObsNote || team.overviewNote || '尚無附言';
                 }
@@ -4729,80 +4771,15 @@
         function setupRealtimeListeners() {
             if (!currentUser || !db) return;
 
-            // 1. Listen to Teams Collection (satoyama_teams) so team name, inputs & completion sync across all devices
-            const teamsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'satoyama_teams');
-            onSnapshot(teamsColRef, (snapshot) => {
-                if (snapshot.empty) return;
-                isApplyingRemote = true;
-                snapshot.docChanges().forEach((change) => {
-                    const data = change.doc.data();
-                    if (!data || !data.id) return;
-                    const idx = teamsData.findIndex(t => t.id === data.id);
-                    if (change.type === 'removed') {
-                        if (idx >= 0 && teamsData.length > 1) teamsData.splice(idx, 1);
-                    } else {
-                        if (idx >= 0) {
-                            teamsData[idx] = { ...teamsData[idx], ...data };
-                        } else {
-                            teamsData.push(data);
-                        }
-                    }
-                });
-                const activeTeam = getActiveTeamObj();
-                if (activeTeam && Array.isArray(activeTeam.farmIds)) {
-                    farmsData.forEach(f => { f.selected = activeTeam.farmIds.includes(f.id); });
-                }
-                syncTeamInputsToUI();
-                renderPublishedBanner();
-                renderSelectionControls();
-                renderFarmsList();
-                recalculateAll();
-                saveWorkspaceToLocalStorage(true);
-                isApplyingRemote = false;
-            }, (err) => { console.warn('Teams listener error:', err); });
+            let metaLoadedOnce = false;
 
-            // 2. Listen to Farms Collection (satoyama_farms) and trust cloud data completely across devices
-            const farmsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'satoyama_farms');
-            onSnapshot(farmsColRef, (snapshot) => {
-                if (snapshot.empty) return;
-                isApplyingRemote = true;
-                snapshot.docChanges().forEach((change) => {
-                    const data = change.doc.data();
-                    if (!data || !data.id) return;
-                    const idx = farmsData.findIndex(f => Number(f.id) === Number(data.id));
-                    if (change.type === 'removed') {
-                        if (idx >= 0 && farmsData.length > 1) farmsData.splice(idx, 1);
-                    } else {
-                        if (idx >= 0) {
-                            farmsData[idx] = { ...farmsData[idx], ...data };
-                        } else {
-                            farmsData.push(data);
-                        }
-                    }
-                });
-                const activeTeam = getActiveTeamObj();
-                if (activeTeam && Array.isArray(activeTeam.farmIds) && activeTeam.farmIds.length > 0) {
-                    farmsData.forEach(f => {
-                        if (activeTeam.farmIds.includes(Number(f.id)) || activeTeam.farmIds.includes(f.id)) {
-                            f.selected = true;
-                        }
-                    });
-                }
-                syncTeamInputsToUI();
-                renderPublishedBanner();
-                renderSelectionControls();
-                renderFarmsList();
-                recalculateAll();
-                saveWorkspaceToLocalStorage(true);
-                isApplyingRemote = false;
-            }, (err) => { console.warn('Farms listener error:', err); });
-
-            // 3. Listen to Global Workspace State (satoyama_meta/workspace_state) for Mode, ActiveTeam, Locks & Full Atomic Sync
+            // Primary Authoritative Listener: Global Workspace State (satoyama_meta/workspace_state)
             const metaDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'satoyama_meta', 'workspace_state');
             onSnapshot(metaDocRef, (docSnap) => {
                 if (!docSnap.exists()) return;
                 const d = docSnap.data();
                 if (!d) return;
+                metaLoadedOnce = true;
                 isApplyingRemote = true;
                 if (d.teamsDataJson) {
                     try {
@@ -4817,6 +4794,12 @@
                     } catch (e) {}
                 }
                 if (d.activeTeamId) activeTeamId = d.activeTeamId;
+                const activeTeam = getActiveTeamObj();
+                if (activeTeam && Array.isArray(activeTeam.farmIds) && activeTeam.farmIds.length > 0) {
+                    farmsData.forEach(f => {
+                        f.selected = activeTeam.farmIds.includes(Number(f.id)) || activeTeam.farmIds.includes(f.id);
+                    });
+                }
                 if (d.targetEvalYear) targetEvalYear = d.targetEvalYear;
                 if (d.systemLockPassword) systemLockPassword = String(d.systemLockPassword);
                 if (typeof d.isProxyLocked === 'boolean') isProxyLocked = d.isProxyLocked;
@@ -4843,6 +4826,29 @@
                 saveWorkspaceToLocalStorage(true);
                 isApplyingRemote = false;
             }, (err) => { console.warn('Meta listener error:', err); });
+
+            // Fallback listeners only used if workspace_state hasn't been initialized yet
+            const teamsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'satoyama_teams');
+            onSnapshot(teamsColRef, (snapshot) => {
+                if (snapshot.empty || metaLoadedOnce) return;
+                isApplyingRemote = true;
+                snapshot.docChanges().forEach((change) => {
+                    const data = change.doc.data();
+                    if (!data || !data.id) return;
+                    const idx = teamsData.findIndex(t => t.id === data.id);
+                    if (change.type === 'removed') {
+                        if (idx >= 0 && teamsData.length > 1) teamsData.splice(idx, 1);
+                    } else {
+                        if (idx >= 0) teamsData[idx] = { ...teamsData[idx], ...data };
+                        else teamsData.push(data);
+                    }
+                });
+                syncTeamInputsToUI();
+                renderSelectionControls();
+                renderFarmsList();
+                recalculateAll();
+                isApplyingRemote = false;
+            }, () => {});
         }
 
         window.syncFarmToCloud = async function(farmObj) {
@@ -4854,6 +4860,7 @@
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUser.uid
                 });
+                await window.syncMetaToCloud();
             } catch (err) {
                 console.error('Failed to sync farm to cloud:', err);
             }
@@ -4879,6 +4886,7 @@
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUser.uid
                 });
+                await window.syncMetaToCloud();
             } catch (err) {
                 console.error('Failed to sync team to cloud:', err);
             }
