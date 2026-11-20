@@ -643,7 +643,7 @@
         const firebaseConfig = { apiKey: "AIzaSyCEH65YbNirj_IRmtsIJZS-HNEbsRBBsSQ", authDomain: "sustainable-tourism-65025.firebaseapp.com", projectId: "sustainable-tourism-65025" };
         const LOCAL_STORAGE_KEY = 'shuilMoriData_v3.0';
 
-        const transportData={walk_bike:{name:'步行/單車',icon:'🚶🚲',reduction:173,mode:'WALKING'},thsr:{name:'搭乘高鐵',icon:'🚆',reduction:141,mode:'TRANSIT'},bus_train:{name:'共乘巴士(35人)',icon:'🚌',reduction:145,mode:'TRANSIT'},carpool_4:{name:'4人共乘',icon:'🚗',reduction:130,mode:'DRIVING'},carpool_5:{name:'5人共乘',icon:'🚐',reduction:129,mode:'DRIVING'},carpool_3:{name:'3人共乘',icon:'🚗',reduction:115,mode:'DRIVING'},carpool_2_car:{name:'2人共乘(汽車)',icon:'🚗',reduction:86,mode:'DRIVING'},carpool_2_moto:{name:'機車/2人',icon:'🛵',reduction:125,mode:'DRIVING'},drive_alone:{name:'單人自駕',icon:'🚘',reduction:0,mode:'DRIVING'}};
+        const transportData={walk_bike:{name:'步行/單車',icon:'🚶🚲',reduction:173,mode:'WALKING'},thsr:{name:'搭乘高鐵',icon:'🚆',reduction:141,mode:'TRANSIT'},bus_train:{name:'共乘巴士(35人)',icon:'🚌',reduction:145,mode:'DRIVING'},carpool_4:{name:'4人共乘',icon:'🚗',reduction:130,mode:'DRIVING'},carpool_5:{name:'5人共乘',icon:'🚐',reduction:129,mode:'DRIVING'},carpool_3:{name:'3人共乘',icon:'🚗',reduction:115,mode:'DRIVING'},carpool_2_car:{name:'2人共乘(汽車)',icon:'🚗',reduction:86,mode:'DRIVING'},carpool_2_moto:{name:'機車/2人',icon:'🛵',reduction:125,mode:'DRIVING'},drive_alone:{name:'單人自駕',icon:'🚘',reduction:0,mode:'DRIVING'}};
         window.guideVideos = [];
 
         window.extractYouTubeID = function(url) {
@@ -1014,62 +1014,108 @@
             if (window.fallbackPolyline) window.fallbackPolyline.setMap(null);
             window.directionsRenderer.setMap(window.mapInstance);
 
-            const origin = window.routePoints[0].coords;
-            const destination = window.routePoints[window.routePoints.length - 1].coords;
-            const waypoints = window.routePoints.slice(1, -1).map(p => ({ location: p.coords, stopover: true }));
+            // 確保所有座標皆為標準數值格式，避免字串座標導致 API 失敗
+            const sanitizeCoords = (c) => ({ lat: parseFloat(c.lat), lng: parseFloat(c.lng) });
+            const origin = sanitizeCoords(window.routePoints[0].coords);
+            const destination = sanitizeCoords(window.routePoints[window.routePoints.length - 1].coords);
+            const waypoints = window.routePoints.slice(1, -1).map(p => ({ location: sanitizeCoords(p.coords), stopover: true }));
 
-            window.directionsService.route({ 
-                origin: origin, 
-                destination: destination, 
-                waypoints: waypoints,
-                travelMode: google.maps.TravelMode[tData.mode] || 'DRIVING' 
-            }, (result, stat) => {
-                if (stat === 'OK') {
-                    window.directionsRenderer.setDirections(result);
-                    let distMeters = 0;
-                    result.routes[0].legs.forEach(leg => distMeters += leg.distance.value);
-                    
-                    const distKm = distMeters / 1000;
-                    const reduction = Math.round(distKm * (tData.reduction));
-                    window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
-                    if (status) status.innerHTML = `總路網距離 ${distKm.toFixed(1)}km | 預估減碳: <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
-                    if (confirmBtn) confirmBtn.classList.remove('hidden');
-                    if (previewBtn) previewBtn.classList.add('hidden');
-                    
-                    if (routeContainer && routeChevron) {
-                        routeContainer.classList.add('hidden');
-                        routeChevron.classList.add('rotate-180');
-                        routeChevron.classList.remove('fa-chevron-up');
-                        routeChevron.classList.add('fa-chevron-down');
-                    }
+            const collapseRoutePanel = () => {
+                if (routeContainer && routeChevron) {
+                    routeContainer.classList.add('hidden');
+                    routeChevron.classList.add('rotate-180');
+                    routeChevron.classList.remove('fa-chevron-up');
+                    routeChevron.classList.add('fa-chevron-down');
+                }
+            };
 
-                } else {
-                    window.directionsRenderer.setMap(null);
-                    let distMeters = 0;
-                    const path = [];
-                    for(let i=0; i<window.routePoints.length; i++) {
-                        const p1 = new google.maps.LatLng(window.routePoints[i].coords.lat, window.routePoints[i].coords.lng);
-                        path.push(p1);
-                        if(i > 0) {
-                            const p0 = new google.maps.LatLng(window.routePoints[i-1].coords.lat, window.routePoints[i-1].coords.lng);
+            const applyRouteSuccess = (result, labelPrefix = '總路網距離') => {
+                window.directionsRenderer.setDirections(result);
+                let distMeters = 0;
+                result.routes[0].legs.forEach(leg => distMeters += leg.distance.value);
+                const distKm = distMeters / 1000;
+                const reduction = Math.round(distKm * tData.reduction);
+                window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
+                if (status) status.innerHTML = `${labelPrefix} ${distKm.toFixed(1)}km | 預估減碳: <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
+                if (confirmBtn) confirmBtn.classList.remove('hidden');
+                if (previewBtn) previewBtn.classList.add('hidden');
+                collapseRoutePanel();
+            };
+
+            // 純 JS 球面距離公式（作為最終備援，防止 geometry 函式庫未就緒時報錯）
+            const haversineMeters = (c1, c2) => {
+                const R = 6371000;
+                const toRad = (deg) => deg * Math.PI / 180;
+                const dLat = toRad(c2.lat - c1.lat);
+                const dLng = toRad(c2.lng - c1.lng);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(c1.lat)) * Math.cos(toRad(c2.lat)) * Math.sin(dLng / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            };
+
+            const applyStraightLineFallback = () => {
+                window.directionsRenderer.setMap(null);
+                let distMeters = 0;
+                const path = [];
+                for (let i = 0; i < window.routePoints.length; i++) {
+                    const cCurr = sanitizeCoords(window.routePoints[i].coords);
+                    const p1 = new google.maps.LatLng(cCurr.lat, cCurr.lng);
+                    path.push(p1);
+                    if (i > 0) {
+                        const cPrev = sanitizeCoords(window.routePoints[i - 1].coords);
+                        const p0 = new google.maps.LatLng(cPrev.lat, cPrev.lng);
+                        if (google.maps.geometry && google.maps.geometry.spherical) {
                             distMeters += google.maps.geometry.spherical.computeDistanceBetween(p0, p1);
+                        } else {
+                            distMeters += haversineMeters(cPrev, cCurr);
                         }
                     }
-                    const distKm = distMeters / 1000;
-                    const reduction = Math.round(distKm * (tData.reduction));
-                    window.fallbackPolyline = new google.maps.Polyline({ path: path, geodesic: true, strokeColor: '#4A6741', strokeOpacity: 0.8, strokeWeight: 4, map: window.mapInstance });
-                    
-                    window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
-                    if (status) status.innerHTML = `<span class="block text-[11px] text-yellow-600 mb-0.5"><i class="fas fa-magic mr-1"></i>採用直線估算</span>${distKm.toFixed(1)}km | 減碳 <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
-                    if (confirmBtn) confirmBtn.classList.remove('hidden');
-                    if (previewBtn) previewBtn.classList.add('hidden');
-                    
-                    if (routeContainer && routeChevron) {
-                        routeContainer.classList.add('hidden');
-                        routeChevron.classList.add('rotate-180');
-                        routeChevron.classList.remove('fa-chevron-up');
-                        routeChevron.classList.add('fa-chevron-down');
-                    }
+                }
+                const distKm = distMeters / 1000;
+                const reduction = Math.round(distKm * tData.reduction);
+                window.fallbackPolyline = new google.maps.Polyline({ path: path, geodesic: true, strokeColor: '#4A6741', strokeOpacity: 0.8, strokeWeight: 4, map: window.mapInstance });
+                
+                window.pendingTrip = { distMeters, distKm, reduction, isValid: true };
+                if (status) status.innerHTML = `<span class="block text-[11px] text-yellow-600 mb-0.5"><i class="fas fa-magic mr-1"></i>採用直線估算</span>${distKm.toFixed(1)}km | 減碳 <span class="text-mori-forest font-black text-lg">${reduction}</span> g`;
+                if (confirmBtn) confirmBtn.classList.remove('hidden');
+                if (previewBtn) previewBtn.classList.add('hidden');
+                collapseRoutePanel();
+            };
+
+            // Google Maps TRANSIT 模式不支援多點途經 (waypoints)，若有多點自動改採公路路網 (DRIVING)
+            const primaryMode = (tData.mode === 'TRANSIT' && waypoints.length > 0) ? 'DRIVING' : (tData.mode || 'DRIVING');
+            const buildRequest = (mode) => {
+                const req = {
+                    origin: origin,
+                    destination: destination,
+                    travelMode: google.maps.TravelMode[mode] || google.maps.TravelMode.DRIVING
+                };
+                if (mode !== 'TRANSIT' && waypoints.length > 0) {
+                    req.waypoints = waypoints;
+                }
+                // 若為大眾運輸模式，指定日間 09:00 出發時間，避免深夜查詢無班次失敗
+                if (mode === 'TRANSIT') {
+                    const daytime = new Date();
+                    daytime.setDate(daytime.getDate() + 1);
+                    daytime.setHours(9, 0, 0, 0);
+                    req.transitOptions = { departureTime: daytime };
+                }
+                return req;
+            };
+
+            window.directionsService.route(buildRequest(primaryMode), (result, stat) => {
+                if (stat === 'OK') {
+                    applyRouteSuccess(result);
+                } else if (primaryMode !== 'DRIVING') {
+                    // 若大眾運輸或步行查無路線，自動改用公路路網重試，大幅降低跳回直線的機率
+                    window.directionsService.route(buildRequest('DRIVING'), (retryResult, retryStat) => {
+                        if (retryStat === 'OK') {
+                            applyRouteSuccess(retryResult, '公路路網距離');
+                        } else {
+                            applyStraightLineFallback();
+                        }
+                    });
+                } else {
+                    applyStraightLineFallback();
                 }
             });
         };
@@ -1736,7 +1782,7 @@
         };
 
         window.initMap=function(){window.mapsApiReady=true;if(document.getElementById('mission-page')&&!document.getElementById('mission-page').classList.contains('hidden')){window.renderMap();}};
-        window.loadGoogleMaps=function(){if(document.querySelector('script[src*="maps.googleapis.com"]'))return;const script=document.createElement('script');const mk=atob('QUl6YVN5QWpOdjQ5QlBhX1gyU1N3aHR5SFR1eWZqTUFieEVHVS04');script.src=`https://maps.googleapis.com/maps/api/js?key=${mk}&callback=initMap`;script.async=true;script.defer=true;document.head.appendChild(script);};
+        window.loadGoogleMaps=function(){if(document.querySelector('script[src*="maps.googleapis.com"]'))return;const script=document.createElement('script');const mk=atob('QUl6YVN5QWpOdjQ5QlBhX1gyU1N3aHR5SFR1eWZqTUFieEVHVS04');script.src=`https://maps.googleapis.com/maps/api/js?key=${mk}&libraries=geometry&callback=initMap`;script.async=true;script.defer=true;document.head.appendChild(script);};
         
         window.renderMap=function(){
             if(!window.google){window.loadGoogleMaps();return;}
