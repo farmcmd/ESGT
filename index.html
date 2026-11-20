@@ -2101,7 +2101,11 @@
             
             document.getElementById('download-cert-btn')?.addEventListener('click', async () => {
                 window.showToast('🔄 繪製中，請勿關閉視窗...'); const container = document.getElementById('certificate-dom-container'); if(!container) return;
-                const dateStr = new Date().toLocaleDateString('zh-TW');
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('zh-TW');
+                // 產生精確至秒的核發／歸戶驗證時間戳記
+                const latestCheckoutTime = (state.checkoutHistory && state.checkoutHistory.length > 0 && state.checkoutHistory[0].time) ? state.checkoutHistory[0].time : null;
+                const exactTimestamp = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')} (UTC+8)`;
                 const recentLogs = (state.activityLogs || []).slice(0, 3).map(l => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(l.time||'').split(' ')[0]||dateStr}</span> ${l.text||'行動'}</div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無行動紀錄</div>';
                 const recentCheckouts = (state.checkoutHistory || []).slice(0, 3).map(c => `<div style="margin-bottom:6px; font-size:11px; color:#000; line-height:1.4;"><span style="color:#000; font-weight:bold; font-family:monospace; margin-right:6px;">${(c.time||'').split(' ')[0]||dateStr}</span> 歸戶至: ${c.target||'未知'} <b>(${c.carbon||0}g)</b></div>`).join('') || '<div style="font-size:11px; color:#000; font-style:italic;">無歸戶紀錄</div>';
                 
@@ -2135,12 +2139,16 @@
                                             </div>
                                         </td>
                                         <td style="width: 50%; vertical-align: bottom; text-align: right; position: relative;">
-                                            <div style="font-size: 18px; font-weight: bold; color: #000; margin-bottom: 6px; letter-spacing: 3px;">水里永續共好聯盟</div>
+                                            <div style="font-size: 18px; font-weight: bold; color: #000; margin-bottom: 6px; letter-spacing: 3px;">探探里山永續基地</div>
                                             <div style="font-size: 11px; color: #000; letter-spacing: 2px; margin-bottom: 15px;">探探里山行動平台 授權核發</div>
                                             <div style="margin-left: auto; width: 100px; height: 100px; border: 4px solid #DC2626; border-radius: 50%; background-color: #FFFFFF; transform: rotate(-15deg); text-align: center; padding-top: 26px; box-sizing: border-box;"><div style="color: #DC2626; font-weight: bold; font-size: 26px; line-height: 1; letter-spacing: 2px;">ESG</div><div style="color: #DC2626; font-weight: bold; font-size: 12px; margin-top: 6px; letter-spacing: 2px;">探探里山</div></div>
                                         </td>
                                     </tr>
                                 </table>
+                                <div style="margin-top: 22px; padding-top: 12px; border-top: 1px solid #E5E7EB; text-align: left; font-size: 11px; color: #374151; line-height: 1.7;">
+                                    <div style="font-weight: bold; color: #2C3E28;">加註：低碳交通碳排係數來源:環境部碳足跡資訊網、交通部運研所資料庫。活動時間內完成數據歸戶且不可竄改的時間戳記。</div>
+                                    <div style="font-family: monospace; font-size: 10px; color: #4B5563; margin-top: 4px;">時間戳記：${latestCheckoutTime ? `最新歸戶 ${latestCheckoutTime} ｜ ` : ''}證書核發 ${exactTimestamp}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
